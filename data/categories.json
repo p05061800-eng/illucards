@@ -1,0 +1,91 @@
+[
+  {
+    "name": "Marvel",
+    "image": "/uploads/1775862470555-c10f414f.webp",
+    "imageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "plateImage": "/uploads/1775862332510-30ac71f7.webp",
+    "plateImageFocus": {
+      "x": 50,
+      "y": 50
+    }
+  },
+  {
+    "name": "DC",
+    "image": "/uploads/1775830368614-503626c4.webp",
+    "imageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "plateImage": "/uploads/1775830635758-fa0b4ab2.webp",
+    "plateImageFocus": {
+      "x": 50,
+      "y": 50
+    }
+  },
+  {
+    "name": "TMNT",
+    "image": "/uploads/1775862825304-0f0445f0.webp",
+    "imageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "plateImage": "/uploads/1775838066801-9305e6e2.webp",
+    "plateImageFocus": {
+      "x": 50,
+      "y": 50
+    }
+  },
+  {
+    "name": "Stranger Things",
+    "image": "/uploads/1775824883355-86de583c.webp",
+    "imageFocus": {
+      "x": 49.950078125000005,
+      "y": 42.90265625000001
+    }
+  },
+  {
+    "name": "Cars",
+    "image": "/uploads/1775824892459-303a167d.webp",
+    "imageFocus": {
+      "x": 50,
+      "y": 50
+    }
+  },
+  {
+    "name": "Anime",
+    "image": "/uploads/1775856694085-60122022.webp",
+    "imageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "plateImage": "/uploads/1775839355372-40b2b161.webp",
+    "plateImageFocus": {
+      "x": 50,
+      "y": 50
+    }
+  },
+  {
+    "name": "Pokemon",
+    "image": "/uploads/1775832262314-bf7f7635.webp",
+    "imageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "plateImage": "/uploads/1775831825547-f713e27e.webp",
+    "plateImageFocus": {
+      "x": 50,
+      "y": 50
+    }
+  },
+  {
+    "name": "Football",
+    "image": "/uploads/1775824943545-6d37fec8.webp",
+    "imageFocus": {
+      "x": 50,
+      "y": 50
+    }
+  }
+]

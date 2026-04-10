@@ -1,8 +1,36 @@
 @import "tailwindcss";
 
+/* Плитки категорий (герой, «Коллекции», слайдер): картинка целиком, без cover-обрезки */
+img.category-tile-img {
+  object-fit: contain !important;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+html {
+  /* Sticky header ~3.5rem + запас для якорей при scrollIntoView */
+  scroll-padding-top: 5rem;
+}
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #070510;
+  /* Основной текст: лёгкий лавандовый оттенок под фиолетовый фон */
+  --foreground: #ede9fe;
+  --foreground-muted: rgba(196, 181, 253, 0.78);
+  --accent: #a855f7;
+  --accent-muted: rgba(168, 85, 247, 0.35);
+  /* Градиенты для заголовков и акцентов (белый → фиолетовый) */
+  --text-gradient-start: #ffffff;
+  --text-gradient-mid: #ddd6fe;
+  --text-gradient-deep: #a78bfa;
+  --text-gradient-end: #7c3aed;
 }
 
 @theme inline {
@@ -12,15 +40,556 @@
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  font-feature-settings:
+    "kern" 1,
+    "liga" 1,
+    "calt" 1;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* Фон: чёрный + насыщенный фиолетовый градиент, ореолы и лёгкое «дыхание» */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(
+      ellipse 130% 85% at 50% -25%,
+      rgba(139, 92, 246, 0.45) 0%,
+      rgba(88, 28, 135, 0.12) 42%,
+      transparent 68%
+    ),
+    radial-gradient(
+      ellipse 90% 70% at 100% 15%,
+      rgba(167, 139, 250, 0.28) 0%,
+      transparent 55%
+    ),
+    radial-gradient(
+      ellipse 85% 60% at 0% 60%,
+      rgba(109, 40, 217, 0.32) 0%,
+      transparent 52%
+    ),
+    radial-gradient(
+      ellipse 100% 80% at 80% 100%,
+      rgba(76, 29, 149, 0.35) 0%,
+      transparent 55%
+    ),
+    linear-gradient(
+      168deg,
+      #020203 0%,
+      #0a0614 22%,
+      #0f0820 48%,
+      #06040c 78%,
+      #030205 100%
+    );
+  animation: site-mesh-breathe 38s ease-in-out infinite alternate;
+}
+
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  opacity: 0.065;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)'/%3E%3C/svg%3E");
+  mix-blend-mode: overlay;
+}
+
+/* Без transform: на iOS Safari анимация scale на полноэкранном слое ломала hit-testing даже при pointer-events: none */
+@keyframes site-mesh-breathe {
+  0% {
+    filter: saturate(1) brightness(1);
+  }
+  100% {
+    filter: saturate(1.12) brightness(1.06);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body::before {
+    animation: none;
+  }
+}
+
+@media (hover: none) and (pointer: coarse) {
+  body::before {
+    animation: none;
+  }
+}
+
+/* Заголовки: градиент как у фона — белый → сирень → фиолетовый */
+.site-heading {
+  background: linear-gradient(
+    165deg,
+    var(--text-gradient-start) 0%,
+    var(--text-gradient-mid) 38%,
+    var(--text-gradient-deep) 72%,
+    var(--text-gradient-end) 100%
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* Логотип в шапке */
+.site-wordmark {
+  background: linear-gradient(
+    135deg,
+    var(--text-gradient-start) 0%,
+    var(--text-gradient-mid) 45%,
+    var(--text-gradient-deep) 88%,
+    #9333ea 100%
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* Второстепенный текст в том же ключе */
+.site-text-muted {
+  color: var(--foreground-muted);
+}
+
+/* Крупный логотип на главной — тот же градиент целиком */
+.site-hero-wordmark {
+  background: linear-gradient(
+    128deg,
+    #ffffff 0%,
+    #e9d5ff 28%,
+    #c4b5fd 58%,
+    #8b5cf6 88%,
+    #6d28d9 100%
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+::selection {
+  background: rgba(139, 92, 246, 0.38);
+  color: #faf5ff;
+}
+
+/* Legendary cards: golden glow pulse (box-shadow only — avoids conflict with card scale/tilt) */
+@keyframes legendary-card-glow {
+  0%,
+  100% {
+    box-shadow:
+      0 0 26px rgba(245, 158, 11, 0.48),
+      0 0 52px rgba(251, 191, 36, 0.14);
+  }
+  50% {
+    box-shadow:
+      0 0 42px rgba(245, 158, 11, 0.78),
+      0 0 78px rgba(251, 191, 36, 0.32);
+  }
+}
+
+.animate-legendary-card {
+  animation: legendary-card-glow 2.8s ease-in-out infinite;
+}
+
+@keyframes card-showcase-enter {
+  from {
+    opacity: 0.88;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.card-showcase-enter {
+  animation: card-showcase-enter 0.55s ease-in-out forwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .card-showcase-enter {
+    animation: none;
+  }
+}
+
+/* Hero: vario — задняя карта скрыта до движения мыши */
+.card-vario-back {
+  opacity: 0;
+}
+
+.card-vario-front {
+  opacity: 1;
+}
+
+/* Объёмная «толстая» лентикулярная карта: тени + глубина по Z */
+.card-face-lenticular-thick {
+  transform: translateZ(10px);
+  transform-style: preserve-3d;
+  box-shadow:
+    inset 0 3px 8px rgba(255, 255, 255, 0.18),
+    inset 0 -18px 32px rgba(0, 0, 0, 0.55),
+    inset 10px 0 18px -5px rgba(0, 0, 0, 0.28),
+    inset -10px 0 18px -5px rgba(0, 0, 0, 0.28),
+    0 32px 56px rgba(0, 0, 0, 0.58),
+    0 18px 36px rgba(0, 0, 0, 0.48),
+    0 8px 18px rgba(0, 0, 0, 0.4),
+    0 0 0 1px rgba(255, 255, 255, 0.12);
+  filter: drop-shadow(0 4px 24px rgba(0, 0, 0, 0.45));
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .card-face-lenticular-thick {
+    transform: translateZ(2px);
+    filter: drop-shadow(0 2px 12px rgba(0, 0, 0, 0.35));
+    box-shadow:
+      inset 0 1px 3px rgba(255, 255, 255, 0.1),
+      inset 0 -8px 16px rgba(0, 0, 0, 0.38),
+      0 12px 28px rgba(0, 0, 0, 0.45),
+      0 0 0 1px rgba(255, 255, 255, 0.09);
+  }
+}
+
+/* Торцы и нижняя грань — пластик толще по центру */
+.card-thickness-facets {
+  background:
+    linear-gradient(
+      90deg,
+      rgba(0, 0, 0, 0.38) 0%,
+      rgba(0, 0, 0, 0.08) 5%,
+      transparent 9%,
+      transparent 91%,
+      rgba(0, 0, 0, 0.08) 95%,
+      rgba(0, 0, 0, 0.38) 100%
+    ),
+    linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.1) 0%,
+      transparent 14%,
+      transparent 72%,
+      rgba(0, 0, 0, 0.45) 100%
+    );
+  mix-blend-mode: multiply;
+  opacity: 0.92;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .card-thickness-facets {
+    opacity: 0.65;
+  }
+}
+
+/*
+ * Лентикулярная печать (лицо + оборот): рёбра линзы + блик, привязанный к курсору.
+ * --lenticular-x/y в диапазоне 0–1 (задаётся из CardStackVisual).
+ */
+.card-lenticular-overlay {
+  --lenticular-x: 0.5;
+  --lenticular-y: 0.5;
+  /* Тонкие вертикальные полосы — имитация линзовой решётки */
+  background-image:
+    repeating-linear-gradient(
+      90deg,
+      rgba(255, 255, 255, 0.11) 0px,
+      rgba(255, 255, 255, 0.02) 1px,
+      transparent 1.5px,
+      transparent 3.5px
+    ),
+    repeating-linear-gradient(
+      90deg,
+      rgba(0, 0, 0, 0.06) 0px,
+      transparent 1px,
+      transparent 3px,
+      rgba(0, 0, 0, 0.04) 3.5px,
+      transparent 4px
+    ),
+    radial-gradient(
+      ellipse 85% 55% at calc(var(--lenticular-x) * 100%) calc(var(--lenticular-y) * 100%),
+      rgba(255, 255, 255, 0.22) 0%,
+      rgba(255, 255, 255, 0.06) 35%,
+      transparent 65%
+    );
+  background-blend-mode: soft-light, multiply, screen;
+  mix-blend-mode: soft-light;
+  opacity: 0.88;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.04);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .card-lenticular-overlay {
+    opacity: 0.45;
+    background-image: repeating-linear-gradient(
+      90deg,
+      rgba(255, 255, 255, 0.06) 0px,
+      transparent 1px,
+      transparent 4px
+    );
+    mix-blend-mode: soft-light;
+  }
+}
+
+/* Герой/каталог: карта слегка вылезает по тени — не режем 3D */
+.card-container {
+  overflow: visible;
+}
+
+.card-back {
+  position: absolute;
+  z-index: 10;
+}
+
+/*
+ * Карта 3 — под стопкой 1–2; тот же размер 3:4, что у лицевой стопки, только наискосок (translate+rotate на .card-side).
+ * Без уменьшения scale — третья карта совпадает по габариту с 1–2, визуально «подложена» сзади.
+ */
+.card-side {
+  position: absolute;
+  z-index: 1;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  transform: translate3d(-52px, 18px, 0) rotate(-7deg);
+  transform-origin: 52% 58%;
+  pointer-events: none;
+}
+
+.card-side-inner {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+/* Рамка 3:4 как у лицевой стопки; ultra обрезается (cover) */
+.card-side-surface {
+  position: relative;
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 100%;
+  aspect-ratio: 3 / 4;
+  height: auto;
+}
+
+.card-side-img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  pointer-events: none;
+}
+
+/* Герой: сдвиг всей стопки для центра в колонке */
+.hero-card-stack-visual {
+  transform: translate3d(56px, -36px, 0);
+}
+
+/*
+ * Узкая вёрстка: отрицательный translateY поднимает стопку и перекрывает плашки / блок «Акции»;
+ * в Safari/WebKit слой с transform часто перехватывает касания над ними.
+ */
+@media (max-width: 1279px) {
+  .hero-card-stack-visual {
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+.card-main {
+  position: relative;
+  z-index: 20;
+  background: black;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+}
+
+.card-main img {
+  display: block;
+}
+
+.card-glare {
+  position: absolute;
+  inset: 0;
+  z-index: 30;
+}
+
+/* Динамический блик при наклоне: картинка задаётся в CSS, в JS только position/opacity */
+.card-holo-tilt-gradient {
+  background-image: linear-gradient(
+    118deg,
+    transparent 28%,
+    rgba(255, 255, 255, 0.2) 50%,
+    transparent 72%
+  );
+  background-size: 220% 220%;
+}
+
+/* Hero: holo / vario — перелив + лёгкое движение (без «радужного» перебора) */
+@keyframes hero-holo-iridescent-move {
+  0%,
+  100% {
+    background-position: 8% 42%;
+  }
+  50% {
+    background-position: 92% 58%;
+  }
+}
+
+.hero-holo-iridescent {
+  background-image: linear-gradient(
+    118deg,
+    rgba(139, 92, 246, 0.16) 0%,
+    rgba(59, 130, 246, 0.12) 24%,
+    rgba(244, 114, 182, 0.1) 48%,
+    rgba(45, 212, 191, 0.11) 72%,
+    rgba(167, 139, 250, 0.14) 100%
+  );
+  background-size: 220% 220%;
+  animation: hero-holo-iridescent-move 10s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-holo-iridescent {
+    animation: none;
+    background-position: 50% 50%;
+  }
+}
+
+/* Каталог: смена категории */
+@keyframes catalog-category-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.catalog-category-animate {
+  animation: catalog-category-in 0.45s ease-in-out forwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .catalog-category-animate {
+    animation: none;
+  }
+}
+
+/* Каталог: смена карточки в карусели */
+@keyframes catalog-card-swap {
+  from {
+    opacity: 0.82;
+    transform: rotate(-2.5deg);
+  }
+  to {
+    opacity: 1;
+    transform: rotate(0deg);
+  }
+}
+
+.catalog-card-animate {
+  animation: catalog-card-swap 0.5s ease-in-out forwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .catalog-card-animate {
+    animation: none;
+  }
+}
+
+/* Текст под карточкой: fade-up + задержка описания */
+@keyframes fadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(15px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-up {
+  animation: fadeUp 0.6s ease-out forwards;
+  will-change: transform, opacity;
+}
+
+.delay-100 {
+  animation-delay: 0.1s;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-fade-up {
+    animation: none;
+    will-change: auto;
+  }
+
+  .delay-100 {
+    animation-delay: 0s;
+  }
+}
+
+/* Header dropdown */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fadeIn {
+  animation: fadeIn 0.2s ease-out forwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-fadeIn {
+    animation: none;
+  }
+}
+
+/* Premium 3D card: subtle float */
+@keyframes card-float {
+  0%,
+  100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+.animate-card-float {
+  animation: card-float 5s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-card-float {
+    animation: none;
+  }
+}
+
+/* Hero: layered flip card */
+.perspective {
+  perspective: 1200px;
+}
+
+.rotate-y-180 {
+  transform: rotateY(180deg);
+}
+
+.backface-hidden {
+  backface-visibility: hidden;
+}
+
+.preserve-3d {
+  transform-style: preserve-3d;
 }

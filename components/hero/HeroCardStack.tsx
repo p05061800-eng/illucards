@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { useEffect, useRef, useState } from "react";
 import type { StoredCard } from "@/app/api/cards/route";
 import { focusToStyle } from "@/app/lib/imageFocus";
 import { CardStackVisual } from "./CardStackVisual";
@@ -18,13 +19,18 @@ type Props = {
 /**
  * Герой: тяжёлый CardStackVisual монтируем только после гидратации — иначе в Safari/Next
  * часто ломается гидратация (className/DOM), и картинка пропадает после обновления страницы.
- * Переход на карточку — через `<Link>`, не через `<button>` вокруг слоя с pointer capture (иначе клики ломаются в Safari/Telegram WebView).
+ * Переход — `<Link>` + на таче явный `router.push` при коротком тапе: иначе WebKit не шлёт click после micro-move (vario).
  */
+/** Порог: если палец сдвинулся меньше — считаем тапом (Safari часто не шлёт click после micro-move для vario). */
+const TAP_MAX_PX = 22;
+
 export function HeroCardStack({
   displayCard,
   ultraBgUrl,
 }: Props) {
+  const router = useRouter();
   const [showStack, setShowStack] = useState(false);
+  const touchStartRef = useRef<{ x: number; y: number } | null>(null);
 
   useEffect(() => {
     const id = requestAnimationFrame(() => setShowStack(true));
@@ -45,6 +51,26 @@ export function HeroCardStack({
           aria-label={`Открыть ${displayCard.title}`}
           aria-busy={!showStack}
           suppressHydrationWarning
+          onTouchStartCapture={(e) => {
+            if (e.touches.length === 0) return;
+            const t = e.touches[0];
+            touchStartRef.current = { x: t.clientX, y: t.clientY };
+          }}
+          onTouchEnd={(e) => {
+            const start = touchStartRef.current;
+            touchStartRef.current = null;
+            if (!start || e.changedTouches.length === 0) return;
+            const t = e.changedTouches[0];
+            const dx = Math.abs(t.clientX - start.x);
+            const dy = Math.abs(t.clientY - start.y);
+            if (dx <= TAP_MAX_PX && dy <= TAP_MAX_PX) {
+              e.preventDefault();
+              router.push(href);
+            }
+          }}
+          onTouchCancel={() => {
+            touchStartRef.current = null;
+          }}
         >
           {showStack ? (
             <CardStackVisual

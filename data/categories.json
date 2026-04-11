@@ -27,7 +27,7 @@
   },
   {
     "name": "TMNT",
-    "image": "/uploads/1775862825304-0f0445f0.webp",
+    "image": "/uploads/1775866836232-e9e3bcf2.webp",
     "imageFocus": {
       "x": 50,
       "y": 50
@@ -48,8 +48,13 @@
   },
   {
     "name": "Cars",
-    "image": "/uploads/1775824892459-303a167d.webp",
+    "image": "/uploads/1775866955447-62551e0b.webp",
     "imageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "plateImage": "/uploads/1775866949023-b4b524da.webp",
+    "plateImageFocus": {
       "x": 50,
       "y": 50
     }
@@ -82,8 +87,13 @@
   },
   {
     "name": "Football",
-    "image": "/uploads/1775824943545-6d37fec8.webp",
+    "image": "/uploads/1775867363437-40963d7b.webp",
     "imageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "plateImage": "/uploads/1775867372472-1c6c1f35.webp",
+    "plateImageFocus": {
       "x": 50,
       "y": 50
     }

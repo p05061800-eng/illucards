@@ -1,5 +1,5 @@
 /**
- * Слайды блока «Акции и подборки» на главной (витрина слева).
+ * Слайды витрины на главной (переключение точками и стрелками вверху).
  */
 
 export type SpotlightSlideRow =
@@ -31,7 +31,7 @@ export const DEFAULT_SPOTLIGHT_SLIDES: SpotlightSlideRow[] = [
     id: "novelties",
     title: "Новинки",
     description:
-      "Крупная карточка в витрине — текущая новинка. Листайте её стрелками; разделы «Акции» — стрелками вверху.",
+      "Крупная карточка в витрине — текущая новинка. Листайте стрелками по бокам; другие разделы — точками и стрелками вверху.",
   },
   {
     kind: "promo",
@@ -45,11 +45,20 @@ export const DEFAULT_SPOTLIGHT_SLIDES: SpotlightSlideRow[] = [
   {
     kind: "promo",
     id: "sale",
-    title: "Распродажа",
+    title: "Акция",
     description:
       "Карточки со сниженной ценой. Количество ограничено — успейте забрать любимые позиции.",
     detailHref: "#collection",
     detailLabel: "Смотреть карточки",
+  },
+  {
+    kind: "promo",
+    id: "auction",
+    title: "Аукцион",
+    description:
+      "Редкие лоты и торги за коллекционные карточки. Следите за обновлениями и участвуйте в аукционах.",
+    detailHref: "#collection",
+    detailLabel: "Подробнее",
   },
 ];
 

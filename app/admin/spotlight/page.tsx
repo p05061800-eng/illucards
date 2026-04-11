@@ -4,7 +4,7 @@ import { AdminSpotlightEditor } from "../AdminSpotlightEditor";
 
 export const metadata: Metadata = {
   title: "Витрина — админ — IlluCards",
-  description: "Слайды «Акции и подборки» на главной",
+  description: "Слайды витрины на главной",
 };
 
 export default function AdminSpotlightPage() {
@@ -24,7 +24,7 @@ export default function AdminSpotlightPage() {
                 </span>
               </h1>
               <p className="mt-2 text-zinc-400">
-                Блок «Акции и подборки»: слайды Новинки и подборки — заголовки,
+                Слайды витрины: Новинки, спецпредложения, акция, аукцион — заголовки,
                 текст, картинки и кнопки.
               </p>
             </div>

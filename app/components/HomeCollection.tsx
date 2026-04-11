@@ -8,16 +8,17 @@ import {
   RotateCcw,
   Search,
   ShieldAlert,
+  SlidersHorizontal,
   Sparkles,
 } from "lucide-react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { usePathname, useRouter } from "next/navigation";
+import { useEffect, useMemo, useRef } from "react";
 import type { StoredCard } from "../api/cards/route";
 import type { CategoryTile } from "../lib/categoriesJson";
+import { useCatalogFilter } from "../context/CatalogFilterContext";
 import {
-  EMPTY_TYPE_FILTER,
   filterCollectionCards,
   sortCardsByPrice,
-  type PriceSort,
   type TypeFilterState,
 } from "../lib/collectionFilter";
 import { collectionSectionId } from "../lib/collectionAnchor";
@@ -32,14 +33,26 @@ type Props = {
 const filterLabelClass =
   "mb-1.5 block text-[10px] font-semibold uppercase tracking-[0.18em] text-violet-300/75";
 
-export function HomeCollection({ cards, categories }: Props) {
-  const [filtersOpen, setFiltersOpen] = useState(false);
-  const searchInputRef = useRef<HTMLInputElement>(null);
+/** Автопереход на страницу карточки: точное совпадение названия или ровно одна карточка по подстроке в title. */
+const SEARCH_NAV_DEBOUNCE_MS = 380;
 
-  const [search, setSearch] = useState("");
-  const [categoryFilter, setCategoryFilter] = useState("");
-  const [typeFilter, setTypeFilter] = useState<TypeFilterState>(EMPTY_TYPE_FILTER);
-  const [priceSort, setPriceSort] = useState<PriceSort>("default");
+export function HomeCollection({ cards, categories }: Props) {
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchInputRef = useRef<HTMLInputElement>(null);
+  const {
+    search,
+    setSearch,
+    categoryFilter,
+    setCategoryFilter,
+    typeFilter,
+    toggleType,
+    priceSort,
+    setPriceSort,
+    filtersOpen,
+    setFiltersOpen,
+    resetFilters,
+  } = useCatalogFilter();
 
   useEffect(() => {
     if (!filtersOpen) return;
@@ -57,6 +70,33 @@ export function HomeCollection({ cards, categories }: Props) {
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [filtersOpen]);
+
+  useEffect(() => {
+    if (pathname !== "/") return;
+    const q = search.trim();
+    if (q.length < 2) return;
+
+    const id = window.setTimeout(() => {
+      const lower = q.toLowerCase();
+      const exact = cards.find(
+        (c) => c.title.trim().toLowerCase() === lower
+      );
+      if (exact) {
+        setSearch("");
+        router.push(`/card/${exact.id}`);
+        return;
+      }
+      const byTitle = cards.filter((c) =>
+        c.title.toLowerCase().includes(lower)
+      );
+      if (byTitle.length === 1) {
+        setSearch("");
+        router.push(`/card/${byTitle[0].id}`);
+      }
+    }, SEARCH_NAV_DEBOUNCE_MS);
+
+    return () => window.clearTimeout(id);
+  }, [search, cards, pathname, router, setSearch]);
 
   const apiOrder = categories
     .map((c) => ({ ...c, name: c.name.trim() }))
@@ -113,17 +153,6 @@ export function HomeCollection({ cards, categories }: Props) {
     typeFilter.novelties ||
     priceSort !== "default";
 
-  const resetFilters = () => {
-    setSearch("");
-    setCategoryFilter("");
-    setTypeFilter(EMPTY_TYPE_FILTER);
-    setPriceSort("default");
-  };
-
-  const toggleType = (key: keyof TypeFilterState) => {
-    setTypeFilter((prev) => ({ ...prev, [key]: !prev[key] }));
-  };
-
   if (sections.length === 0) {
     return (
       <p className="py-8 text-center text-sm text-zinc-500">
@@ -165,86 +194,57 @@ export function HomeCollection({ cards, categories }: Props) {
             </>
           ) : null}
 
-          {!filtersOpen ? (
-            <button
-              type="button"
-              onClick={() => setFiltersOpen(true)}
-              className="relative flex w-full items-center gap-3 rounded-xl border border-white/10 bg-black/35 px-3 py-2.5 text-left transition hover:border-violet-400/35 hover:bg-white/[0.04] hover:shadow-[0_0_24px_rgba(139,92,246,0.12)]"
-            >
-              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-violet-500/15 text-violet-300">
-                <Search className="h-4 w-4" aria-hidden />
-              </div>
-              <div className="min-w-0 flex-1">
-                <p className="text-[13px] font-medium text-zinc-100">
-                  Поиск и фильтры
-                </p>
-                <p className="truncate text-[11px] text-zinc-500">
-                  {hasActiveFilters
-                    ? `${filteredSorted.length} из ${cards.length} · откройте, чтобы править`
-                    : "Нажмите, чтобы открыть каталог"}
-                </p>
-              </div>
-              {hasActiveFilters ? (
-                <span className="shrink-0 rounded-full bg-fuchsia-500/20 px-2 py-0.5 text-[10px] font-medium text-fuchsia-200/90">
-                  активно
-                </span>
-              ) : null}
-              <ChevronDown
-                className="h-4 w-4 shrink-0 text-zinc-500"
+          <div className="flex items-center gap-2 sm:gap-3">
+            <div className="group relative min-w-0 flex-1">
+              <div
+                className="pointer-events-none absolute -inset-px rounded-lg bg-gradient-to-r from-violet-500/0 via-fuchsia-500/0 to-violet-500/0 opacity-0 blur-[1px] transition-opacity duration-300 group-focus-within:from-violet-500/35 group-focus-within:via-fuchsia-400/25 group-focus-within:to-violet-500/35 group-focus-within:opacity-100"
                 aria-hidden
               />
+              <Search
+                className="pointer-events-none absolute left-2.5 top-1/2 z-10 h-4 w-4 -translate-y-1/2 text-violet-400/80"
+                aria-hidden
+              />
+              <input
+                ref={searchInputRef}
+                id="collection-search"
+                type="search"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Поиск…"
+                autoComplete="off"
+                aria-label="Поиск по каталогу"
+                className="relative w-full rounded-lg border border-white/10 bg-black/45 py-2 pl-9 pr-3 text-[13px] text-zinc-100 shadow-inner shadow-black/20 placeholder:text-zinc-600 focus:border-violet-400/45 focus:outline-none focus:ring-2 focus:ring-violet-500/20"
+              />
+            </div>
+            <button
+              type="button"
+              onClick={() => setFiltersOpen((o) => !o)}
+              aria-pressed={filtersOpen}
+              aria-label={
+                filtersOpen
+                  ? "Свернуть дополнительные фильтры"
+                  : "Открыть фильтры"
+              }
+              title={filtersOpen ? "Свернуть" : "Фильтры"}
+              className={`relative flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border transition sm:h-11 sm:w-11 ${
+                filtersOpen
+                  ? "border-violet-400/50 bg-violet-500/15 text-violet-200"
+                  : "border-white/10 bg-black/40 text-zinc-300 hover:border-violet-400/35 hover:bg-white/[0.06] hover:text-white"
+              }`}
+            >
+              <SlidersHorizontal
+                className="h-[18px] w-[18px]"
+                aria-hidden
+              />
+              {hasActiveFilters ? (
+                <span className="absolute -right-0.5 -top-0.5 h-2 w-2 rounded-full bg-fuchsia-500 shadow-[0_0_8px_rgba(217,70,239,0.8)]" />
+              ) : null}
             </button>
-          ) : (
-            <div className="relative">
-              <button
-                type="button"
-                onClick={() => setFiltersOpen(false)}
-                className="mb-3 flex w-full items-center gap-3 rounded-xl border border-white/10 bg-black/35 px-3 py-2.5 text-left transition hover:border-violet-400/30 hover:bg-white/[0.04]"
-                aria-expanded="true"
-                aria-label="Свернуть поиск и фильтры"
-              >
-                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-violet-500/15 text-violet-300">
-                  <Search className="h-4 w-4" aria-hidden />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="text-[13px] font-medium text-zinc-100">
-                    Поиск и фильтры
-                  </p>
-                  <p className="truncate text-[11px] text-zinc-500">
-                    Нажмите ещё раз, чтобы свернуть
-                  </p>
-                </div>
-                <ChevronDown
-                  className="h-4 w-4 shrink-0 rotate-180 text-zinc-500"
-                  aria-hidden
-                />
-              </button>
+          </div>
 
-              <label htmlFor="collection-search" className={filterLabelClass}>
-                Поиск
-              </label>
-              <div className="group relative">
-                <div
-                  className="pointer-events-none absolute -inset-px rounded-lg bg-gradient-to-r from-violet-500/0 via-fuchsia-500/0 to-violet-500/0 opacity-0 blur-[1px] transition-opacity duration-300 group-focus-within:from-violet-500/35 group-focus-within:via-fuchsia-400/25 group-focus-within:to-violet-500/35 group-focus-within:opacity-100"
-                  aria-hidden
-                />
-                <Search
-                  className="pointer-events-none absolute left-2.5 top-1/2 z-10 h-4 w-4 -translate-y-1/2 text-violet-400/80"
-                  aria-hidden
-                />
-                <input
-                  ref={searchInputRef}
-                  id="collection-search"
-                  type="search"
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  placeholder="Название, описание…"
-                  autoComplete="off"
-                  className="relative w-full rounded-lg border border-white/10 bg-black/45 py-2 pl-9 pr-3 text-[13px] text-zinc-100 shadow-inner shadow-black/20 placeholder:text-zinc-600 focus:border-violet-400/45 focus:outline-none focus:ring-2 focus:ring-violet-500/20"
-                />
-              </div>
-
-              <div className="mt-3 grid gap-3 sm:grid-cols-2">
+          {filtersOpen ? (
+            <div className="relative mt-3 border-t border-white/[0.06] pt-3">
+              <div className="grid gap-3 sm:grid-cols-2">
                 <div className="min-w-0">
                   <label htmlFor="collection-category" className={filterLabelClass}>
                     Категория
@@ -378,7 +378,7 @@ export function HomeCollection({ cards, categories }: Props) {
                 )}
               </div>
             </div>
-          )}
+          ) : null}
         </div>
       </div>
 

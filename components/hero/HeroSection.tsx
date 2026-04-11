@@ -1,8 +1,14 @@
 "use client";
 
-import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type TouchEvent,
+} from "react";
 import type { StoredCard } from "@/app/api/cards/route";
 import type { CategoryTile } from "@/app/lib/categoriesJson";
 import { apiUrl } from "@/app/lib/apiUrl";
@@ -48,7 +54,7 @@ type Props = {
   cards: StoredCard[];
   /** Категория `cards[0]` с сервера — до ответа `/api/categories` фильтр героя совпадает с SSR. */
   initialHeroCategoryName: string | null;
-  /** Слайды витрины «Акции и подборки» (редактируются в /admin/spotlight). */
+  /** Слайды витрины (редактируются в /admin/spotlight). */
   initialSpotlightSlides: SpotlightSlideRow[];
   /** Плашки категорий в герое — с сервера, чтобы показывались даже если fetch на клиенте не сработал (Telegram, блокировки). */
   initialCategories?: CategoryTile[];
@@ -62,6 +68,7 @@ export default function HeroSection({
 }: Props) {
   const router = useRouter();
   const heroCardFlyRef = useRef<HTMLDivElement>(null);
+  const noveltySwipeRef = useRef<{ x: number; y: number } | null>(null);
   const [spotlightSlides, setSpotlightSlides] = useState<SpotlightSlideRow[]>(
     () =>
       initialSpotlightSlides.length > 0
@@ -197,8 +204,37 @@ export default function HeroSection({
   const ultraBgUrl = ultraOrHeroBgUrl(focusCard);
   const isNoveltiesSlide =
     noveltiesSlideIndex >= 0 && spotlightSlide === noveltiesSlideIndex;
-  const showNoveltyFlip =
-    isNoveltiesSlide && noveltiesCards.length > 1;
+
+  const onNoveltySwipeStart = useCallback(
+    (e: TouchEvent<HTMLDivElement>) => {
+      if (!isNoveltiesSlide || noveltiesCards.length < 2) return;
+      const t = e.touches[0];
+      if (!t) return;
+      noveltySwipeRef.current = { x: t.clientX, y: t.clientY };
+    },
+    [isNoveltiesSlide, noveltiesCards.length]
+  );
+
+  const onNoveltySwipeEnd = useCallback(
+    (e: TouchEvent<HTMLDivElement>) => {
+      const start = noveltySwipeRef.current;
+      noveltySwipeRef.current = null;
+      if (!start || e.changedTouches.length === 0) return;
+      if (!isNoveltiesSlide || noveltiesCards.length < 2) return;
+      const t = e.changedTouches[0];
+      const dx = t.clientX - start.x;
+      const dy = t.clientY - start.y;
+      if (Math.abs(dx) < 56 || Math.abs(dx) < Math.abs(dy)) return;
+      if (dx < 0) {
+        setNoveltyIndex((i) => (i + 1) % noveltiesCards.length);
+      } else {
+        setNoveltyIndex(
+          (i) => (i - 1 + noveltiesCards.length) % noveltiesCards.length
+        );
+      }
+    },
+    [isNoveltiesSlide, noveltiesCards.length]
+  );
 
   return (
     <div className="relative z-0 mb-12 min-h-[min(600px,92vh)] w-full overflow-visible py-6 sm:py-8">
@@ -281,91 +317,43 @@ export default function HeroSection({
             ) : null}
 
             <div className="relative z-0 mt-4 flex flex-col items-stretch gap-8 sm:mt-5 lg:mt-6 lg:flex-row lg:items-start lg:justify-between lg:gap-10 xl:gap-14">
-              <div
-                className={`relative z-10 min-w-0 flex-1 ${
-                  isNoveltiesSlide
-                    ? "lg:max-w-[min(100%,580px)]"
-                    : "lg:max-w-[min(100%,520px)]"
-                }`}
-              >
+              {/* На телефоне сначала колонка с карточкой, затем витрина со слайдами */}
+              <div className="relative z-10 min-w-0 flex-1 order-2 lg:order-1 lg:max-w-[min(100%,580px)]">
                 <PromoSpotlightPanel
                   embedded
                   slides={spotlightSlides}
                   slideIndex={spotlightSlide}
                   onSlideChange={setSpotlightSlide}
-                  noveltyIndex={noveltyIndex}
                   noveltyTotal={noveltiesCards.length}
-                  noveltiesFooter={
-                    isNoveltiesSlide ? (
-                      <HeroCardCommerce
-                        variant="noveltiesBlock"
-                        card={focusCard}
-                        flySourceRef={heroCardFlyRef}
-                        onOpenCard={() => router.push(`/card/${focusCard.id}`)}
-                      />
-                    ) : undefined
-                  }
-                />
-              </div>
-
-              <div
-                className={`relative z-0 w-full min-w-0 lg:shrink-0 ${
-                  isNoveltiesSlide
-                    ? "lg:max-w-[min(100%,min(720px,92vw))] lg:flex-1 lg:-translate-x-16 xl:-translate-x-20 2xl:-translate-x-24"
-                    : "lg:max-w-[min(100%,min(920px,96vw))] lg:-translate-x-24 lg:-translate-y-2 xl:-translate-x-32 xl:-translate-y-3 2xl:-translate-x-40"
-                }`}
-              >
-                <div
-                  className={`relative z-10 flex w-full min-w-0 flex-col gap-6 lg:flex-row lg:items-center lg:justify-end xl:gap-10 ${
-                    isNoveltiesSlide ? "lg:gap-6" : "lg:gap-8"
-                  }`}
-                >
-                  {!isNoveltiesSlide ? (
+                  commerceFooter={
                     <HeroCardCommerce
+                      variant="noveltiesBlock"
                       card={focusCard}
                       flySourceRef={heroCardFlyRef}
                       onOpenCard={() => router.push(`/card/${focusCard.id}`)}
                     />
-                  ) : null}
-                  <div className="relative w-full min-w-0 flex-1 lg:max-w-[min(100%,420px)]">
-                    {showNoveltyFlip ? (
-                      <>
-                        <button
-                          type="button"
-                          onClick={() =>
-                            setNoveltyIndex(
-                              (i) =>
-                                (i - 1 + noveltiesCards.length) %
-                                noveltiesCards.length
-                            )
-                          }
-                          className="absolute left-0 top-1/2 z-50 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border border-white/15 bg-black/85 text-white shadow-lg backdrop-blur-sm transition hover:border-zinc-500/50 hover:bg-zinc-900 sm:-left-1 md:left-0"
-                          aria-label="Предыдущая новинка"
-                        >
-                          <ChevronLeft className="h-6 w-6" aria-hidden />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() =>
-                            setNoveltyIndex(
-                              (i) => (i + 1) % noveltiesCards.length
-                            )
-                          }
-                          className="absolute right-0 top-1/2 z-50 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border border-white/15 bg-black/85 text-white shadow-lg backdrop-blur-sm transition hover:border-zinc-500/50 hover:bg-zinc-900 sm:-right-1 md:right-0"
-                          aria-label="Следующая новинка"
-                        >
-                          <ChevronRight className="h-6 w-6" aria-hidden />
-                        </button>
-                      </>
-                    ) : null}
-                    <div
-                      ref={heroCardFlyRef}
-                      className="grid min-h-[min(400px,68vh)] w-full min-w-0 place-items-center px-6 pb-2 pt-3 sm:px-10 sm:pb-3 sm:pt-4 md:min-h-[min(520px,74vh)] lg:px-4"
-                    >
-                      <HeroCardStack
-                        displayCard={focusCard}
-                        ultraBgUrl={ultraBgUrl}
-                      />
+                  }
+                />
+              </div>
+
+              <div className="relative z-0 w-full min-w-0 order-1 lg:order-2 lg:shrink-0 lg:max-w-[min(100%,min(720px,92vw))] lg:flex-1 lg:translate-x-6 xl:translate-x-8 2xl:translate-x-10">
+                <div className="relative z-10 flex w-full min-w-0 flex-col lg:flex-row lg:items-center lg:justify-center lg:gap-6 xl:gap-10">
+                  <div className="flex w-full min-w-0 flex-col items-center lg:max-w-[min(100%,420px)] lg:flex-1 lg:translate-x-2 xl:translate-x-3">
+                    <div className="relative z-[15] min-h-0 min-w-0 isolate">
+                      <div
+                        ref={heroCardFlyRef}
+                        onTouchStart={onNoveltySwipeStart}
+                        onTouchEnd={onNoveltySwipeEnd}
+                        onTouchCancel={() => {
+                          noveltySwipeRef.current = null;
+                        }}
+                        className="flex min-h-0 w-full min-w-0 touch-pan-y justify-center px-4 pb-2 pt-1 sm:px-8 sm:pt-2 md:min-h-[min(360px,52vh)] md:px-10 md:pb-3 md:pt-4 lg:min-h-[min(400px,68vh)] lg:px-4 xl:min-h-[min(520px,74vh)] [&>div]:!w-auto [&>div]:max-w-full"
+                      >
+                        <HeroCardStack
+                          displayCard={focusCard}
+                          ultraBgUrl={ultraBgUrl}
+                        />
+                      </div>
                     </div>
                   </div>
                 </div>

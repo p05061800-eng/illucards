@@ -54,6 +54,8 @@ export function CardStackVisual({
   const rafRef = useRef(0);
   const pendingRef = useRef<{ cx: number; cy: number } | null>(null);
   const reduceMotionRef = useRef(false);
+  /** На главной с тачем: не тянуть 3D-наклон — только vario (меньше лагов) */
+  const coarseTouchHeroRef = useRef(false);
 
   /** Две разные картинки → варио в каталоге и герое (не только при effect===vario в JSON). */
   const hasVario = useMemo(() => {
@@ -77,6 +79,20 @@ export function CardStackVisual({
     mq.addEventListener("change", fn);
     return () => mq.removeEventListener("change", fn);
   }, []);
+
+  useEffect(() => {
+    if (!heroStack) {
+      coarseTouchHeroRef.current = false;
+      return;
+    }
+    const mq = window.matchMedia("(hover: none), (pointer: coarse)");
+    const sync = () => {
+      coarseTouchHeroRef.current = mq.matches;
+    };
+    sync();
+    mq.addEventListener("change", sync);
+    return () => mq.removeEventListener("change", sync);
+  }, [heroStack]);
 
   useEffect(
     () => () => {
@@ -108,14 +124,27 @@ export function CardStackVisual({
       if (back) back.style.opacity = String(mouseX);
       if (front) front.style.opacity = String(1 - mouseX);
       const lent = lenticularRef.current;
-      if (lent && !reduceMotionRef.current) {
+      const liteLenticular =
+        heroStack && coarseTouchHeroRef.current ? false : true;
+      if (lent && !reduceMotionRef.current && liteLenticular) {
         lent.style.setProperty("--lenticular-x", String(px));
         lent.style.setProperty("--lenticular-y", String(py));
       }
     }
 
     const tilt = tiltRef.current;
-    if (reduceMotionRef.current || !tilt) return;
+    const skip3dTilt =
+      reduceMotionRef.current ||
+      (heroStack && coarseTouchHeroRef.current && hasVario);
+    if (skip3dTilt || !tilt) {
+      if (tilt && skip3dTilt) {
+        tilt.style.transform = `rotateX(0deg) rotateY(0deg) translateZ(${idleTranslateZ}px)`;
+      }
+      if (holoGlare && skip3dTilt) {
+        holoGlare.style.opacity = "0";
+      }
+      return;
+    }
 
     const ry = Math.max(-maxTilt, Math.min(maxTilt, nx * maxTilt));
     const rx = Math.max(-maxTilt, Math.min(maxTilt, -ny * maxTilt));
@@ -133,24 +162,27 @@ export function CardStackVisual({
       holoGlare.style.mixBlendMode = "soft-light";
       holoGlare.style.transition = "none";
     }
-  }, [hasVario, maxTilt, idleTranslateZ, catalogStack]);
+  }, [hasVario, maxTilt, idleTranslateZ, catalogStack, heroStack]);
 
   const onPointerMove = useCallback(
     (e: PointerEvent<HTMLDivElement>) => {
+      /* iOS шлёт и pointer, и touch — движение обрабатывают touch listeners */
+      if (heroStack && e.pointerType === "touch") return;
       pendingRef.current = { cx: e.clientX, cy: e.clientY };
       if (rafRef.current !== 0) cancelAnimationFrame(rafRef.current);
       rafRef.current = requestAnimationFrame(applyTilt);
     },
-    [applyTilt]
+    [applyTilt, heroStack]
   );
 
   const onPointerEnter = useCallback(
     (e: PointerEvent<HTMLDivElement>) => {
+      if (heroStack && e.pointerType === "touch") return;
       pendingRef.current = { cx: e.clientX, cy: e.clientY };
       if (rafRef.current !== 0) cancelAnimationFrame(rafRef.current);
       rafRef.current = requestAnimationFrame(applyTilt);
     },
-    [applyTilt]
+    [applyTilt, heroStack]
   );
 
   /**
@@ -213,6 +245,44 @@ export function CardStackVisual({
   useLayoutEffect(() => {
     resetInteractiveState();
   }, [card.id, resetInteractiveState]);
+
+  /**
+   * Vario на телефоне: без pointer capture в герое `pointermove` в WebKit часто не идёт
+   * во время жеста. Нативные touch-события дают координаты; passive — не блокируем клик по Link.
+   */
+  useEffect(() => {
+    if (!hasVario) return;
+    const el = tiltZoneRef.current;
+    if (!el) return;
+
+    const syncFromTouch = (e: TouchEvent) => {
+      if (e.touches.length === 0) return;
+      const t = e.touches[0];
+      pendingRef.current = { cx: t.clientX, cy: t.clientY };
+      if (rafRef.current !== 0) cancelAnimationFrame(rafRef.current);
+      rafRef.current = requestAnimationFrame(applyTilt);
+    };
+
+    const syncFromTouchEnd = (e: TouchEvent) => {
+      const t = e.changedTouches[0];
+      if (!t) return;
+      pendingRef.current = { cx: t.clientX, cy: t.clientY };
+      if (rafRef.current !== 0) cancelAnimationFrame(rafRef.current);
+      rafRef.current = requestAnimationFrame(applyTilt);
+    };
+
+    el.addEventListener("touchstart", syncFromTouch, { passive: true });
+    el.addEventListener("touchmove", syncFromTouch, { passive: true });
+    el.addEventListener("touchend", syncFromTouchEnd, { passive: true });
+    el.addEventListener("touchcancel", syncFromTouchEnd, { passive: true });
+
+    return () => {
+      el.removeEventListener("touchstart", syncFromTouch);
+      el.removeEventListener("touchmove", syncFromTouch);
+      el.removeEventListener("touchend", syncFromTouchEnd);
+      el.removeEventListener("touchcancel", syncFromTouchEnd);
+    };
+  }, [hasVario, applyTilt, card.id]);
 
   const front = card.frontImage?.trim();
   if (!front) return null;
@@ -281,7 +351,11 @@ export function CardStackVisual({
                     <>
                       <div
                         ref={cardBackRef}
-                        className="card-back card-vario-back absolute inset-0 overflow-hidden rounded-2xl bg-black transition-opacity duration-100 ease-linear"
+                        className={`card-back card-vario-back absolute inset-0 overflow-hidden rounded-2xl bg-black ${
+                          heroStack
+                            ? "transition-none"
+                            : "transition-opacity duration-100 ease-linear"
+                        }`}
                       >
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img
@@ -296,7 +370,11 @@ export function CardStackVisual({
                       </div>
                       <div
                         ref={cardFrontRef}
-                        className="card-main card-vario-front relative overflow-hidden rounded-2xl transition-opacity duration-100 ease-linear"
+                        className={`card-main card-vario-front relative overflow-hidden rounded-2xl ${
+                          heroStack
+                            ? "transition-none"
+                            : "transition-opacity duration-100 ease-linear"
+                        }`}
                       >
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img

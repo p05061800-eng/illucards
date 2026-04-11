@@ -397,6 +397,13 @@ body::after {
   }
 }
 
+/* Третий слой (ultra) на телефоне даёт полоску/лишний слой над лицом и грузит GPU — убираем только в герое */
+@media (max-width: 1023px) {
+  .hero-card-stack-visual > .card-side {
+    display: none;
+  }
+}
+
 .card-main {
   position: relative;
   z-index: 20;

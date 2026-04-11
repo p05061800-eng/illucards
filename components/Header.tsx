@@ -1,9 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { Menu, ShoppingBag, X } from "lucide-react";
-import { useEffect, useState } from "react";
-import { usePathname } from "next/navigation";
+import { Menu, Search, ShoppingBag, SlidersHorizontal, X } from "lucide-react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { usePathname, useRouter } from "next/navigation";
+import { useCatalogFilter } from "@/app/context/CatalogFilterContext";
 import { useCart } from "@/app/context/CartContext";
 import { useCurrency } from "@/app/context/CurrencyContext";
 import { useFavorites } from "@/app/context/FavoritesContext";
@@ -13,6 +14,7 @@ import { apiUrl } from "@/app/lib/apiUrl";
 
 export default function Header() {
   const pathname = usePathname();
+  const router = useRouter();
   const [menu, setMenu] = useState<MenuJsonSection[]>([]);
   const [active, setActive] = useState<string | null>(null);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
@@ -21,6 +23,50 @@ export default function Header() {
   const { itemCount, hydrated, cartOpen, openCart } = useCart();
   const count = hydrated ? itemCount : 0;
   const { currency, setCurrency } = useCurrency();
+  const {
+    search,
+    setSearch,
+    categoryFilter,
+    typeFilter,
+    priceSort,
+    filtersOpen,
+    setFiltersOpen,
+    openFiltersAndScrollToCollection,
+  } = useCatalogFilter();
+
+  /** Первое нажатие — открыть фильтры у «Коллекций»; второе — закрыть и вернуться к началу главной. */
+  const handleFilterButtonClick = useCallback(() => {
+    if (filtersOpen) {
+      setFiltersOpen(false);
+      if (pathname === "/") {
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      } else {
+        router.push("/");
+      }
+    } else {
+      openFiltersAndScrollToCollection();
+    }
+  }, [
+    filtersOpen,
+    setFiltersOpen,
+    pathname,
+    router,
+    openFiltersAndScrollToCollection,
+  ]);
+
+  const catalogFiltersActive = useMemo(() => {
+    const tf = typeFilter;
+    return (
+      search.trim() !== "" ||
+      categoryFilter.trim() !== "" ||
+      tf.adult ||
+      tf.limited ||
+      tf.common ||
+      tf.hotPrice ||
+      tf.novelties ||
+      priceSort !== "default"
+    );
+  }, [search, categoryFilter, typeFilter, priceSort]);
 
   useEffect(() => {
     fetch(apiUrl("/api/menu"))
@@ -114,6 +160,45 @@ export default function Header() {
               <Menu className="h-5 w-5" aria-hidden />
             )}
           </button>
+
+          <div className="flex min-w-0 items-center gap-1.5 md:gap-2">
+            <div className="relative w-[min(132px,calc(100vw-10rem))] sm:w-[200px] md:w-[260px] lg:w-[300px]">
+              <Search
+                className="pointer-events-none absolute left-2.5 top-1/2 z-10 h-3.5 w-3.5 -translate-y-1/2 text-zinc-500"
+                aria-hidden
+              />
+              <input
+                type="search"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Поиск…"
+                autoComplete="off"
+                aria-label="Поиск по каталогу"
+                className="w-full rounded-lg border border-white/10 bg-black/40 py-1.5 pl-8 pr-2 text-xs text-zinc-100 shadow-inner shadow-black/20 placeholder:text-zinc-600 focus:border-violet-400/45 focus:outline-none focus:ring-2 focus:ring-violet-500/20 sm:py-2 sm:text-[13px]"
+              />
+            </div>
+            <button
+              type="button"
+              onClick={handleFilterButtonClick}
+              aria-label={
+                filtersOpen
+                  ? "Закрыть фильтры и вернуться к началу страницы"
+                  : "Открыть фильтры каталога"
+              }
+              title={filtersOpen ? "Закрыть фильтры" : "Фильтры"}
+              aria-pressed={filtersOpen}
+              className={`relative flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border text-zinc-300 transition sm:h-10 sm:w-10 ${
+                filtersOpen
+                  ? "border-violet-400/50 bg-violet-500/15 text-violet-200"
+                  : "border-white/10 bg-black/40 hover:border-violet-400/40 hover:bg-white/[0.06] hover:text-white"
+              }`}
+            >
+              <SlidersHorizontal className="h-4 w-4 sm:h-[18px] sm:w-[18px]" aria-hidden />
+              {catalogFiltersActive ? (
+                <span className="absolute -right-0.5 -top-0.5 h-2 w-2 rounded-full bg-fuchsia-500 shadow-[0_0_8px_rgba(217,70,239,0.8)]" />
+              ) : null}
+            </button>
+          </div>
 
           <div
             className="hidden rounded-full border border-white/12 bg-black/50 p-0.5 sm:flex"

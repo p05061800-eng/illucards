@@ -32,7 +32,7 @@
       "x": 50,
       "y": 50
     },
-    "plateImage": "/uploads/1775838066801-9305e6e2.webp",
+    "plateImage": "/uploads/1775881583777-c96d4a21.webp",
     "plateImageFocus": {
       "x": 50,
       "y": 50
@@ -44,6 +44,11 @@
     "imageFocus": {
       "x": 49.950078125000005,
       "y": 42.90265625000001
+    },
+    "plateImage": "/uploads/1775881773285-abd30fb3.webp",
+    "plateImageFocus": {
+      "x": 50,
+      "y": 50
     }
   },
   {

@@ -388,19 +388,36 @@ body::after {
 }
 
 /*
- * Узкая вёрстка: отрицательный translateY поднимает стопку и перекрывает плашки / блок «Акции»;
- * в Safari/WebKit слой с transform часто перехватывает касания над ними.
+ * Герой, третий слой (ultra): базовый .card-side даёт translateY(18px) — низ вылезает полосой
+ * под лицевой стопкой. Сдвигаем только в герое, без overflow:hidden на всей стопке (3D/тени сохраняются).
  */
-@media (max-width: 1279px) {
-  .hero-card-stack-visual {
-    transform: translate3d(0, 0, 0);
+@media (min-width: 1024px) {
+  .hero-card-stack-visual > .card-side {
+    transform: translate3d(-46px, 4px, 0) rotate(-6.5deg);
+    transform-origin: 48% 44%;
   }
 }
 
-/* Третий слой (ultra) на телефоне даёт полоску/лишний слой над лицом и грузит GPU — убираем только в герое */
+/*
+ * Узкая вёрстка: на десктопе сильнее сдвиг; на планшете/телефоне — меньше, но не ноль (сохраняем «вылет» стопки).
+ */
+@media (max-width: 1279px) {
+  .hero-card-stack-visual {
+    transform: translate3d(28px, -20px, 0);
+  }
+}
+
+@media (max-width: 639px) {
+  .hero-card-stack-visual {
+    transform: translate3d(18px, -14px, 0);
+  }
+}
+
+/* Третий слой (ultra) на планшете/телефоне: слабее наискосок + меньше сдвиг вниз — без полосы снизу */
 @media (max-width: 1023px) {
   .hero-card-stack-visual > .card-side {
-    display: none;
+    transform: translate3d(-36px, 6px, 0) rotate(-6deg);
+    transform-origin: 48% 44%;
   }
 }
 

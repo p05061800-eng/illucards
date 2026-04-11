@@ -138,10 +138,14 @@ export function CardStackVisual({
       (heroStack && coarseTouchHeroRef.current && hasVario);
     if (skip3dTilt || !tilt) {
       if (tilt && skip3dTilt) {
-        tilt.style.transform = `rotateX(0deg) rotateY(0deg) translateZ(${idleTranslateZ}px)`;
+        const zLift =
+          heroStack && coarseTouchHeroRef.current ? idleTranslateZ + 6 : idleTranslateZ;
+        tilt.style.transform = `rotateX(0deg) rotateY(0deg) translateZ(${zLift}px)`;
       }
       if (holoGlare && skip3dTilt) {
-        holoGlare.style.opacity = "0";
+        /* На таче без 3D-наклона — лёгкий блик вместо полного отключения */
+        holoGlare.style.opacity =
+          heroStack && coarseTouchHeroRef.current ? "0.14" : "0";
       }
       return;
     }

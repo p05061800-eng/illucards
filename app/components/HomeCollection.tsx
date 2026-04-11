@@ -40,6 +40,8 @@ export function HomeCollection({ cards, categories }: Props) {
   const router = useRouter();
   const pathname = usePathname();
   const searchInputRef = useRef<HTMLInputElement>(null);
+  /** Не запускать автопереход в карточку на первом прогоне эффекта после загрузки/обновления страницы. */
+  const skipSearchAutoNavOnceRef = useRef(true);
   const {
     search,
     setSearch,
@@ -73,6 +75,10 @@ export function HomeCollection({ cards, categories }: Props) {
 
   useEffect(() => {
     if (pathname !== "/") return;
+    if (skipSearchAutoNavOnceRef.current) {
+      skipSearchAutoNavOnceRef.current = false;
+      return;
+    }
     const q = search.trim();
     if (q.length < 2) return;
 

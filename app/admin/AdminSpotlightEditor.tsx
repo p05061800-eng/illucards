@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import type { StoredCard } from "@/app/api/cards/route";
 import type { SpotlightConfig, SpotlightSlideRow } from "@/app/lib/spotlightJson";
 import { DEFAULT_SPOTLIGHT_SLIDES } from "@/app/lib/spotlightJson";
 import { apiUrl } from "@/app/lib/apiUrl";
@@ -12,6 +13,7 @@ function newSlide(kind: SpotlightSlideRow["kind"], index: number): SpotlightSlid
       id: `novelties-${index}`,
       title: "Новинки",
       description: "Описание раздела.",
+      cardIds: [],
     };
   }
   return {
@@ -31,6 +33,21 @@ export function AdminSpotlightEditor() {
   const [loaded, setLoaded] = useState(false);
   const [saving, setSaving] = useState(false);
   const [uploadingIndex, setUploadingIndex] = useState<number | null>(null);
+  const [catalogCards, setCatalogCards] = useState<StoredCard[]>([]);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetch(apiUrl("/api/cards"))
+      .then((res) => (res.ok ? res.json() : Promise.reject(new Error(String(res.status)))))
+      .then((data: unknown) => {
+        if (cancelled || !Array.isArray(data)) return;
+        setCatalogCards(data as StoredCard[]);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -101,6 +118,19 @@ export function AdminSpotlightEditor() {
       const row = slides[index];
       if (!row) return prev;
       slides[index] = { ...row, ...patch } as SpotlightSlideRow;
+      return { slides };
+    });
+  };
+
+  const setNoveltyCardIds = (index: number, cardIds: string[]) => {
+    setConfig((prev) => {
+      const slides = [...prev.slides];
+      const row = slides[index];
+      if (!row || row.kind !== "novelties") return prev;
+      slides[index] = {
+        ...row,
+        cardIds: cardIds.length > 0 ? cardIds : undefined,
+      };
       return { slides };
     });
   };
@@ -269,6 +299,103 @@ export function AdminSpotlightEditor() {
                     </div>
                   </div>
                 ) : null}
+                {slide.kind === "novelties" ? (
+                  <div className="rounded-xl border border-white/10 bg-black/25 p-4">
+                    <p className="mb-2 text-xs font-medium text-zinc-400">
+                      Карусель в герое (свайп по стопке)
+                    </p>
+                    <p className="mb-3 text-xs leading-relaxed text-zinc-500">
+                      Добавьте карточки в нужном порядке. Если список пуст, на сайте
+                      показываются все карточки с флагом «Новинка» в каталоге.
+                    </p>
+                    {slide.cardIds && slide.cardIds.length > 0 ? (
+                      <ul className="mb-3 space-y-2">
+                        {slide.cardIds.map((cid, j) => {
+                          const c = catalogCards.find((x) => x.id === cid);
+                          const label = c?.title?.trim() || cid;
+                          return (
+                            <li
+                              key={`${cid}-${j}`}
+                              className="flex flex-wrap items-center gap-2 rounded-lg border border-white/10 bg-black/30 px-2 py-1.5"
+                            >
+                              <span className="min-w-0 flex-1 truncate text-sm text-zinc-200">
+                                {j + 1}. {label}
+                              </span>
+                              <button
+                                type="button"
+                                className="rounded border border-white/15 px-2 py-0.5 text-xs text-zinc-400 hover:bg-white/10 disabled:opacity-30"
+                                disabled={j === 0}
+                                onClick={() => {
+                                  const next = [...(slide.cardIds ?? [])];
+                                  [next[j - 1], next[j]] = [next[j]!, next[j - 1]!];
+                                  setNoveltyCardIds(index, next);
+                                }}
+                              >
+                                ↑
+                              </button>
+                              <button
+                                type="button"
+                                className="rounded border border-white/15 px-2 py-0.5 text-xs text-zinc-400 hover:bg-white/10 disabled:opacity-30"
+                                disabled={j >= (slide.cardIds?.length ?? 0) - 1}
+                                onClick={() => {
+                                  const next = [...(slide.cardIds ?? [])];
+                                  [next[j], next[j + 1]] = [next[j + 1]!, next[j]!];
+                                  setNoveltyCardIds(index, next);
+                                }}
+                              >
+                                ↓
+                              </button>
+                              <button
+                                type="button"
+                                className="text-xs text-red-400/90 hover:text-red-300"
+                                onClick={() => {
+                                  const next = (slide.cardIds ?? []).filter(
+                                    (_, k) => k !== j
+                                  );
+                                  setNoveltyCardIds(index, next);
+                                }}
+                              >
+                                Убрать
+                              </button>
+                            </li>
+                          );
+                        })}
+                      </ul>
+                    ) : (
+                      <p className="mb-3 text-xs text-zinc-500">
+                        Список пуст — используется режим «все новинки из каталога».
+                      </p>
+                    )}
+                    <div className="flex flex-wrap items-end gap-2">
+                      <div className="min-w-[200px] flex-1">
+                        <label className="mb-1 block text-xs text-zinc-500">
+                          Добавить карточку
+                        </label>
+                        <select
+                          className="w-full rounded-lg border border-white/10 bg-black/40 px-3 py-2 text-sm text-white"
+                          defaultValue=""
+                          onChange={(e) => {
+                            const id = e.target.value;
+                            e.target.value = "";
+                            if (!id) return;
+                            const cur = slide.cardIds ?? [];
+                            if (cur.includes(id)) return;
+                            setNoveltyCardIds(index, [...cur, id]);
+                          }}
+                        >
+                          <option value="">Выберите…</option>
+                          {catalogCards
+                            .filter((c) => !(slide.cardIds ?? []).includes(c.id))
+                            .map((c) => (
+                              <option key={c.id} value={c.id}>
+                                {c.title?.trim() || c.id}
+                              </option>
+                            ))}
+                        </select>
+                      </div>
+                    </div>
+                  </div>
+                ) : null}
                 <div>
                   <label className="mb-1 block text-xs text-zinc-500">Тип слайда</label>
                   <select
@@ -286,7 +413,7 @@ export function AdminSpotlightEditor() {
                         };
                         slides[index] =
                           k === "novelties"
-                            ? { kind: "novelties", ...base }
+                            ? { kind: "novelties", ...base, cardIds: [] }
                             : {
                                 kind: "promo",
                                 ...base,
@@ -298,7 +425,9 @@ export function AdminSpotlightEditor() {
                     }}
                     className="rounded-lg border border-white/10 bg-black/40 px-3 py-2 text-sm text-white"
                   >
-                    <option value="novelties">Новинки (карусель карточек isNew)</option>
+                    <option value="novelties">
+                      Новинки (карусель — список id ниже или все isNew)
+                    </option>
                     <option value="promo">Подборка с кнопкой</option>
                   </select>
                 </div>

@@ -44,7 +44,7 @@ export function HeroCardStack({
 
   return (
     <div className="grid w-full min-w-0 shrink-0 place-items-center">
-      <div className="relative z-0 max-w-full overflow-visible">
+      <div className="relative z-0 max-w-full min-w-0 overflow-visible">
         <Link
           href={href}
           className={HERO_CARD_STACK_BUTTON_CLASS}

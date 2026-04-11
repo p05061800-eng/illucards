@@ -1,10 +1,24 @@
 "use client";
 
 import Link from "next/link";
-import { ChevronLeft, ChevronRight } from "lucide-react";
-import { useCallback, type ReactNode } from "react";
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type Dispatch,
+  type PointerEvent,
+  type ReactNode,
+  type SetStateAction,
+} from "react";
 import type { SpotlightSlideRow } from "@/app/lib/spotlightJson";
 import { DEFAULT_SPOTLIGHT_SLIDES } from "@/app/lib/spotlightJson";
+
+/** Интервал автопрокрутки слайдов витрины (мс). */
+const SPOTLIGHT_AUTOPLAY_MS = 6500;
+
+/** Горизонтальный жест мышью/пальцем: порог в px (как у свайпа карточки в герое). */
+const SWIPE_MIN_PX = 48;
 
 /** @deprecated Используйте SpotlightSlideRow из @/app/lib/spotlightJson */
 export type SpotlightSlide = SpotlightSlideRow;
@@ -15,7 +29,7 @@ type Props = {
   embedded?: boolean;
   slides: SpotlightSlideRow[];
   slideIndex: number;
-  onSlideChange: (index: number) => void;
+  onSlideChange: Dispatch<SetStateAction<number>>;
   /** Для слайда «Новинки»: сколько новинок (для пустого состояния) */
   noveltyTotal: number;
   /** Цена, название карточки и кнопки под заголовком/описанием (как у «Новинки») */
@@ -34,12 +48,84 @@ export function PromoSpotlightPanel({
   const list = slides.length > 0 ? slides : DEFAULT_SPOTLIGHT_SLIDES;
   const max = list.length - 1;
 
-  const go = useCallback(
-    (dir: -1 | 1) => {
-      onSlideChange(Math.min(max, Math.max(0, slideIndex + dir)));
+  const [hoverPause, setHoverPause] = useState(false);
+  const [reducedMotion, setReducedMotion] = useState(false);
+  const swipeStartRef = useRef<{ x: number; y: number } | null>(null);
+  const swipePointerIdRef = useRef<number | null>(null);
+
+  const clearSwipe = useCallback((el: HTMLDivElement | null, pointerId: number) => {
+    swipeStartRef.current = null;
+    swipePointerIdRef.current = null;
+    if (!el) return;
+    try {
+      el.releasePointerCapture(pointerId);
+    } catch {
+      /* ignore */
+    }
+  }, []);
+
+  const onSpotlightPointerDown = useCallback(
+    (e: PointerEvent<HTMLDivElement>) => {
+      if (list.length <= 1) return;
+      if (e.button !== 0) return;
+      const target = e.target as HTMLElement | null;
+      if (target?.closest("a, button")) return;
+
+      swipeStartRef.current = { x: e.clientX, y: e.clientY };
+      swipePointerIdRef.current = e.pointerId;
+      try {
+        e.currentTarget.setPointerCapture(e.pointerId);
+      } catch {
+        /* ignore */
+      }
     },
-    [max, onSlideChange, slideIndex]
+    [list.length]
   );
+
+  const onSpotlightPointerUp = useCallback(
+    (e: PointerEvent<HTMLDivElement>) => {
+      if (swipePointerIdRef.current !== e.pointerId) return;
+      const start = swipeStartRef.current;
+      clearSwipe(e.currentTarget, e.pointerId);
+      if (!start || list.length <= 1) return;
+
+      const dx = e.clientX - start.x;
+      const dy = e.clientY - start.y;
+      if (Math.abs(dx) < SWIPE_MIN_PX || Math.abs(dx) < Math.abs(dy)) return;
+
+      if (dx < 0) {
+        onSlideChange((prev) => (prev + 1) % list.length);
+      } else {
+        onSlideChange((prev) => (prev - 1 + list.length) % list.length);
+      }
+    },
+    [clearSwipe, list.length, onSlideChange]
+  );
+
+  const onSpotlightPointerCancel = useCallback(
+    (e: PointerEvent<HTMLDivElement>) => {
+      if (swipePointerIdRef.current !== e.pointerId) return;
+      clearSwipe(e.currentTarget, e.pointerId);
+    },
+    [clearSwipe]
+  );
+
+  useEffect(() => {
+    const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
+    setReducedMotion(mq.matches);
+    const fn = () => setReducedMotion(mq.matches);
+    mq.addEventListener("change", fn);
+    return () => mq.removeEventListener("change", fn);
+  }, []);
+
+  useEffect(() => {
+    if (list.length <= 1 || hoverPause || reducedMotion) return;
+
+    const id = window.setInterval(() => {
+      onSlideChange((prev) => (prev + 1) % list.length);
+    }, SPOTLIGHT_AUTOPLAY_MS);
+    return () => window.clearInterval(id);
+  }, [list.length, onSlideChange, hoverPause, reducedMotion]);
 
   const current = list[Math.min(slideIndex, max)]!;
 
@@ -75,31 +161,14 @@ export function PromoSpotlightPanel({
 
   return (
     <div className="relative z-20 w-full">
-      <div className={shellClass}>
-        {/* На телефоне только точки — стрелки разделов скрыты (жест/точки достаточно) */}
-        <div className="mb-4 hidden items-center justify-end gap-2 lg:flex">
-          <div className="flex items-center gap-1">
-            <button
-              type="button"
-              onClick={() => go(-1)}
-              disabled={slideIndex <= 0}
-              className="flex h-9 w-9 items-center justify-center rounded-lg border border-white/10 bg-black/50 text-zinc-200 transition hover:border-zinc-500/50 hover:text-white disabled:cursor-not-allowed disabled:opacity-30"
-              aria-label="Предыдущий раздел"
-            >
-              <ChevronLeft className="h-5 w-5" />
-            </button>
-            <button
-              type="button"
-              onClick={() => go(1)}
-              disabled={slideIndex >= max}
-              className="flex h-9 w-9 items-center justify-center rounded-lg border border-white/10 bg-black/50 text-zinc-200 transition hover:border-zinc-500/50 hover:text-white disabled:cursor-not-allowed disabled:opacity-30"
-              aria-label="Следующий раздел"
-            >
-              <ChevronRight className="h-5 w-5" />
-            </button>
-          </div>
-        </div>
-
+      <div
+        className={`${shellClass} cursor-grab active:cursor-grabbing`}
+        onMouseEnter={() => setHoverPause(true)}
+        onMouseLeave={() => setHoverPause(false)}
+        onPointerDown={onSpotlightPointerDown}
+        onPointerUp={onSpotlightPointerUp}
+        onPointerCancel={onSpotlightPointerCancel}
+      >
         {embedded ? dotsRow : null}
 
         <div
@@ -131,8 +200,9 @@ export function PromoSpotlightPanel({
                 </p>
                 {noveltyTotal === 0 ? (
                   <p className="mt-3 text-sm text-amber-400/90">
-                    Новинок пока нет — в витрине показана карточка выбранной
-                    категории.
+                    Карточек для карусели нет: добавьте карточки в админке (Витрина →
+                    этот слайд) или отметьте новинки в каталоге — иначе показывается
+                    карточка выбранной категории.
                   </p>
                 ) : null}
               </div>

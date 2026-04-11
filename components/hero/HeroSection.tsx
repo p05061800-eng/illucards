@@ -7,6 +7,7 @@ import {
   useMemo,
   useRef,
   useState,
+  type PointerEvent,
   type TouchEvent,
 } from "react";
 import type { StoredCard } from "@/app/api/cards/route";
@@ -21,6 +22,9 @@ import { HeroCardCommerce } from "./HeroCardCommerce";
 import { HeroCardStack } from "./HeroCardStack";
 import { HeroIlluCardsLogo } from "./HeroIlluCardsLogo";
 import { PromoSpotlightPanel } from "./PromoSpotlightPanel";
+
+/** Горизонтальный свайп по стопке «Новинки»: тот же порог, что и для touch. */
+const NOVELTY_SWIPE_MIN_PX = 56;
 
 /** Прокрутка к секции каталога + hash. Запасной якорь — `#collection` (блок «Коллекции»). */
 function scrollToCollectionSection(anchorId: string) {
@@ -68,7 +72,9 @@ export default function HeroSection({
 }: Props) {
   const router = useRouter();
   const heroCardFlyRef = useRef<HTMLDivElement>(null);
-  const noveltySwipeRef = useRef<{ x: number; y: number } | null>(null);
+  const noveltyDragStartRef = useRef<{ x: number; y: number } | null>(null);
+  /** После свайпа гасим синтетический click по `<Link>` на карточке. */
+  const blockHeroCardLinkClickRef = useRef(false);
   const [spotlightSlides, setSpotlightSlides] = useState<SpotlightSlideRow[]>(
     () =>
       initialSpotlightSlides.length > 0
@@ -135,24 +141,38 @@ export default function HeroSection({
 
   const displayCard = filteredCards[0] ?? cards[0] ?? null;
 
-  const noveltiesCards = useMemo(
-    () => cards.filter((c) => c.isNew),
-    [cards]
-  );
-
   const [spotlightSlide, setSpotlightSlide] = useState(0);
   const [noveltyIndex, setNoveltyIndex] = useState(0);
 
-  const noveltiesSlideIndex = useMemo(
-    () => spotlightSlides.findIndex((s) => s.kind === "novelties"),
-    [spotlightSlides]
+  const safeSpotlightIndex = Math.min(
+    spotlightSlide,
+    Math.max(0, spotlightSlides.length - 1)
   );
+  const currentSpotlightSlide = spotlightSlides[safeSpotlightIndex];
+
+  const noveltiesCards = useMemo(() => {
+    if (!currentSpotlightSlide || currentSpotlightSlide.kind !== "novelties") {
+      return [];
+    }
+    const ids = currentSpotlightSlide.cardIds?.filter(Boolean) ?? [];
+    if (ids.length > 0) {
+      const map = new Map(cards.map((c) => [c.id, c]));
+      return ids.map((id) => map.get(id)).filter((c): c is StoredCard =>
+        Boolean(c)
+      );
+    }
+    return cards.filter((c) => c.isNew);
+  }, [cards, currentSpotlightSlide]);
 
   useEffect(() => {
     setSpotlightSlide((i) =>
       Math.min(i, Math.max(0, spotlightSlides.length - 1))
     );
   }, [spotlightSlides.length]);
+
+  useEffect(() => {
+    setNoveltyIndex(0);
+  }, [safeSpotlightIndex]);
 
   useEffect(() => {
     setNoveltyIndex((i) => {
@@ -163,21 +183,21 @@ export default function HeroSection({
 
   const focusCard = useMemo((): StoredCard | null => {
     if (!displayCard) return null;
-    // Плашка категории выбрана явно — в герое показываем эту категорию, а не новинку со слайда «Новинки»
+    // Плашка категории выбрана явно — в герое показываем эту категорию, а не карусель слайда «Новинки»
     if (userSelectedCategory != null) {
       return displayCard;
     }
-    const isNovelties =
-      noveltiesSlideIndex >= 0 && spotlightSlide === noveltiesSlideIndex;
-    if (isNovelties && noveltiesCards.length > 0) {
+    if (
+      currentSpotlightSlide?.kind === "novelties" &&
+      noveltiesCards.length > 0
+    ) {
       return noveltiesCards[noveltyIndex % noveltiesCards.length]!;
     }
     return displayCard;
   }, [
     displayCard,
     userSelectedCategory,
-    noveltiesSlideIndex,
-    spotlightSlide,
+    currentSpotlightSlide,
     noveltiesCards,
     noveltyIndex,
   ]);
@@ -186,6 +206,105 @@ export default function HeroSection({
     selectedCategoryName != null &&
     filteredCards.length === 0 &&
     cards.length > 0;
+
+  const isNoveltiesSlide = currentSpotlightSlide?.kind === "novelties";
+
+  const applyNoveltySwipeFromDelta = useCallback(
+    (start: { x: number; y: number }, endX: number, endY: number) => {
+      if (
+        userSelectedCategory != null ||
+        !isNoveltiesSlide ||
+        noveltiesCards.length < 2
+      ) {
+        return;
+      }
+      const dx = endX - start.x;
+      const dy = endY - start.y;
+      if (
+        Math.abs(dx) < NOVELTY_SWIPE_MIN_PX ||
+        Math.abs(dx) < Math.abs(dy)
+      ) {
+        return;
+      }
+      blockHeroCardLinkClickRef.current = true;
+      if (dx < 0) {
+        setNoveltyIndex((i) => (i + 1) % noveltiesCards.length);
+      } else {
+        setNoveltyIndex(
+          (i) => (i - 1 + noveltiesCards.length) % noveltiesCards.length
+        );
+      }
+    },
+    [isNoveltiesSlide, noveltiesCards.length, userSelectedCategory]
+  );
+
+  const onNoveltySwipeStart = useCallback(
+    (e: TouchEvent<HTMLDivElement>) => {
+      if (
+        userSelectedCategory != null ||
+        !isNoveltiesSlide ||
+        noveltiesCards.length < 2
+      ) {
+        return;
+      }
+      const t = e.touches[0];
+      if (!t) return;
+      noveltyDragStartRef.current = { x: t.clientX, y: t.clientY };
+    },
+    [isNoveltiesSlide, noveltiesCards.length, userSelectedCategory]
+  );
+
+  const onNoveltySwipeEnd = useCallback(
+    (e: TouchEvent<HTMLDivElement>) => {
+      const start = noveltyDragStartRef.current;
+      noveltyDragStartRef.current = null;
+      if (!start || e.changedTouches.length === 0) return;
+      const t = e.changedTouches[0];
+      applyNoveltySwipeFromDelta(start, t.clientX, t.clientY);
+    },
+    [applyNoveltySwipeFromDelta]
+  );
+
+  const onNoveltyPointerDown = useCallback(
+    (e: PointerEvent<HTMLDivElement>) => {
+      if (e.pointerType !== "mouse" && e.pointerType !== "pen") return;
+      if (e.button !== 0) return;
+      if (
+        userSelectedCategory != null ||
+        !isNoveltiesSlide ||
+        noveltiesCards.length < 2
+      ) {
+        return;
+      }
+      noveltyDragStartRef.current = { x: e.clientX, y: e.clientY };
+      try {
+        e.currentTarget.setPointerCapture(e.pointerId);
+      } catch {
+        /* ignore */
+      }
+    },
+    [isNoveltiesSlide, noveltiesCards.length, userSelectedCategory]
+  );
+
+  const onNoveltyPointerUp = useCallback(
+    (e: PointerEvent<HTMLDivElement>) => {
+      if (e.pointerType !== "mouse" && e.pointerType !== "pen") return;
+      const start = noveltyDragStartRef.current;
+      noveltyDragStartRef.current = null;
+      try {
+        e.currentTarget.releasePointerCapture(e.pointerId);
+      } catch {
+        /* ignore */
+      }
+      if (!start) return;
+      applyNoveltySwipeFromDelta(start, e.clientX, e.clientY);
+    },
+    [applyNoveltySwipeFromDelta]
+  );
+
+  const onNoveltyPointerCancel = useCallback(() => {
+    noveltyDragStartRef.current = null;
+  }, []);
 
   if (cards.length === 0) {
     return (
@@ -202,39 +321,6 @@ export default function HeroSection({
   }
 
   const ultraBgUrl = ultraOrHeroBgUrl(focusCard);
-  const isNoveltiesSlide =
-    noveltiesSlideIndex >= 0 && spotlightSlide === noveltiesSlideIndex;
-
-  const onNoveltySwipeStart = useCallback(
-    (e: TouchEvent<HTMLDivElement>) => {
-      if (!isNoveltiesSlide || noveltiesCards.length < 2) return;
-      const t = e.touches[0];
-      if (!t) return;
-      noveltySwipeRef.current = { x: t.clientX, y: t.clientY };
-    },
-    [isNoveltiesSlide, noveltiesCards.length]
-  );
-
-  const onNoveltySwipeEnd = useCallback(
-    (e: TouchEvent<HTMLDivElement>) => {
-      const start = noveltySwipeRef.current;
-      noveltySwipeRef.current = null;
-      if (!start || e.changedTouches.length === 0) return;
-      if (!isNoveltiesSlide || noveltiesCards.length < 2) return;
-      const t = e.changedTouches[0];
-      const dx = t.clientX - start.x;
-      const dy = t.clientY - start.y;
-      if (Math.abs(dx) < 56 || Math.abs(dx) < Math.abs(dy)) return;
-      if (dx < 0) {
-        setNoveltyIndex((i) => (i + 1) % noveltiesCards.length);
-      } else {
-        setNoveltyIndex(
-          (i) => (i - 1 + noveltiesCards.length) % noveltiesCards.length
-        );
-      }
-    },
-    [isNoveltiesSlide, noveltiesCards.length]
-  );
 
   return (
     <div className="relative z-0 mb-12 min-h-[min(600px,92vh)] w-full overflow-visible py-6 sm:py-8">
@@ -345,7 +431,16 @@ export default function HeroSection({
                         onTouchStart={onNoveltySwipeStart}
                         onTouchEnd={onNoveltySwipeEnd}
                         onTouchCancel={() => {
-                          noveltySwipeRef.current = null;
+                          noveltyDragStartRef.current = null;
+                        }}
+                        onPointerDown={onNoveltyPointerDown}
+                        onPointerUp={onNoveltyPointerUp}
+                        onPointerCancel={onNoveltyPointerCancel}
+                        onClickCapture={(e) => {
+                          if (!blockHeroCardLinkClickRef.current) return;
+                          e.preventDefault();
+                          e.stopPropagation();
+                          blockHeroCardLinkClickRef.current = false;
                         }}
                         className="flex min-h-0 w-full min-w-0 touch-pan-y justify-center px-4 pb-2 pt-1 sm:px-8 sm:pt-2 md:min-h-[min(360px,52vh)] md:px-10 md:pb-3 md:pt-4 lg:min-h-[min(400px,68vh)] lg:px-4 xl:min-h-[min(520px,74vh)] [&>div]:!w-auto [&>div]:max-w-full"
                       >

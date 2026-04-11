@@ -4,7 +4,13 @@
       "kind": "novelties",
       "id": "novelties",
       "title": "Новинки",
-      "description": "Крупная карточка в витрине — текущая новинка. Листайте стрелками по бокам; другие разделы — точками и стрелками вверху."
+      "description": "Крупная карточка в витрине — текущая новинка. Листайте стрелками по бокам; другие разделы — точками и стрелками вверху.",
+      "imageUrl": "/uploads/1775870033956-beb52c74.webp",
+      "cardIds": [
+        "53c5cb02-f3bb-4def-9735-06217c950134",
+        "95a9a1ea-b6ed-4f4b-a9c9-5eccc8d67192",
+        "e8f9a0b1-c2d3-4567-8901-abcdefabcdef"
+      ]
     },
     {
       "kind": "promo",
@@ -12,7 +18,8 @@
       "title": "Спецпредложения",
       "description": "Подборки со скидками и акции — загляните в каталог и оформите заказ выгодно.",
       "detailHref": "#collection",
-      "detailLabel": "В коллекцию"
+      "detailLabel": "В коллекцию",
+      "imageUrl": "/uploads/1775870042298-7ec757d2.webp"
     },
     {
       "kind": "promo",
@@ -20,7 +27,8 @@
       "title": "Акция",
       "description": "Карточки со сниженной ценой. Количество ограничено — успейте забрать любимые позиции.",
       "detailHref": "#collection",
-      "detailLabel": "Смотреть карточки"
+      "detailLabel": "Смотреть карточки",
+      "imageUrl": "/uploads/1775870048292-ee067c26.webp"
     },
     {
       "kind": "promo",
@@ -29,6 +37,20 @@
       "description": "Редкие лоты и торги за коллекционные карточки. Следите за обновлениями и участвуйте в аукционах.",
       "detailHref": "#collection",
       "detailLabel": "Подробнее"
+    },
+    {
+      "kind": "promo",
+      "id": "promo-4",
+      "title": "Новая подборка",
+      "description": "Текст подборки.",
+      "detailHref": "#collection",
+      "detailLabel": "Подробнее"
+    },
+    {
+      "kind": "novelties",
+      "id": "novelties-5",
+      "title": "Новинки",
+      "description": "Описание раздела."
     }
   ]
 }

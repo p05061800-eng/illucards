@@ -5,6 +5,7 @@ import {
   createContext,
   useCallback,
   useContext,
+  useEffect,
   useMemo,
   useState,
   type Dispatch,
@@ -59,6 +60,13 @@ export function CatalogFilterProvider({ children }: { children: ReactNode }) {
     setTypeFilter(EMPTY_TYPE_FILTER);
     setPriceSort("default");
   }, []);
+
+  /** На странице карточки поиск в шапке не должен держать запрос с главной — иначе при возврате срабатывает автопереход. */
+  useEffect(() => {
+    if (pathname.startsWith("/card/")) {
+      setSearch("");
+    }
+  }, [pathname, setSearch]);
 
   const openFiltersAndScrollToCollection = useCallback(() => {
     setFiltersOpen(true);

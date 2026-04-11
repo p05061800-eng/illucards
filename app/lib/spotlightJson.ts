@@ -10,6 +10,11 @@ export type SpotlightSlideRow =
       description: string;
       /** Картинка над текстом (опционально) */
       imageUrl?: string;
+      /**
+       * Порядок карточек в герое (свайп). Если задан и не пуст — только эти id из каталога.
+       * Иначе — по умолчанию все с флагом isNew в каталоге.
+       */
+      cardIds?: string[];
     }
   | {
       kind: "promo";
@@ -76,12 +81,21 @@ function parseSlide(row: unknown): SpotlightSlideRow | null {
   const imageUrl = trimStr(o.imageUrl);
 
   if (kind === "novelties") {
+    let cardIds: string[] | undefined;
+    const rawIds = o.cardIds;
+    if (Array.isArray(rawIds)) {
+      const ids = rawIds
+        .map((x) => trimStr(x))
+        .filter(Boolean);
+      if (ids.length > 0) cardIds = ids;
+    }
     return {
       kind: "novelties",
       id: id || "novelties",
       title,
       description,
       ...(imageUrl ? { imageUrl } : {}),
+      ...(cardIds ? { cardIds } : {}),
     };
   }
   if (kind === "promo") {
@@ -127,12 +141,15 @@ export function normalizeSpotlightConfig(config: SpotlightConfig): SpotlightConf
     }
     seen.add(id);
     if (s.kind === "novelties") {
+      const cardIds =
+        s.cardIds?.map((x) => x.trim()).filter(Boolean) ?? undefined;
       return {
         kind: "novelties" as const,
         id,
         title: s.title.trim() || "Новинки",
         description: s.description.trim(),
         ...(s.imageUrl?.trim() ? { imageUrl: s.imageUrl.trim() } : {}),
+        ...(cardIds && cardIds.length > 0 ? { cardIds } : {}),
       };
     }
     return {

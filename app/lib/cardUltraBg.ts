@@ -10,14 +10,23 @@ const ultraBackgrounds: Record<string, string> = Object.fromEntries(
 );
 
 /**
- * URL третьего слоя (наклон сзади): ultra → hero → дефолт по категории.
- * Отображение везде через `CardStackVisual`: рамка 3:4, картинка с `object-fit: cover`.
+ * URL третьего слоя (наклон сзади): ultra → hero → **фон категории из админки** (`categoryBg`)
+ * → статические ultra/hero по категории.
+ * Отображение везде через `CardStackVisual`: рамка по пропорциям лица, третий слой — `object-fit: contain` (без обрезки).
  */
+export function ultraOrHeroBgUrlForCategoryName(categoryName: string): string {
+  const c = categoryName.trim();
+  const name = c || categories[0]?.name || "TMNT";
+  return ultraOrHeroBgUrl({ category: name } as StoredCard);
+}
+
 export function ultraOrHeroBgUrl(card: StoredCard): string {
   const u = card.ultraBg?.trim();
   if (u) return u;
   const h = card.heroBg?.trim();
   if (h) return h;
+  const catBg = card.categoryBg?.trim();
+  if (catBg) return catBg;
   const ultra = ultraBackgrounds[card.category];
   if (ultra) return ultra;
   const hero = heroBackgrounds[card.category];

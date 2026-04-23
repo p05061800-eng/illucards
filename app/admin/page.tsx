@@ -25,17 +25,17 @@ export default function AdminPage() {
   const initialCards = loadCards();
 
   return (
-    <main className="relative min-h-screen overflow-hidden bg-black text-white">
+    <main className="relative overflow-visible bg-black text-white">
       <div
         className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_90%_60%_at_50%_-20%,rgba(88,28,135,0.4),transparent_55%)]"
         aria-hidden
       />
       <div
-        className="pointer-events-none absolute bottom-0 left-1/2 h-64 w-[120%] max-w-3xl -translate-x-1/2 rounded-full bg-purple-600/15 blur-[100px]"
+        className="pointer-events-none absolute bottom-0 left-1/2 h-64 w-[120%] max-w-[min(100%,90rem)] -translate-x-1/2 rounded-full bg-purple-600/15 blur-[100px]"
         aria-hidden
       />
       <div className="relative z-10 p-8 md:p-12">
-        <div className="mx-auto max-w-6xl">
+        <div className="mx-auto w-full max-w-[min(100%,90rem)]">
           <div className="mb-10 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <h1 className="text-3xl font-bold tracking-tight md:text-4xl">
@@ -65,6 +65,12 @@ export default function AdminPage() {
                 className="inline-flex items-center justify-center rounded-full border border-white/15 bg-white/5 px-5 py-2.5 text-sm font-medium text-zinc-200 transition hover:border-purple-400/40 hover:bg-white/10 hover:text-white"
               >
                 Витрина (главная)
+              </Link>
+              <Link
+                href="/admin/social"
+                className="inline-flex items-center justify-center rounded-full border border-white/15 bg-white/5 px-5 py-2.5 text-sm font-medium text-zinc-200 transition hover:border-purple-400/40 hover:bg-white/10 hover:text-white"
+              >
+                Соцсети
               </Link>
               <Link
                 href="/"

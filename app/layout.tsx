@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import { SiteFooter } from "@/components/SiteFooter";
 import Header from "@/components/Header";
 import { RefreshToHome } from "@/components/RefreshToHome";
 import { ScrollToTopButton } from "@/components/ScrollToTopButton";
@@ -37,16 +38,17 @@ export default function RootLayout({
 }>) {
   return (
     <html
-      lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      lang="ru"
+      className={`${geistSans.variable} ${geistMono.variable} antialiased`}
     >
-      <body className="flex min-h-full min-h-dvh flex-col overflow-x-visible bg-[var(--background)] text-zinc-100 antialiased [color-scheme:dark]">
+      <body className="flex flex-col overflow-x-visible bg-[var(--background)] text-zinc-100 antialiased [color-scheme:dark]">
         <Providers>
           <RefreshToHome />
           <Header />
-          <div className="relative z-0 flex min-w-0 flex-1 flex-col overflow-visible">
+          <div className="wrapper relative z-0 flex w-full min-w-0 flex-col overflow-visible">
             {children}
           </div>
+          <SiteFooter />
           <ScrollToTopButton />
         </Providers>
       </body>

@@ -6,7 +6,8 @@
     "dev": "bash scripts/dev.sh",
     "build": "next build",
     "start": "next start -H 0.0.0.0 -p 3010",
-    "lint": "eslint"
+    "lint": "eslint",
+    "backfill:card-dims": "node scripts/backfill-card-front-dimensions.mjs"
   },
   "dependencies": {
     "framer-motion": "^12.38.0",

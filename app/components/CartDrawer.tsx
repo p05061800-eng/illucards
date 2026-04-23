@@ -11,15 +11,19 @@ import {
   type PointerEvent,
 } from "react";
 import { createPortal } from "react-dom";
+import { AdultContentBlurGate } from "./AdultContentBlurGate";
+import { cardRequiresAgeConfirmation } from "../lib/cardRequiresAgeConfirmation";
 import { useCart } from "../context/CartContext";
 import { useCurrency } from "../context/CurrencyContext";
+import { useCategoryTiles } from "../context/CategoryFramesContext";
+import { getCardArtIntrinsicSize } from "../lib/cardArtIntrinsicSize";
 import { formatCardPrice } from "../lib/formatPrice";
-import { PurchaseModal } from "./PurchaseModal";
 
 export function CartDrawer() {
   const {
     cartItems,
-    totalPrice,
+    totalPriceByn,
+    totalPriceRub,
     hydrated,
     cartOpen,
     closeCart,
@@ -27,7 +31,7 @@ export function CartDrawer() {
     setQuantity,
   } = useCart();
   const { currency } = useCurrency();
-  const [checkoutOpen, setCheckoutOpen] = useState(false);
+  const categoryTiles = useCategoryTiles();
   const [mounted, setMounted] = useState(false);
   const titleId = useId();
   const asideRef = useRef<HTMLDivElement>(null);
@@ -271,22 +275,42 @@ export function CartDrawer() {
           ) : (
             <>
               <ul className="min-h-0 flex-1 space-y-3 overflow-y-auto overscroll-contain px-4 py-4 sm:px-5">
-                {cartItems.map((line) => (
+                {cartItems.map((line) => {
+                  const cartArt = getCardArtIntrinsicSize(
+                    line.category,
+                    categoryTiles,
+                  );
+                  return (
                   <li
                     key={line.id}
-                    className="flex gap-3 rounded-2xl border border-white/[0.07] bg-white/[0.03] p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] backdrop-blur-sm transition hover:border-white/[0.1] hover:bg-white/[0.045]"
+                    className="flex items-start gap-3 rounded-2xl border border-white/[0.07] bg-white/[0.03] p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] backdrop-blur-sm transition hover:border-white/[0.1] hover:bg-white/[0.045]"
                   >
-                    <div className="relative h-[4.5rem] w-[3.25rem] shrink-0 overflow-hidden rounded-2xl bg-zinc-900 ring-1 ring-white/10">
+                    <div className="flex w-[3.25rem] shrink-0 items-start justify-center self-start overflow-visible rounded-2xl bg-zinc-900 ring-1 ring-white/10">
                       {line.frontImage ? (
-                        <Image
-                          src={line.frontImage}
-                          alt=""
-                          fill
-                          className="rounded-2xl object-cover"
-                          sizes="52px"
-                        />
+                        <AdultContentBlurGate
+                          isAdult={cardRequiresAgeConfirmation({
+                            rarity: line.rarity,
+                            category: line.category,
+                            categoryOrder: line.categoryOrder,
+                          })}
+                          mode="blurOnly"
+                        >
+                          <Image
+                            src={line.frontImage}
+                            alt=""
+                            width={cartArt.width}
+                            height={cartArt.height}
+                            className="h-auto w-full rounded-2xl"
+                            sizes="52px"
+                            style={{
+                              width: "100%",
+                              height: "auto",
+                              objectFit: "unset",
+                            }}
+                          />
+                        </AdultContentBlurGate>
                       ) : (
-                        <div className="flex h-full items-center justify-center text-[10px] text-zinc-600">
+                        <div className="flex min-h-[2.5rem] items-center justify-center text-[10px] text-zinc-600">
                           —
                         </div>
                       )}
@@ -301,11 +325,18 @@ export function CartDrawer() {
                           {line.title}
                         </Link>
                         <p className="mt-1 text-xs tabular-nums text-purple-200/80">
-                          {formatCardPrice(line.price, currency)} ×{" "}
-                          {line.quantity} ={" "}
                           {formatCardPrice(
-                            line.price * line.quantity,
-                            currency
+                            line.priceByn,
+                            currency,
+                            currency === "RUB" ? line.priceRub : undefined
+                          )}{" "}
+                          × {line.quantity} ={" "}
+                          {formatCardPrice(
+                            line.priceByn * line.quantity,
+                            currency,
+                            currency === "RUB"
+                              ? line.priceRub * line.quantity
+                              : undefined
                           )}
                         </p>
                       </div>
@@ -345,26 +376,28 @@ export function CartDrawer() {
                       </div>
                     </div>
                   </li>
-                ))}
+                  );
+                })}
               </ul>
 
               <div className="shrink-0 border-t border-white/[0.06] bg-black/20 px-4 py-4 backdrop-blur-md sm:px-6">
                 <div className="mb-4 flex items-baseline justify-between gap-3">
                   <span className="text-sm text-zinc-500">Итого</span>
                   <span className="bg-gradient-to-r from-purple-200 to-violet-200 bg-clip-text text-lg font-semibold tabular-nums text-transparent">
-                    {formatCardPrice(totalPrice, currency)}
+                    {formatCardPrice(
+                      totalPriceByn,
+                      currency,
+                      currency === "RUB" ? totalPriceRub : undefined
+                    )}
                   </span>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setCheckoutOpen(true);
-                    closeCart();
-                  }}
-                  className="w-full rounded-full bg-gradient-to-r from-purple-600 via-violet-600 to-fuchsia-600 py-3.5 text-sm font-semibold text-white shadow-[0_0_36px_rgba(168,85,247,0.45)] ring-1 ring-purple-400/40 transition hover:from-purple-500 hover:via-violet-500 hover:to-fuchsia-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-400/80"
+                <Link
+                  href="/checkout"
+                  onClick={closeCart}
+                  className="flex w-full items-center justify-center rounded-full bg-gradient-to-r from-purple-600 via-violet-600 to-fuchsia-600 py-3.5 text-sm font-semibold text-white shadow-[0_0_36px_rgba(168,85,247,0.45)] ring-1 ring-purple-400/40 transition hover:from-purple-500 hover:via-violet-500 hover:to-fuchsia-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-400/80"
                 >
                   Оформить заказ
-                </button>
+                </Link>
               </div>
             </>
           )}
@@ -375,10 +408,6 @@ export function CartDrawer() {
 
   return (
     <>
-      <PurchaseModal
-        open={checkoutOpen}
-        onClose={() => setCheckoutOpen(false)}
-      />
       {/* Пока корзина закрыта — не монтируем оверлей в body, иначе на части устройств он перехватывает касания */}
       {mounted && cartOpen ? createPortal(drawer, document.body) : null}
     </>

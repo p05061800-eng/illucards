@@ -14,11 +14,14 @@ import {
   type TouchEvent,
 } from "react";
 import type { CardRarity, StoredCard } from "./api/cards/route";
+import { CardDescriptionText } from "./components/CardDescriptionText";
 import { PurchaseModal } from "./components/PurchaseModal";
 import { RARITY_STYLES } from "./lib/cardRarityUi";
-import { useCurrency } from "./context/CurrencyContext";
+import { useAdultContentGateOptional } from "./context/AdultContentContext";
+import { cardRequiresAgeConfirmation } from "./lib/cardRequiresAgeConfirmation";
 import { useAddToCartWithFeedback } from "./lib/cartUx/useAddToCartWithFeedback";
-import { formatCardPrice } from "./lib/formatPrice";
+import { CardPriceDualRow } from "./components/CardPriceDualRow";
+import { effectiveCardPriceByn } from "./lib/formatPrice";
 import { categories } from "@/data/categories";
 import { categoryLabel } from "./lib/categoryLabels";
 
@@ -30,6 +33,7 @@ const RARITY_LABELS: Record<CardRarity, string> = {
   common: "Обычная",
   limited: "Лимитированная",
   adult: "18+",
+  replica: "Реплики",
   novelty: "Новинки",
   hot_price: "Горячая цена",
 };
@@ -47,8 +51,9 @@ function CardItem({
   variant?: "grid" | "list";
 }) {
   const addToCartWithFeedback = useAddToCartWithFeedback();
-  const { currency } = useCurrency();
-
+  const adultGate = useAdultContentGateOptional();
+  const adultLocked =
+    cardRequiresAgeConfirmation(card) && !(adultGate?.confirmed ?? false);
   const categoryDisplay = card.category
     ? categoryLabel(card.category)
     : "—";
@@ -67,7 +72,7 @@ function CardItem({
       <div
         className={
           isList
-            ? "h-full [transform-style:preserve-3d]"
+            ? "[transform-style:preserve-3d]"
             : "flex flex-col rounded-2xl [transform-style:preserve-3d]"
         }
       >
@@ -80,11 +85,11 @@ function CardItem({
         >
         <Link
           href={`/card/${card.id}`}
-          className={
+          className={`${
             isList
               ? "group/card flex min-w-0 flex-1 cursor-pointer flex-row gap-4 rounded-xl p-0.5 transition-[filter] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] sm:items-start"
               : "group/card flex cursor-pointer flex-col gap-2 rounded-2xl p-0.5 transition-[filter] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)]"
-          }
+          }${adultLocked ? " pointer-events-none" : ""}`}
         >
           <div
             className={
@@ -96,7 +101,7 @@ function CardItem({
                 card={card}
                 ultraBgUrl={ultraOrHeroBgUrl(card)}
                 catalogStack
-                rootClassName="relative mx-auto aspect-[3/4] w-full rounded-2xl"
+                rootClassName="relative mx-auto w-full max-w-full rounded-2xl"
                 dataCartFlySource
               />
             </div>
@@ -112,7 +117,11 @@ function CardItem({
               {RARITY_LABELS[rarity]}
             </span>
             <p className="mt-1 line-clamp-2 text-sm text-gray-400 transition animate-fade-up delay-100 group-hover/card:text-gray-200">
-              {card.description?.trim() || "Описание скоро появится"}
+              <CardDescriptionText
+                text={card.description}
+                fallback="Описание скоро появится"
+                className="block"
+              />
             </p>
           </div>
         </div>
@@ -127,15 +136,21 @@ function CardItem({
             <p className="mb-1 text-[10px] font-medium uppercase tracking-wide text-purple-400/90 transition-colors duration-300 group-hover/card:text-purple-300">
               {categoryDisplay}
             </p>
-            <p
+            <div
               className={
                 isList
-                  ? "mb-0 bg-gradient-to-r from-purple-200 to-violet-200 bg-clip-text text-sm font-semibold text-transparent tabular-nums"
-                  : "mb-2.5 bg-gradient-to-r from-purple-200 to-violet-200 bg-clip-text text-[11px] font-semibold leading-snug text-transparent transition-opacity duration-300 group-hover/card:opacity-100 sm:text-xs"
+                  ? "mb-0"
+                  : "mb-2.5 text-[11px] leading-normal transition-opacity duration-300 group-hover/card:opacity-100 sm:text-xs"
               }
             >
-              {formatCardPrice(card.price, currency)}
-            </p>
+              <CardPriceDualRow
+                card={card}
+                variant="catalog"
+                className={isList ? "" : "text-[11px] sm:text-xs"}
+                byClassName="bg-gradient-to-r from-purple-200 to-violet-200 bg-clip-text text-transparent"
+                rubClassName="bg-gradient-to-r from-purple-200 to-violet-200 bg-clip-text text-transparent opacity-90"
+              />
+            </div>
           </div>
         </Link>
 
@@ -187,8 +202,9 @@ const RARITY_SORT: Record<CardRarity, number> = {
   common: 0,
   limited: 1,
   adult: 2,
-  novelty: 3,
-  hot_price: 4,
+  replica: 3,
+  novelty: 4,
+  hot_price: 5,
 };
 
 type SortMode = "popular" | "new" | "cheap";
@@ -204,7 +220,8 @@ function sortCards(
   if (mode === "cheap") {
     copy.sort(
       (a, b) =>
-        a.price - b.price || (a.title || "").localeCompare(b.title || "", "ru")
+        effectiveCardPriceByn(a) - effectiveCardPriceByn(b) ||
+        (a.title || "").localeCompare(b.title || "", "ru")
     );
   } else if (mode === "new") {
     copy.sort((a, b) => indexOfId(b.id) - indexOfId(a.id));

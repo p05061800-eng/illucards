@@ -4,15 +4,15 @@ import { Heart, ShoppingBag } from "lucide-react";
 import { useCallback, useMemo, useState, type MouseEvent, type RefObject } from "react";
 import type { CardRarity, StoredCard } from "@/app/api/cards/route";
 import { FavoritePopup } from "@/app/components/FavoritePopup";
-import { useCurrency } from "@/app/context/CurrencyContext";
 import { useFavorites } from "@/app/context/FavoritesContext";
 import { useAddToCartWithFeedback } from "@/app/lib/cartUx/useAddToCartWithFeedback";
-import { formatCardPrice } from "@/app/lib/formatPrice";
+import { CardPriceDualRow } from "@/app/components/CardPriceDualRow";
 
 const RARITY_LABELS: Record<CardRarity, string> = {
   common: "Обычная",
   limited: "Лимитированная",
   adult: "18+",
+  replica: "Реплики",
   novelty: "Новинки",
   hot_price: "Горячая цена",
 };
@@ -31,7 +31,6 @@ export function HeroCardCommerce({
   onOpenCard,
   variant = "besideCard",
 }: Props) {
-  const { currency } = useCurrency();
   const { isFavorite, toggleFavorite } = useFavorites();
   const addToCartWithFeedback = useAddToCartWithFeedback();
   const [showPopup, setShowPopup] = useState(false);
@@ -43,7 +42,7 @@ export function HeroCardCommerce({
     const parts: string[] = [RARITY_LABELS[rarity]];
     if (showNewPill) parts.push("Новинка");
     if (card.isSale) parts.push("Акция");
-    parts.push(card.inStock ? "В наличии" : "Нет в наличии");
+    parts.push(card.inStock ? "В наличии" : "Уже раскупили");
     return parts.join(" · ");
   }, [rarity, showNewPill, card.isSale, card.inStock]);
 
@@ -57,32 +56,48 @@ export function HeroCardCommerce({
   }
 
   const btnRow =
-    "inline-flex min-h-[44px] flex-1 items-center justify-center gap-1.5 rounded-full border border-white/15 bg-transparent px-3 py-2 text-center text-[13px] font-medium leading-tight text-zinc-100 transition hover:border-white/30 hover:bg-white/[0.06] active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-35 sm:px-4 sm:text-sm";
+    "hero-commerce-btn inline-flex flex-1 items-center justify-center gap-1.5 rounded-full border border-white/15 bg-transparent py-2 text-center font-medium leading-tight text-zinc-100 transition hover:border-white/30 hover:bg-white/[0.06] active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-35";
 
   return (
     <aside
       className={
         variant === "noveltiesBlock"
-          ? "flex w-full min-w-0 max-w-full flex-col gap-4"
-          : "flex w-full min-w-0 max-w-full flex-col gap-4 lg:max-w-[min(100%,min(92vw,520px))] lg:shrink-0"
+          ? "flex w-full min-w-0 max-w-full flex-col gap-3 sm:gap-4"
+          : "flex w-full min-w-0 max-w-full flex-col gap-[clamp(0.75rem,1.8vw,1.25rem)] lg:max-w-[min(100%,min(92vw,520px))] lg:shrink-0"
       }
     >
       <FavoritePopup show={showPopup} onClose={closePopup} />
 
       <div>
-        <p className="text-xs text-zinc-500">{card.category}</p>
-        <h3 className="mt-0.5 line-clamp-2 text-xl font-medium leading-snug tracking-tight text-white sm:text-2xl">
+        {variant !== "noveltiesBlock" ? (
+          <p className="text-xs text-zinc-500">{card.category}</p>
+        ) : null}
+        <h3
+          className={
+            variant === "noveltiesBlock"
+              ? "hero-commerce-title line-clamp-2 font-medium leading-snug tracking-tight text-white"
+              : "hero-commerce-title mt-0.5 line-clamp-2 font-medium leading-snug tracking-tight text-white"
+          }
+        >
           {card.title}
         </h3>
-        <p className="mt-2 text-xs leading-relaxed text-zinc-500">{metaLine}</p>
+        {variant === "noveltiesBlock" ? (
+          <>
+            {!card.inStock ? (
+              <p className="mt-2 text-xs text-amber-400/90">Уже раскупили</p>
+            ) : null}
+            {card.isSale && card.inStock ? (
+              <p className="mt-1.5 text-xs text-emerald-400/85">Акция</p>
+            ) : null}
+          </>
+        ) : (
+          <p className="mt-2 text-xs leading-relaxed text-zinc-500">{metaLine}</p>
+        )}
       </div>
 
-      <p
-        className="text-2xl font-light tabular-nums tracking-tight text-white sm:text-3xl"
-        aria-live="polite"
-      >
-        {formatCardPrice(card.price, currency)}
-      </p>
+      <div aria-live="polite">
+        <CardPriceDualRow card={card} variant="hero" />
+      </div>
 
       {/* Все действия в одну строку; на узком экране перенос */}
       <div className="flex flex-wrap gap-2">

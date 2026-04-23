@@ -2,23 +2,25 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import { useMemo, useRef } from "react";
 import type { StoredCard } from "@/app/api/cards/route";
-import { focusToStyle } from "@/app/lib/imageFocus";
+import { useAdultContentGateOptional } from "@/app/context/AdultContentContext";
+import { cardRequiresAgeConfirmation } from "@/app/lib/cardRequiresAgeConfirmation";
 import { CardStackVisual } from "./CardStackVisual";
 import {
   HERO_CARD_STACK_BUTTON_CLASS,
-  HERO_CARD_STACK_ROOT_CLASS,
+  HERO_CARD_STACK_BUTTON_CLASS_NOVELTY_NARROW,
+  heroCardStackRootClass,
 } from "./heroCardStackClasses";
 
 type Props = {
   displayCard: StoredCard;
   ultraBgUrl: string;
+  /** Чуть уже карточка в колонке «Новинки» героя. */
+  noveltyNarrow?: boolean;
 };
 
 /**
- * Герой: тяжёлый CardStackVisual монтируем только после гидратации — иначе в Safari/Next
- * часто ломается гидратация (className/DOM), и картинка пропадает после обновления страницы.
  * Переход — `<Link>` + на таче явный `router.push` при коротком тапе: иначе WebKit не шлёт click после micro-move (vario).
  */
 /** Порог: если палец сдвинулся меньше — считаем тапом (Safari часто не шлёт click после micro-move для vario). */
@@ -27,29 +29,50 @@ const TAP_MAX_PX = 22;
 export function HeroCardStack({
   displayCard,
   ultraBgUrl,
+  noveltyNarrow = false,
 }: Props) {
   const router = useRouter();
-  const [showStack, setShowStack] = useState(false);
+  const adultGate = useAdultContentGateOptional();
   const touchStartRef = useRef<{ x: number; y: number } | null>(null);
+  const adultLocked =
+    cardRequiresAgeConfirmation(displayCard) &&
+    !(adultGate?.confirmed ?? false);
 
-  useEffect(() => {
-    const id = requestAnimationFrame(() => setShowStack(true));
-    return () => cancelAnimationFrame(id);
-  }, []);
+  /** Без лица в JSON герой не пустой: фон категории или слой ultra (как на витрине). */
+  const cardForVisual = useMemo((): StoredCard => {
+    if (displayCard.frontImage?.trim()) return displayCard;
+    const fb = (
+      displayCard.categoryBg?.trim() ||
+      ultraBgUrl?.trim() ||
+      ""
+    ).trim();
+    if (!fb) return displayCard;
+    return { ...displayCard, frontImage: fb };
+  }, [displayCard, ultraBgUrl]);
 
-  const front = displayCard.frontImage?.trim();
+  const front = cardForVisual.frontImage?.trim();
   if (!front) return null;
 
+  const heroRootClass = heroCardStackRootClass();
+
   const href = `/card/${displayCard.id}`;
+  const buttonClass = noveltyNarrow
+    ? HERO_CARD_STACK_BUTTON_CLASS_NOVELTY_NARROW
+    : HERO_CARD_STACK_BUTTON_CLASS;
+
+  const rowJustify = noveltyNarrow
+    ? "justify-center"
+    : "justify-center lg:justify-end";
 
   return (
-    <div className="grid w-full min-w-0 shrink-0 place-items-center">
-      <div className="relative z-0 max-w-full min-w-0 overflow-visible">
+    <div className={`flex w-full min-w-0 shrink-0 ${rowJustify}`}>
+      <div
+        className={`relative z-0 flex w-full min-w-0 max-w-full overflow-visible ${noveltyNarrow ? "justify-center" : "lg:justify-end"}`}
+      >
         <Link
           href={href}
-          className={HERO_CARD_STACK_BUTTON_CLASS}
+          className={`${buttonClass}${adultLocked ? " pointer-events-none" : ""}`}
           aria-label={`Открыть ${displayCard.title}`}
-          aria-busy={!showStack}
           suppressHydrationWarning
           onTouchStartCapture={(e) => {
             if (e.touches.length === 0) return;
@@ -72,30 +95,14 @@ export function HeroCardStack({
             touchStartRef.current = null;
           }}
         >
-          {showStack ? (
-            <CardStackVisual
-              card={displayCard}
-              ultraBgUrl={ultraBgUrl}
-              heroStack
-              dataCartFlySource
-              rootClassName={HERO_CARD_STACK_ROOT_CLASS}
-            />
-          ) : (
-            <div
-              className={`${HERO_CARD_STACK_ROOT_CLASS} relative overflow-hidden bg-zinc-900/60 ring-1 ring-white/10`}
-              aria-hidden
-            >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={front}
-                alt=""
-                className="h-full w-full object-cover opacity-50"
-                style={focusToStyle(displayCard.frontImageFocus)}
-                draggable={false}
-                decoding="async"
-              />
-            </div>
-          )}
+          <CardStackVisual
+            card={cardForVisual}
+            ultraBgUrl={ultraBgUrl}
+            heroStack
+            catalogLikeDiagonal
+            dataCartFlySource
+            rootClassName={heroRootClass}
+          />
         </Link>
       </div>
     </div>

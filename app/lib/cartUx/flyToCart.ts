@@ -61,7 +61,7 @@ export function flyToCart(source: HTMLElement | null | undefined): void {
     c.alt = "";
     c.decoding = "async";
     c.style.cssText =
-      "width:100%;height:100%;object-fit:cover;display:block";
+      "width:100%;height:100%;object-fit:contain;display:block";
     flyer.appendChild(c);
   } else {
     flyer.style.background =

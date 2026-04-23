@@ -44,7 +44,7 @@ export default async function CardPage({ params }: PageProps) {
       : [card];
 
   return (
-    <main className="relative min-h-screen overflow-x-hidden text-white">
+    <main className="relative overflow-visible text-white">
       <div
         className="pointer-events-none absolute inset-0 bg-black"
         aria-hidden

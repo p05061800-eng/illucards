@@ -1,0 +1,78 @@
+{
+  "telemetry.telemetryLevel": "off",
+  "files.watcherExclude": {
+    "**/.git/objects/**": true,
+    "**/.git/subtree-cache/**": true,
+    "**/node_modules/**": true,
+    "**/.next/**": true,
+    "**/out/**": true,
+    "**/dist/**": true,
+    "**/build/**": true,
+    "**/.turbo/**": true,
+    "**/coverage/**": true,
+    "**/.cache/**": true,
+    "**/.eslintcache": true,
+    "**/pnpm-lock.yaml": true,
+    "**/tsconfig.tsbuildinfo": true,
+    "**/.vercel/**": true,
+    "**/public/uploads/**": true
+  },
+  "search.exclude": {
+    "**/node_modules": true,
+    "**/.next": true,
+    "**/out": true,
+    "**/dist": true,
+    "**/build": true,
+    "**/.turbo": true,
+    "**/coverage": true,
+    "**/.cache": true,
+    "**/.vercel": true,
+    "**/package-lock.json": true,
+    "**/pnpm-lock.yaml": true,
+    "**/*.tsbuildinfo": true,
+    "**/public/uploads": true,
+    "**/public/uploads/**": true
+  },
+  "files.exclude": {
+    "**/.next": true,
+    "**/.turbo": true,
+    "**/.cache": true
+  },
+  "explorer.excludeGitIgnore": true,
+  "search.useIgnoreFiles": true,
+  "search.followSymlinks": false,
+  "search.smartCase": true,
+  "typescript.tsserver.maxTsServerMemory": 4096,
+  "typescript.tsserver.experimental.enableProjectDiagnostics": false,
+  "typescript.tsserver.watchOptions": {
+    "watchFile": "useFsEventsOnParentDirectory",
+    "watchDirectory": "useFsEvents",
+    "fallbackPolling": "dynamicPriority",
+    "synchronousWatchDirectory": false
+  },
+  "javascript.validate.enable": true,
+  "eslint.run": "onSave",
+  "tailwindCSS.files.exclude": [
+    "**/.next/**",
+    "**/node_modules/**",
+    "**/.git/**",
+    "**/public/uploads/**"
+  ],
+  "npm.autoDetect": "off",
+  "extensions.autoUpdate": false,
+  "extensions.autoCheckUpdates": false,
+  "update.mode": "manual",
+  "workbench.editor.enablePreview": false,
+  "workbench.editor.limit.enabled": true,
+  "workbench.editor.limit.value": 10,
+  "workbench.settings.enableNaturalLanguageSearch": false,
+  "editor.quickSuggestionsDelay": 120,
+  "editor.quickSuggestions": {
+    "other": "on",
+    "comments": "off",
+    "strings": "off"
+  },
+  "editor.semanticHighlighting.enabled": true,
+  "diffEditor.ignoreTrimWhitespace": true,
+  "git.autorefresh": true
+}

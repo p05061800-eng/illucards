@@ -72,6 +72,11 @@ export function slugForCategoryName(name: string): string | undefined {
   const n = name.trim();
   const byName = categories.find((c) => c.name === n)?.slug;
   if (byName) return byName;
+  const nl = n.toLowerCase();
+  const byNameInsensitive = categories.find(
+    (c) => c.name.toLowerCase() === nl,
+  )?.slug;
+  if (byNameInsensitive) return byNameInsensitive;
   if (n === "Очень странные дела") return "stranger-things";
   return undefined;
 }

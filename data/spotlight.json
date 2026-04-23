@@ -4,7 +4,7 @@
       "kind": "novelties",
       "id": "novelties",
       "title": "Новинки",
-      "description": "Крупная карточка в витрине — текущая новинка. Листайте стрелками по бокам; другие разделы — точками и стрелками вверху.",
+      "description": "",
       "imageUrl": "/uploads/1775870033956-beb52c74.webp",
       "cardIds": [
         "53c5cb02-f3bb-4def-9735-06217c950134",
@@ -50,7 +50,7 @@
       "kind": "novelties",
       "id": "novelties-5",
       "title": "Новинки",
-      "description": "Описание раздела."
+      "description": ""
     }
   ]
 }

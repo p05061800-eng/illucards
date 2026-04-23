@@ -1,15 +1,19 @@
 "use client";
 
 import { ShoppingBag } from "lucide-react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useRef, useState, type MouseEvent } from "react";
 import type { StoredCard } from "../api/cards/route";
-import { useCurrency } from "../context/CurrencyContext";
+import { useAdultContentGateOptional } from "../context/AdultContentContext";
+import { useMergedRating } from "../context/CardRatingsContext";
 import { useFavorites } from "../context/FavoritesContext";
+import { cardRequiresAgeConfirmation } from "../lib/cardRequiresAgeConfirmation";
 import { useAddToCartWithFeedback } from "../lib/cartUx/useAddToCartWithFeedback";
-import { formatCardPrice } from "../lib/formatPrice";
 import { ultraOrHeroBgUrl } from "../lib/cardUltraBg";
 import { CardStackVisual } from "@/components/hero/CardStackVisual";
+import { CardPriceDualRow } from "./CardPriceDualRow";
+import { CardRatingStars } from "./CardRatingStars";
 import { FavoritePopup } from "./FavoritePopup";
 
 type Props = {
@@ -18,12 +22,19 @@ type Props = {
   hideUltraLayer?: boolean;
 };
 
+/** Как в HeroCardStack: короткий тап — переход; микросдвиг — vario/3D без потери click в WebKit */
+const TAP_MAX_PX = 22;
+
 export function CardItem({ card, hideUltraLayer = false }: Props) {
   const router = useRouter();
-  const { currency } = useCurrency();
+  const adultGate = useAdultContentGateOptional();
+  const adultLocked =
+    cardRequiresAgeConfirmation(card) && !(adultGate?.confirmed ?? false);
+  const merged = useMergedRating(card);
   const { isFavorite, toggleFavorite } = useFavorites();
   const addToCartWithFeedback = useAddToCartWithFeedback();
-  const flyRef = useRef<HTMLDivElement>(null);
+  const flyRef = useRef<HTMLAnchorElement | null>(null);
+  const touchStartRef = useRef<{ x: number; y: number } | null>(null);
   const [showPopup, setShowPopup] = useState(false);
   const liked = isFavorite(card.id);
 
@@ -40,75 +51,99 @@ export function CardItem({ card, hideUltraLayer = false }: Props) {
     router.push(`/card/${card.id}`);
   }
 
+  const cardHref = `/card/${card.id}`;
+
   return (
-    <div className="flex min-w-0 w-full flex-col overflow-visible text-left">
-      <div
+    <div className="card flex h-full min-h-0 w-full min-w-0 flex-col overflow-visible text-left">
+      <Link
         ref={flyRef}
-        className="relative w-full min-w-0 cursor-pointer"
-        onClick={goToCardPage}
-        onKeyDown={(e) => {
-          if (e.key === "Enter" || e.key === " ") {
+        href={cardHref}
+        prefetch
+        className={`relative block w-full min-w-0 shrink-0 cursor-pointer overflow-visible${adultLocked ? " pointer-events-none" : ""}`}
+        aria-label={`Открыть карточку: ${card.title}`}
+        onTouchStartCapture={(e) => {
+          if (e.touches.length === 0) return;
+          const t = e.touches[0];
+          touchStartRef.current = { x: t.clientX, y: t.clientY };
+        }}
+        onTouchEnd={(e) => {
+          const start = touchStartRef.current;
+          touchStartRef.current = null;
+          if (!start || e.changedTouches.length === 0) return;
+          const t = e.changedTouches[0];
+          const dx = Math.abs(t.clientX - start.x);
+          const dy = Math.abs(t.clientY - start.y);
+          if (dx <= TAP_MAX_PX && dy <= TAP_MAX_PX) {
             e.preventDefault();
-            goToCardPage();
+            router.push(cardHref);
           }
         }}
-        role="link"
-        tabIndex={0}
-        aria-label={`Открыть карточку: ${card.title}`}
+        onTouchCancel={() => {
+          touchStartRef.current = null;
+        }}
       >
         <CardStackVisual
           card={card}
           ultraBgUrl={ultraOrHeroBgUrl(card)}
           catalogStack
           hideUltraLayer={hideUltraLayer}
-          rootClassName="relative mx-auto aspect-[3/4] w-full max-w-[min(100%,360px)] rounded-2xl"
+          rootClassName="relative mx-auto max-w-full rounded-2xl"
           dataCartFlySource
         />
-      </div>
+      </Link>
 
       <FavoritePopup show={showPopup} onClose={closePopup} />
 
-      <div className="flex flex-col gap-2 p-3">
-        <button
-          type="button"
-          onClick={goToCardPage}
-          className="w-full text-left transition hover:text-purple-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-500/50"
-        >
-          <h3 className="line-clamp-2 text-sm font-semibold text-white sm:text-base">
-            {card.title}
-          </h3>
-        </button>
+      <div className="flex min-h-0 flex-1 flex-col justify-between gap-2 p-3 pt-2.5">
+        <div className="min-h-0 shrink-0">
+          <button
+            type="button"
+            onClick={goToCardPage}
+            className="w-full text-left transition hover:text-purple-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-500/50"
+          >
+            <h3 className="line-clamp-2 min-h-[2.75rem] text-sm font-semibold leading-snug text-white sm:min-h-[3.125rem] sm:text-base">
+              {card.title}
+            </h3>
+          </button>
+        </div>
 
-        <div className="flex items-center justify-between gap-2">
-          <p className="text-sm font-semibold tabular-nums text-white sm:text-base">
-            {formatCardPrice(card.price, currency)}
-          </p>
-          <div className="flex shrink-0 items-center gap-1">
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                handleFavorite(e);
-              }}
-              className={`rounded-full p-2 text-lg transition hover:brightness-125 active:opacity-80 ${
-                liked ? "text-red-400" : "text-white/85"
-              }`}
-              aria-label={liked ? "Убрать из избранного" : "В избранное"}
-              aria-pressed={liked}
-            >
-              {liked ? "❤️" : "🤍"}
-            </button>
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                addToCartWithFeedback(card, flyRef.current);
-              }}
-              className="shrink-0 rounded-full bg-green-500 p-2 text-white transition-all duration-300 ease-out hover:shadow-lg hover:shadow-green-500/35 hover:brightness-110 active:opacity-90"
-              aria-label="В корзину"
-            >
-              <ShoppingBag className="h-5 w-5 text-white" aria-hidden />
-            </button>
+        <div className="flex shrink-0 flex-col gap-2 border-t border-white/[0.06] pt-2.5">
+          <div className="flex items-center gap-1.5 px-0.5">
+            <CardRatingStars value={merged.avg} compact />
+            <span className="text-[11px] font-semibold tabular-nums text-amber-200/90">
+              {merged.avg.toFixed(1)}
+            </span>
+          </div>
+
+          <div className="flex min-w-0 items-center justify-between gap-2">
+            <CardPriceDualRow card={card} variant="catalog" />
+            <div className="flex shrink-0 items-center gap-1">
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleFavorite(e);
+                }}
+                className={`rounded-full p-2 text-lg transition hover:brightness-125 active:opacity-80 ${
+                  liked ? "text-red-400" : "text-white/85"
+                }`}
+                aria-label={liked ? "Убрать из избранного" : "В избранное"}
+                aria-pressed={liked}
+              >
+                {liked ? "❤️" : "🤍"}
+              </button>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  addToCartWithFeedback(card, flyRef.current);
+                }}
+                className="shrink-0 rounded-full bg-green-500 p-2 text-white transition-all duration-300 ease-out hover:shadow-lg hover:shadow-green-500/35 hover:brightness-110 active:opacity-90"
+                aria-label="В корзину"
+              >
+                <ShoppingBag className="h-5 w-5 text-white" aria-hidden />
+              </button>
+            </div>
           </div>
         </div>
       </div>

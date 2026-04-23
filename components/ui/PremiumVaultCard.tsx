@@ -10,8 +10,17 @@ import {
   type ReactNode,
 } from "react";
 import type { StoredCard } from "@/app/api/cards/route";
+import { useIntrinsicImageAspect } from "@/app/lib/useIntrinsicImageAspect";
 import { getCategoryBackgroundUrl } from "@/app/lib/categoryBackground";
-import { focusToStyle } from "@/app/lib/imageFocus";
+import {
+  resolveCardArtBoxAspectCss,
+} from "@/app/lib/cardAspectRatio";
+import {
+  cardArtFaceFitStyle,
+  cardArtFaceObjectFitClass,
+  categoryFocusContainStyle,
+  NEXT_IMAGE_CARD_ART_SIZES,
+} from "@/app/lib/imageFocus";
 
 function cn(...parts: (string | false | undefined)[]) {
   return parts.filter(Boolean).join(" ");
@@ -163,6 +172,15 @@ export function PremiumVaultCard({ card, className, overlay }: Props) {
   }, []);
 
   const front = safeSrc(card.frontImage);
+  const { aspectRatioCss: loadedAspectCss } = useIntrinsicImageAspect(
+    card.frontImageWidth && card.frontImageHeight ? undefined : front ?? "",
+  );
+  const boxAspectRatioCss = resolveCardArtBoxAspectCss(
+    card,
+    loadedAspectCss,
+    null,
+  );
+  const faceCls = cardArtFaceObjectFitClass(card.cardArtFramePreset);
   const back = safeSrc(card.backImage);
   const categoryUrl =
     card.categoryBg?.trim() || getCategoryBackgroundUrl(card.category);
@@ -175,9 +193,10 @@ export function PremiumVaultCard({ card, className, overlay }: Props) {
     return (
       <div
         className={cn(
-          "relative aspect-[3/4] w-full overflow-hidden rounded-2xl bg-gradient-to-br from-zinc-900 to-purple-950/40 ring-1 ring-white/10",
+          "relative w-full overflow-hidden rounded-2xl bg-gradient-to-br from-zinc-900 to-purple-950/40 ring-1 ring-white/10",
           className
         )}
+        style={{ aspectRatio: boxAspectRatioCss }}
       >
         <div className="absolute inset-0 flex items-center justify-center text-sm text-zinc-500">
           Нет изображения
@@ -196,22 +215,27 @@ export function PremiumVaultCard({ card, className, overlay }: Props) {
     >
       <div
         ref={tiltInnerRef}
-        className="relative aspect-[3/4] w-full origin-center transition-transform duration-300 ease-out will-change-transform [transform-style:preserve-3d]"
-        style={
-          reduceMotion
-            ? undefined
-            : { transform: "rotateX(0deg) rotateY(0deg) translateZ(0)" }
-        }
+        className="relative w-full origin-center transition-transform duration-300 ease-out will-change-transform [transform-style:preserve-3d]"
+        style={{
+          aspectRatio: boxAspectRatioCss,
+          ...(reduceMotion
+            ? {}
+            : { transform: "rotateX(0deg) rotateY(0deg) translateZ(0)" }),
+        }}
       >
         {/* Ultra: мягкий градиент + опционально дальний кадр */}
-        <div className="absolute inset-0 overflow-hidden rounded-2xl shadow-[0_20px_48px_rgba(0,0,0,0.35)] [transform:translateZ(-12px)]">
+        <div className="absolute inset-0 flex items-center justify-center overflow-hidden rounded-2xl bg-black shadow-[0_20px_48px_rgba(0,0,0,0.35)] [transform:translateZ(-12px)]">
           {ultraImg ? (
             <Image
               src={ultraImg}
               alt=""
               fill
-              className="rounded-2xl object-cover opacity-50 saturate-110"
-              sizes="(max-width: 768px) 50vw, 25vw"
+              className={cn(
+                "rounded-2xl object-contain opacity-50 saturate-110",
+                faceCls,
+              )}
+              sizes={NEXT_IMAGE_CARD_ART_SIZES}
+              style={categoryFocusContainStyle(null)}
             />
           ) : null}
           <div
@@ -224,14 +248,14 @@ export function PremiumVaultCard({ card, className, overlay }: Props) {
 
         {/* Category: лёгкий наклон, без тяжёлого затемнения */}
         {categoryUrl ? (
-          <div className="absolute inset-[-6%] overflow-hidden rounded-2xl opacity-[0.72] [transform:translateZ(-6px)_rotate(-9deg)]">
+          <div className="absolute inset-[-6%] flex items-center justify-center overflow-hidden rounded-2xl bg-black opacity-[0.72] [transform:translateZ(-6px)_rotate(-9deg)]">
             <Image
               src={categoryUrl}
               alt=""
               fill
-              className="rounded-2xl object-cover"
-              style={focusToStyle(card.categoryBgFocus)}
-              sizes="(max-width: 768px) 50vw, 25vw"
+              className={cn("rounded-2xl object-contain", faceCls)}
+              style={categoryFocusContainStyle(card.categoryBgFocus)}
+              sizes={NEXT_IMAGE_CARD_ART_SIZES}
             />
             <div className="absolute inset-0 bg-gradient-to-t from-black/25 via-transparent to-transparent" />
           </div>
@@ -245,28 +269,34 @@ export function PremiumVaultCard({ card, className, overlay }: Props) {
 
         {/* Back: лёгкое размытие глубины */}
         {back ? (
-          <div className="absolute inset-[5%] overflow-hidden rounded-2xl opacity-[0.58] [transform:translateZ(8px)_rotate(-2deg)]">
+          <div className="absolute inset-[5%] flex items-center justify-center overflow-hidden rounded-2xl opacity-[0.58] [transform:translateZ(8px)_rotate(-2deg)]">
             <Image
               src={back}
               alt=""
               fill
-              className="rounded-2xl object-cover blur-sm"
-              style={focusToStyle(card.backImageFocus)}
-              sizes="(max-width: 768px) 50vw, 25vw"
+              className={cn("rounded-2xl blur-sm", faceCls)}
+              style={cardArtFaceFitStyle(
+                card.cardArtFramePreset,
+                card.backImageFocus,
+              )}
+              sizes={NEXT_IMAGE_CARD_ART_SIZES}
             />
           </div>
         ) : null}
 
         {/* Front */}
-        <div className="absolute inset-0 overflow-hidden rounded-2xl [transform:translateZ(18px)]">
+        <div className="absolute inset-0 flex items-center justify-center overflow-hidden rounded-2xl [transform:translateZ(18px)]">
           <Image
             src={front}
             alt={card.title}
             fill
             priority={false}
-            className="rounded-2xl object-cover"
-            style={focusToStyle(card.frontImageFocus)}
-            sizes="(max-width: 768px) 45vw, 22vw"
+            className={cn("rounded-2xl", faceCls)}
+            style={cardArtFaceFitStyle(
+              card.cardArtFramePreset,
+              card.frontImageFocus,
+            )}
+            sizes={NEXT_IMAGE_CARD_ART_SIZES}
           />
           <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/18 via-transparent to-white/[0.06]" />
         </div>

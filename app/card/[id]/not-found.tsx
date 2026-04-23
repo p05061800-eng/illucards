@@ -2,7 +2,7 @@ import Link from "next/link";
 
 export default function CardNotFound() {
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center bg-black px-6 text-center text-white">
+    <main className="flex min-h-0 flex-col items-center justify-center bg-black px-6 py-24 text-center text-white">
       <p className="text-lg text-zinc-400">Карточка не найдена</p>
       <Link
         href="/#collection"

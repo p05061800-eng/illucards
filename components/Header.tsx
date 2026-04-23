@@ -1,15 +1,24 @@
 "use client";
 
 import Link from "next/link";
-import { Menu, Search, ShoppingBag, SlidersHorizontal, X } from "lucide-react";
+import {
+  Menu,
+  Search,
+  ShoppingBag,
+  SlidersHorizontal,
+  User,
+  X,
+} from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
+import { useAuth } from "@/app/context/AuthContext";
 import { useCatalogFilter } from "@/app/context/CatalogFilterContext";
 import { useCart } from "@/app/context/CartContext";
 import { useCurrency } from "@/app/context/CurrencyContext";
 import { useFavorites } from "@/app/context/FavoritesContext";
+import { SocialLinksBar } from "@/app/components/SocialLinksBar";
 import type { MenuJsonSection } from "@/app/lib/menuJson";
-import { focusToStyle } from "@/app/lib/imageFocus";
+import { categoryFocusToStyle } from "@/app/lib/imageFocus";
 import { apiUrl } from "@/app/lib/apiUrl";
 
 export default function Header() {
@@ -20,6 +29,7 @@ export default function Header() {
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
   const { favorites, hydrated: favoritesHydrated } = useFavorites();
+  const { user: authUser, hydrated: authHydrated } = useAuth();
   const { itemCount, hydrated, cartOpen, openCart } = useCart();
   const count = hydrated ? itemCount : 0;
   const { currency, setCurrency } = useCurrency();
@@ -62,6 +72,7 @@ export default function Header() {
       tf.adult ||
       tf.limited ||
       tf.common ||
+      tf.replica ||
       tf.hotPrice ||
       tf.novelties ||
       priceSort !== "default"
@@ -92,7 +103,8 @@ export default function Header() {
           IlluCards
         </Link>
 
-        <nav className="hidden min-w-0 flex-1 items-center justify-center gap-6 md:flex lg:gap-8">
+        <nav className="hidden min-w-0 flex-1 items-center justify-center gap-5 md:flex lg:gap-7">
+          <SocialLinksBar compact />
           {menu.map((section) => (
             <div
               key={section.title}
@@ -118,17 +130,17 @@ export default function Header() {
                         href={item.link || "#"}
                         className="group block w-[140px] shrink-0"
                       >
-                        <div className="aspect-[3/4] w-full overflow-hidden rounded-2xl bg-zinc-900/50">
+                        <div className="w-full overflow-visible rounded-2xl bg-zinc-900/50">
                           {item.image ? (
                             // eslint-disable-next-line @next/next/no-img-element
                             <img
                               src={item.image}
                               alt=""
-                              className="h-full w-full rounded-2xl object-cover transition duration-300 group-hover:brightness-110"
-                              style={focusToStyle(item.imageFocus)}
+                              className="block h-auto w-full rounded-2xl transition duration-300 group-hover:brightness-110"
+                              style={categoryFocusToStyle(item.imageFocus)}
                             />
                           ) : (
-                            <div className="flex aspect-[3/4] w-full items-center justify-center bg-zinc-800 text-xs text-zinc-500">
+                            <div className="flex min-h-[120px] w-full items-center justify-center bg-zinc-800 text-xs text-zinc-500">
                               Нет фото
                             </div>
                           )}
@@ -230,20 +242,6 @@ export default function Header() {
           </div>
 
           <Link
-            href="/custom"
-            className="hidden text-sm text-zinc-400 transition hover:text-zinc-200 lg:inline"
-          >
-            Своя карточка
-          </Link>
-
-          <Link
-            href="/snake"
-            className="hidden text-sm text-zinc-400 transition hover:text-zinc-200 lg:inline"
-          >
-            Snake
-          </Link>
-
-          <Link
             href="/favorites"
             className="relative inline-flex text-xl transition duration-300 hover:opacity-90 active:opacity-80"
             aria-label="Избранное"
@@ -253,6 +251,24 @@ export default function Header() {
             {favoritesHydrated && favorites.length > 0 ? (
               <span className="absolute -right-2 -top-2 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-purple-600 px-1 text-[10px] font-bold tabular-nums leading-none text-white ring-2 ring-black">
                 {favorites.length > 99 ? "99+" : favorites.length}
+              </span>
+            ) : null}
+          </Link>
+
+          <Link
+            href={authHydrated && authUser ? "/account" : "/login"}
+            className="relative inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-white/15 bg-white/[0.06] text-zinc-200 transition hover:border-white/25 hover:bg-white/10"
+            aria-label={
+              authHydrated && authUser
+                ? "Личный кабинет"
+                : "Войти"
+            }
+            title={authHydrated && authUser ? "Кабинет" : "Войти"}
+          >
+            <User className="h-[18px] w-[18px]" aria-hidden />
+            {authHydrated && !authUser ? (
+              <span className="absolute -bottom-0.5 -right-1 rounded bg-amber-600 px-1 py-px text-[8px] font-bold uppercase leading-none text-white ring-1 ring-black">
+                Войти
               </span>
             ) : null}
           </Link>
@@ -309,26 +325,26 @@ export default function Header() {
 
             <div className="flex flex-col gap-2 border-b border-white/10 pb-4">
               <Link
-                href="/custom"
-                className="rounded-xl px-3 py-3 text-sm font-medium text-zinc-200 transition hover:bg-white/[0.06]"
-                onClick={() => setMobileNavOpen(false)}
-              >
-                Своя карточка
-              </Link>
-              <Link
-                href="/snake"
-                className="rounded-xl px-3 py-3 text-sm font-medium text-zinc-200 transition hover:bg-white/[0.06]"
-                onClick={() => setMobileNavOpen(false)}
-              >
-                Snake
-              </Link>
-              <Link
                 href="/favorites"
                 className="rounded-xl px-3 py-3 text-sm font-medium text-zinc-200 transition hover:bg-white/[0.06]"
                 onClick={() => setMobileNavOpen(false)}
               >
                 Избранное
               </Link>
+              <Link
+                href={authHydrated && authUser ? "/account" : "/login"}
+                className="rounded-xl px-3 py-3 text-sm font-medium text-zinc-200 transition hover:bg-white/[0.06]"
+                onClick={() => setMobileNavOpen(false)}
+              >
+                {authHydrated && authUser ? "Личный кабинет" : "Войти"}
+              </Link>
+            </div>
+
+            <div className="border-b border-white/[0.06] pb-4">
+              <SocialLinksBar
+                compact
+                className="w-full [&_ul]:justify-start"
+              />
             </div>
 
             {menu.map((section) => (

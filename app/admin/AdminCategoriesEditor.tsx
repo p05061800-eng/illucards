@@ -5,6 +5,7 @@ import { useCallback, useEffect, useState } from "react";
 import { DraggableImageFrame } from "@/app/admin/components/DraggableImageFrame";
 import type { CategoryTile } from "@/app/lib/categoriesJson";
 import { DEFAULT_IMAGE_FOCUS } from "@/app/lib/imageFocus";
+import { useCategoryFramesRefresh } from "@/app/context/CategoryFramesContext";
 import { apiUrl } from "@/app/lib/apiUrl";
 
 type Props = {
@@ -15,6 +16,7 @@ type Props = {
 type UploadField = "banner" | "plate";
 
 export function AdminCategoriesEditor({ variant = "page" }: Props) {
+  const refreshCategoryFrames = useCategoryFramesRefresh();
   const [cats, setCats] = useState<CategoryTile[]>([]);
   const [loaded, setLoaded] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -53,6 +55,7 @@ export function AdminCategoriesEditor({ variant = "page" }: Props) {
         window.alert("Не удалось сохранить.");
         return;
       }
+      refreshCategoryFrames();
       window.alert("Сохранено");
     } finally {
       setSaving(false);
@@ -157,7 +160,8 @@ export function AdminCategoriesEditor({ variant = "page" }: Props) {
         фото раздела в коллекции.{" "}
         <span className="font-medium text-zinc-400">Плашка</span> — отдельное
         квадратное фото для полоски категорий вверху главной; если не задано,
-        подставляется баннер.
+        подставляется баннер. Пропорции карточек на витрине — по файлу лица
+        (метаданные после загрузки).
       </p>
 
       {cats.map((cat, i) => (
@@ -209,11 +213,9 @@ export function AdminCategoriesEditor({ variant = "page" }: Props) {
                       return next;
                     });
                   }}
-                  aspectClass="aspect-[42/9]"
-                  objectFit="contain"
                 />
               ) : (
-                <div className="flex aspect-[42/9] w-full max-w-[min(100%,420px)] items-center justify-center rounded-xl border border-white/10 bg-zinc-900 text-xs text-zinc-600">
+                <div className="flex min-h-[100px] w-full max-w-[min(100%,420px)] items-center justify-center rounded-xl border border-white/10 bg-zinc-900 text-xs text-zinc-600">
                   нет баннера
                 </div>
               )}
@@ -251,7 +253,6 @@ export function AdminCategoriesEditor({ variant = "page" }: Props) {
                       });
                     }}
                     aspectClass="aspect-square"
-                    objectFit="contain"
                   />
                 ) : (
                   <div className="flex aspect-square w-full items-center justify-center rounded-2xl border border-dashed border-white/15 bg-zinc-900/80 px-1 text-center text-[10px] leading-tight text-zinc-500">

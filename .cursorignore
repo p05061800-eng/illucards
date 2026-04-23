@@ -1,0 +1,17 @@
+# Cursor indexing — keep AI context small and CPU low
+
+node_modules/
+.next/
+dist/
+build/
+coverage/
+public/uploads/
+
+# Extra heavy / generated
+out/
+.turbo/
+.cache/
+.vercel/
+package-lock.json
+pnpm-lock.yaml
+*.tsbuildinfo

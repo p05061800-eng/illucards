@@ -2,6 +2,7 @@
 
 import {
   ChevronDown,
+  Copy,
   Flame,
   Gem,
   Layers2,
@@ -12,36 +13,128 @@ import {
   Sparkles,
 } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useMemo, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { StoredCard } from "../api/cards/route";
 import type { CategoryTile } from "../lib/categoriesJson";
 import { useCatalogFilter } from "../context/CatalogFilterContext";
 import {
   filterCollectionCards,
   sortCardsByPrice,
+  sortSectionCardsForDefaultCatalog,
   type TypeFilterState,
 } from "../lib/collectionFilter";
 import { collectionSectionId } from "../lib/collectionAnchor";
-import { focusObjectPositionOnly } from "../lib/imageFocus";
+import { categoryFocusToStyle } from "../lib/imageFocus";
 import { CardPreview } from "./CardPreview";
 
 type Props = {
   cards: StoredCard[];
   categories: CategoryTile[];
+  /** Компактный каталог под главную «в один экран». */
+  viewportCompact?: boolean;
 };
 
 const filterLabelClass =
   "mb-1.5 block text-[10px] font-semibold uppercase tracking-[0.18em] text-violet-300/75";
 
+/** Число колонок для превью «Смотреть ещё» — совпадает с `.collection-card-grid` (2 / 3 / 5). */
+function useCatalogGridColumns(): number {
+  const [cols, setCols] = useState(5);
+  useEffect(() => {
+    const read = () => {
+      const w = window.innerWidth;
+      if (w < 640) setCols(2);
+      else if (w < 1024) setCols(3);
+      else setCols(5);
+    };
+    read();
+    window.addEventListener("resize", read, { passive: true });
+    return () => window.removeEventListener("resize", read);
+  }, []);
+  return cols;
+}
+
 /** Автопереход на страницу карточки: точное совпадение названия или ровно одна карточка по подстроке в title. */
 const SEARCH_NAV_DEBOUNCE_MS = 380;
 
-export function HomeCollection({ cards, categories }: Props) {
+/** Баннер строки категории: высота от файла, без aspect-ratio на контейнере. */
+function CategoryRowBanner({
+  cat,
+  sectionId,
+  compact,
+}: {
+  cat: CategoryTile;
+  sectionId: string;
+  compact?: boolean;
+}) {
+  return (
+    <div
+      className={`category-row-banner-card relative w-full rounded-none bg-zinc-950 ${
+        compact ? "h-12 overflow-hidden sm:h-14" : ""
+      }`}
+    >
+      {cat.image ? (
+        <>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={cat.image}
+            alt=""
+            className={`block w-full max-w-full ${
+              compact
+                ? "h-full min-h-0 object-cover"
+                : "h-auto"
+            }`}
+            style={categoryFocusToStyle(cat.imageFocus)}
+            draggable={false}
+          />
+        </>
+      ) : (
+        <div
+          className={
+            compact
+              ? "h-full min-h-[3rem] bg-gradient-to-br from-zinc-900 via-zinc-950 to-[#070510]"
+              : "min-h-[120px] bg-gradient-to-br from-zinc-900 via-zinc-950 to-[#070510]"
+          }
+          aria-hidden
+        />
+      )}
+      <div
+        className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/88 via-black/15 to-transparent"
+        aria-hidden
+      />
+      <h2
+        id={`${sectionId}-heading`}
+        className={`absolute left-0 right-0 max-w-none truncate px-4 font-bold tracking-tight text-white drop-shadow-md sm:px-6 ${
+          compact
+            ? "bottom-1 text-xs sm:bottom-1.5 sm:text-sm"
+            : "bottom-2 text-base sm:bottom-3 sm:px-10 sm:text-lg md:text-xl"
+        }`}
+      >
+        {cat.name}
+      </h2>
+    </div>
+  );
+}
+
+export function HomeCollection({
+  cards,
+  categories,
+  viewportCompact = false,
+}: Props) {
   const router = useRouter();
   const pathname = usePathname();
   const searchInputRef = useRef<HTMLInputElement>(null);
   /** Не запускать автопереход в карточку на первом прогоне эффекта после загрузки/обновления страницы. */
   const skipSearchAutoNavOnceRef = useRef(true);
+  const previewCols = useCatalogGridColumns();
+  const [expandedCategoryRows, setExpandedCategoryRows] = useState<
+    Record<string, boolean>
+  >({});
+
+  const setCategoryExpanded = useCallback((name: string, value: boolean) => {
+    setExpandedCategoryRows((prev) => ({ ...prev, [name]: value }));
+  }, []);
+
   const {
     search,
     setSearch,
@@ -155,9 +248,13 @@ export function HomeCollection({ cards, categories }: Props) {
     typeFilter.adult ||
     typeFilter.limited ||
     typeFilter.common ||
+    typeFilter.replica ||
     typeFilter.hotPrice ||
     typeFilter.novelties ||
     priceSort !== "default";
+
+  /** Одна строка превью + «Смотреть ещё» только на главной без фильтров. */
+  const useCategoryRowPreview = !hasActiveFilters;
 
   if (sections.length === 0) {
     return (
@@ -175,16 +272,28 @@ export function HomeCollection({ cards, categories }: Props) {
     { key: "adult", label: "18+", Icon: ShieldAlert },
     { key: "limited", label: "Лимитированные", Icon: Gem },
     { key: "common", label: "Обычные", Icon: Layers2 },
+    { key: "replica", label: "Реплики", Icon: Copy },
     { key: "hotPrice", label: "Горячая цена", Icon: Flame },
     { key: "novelties", label: "Новинки", Icon: Sparkles },
   ];
 
+  const outerStack = viewportCompact ? "space-y-3 sm:space-y-4" : "space-y-10 sm:space-y-12";
+  const sectionStack = viewportCompact
+    ? "space-y-5 sm:space-y-6"
+    : "space-y-16 sm:space-y-20";
+
   return (
-    <div className="space-y-10 sm:space-y-12">
-      <div className="relative overflow-hidden rounded-2xl border border-white/[0.09] bg-gradient-to-br from-violet-950/40 via-zinc-950/90 to-fuchsia-950/25 p-[1px] shadow-[0_0_48px_-8px_rgba(139,92,246,0.4)]">
+    <div className={outerStack}>
+      <div className="relative overflow-visible rounded-2xl border border-white/[0.09] bg-gradient-to-br from-violet-950/40 via-zinc-950/90 to-fuchsia-950/25 p-[1px] shadow-[0_0_48px_-8px_rgba(139,92,246,0.4)]">
         <div
-          className={`relative overflow-hidden rounded-[15px] bg-zinc-950/90 backdrop-blur-md ${
-            filtersOpen ? "px-3 py-3 sm:px-4 sm:py-3.5" : "p-2.5 sm:p-3"
+          className={`relative overflow-visible rounded-[15px] bg-zinc-950/90 backdrop-blur-md ${
+            viewportCompact
+              ? filtersOpen
+                ? "px-2.5 py-2 sm:px-3 sm:py-2.5"
+                : "p-2 sm:p-2.5"
+              : filtersOpen
+                ? "px-3 py-3 sm:px-4 sm:py-3.5"
+                : "p-2.5 sm:p-3"
           }`}
         >
           {filtersOpen ? (
@@ -393,12 +502,16 @@ export function HomeCollection({ cards, categories }: Props) {
           Ничего не найдено — измените фильтры или поиск.
         </p>
       ) : (
-        <div className="space-y-16 sm:space-y-20">
+        <div className={sectionStack}>
           {sections
             .map((cat) => {
-              const sectionCards = filteredSorted.filter(
+              const rawSection = filteredSorted.filter(
                 (c) => (c.category?.trim() ?? "") === cat.name
               );
+              const sectionCards =
+                priceSort === "default"
+                  ? sortSectionCardsForDefaultCatalog(rawSection, cards)
+                  : rawSection;
               return { cat, sectionCards };
             })
             .filter(
@@ -407,6 +520,18 @@ export function HomeCollection({ cards, categories }: Props) {
             )
             .map(({ cat, sectionCards }) => {
             const sectionId = collectionSectionId(cat.name);
+            const expanded = expandedCategoryRows[cat.name] ?? false;
+            const canCollapseRow =
+              useCategoryRowPreview &&
+              sectionCards.length > previewCols;
+            const cardsToRender =
+              canCollapseRow && !expanded
+                ? sectionCards.slice(0, previewCols)
+                : sectionCards;
+            const restCount =
+              canCollapseRow && !expanded
+                ? sectionCards.length - previewCols
+                : 0;
 
             return (
               <section
@@ -415,44 +540,69 @@ export function HomeCollection({ cards, categories }: Props) {
                 className="scroll-mt-24"
                 aria-labelledby={`${sectionId}-heading`}
               >
-                <div className="relative w-full overflow-hidden rounded-lg bg-zinc-950 aspect-[42/9]">
-                  {cat.image ? (
-                    <>
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src={cat.image}
-                        alt=""
-                        className="absolute inset-0 h-full w-full object-cover"
-                        style={focusObjectPositionOnly(cat.imageFocus)}
-                        draggable={false}
-                      />
-                    </>
-                  ) : (
-                    <div
-                      className="absolute inset-0 bg-gradient-to-br from-zinc-900 via-zinc-950 to-[#070510]"
-                      aria-hidden
-                    />
-                  )}
-                  <div
-                    className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/88 via-black/15 to-transparent"
-                    aria-hidden
+                {/*
+                  Плашка на всю ширину окна: выходим из padding/max-width секции «Коллекции».
+                */}
+                <div
+                  className="relative left-1/2 z-0 w-screen max-w-[100vw] -translate-x-1/2"
+                  role="presentation"
+                >
+                  <CategoryRowBanner
+                    cat={cat}
+                    sectionId={sectionId}
+                    compact={viewportCompact}
                   />
-                  <h2
-                    id={`${sectionId}-heading`}
-                    className="absolute bottom-2 left-3 max-w-[92%] truncate text-base font-bold tracking-tight text-white drop-shadow-md sm:bottom-3 sm:left-4 sm:text-lg md:text-xl"
-                  >
-                    {cat.name}
-                  </h2>
                 </div>
 
                 {sectionCards.length > 0 ? (
-                  <div className="mt-8 grid min-w-0 grid-cols-2 gap-x-4 gap-y-8 sm:grid-cols-3 sm:gap-x-4 sm:gap-y-9 md:grid-cols-4 md:gap-x-4 lg:grid-cols-5 lg:gap-x-3 xl:grid-cols-6 xl:gap-x-3 xl:gap-y-10">
-                    {sectionCards.map((card) => (
-                      <div key={card.id} className="min-w-0">
-                        <CardPreview card={card} hideUltraLayer />
+                  <>
+                    <div
+                      className={`collection-card-grid min-w-0 ${
+                        viewportCompact
+                          ? "collection-card-grid--viewport-compact mt-2"
+                          : "mt-8"
+                      }`}
+                    >
+                      {cardsToRender.map((card) => (
+                        <div
+                          key={card.id}
+                          className="flex h-full min-h-0 min-w-0"
+                        >
+                          <CardPreview card={card} hideUltraLayer />
+                        </div>
+                      ))}
+                    </div>
+                    {canCollapseRow ? (
+                      <div
+                        className={`flex justify-center ${
+                          viewportCompact ? "mt-3" : "mt-6"
+                        }`}
+                      >
+                        {expanded ? (
+                          <button
+                            type="button"
+                            onClick={() => setCategoryExpanded(cat.name, false)}
+                            className="rounded-full border border-white/12 bg-white/[0.04] px-5 py-2.5 text-sm font-medium text-zinc-200 transition hover:border-violet-400/40 hover:bg-violet-500/10 hover:text-white"
+                          >
+                            Свернуть
+                          </button>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => setCategoryExpanded(cat.name, true)}
+                            className="rounded-full border border-violet-500/35 bg-violet-950/35 px-5 py-2.5 text-sm font-semibold text-violet-100 shadow-[0_0_24px_rgba(139,92,246,0.15)] transition hover:border-violet-400/55 hover:bg-violet-900/45"
+                          >
+                            Смотреть ещё
+                            {restCount > 0 ? (
+                              <span className="ml-1.5 tabular-nums text-violet-200/90">
+                                ({restCount})
+                              </span>
+                            ) : null}
+                          </button>
+                        )}
                       </div>
-                    ))}
-                  </div>
+                    ) : null}
+                  </>
                 ) : (
                   <p className="site-text-muted mt-6 text-center text-sm">
                     В этом разделе пока нет карточек.

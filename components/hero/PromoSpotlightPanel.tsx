@@ -3,9 +3,7 @@
 import Link from "next/link";
 import {
   useCallback,
-  useEffect,
   useRef,
-  useState,
   type Dispatch,
   type PointerEvent,
   type ReactNode,
@@ -13,9 +11,6 @@ import {
 } from "react";
 import type { SpotlightSlideRow } from "@/app/lib/spotlightJson";
 import { DEFAULT_SPOTLIGHT_SLIDES } from "@/app/lib/spotlightJson";
-
-/** Интервал автопрокрутки слайдов витрины (мс). */
-const SPOTLIGHT_AUTOPLAY_MS = 6500;
 
 /** Горизонтальный жест мышью/пальцем: порог в px (как у свайпа карточки в герое). */
 const SWIPE_MIN_PX = 48;
@@ -27,6 +22,8 @@ export const SPOTLIGHT_SLIDES: SpotlightSlideRow[] = DEFAULT_SPOTLIGHT_SLIDES;
 
 type Props = {
   embedded?: boolean;
+  /** Меньше отступов в режиме героя «один экран». */
+  compact?: boolean;
   slides: SpotlightSlideRow[];
   slideIndex: number;
   onSlideChange: Dispatch<SetStateAction<number>>;
@@ -39,6 +36,7 @@ type Props = {
 /** Левая колонка: переключение разделов и текст слайда (без дублирующей ленты карточек). */
 export function PromoSpotlightPanel({
   embedded = false,
+  compact = false,
   slides,
   slideIndex,
   onSlideChange,
@@ -48,8 +46,6 @@ export function PromoSpotlightPanel({
   const list = slides.length > 0 ? slides : DEFAULT_SPOTLIGHT_SLIDES;
   const max = list.length - 1;
 
-  const [hoverPause, setHoverPause] = useState(false);
-  const [reducedMotion, setReducedMotion] = useState(false);
   const swipeStartRef = useRef<{ x: number; y: number } | null>(null);
   const swipePointerIdRef = useRef<number | null>(null);
 
@@ -110,28 +106,13 @@ export function PromoSpotlightPanel({
     [clearSwipe]
   );
 
-  useEffect(() => {
-    const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
-    setReducedMotion(mq.matches);
-    const fn = () => setReducedMotion(mq.matches);
-    mq.addEventListener("change", fn);
-    return () => mq.removeEventListener("change", fn);
-  }, []);
-
-  useEffect(() => {
-    if (list.length <= 1 || hoverPause || reducedMotion) return;
-
-    const id = window.setInterval(() => {
-      onSlideChange((prev) => (prev + 1) % list.length);
-    }, SPOTLIGHT_AUTOPLAY_MS);
-    return () => window.clearInterval(id);
-  }, [list.length, onSlideChange, hoverPause, reducedMotion]);
-
   const current = list[Math.min(slideIndex, max)]!;
 
   const dotsRow = (
     <div
-      className={`flex justify-center gap-1.5 ${embedded ? "mb-4" : "mt-6"}`}
+      className={`flex justify-center gap-1.5 ${
+        embedded ? (compact ? "mb-2" : "mb-4") : "mt-6"
+      }`}
       role="tablist"
       aria-label="Разделы"
     >
@@ -156,15 +137,15 @@ export function PromoSpotlightPanel({
   );
 
   const shellClass = embedded
-    ? "relative w-full"
+    ? compact
+      ? "relative w-full rounded-xl border border-white/[0.08] bg-zinc-950/40 p-2.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] sm:p-3 lg:p-3.5"
+      : "relative w-full rounded-2xl border border-white/[0.08] bg-zinc-950/40 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] sm:p-5 lg:p-6"
     : "relative rounded-2xl border border-white/[0.08] bg-zinc-950/40 p-5 shadow-[0_0_40px_rgba(0,0,0,0.45)] backdrop-blur-sm sm:p-7";
 
   return (
     <div className="relative z-20 w-full">
       <div
         className={`${shellClass} cursor-grab active:cursor-grabbing`}
-        onMouseEnter={() => setHoverPause(true)}
-        onMouseLeave={() => setHoverPause(false)}
         onPointerDown={onSpotlightPointerDown}
         onPointerUp={onSpotlightPointerUp}
         onPointerCancel={onSpotlightPointerCancel}
@@ -175,50 +156,71 @@ export function PromoSpotlightPanel({
           key={slideIndex}
           className={
             embedded
-              ? "min-h-[140px] sm:min-h-[160px] pt-2 sm:pt-3"
+              ? "min-h-0 pt-0"
               : "min-h-[180px] sm:min-h-[200px]"
           }
         >
           {current.kind === "novelties" ? (
-            <div className="space-y-4">
-              {current.imageUrl ? (
-                <div className="overflow-hidden rounded-xl border border-white/10 bg-black/30">
+            <div className={compact ? "space-y-2" : "space-y-4"}>
+              {/*
+                В герое рядом с большой карточкой — только блок товара: без баннера витрины
+                и без заголовка/описания слайда (дублируют карточку).
+              */}
+              {embedded && commerceFooter ? null : current.imageUrl ? (
+                <div className="overflow-visible rounded-xl border border-white/10 bg-black/30">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={current.imageUrl}
                     alt=""
-                    className="max-h-40 w-full object-cover sm:max-h-44"
+                    className="block h-auto w-full max-w-full"
                   />
                 </div>
               ) : null}
-              <div>
-                <h2 className="text-xl font-bold tracking-tight text-white sm:text-2xl">
-                  {current.title}
-                </h2>
-                <p className="mt-2 max-w-2xl text-sm leading-relaxed text-zinc-400 sm:text-base">
-                  {current.description}
-                </p>
-                {noveltyTotal === 0 ? (
-                  <p className="mt-3 text-sm text-amber-400/90">
-                    Карточек для карусели нет: добавьте карточки в админке (Витрина →
-                    этот слайд) или отметьте новинки в каталоге — иначе показывается
-                    карточка выбранной категории.
-                  </p>
-                ) : null}
-              </div>
+              {/*
+                В герое блок цены/кнопок уже показывает карточку из каталога (fallback),
+                даже если список «Новинки» в слайде пуст — предупреждение только путало.
+              */}
+              {embedded && commerceFooter ? null : (
+                <div>
+                  <h2 className="text-xl font-bold tracking-tight text-white sm:text-2xl">
+                    {current.title}
+                  </h2>
+                  {current.description.trim() ? (
+                    <p className="mt-2 max-w-2xl whitespace-pre-line text-sm leading-relaxed text-zinc-400 sm:text-base">
+                      {current.description}
+                    </p>
+                  ) : null}
+                  {noveltyTotal === 0 ? (
+                    <p className="mt-3 text-sm text-amber-400/90">
+                      Нет карточек для показа — задайте список в админке (Витрина) или
+                      новинки в каталоге.
+                    </p>
+                  ) : null}
+                </div>
+              )}
               {commerceFooter ? (
-                <div className="mt-5">{commerceFooter}</div>
+                <div
+                  className={
+                    embedded
+                      ? compact
+                        ? "border-t border-white/[0.07] pt-2 sm:pt-2.5"
+                        : "border-t border-white/[0.07] pt-4 sm:pt-5"
+                      : "mt-5"
+                  }
+                >
+                  {commerceFooter}
+                </div>
               ) : null}
             </div>
           ) : (
-            <div className="space-y-4">
+            <div className={compact ? "space-y-2" : "space-y-4"}>
               {current.imageUrl ? (
-                <div className="overflow-hidden rounded-xl border border-white/10 bg-black/30">
+                <div className="overflow-visible rounded-xl border border-white/10 bg-black/30">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={current.imageUrl}
                     alt=""
-                    className="max-h-40 w-full object-cover sm:max-h-44"
+                    className="block h-auto w-full max-w-full"
                   />
                 </div>
               ) : null}
@@ -226,9 +228,11 @@ export function PromoSpotlightPanel({
                 <h2 className="text-xl font-bold tracking-tight text-white sm:text-2xl">
                   {current.title}
                 </h2>
-                <p className="mt-2 max-w-2xl text-sm leading-relaxed text-zinc-400 sm:text-base">
-                  {current.description}
-                </p>
+                {current.description.trim() ? (
+                  <p className="mt-2 max-w-2xl whitespace-pre-line text-sm leading-relaxed text-zinc-400 sm:text-base">
+                    {current.description}
+                  </p>
+                ) : null}
               </div>
               {commerceFooter ? (
                 <div className="mt-5">{commerceFooter}</div>

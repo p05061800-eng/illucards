@@ -212,7 +212,7 @@ export function AdminSpotlightEditor() {
                     <img
                       src={slide.imageUrl}
                       alt=""
-                      className="aspect-[3/4] w-full object-cover"
+                      className="aspect-[3/4] w-full object-contain"
                     />
                   </div>
                 ) : (

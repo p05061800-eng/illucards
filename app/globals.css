@@ -1,8 +1,213 @@
 @import "tailwindcss";
 
-/* Плитки категорий (герой, «Коллекции», слайдер): картинка целиком, без cover-обрезки */
+/*
+ * Документ растёт по контенту — прокрутка страницы, без обрезки по высоте окна.
+ */
+html,
+body {
+  height: auto;
+  min-height: 0;
+  overflow-x: visible;
+  overflow-y: auto;
+}
+
+html {
+  min-height: 0;
+  overflow-x: visible;
+  /* Sticky header ~3.5rem + запас для якорей при scrollIntoView */
+  scroll-padding-top: 5rem;
+}
+
+/* Главная «в один экран»: без прокрутки всего документа */
+html.home-one-screen {
+  height: 100dvh;
+  max-height: 100dvh;
+  overflow: hidden;
+}
+
+html.home-one-screen body {
+  height: 100dvh;
+  max-height: 100dvh;
+  overflow: hidden;
+}
+
+html.home-one-screen .wrapper {
+  display: flex;
+  min-height: 0;
+  flex: 1 1 0%;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+html.home-one-screen [data-site-footer] {
+  display: none;
+}
+
+main,
+.main,
+.wrapper,
+.container {
+  height: auto;
+  overflow: visible;
+}
+
+/* Главная: main заполняет остаток под шапкой (специфичнее `main { height: auto }`) */
+html.home-one-screen main.home-one-screen-main {
+  flex: 1 1 auto;
+  min-height: 0;
+  height: calc(100dvh - var(--home-header-h, 4rem));
+  max-height: calc(100dvh - var(--home-header-h, 4rem));
+  overflow: hidden;
+}
+
+.card {
+  display: block;
+  width: 320px;
+  max-width: 100%;
+  height: auto;
+  overflow: visible;
+  box-sizing: border-box;
+}
+
+.card img {
+  width: 100%;
+  height: auto;
+  display: block;
+  max-width: 100%;
+  object-fit: unset;
+}
+
+/* Корень стопки в каталоге: высота от спейсер-картинки в потоке */
+.card .illucards-card {
+  height: auto;
+  overflow: visible;
+}
+
+/*
+ * Сетка каталога / избранного: до 5 колонок на широких экранах, высота строки по контенту.
+ * (Не класс `.grid` — конфликтует с утилитой Tailwind `display:grid`.)
+ */
+.collection-card-grid {
+  display: grid;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  gap: 1.25rem;
+  /* stretch: одна высота строки — цены и кнопки визуально на одной линии */
+  align-items: stretch;
+  align-content: start;
+  grid-auto-rows: minmax(0, auto);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+@media (min-width: 640px) {
+  .collection-card-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1024px) {
+  .collection-card-grid {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+  }
+}
+
+/* Компактная сетка под колонку «один экран» на главной */
+.collection-card-grid--viewport-compact {
+  gap: 0.5rem;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+@media (min-width: 640px) {
+  .collection-card-grid--viewport-compact {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1024px) {
+  .collection-card-grid--viewport-compact {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+/* Блок `.card` задаёт фикс. 320px — в сетке ячейка должна сужаться под колонку */
+.collection-card-grid .card {
+  width: 100%;
+  max-width: 100%;
+  height: 100%;
+  min-height: 0;
+}
+
+/*
+ * Баннер строки категории в «Коллекциях»: без aspect-ratio, высота от файла;
+ * в разметке может быть в breakout на 100vw (см. HomeCollection).
+ */
+.category-row-banner-card {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  height: auto;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+.category-row-banner-card img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+/* Плитки категорий (герой, «Коллекции», слайдер): без object-fit — центрирование в разметке */
 img.category-tile-img {
-  object-fit: contain !important;
+  display: block;
+  max-width: 100%;
+  width: auto;
+  height: auto;
+  margin: auto;
+}
+
+/*
+ * Стопка карты (CardStackVisual): высота от файла лица (спейсер в потоке).
+ */
+.illucards-card {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  overflow: visible;
+  box-sizing: border-box;
+}
+
+.illucards-card img {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-width: 100%;
+  object-fit: unset;
+}
+
+/* Спейсер в потоке задаёт размер рамки; не обрезать */
+.illucards-card-layout-spacer {
+  visibility: hidden;
+  pointer-events: none;
+  user-select: none;
+}
+
+.card-stack-visual-art img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+  object-fit: unset;
+}
+
+/*
+ * Зона наклона: все указатели на самом слое, не на img/face (иначе React не получает move).
+ */
+.card-stack-tilt-zone {
+  pointer-events: auto;
+}
+
+.card-stack-tilt-zone * {
+  pointer-events: none;
 }
 
 .scrollbar-hide::-webkit-scrollbar {
@@ -12,11 +217,6 @@ img.category-tile-img {
 .scrollbar-hide {
   -ms-overflow-style: none;
   scrollbar-width: none;
-}
-
-html {
-  /* Sticky header ~3.5rem + запас для якорей при scrollIntoView */
-  scroll-padding-top: 5rem;
 }
 
 :root {
@@ -41,6 +241,8 @@ html {
 }
 
 body {
+  min-height: 0;
+  overflow-x: visible;
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
@@ -123,6 +325,11 @@ body::after {
   body::before {
     animation: none;
   }
+
+  /* Шумовой слой: feTurbulence на весь экран дорог на мобильных GPU */
+  body::after {
+    opacity: 0;
+  }
 }
 
 /* Заголовки: градиент как у фона — белый → сирень → фиолетовый */
@@ -158,7 +365,46 @@ body::after {
   color: var(--foreground-muted);
 }
 
-/* Крупный логотип на главной — тот же градиент целиком */
+/* Плавный масштаб без скачков sm/md/lg — вместе с окном */
+.hero-scale-wordmark {
+  font-size: clamp(1.75rem, 0.65rem + 3.6vw, 4.25rem);
+  line-height: 1.06;
+}
+
+.hero-scale-tagline {
+  margin-top: clamp(0.35rem, 0.4vw + 0.2rem, 0.85rem);
+  font-size: clamp(0.625rem, 0.42rem + 0.42vw, 0.8125rem);
+}
+
+.hero-viewport-compact .hero-scale-wordmark {
+  font-size: clamp(1.2rem, 0.4rem + 2.4vw, 1.85rem);
+}
+
+.hero-viewport-compact .hero-scale-tagline {
+  margin-top: 0.15rem;
+  font-size: clamp(0.5rem, 0.32rem + 0.35vw, 0.65rem);
+}
+
+.hero-commerce-title {
+  font-size: clamp(1.0625rem, 0.88rem + 0.7vw, 1.5rem);
+}
+
+.hero-commerce-price {
+  font-size: clamp(1.25rem, 1rem + 1.1vw, 1.875rem);
+}
+
+.hero-commerce-btn {
+  min-height: clamp(2.5rem, 6vw, 2.75rem);
+  padding-left: clamp(0.65rem, 1.8vw, 1rem);
+  padding-right: clamp(0.65rem, 1.8vw, 1rem);
+  font-size: clamp(0.75rem, 0.62rem + 0.35vw, 0.875rem);
+}
+
+.hero-category-label {
+  font-size: clamp(0.5625rem, 0.42rem + 0.35vw, 0.625rem);
+}
+
+/* Крупный логотип на главной — статичный градиент (если нужен без анимации) */
 .site-hero-wordmark {
   background: linear-gradient(
     128deg,
@@ -171,6 +417,52 @@ body::after {
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
+}
+
+/*
+ * Герой: IlluCards и «Новинки» — один эффект «скользящий блик» по расширенному градиенту;
+ * у «Новинки» класс .hero-wordmark-shine--mirror — анимация в обратную сторону (напротив).
+ */
+@keyframes hero-wordmark-shine-move {
+  0% {
+    background-position: 108% 32%;
+  }
+  50% {
+    background-position: -12% 68%;
+  }
+  100% {
+    background-position: 108% 32%;
+  }
+}
+
+.hero-wordmark-shine {
+  background: linear-gradient(
+    125deg,
+    #4c1d95 0%,
+    #a78bfa 16%,
+    #f5d0fe 32%,
+    #ffffff 42%,
+    #ddd6fe 50%,
+    #7c3aed 62%,
+    #e9d5ff 78%,
+    #5b21b6 100%
+  );
+  background-size: 300% 300%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: hero-wordmark-shine-move 8s ease-in-out infinite;
+}
+
+.hero-wordmark-shine--mirror {
+  animation-direction: reverse;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-wordmark-shine {
+    animation: none;
+    background-position: 48% 50%;
+  }
 }
 
 ::selection {
@@ -342,18 +634,50 @@ body::after {
 }
 
 /*
- * Карта 3 — под стопкой 1–2; тот же размер 3:4, что у лицевой стопки, только наискосок (translate+rotate на .card-side).
- * Без уменьшения scale — третья карта совпадает по габариту с 1–2, визуально «подложена» сзади.
+ * Карта 3 — под стопкой 1–2; наискосок как на витрине (GOLO): правее и ниже лицевой,
+ * вылезает из-под 1–2 снизу-справа; ось ближе к низу — сильнее «веер».
  */
 .card-side {
   position: absolute;
   z-index: 1;
   inset: 0;
   width: 100%;
-  height: 100%;
-  transform: translate3d(-52px, 18px, 0) rotate(-7deg);
-  transform-origin: 52% 58%;
+  /*
+   * Смещение слоя 3: на узкой карточке фикс. px дают огромный «чёрный клин»
+   * относительно лица — проценты от размера бокса масштабируются вместе с витриной.
+   */
+  transform: translate3d(-9%, 11%, 0) rotate(-16deg);
+  transform-origin: 44% 68%;
   pointer-events: none;
+}
+
+@media (min-width: 1024px) {
+  .card-side {
+    transform: translate3d(-50px, 44px, 0) rotate(-18deg);
+    transform-origin: 40% 70%;
+  }
+}
+
+/* Герой: ось слоя 3 ближе к правому верху — при смене ширины меньше «пляски» */
+.hero-card-stack-visual .card-side {
+  transform-origin: 88% 10%;
+}
+
+@media (min-width: 1024px) {
+  .hero-card-stack-visual .card-side {
+    transform-origin: 92% 8%;
+  }
+}
+
+/* Герой: наискосок слоя 3 — те же transform-origin, что у каталога (не ось у правого верха) */
+.hero-card-stack-visual.hero-stack-catalog-diagonal .card-side {
+  transform-origin: 44% 68%;
+}
+
+@media (min-width: 1024px) {
+  .hero-card-stack-visual.hero-stack-catalog-diagonal .card-side {
+    transform-origin: 40% 70%;
+  }
 }
 
 .card-side-inner {
@@ -362,63 +686,38 @@ body::after {
   pointer-events: none;
 }
 
-/* Рамка 3:4 как у лицевой стопки; ultra обрезается (cover) */
+/* Ultra: высота как у блока лица (спейсер в потоке задаёт высоту) */
 .card-side-surface {
-  position: relative;
-  box-sizing: border-box;
-  width: 100%;
-  max-width: 100%;
-  aspect-ratio: 3 / 4;
-  height: auto;
-}
-
-.card-side-img {
   position: absolute;
   inset: 0;
+  box-sizing: border-box;
+  width: auto;
+  max-width: 100%;
+}
+
+.card-stack-visual-art .card-side-img {
+  position: relative;
+  display: block;
   width: 100%;
-  height: 100%;
-  object-fit: cover;
-  object-position: center;
+  height: auto;
+  max-width: 100%;
   pointer-events: none;
 }
 
-/* Герой: сдвиг всей стопки для центра в колонке */
+/*
+ * Герой: без translate — иначе flex/grid центрируют layout box, а картинка уезжает
+ * вверх-вправо и «квадрат» визуально пустой снизу и слева.
+ */
 .hero-card-stack-visual {
-  transform: translate3d(56px, -36px, 0);
+  transform: none;
 }
 
 /*
- * Герой, третий слой (ultra): базовый .card-side даёт translateY(18px) — низ вылезает полосой
- * под лицевой стопкой. Сдвигаем только в герое, без overflow:hidden на всей стопке (3D/тени сохраняются).
+ * Страница товара: без сдвига корня героя — стопка не вылезает из колонки и не режется;
+ * наклон слоя 3 — общий (см. .card-side).
  */
-@media (min-width: 1024px) {
-  .hero-card-stack-visual > .card-side {
-    transform: translate3d(-46px, 4px, 0) rotate(-6.5deg);
-    transform-origin: 48% 44%;
-  }
-}
-
-/*
- * Узкая вёрстка: на десктопе сильнее сдвиг; на планшете/телефоне — меньше, но не ноль (сохраняем «вылет» стопки).
- */
-@media (max-width: 1279px) {
-  .hero-card-stack-visual {
-    transform: translate3d(28px, -20px, 0);
-  }
-}
-
-@media (max-width: 639px) {
-  .hero-card-stack-visual {
-    transform: translate3d(18px, -14px, 0);
-  }
-}
-
-/* Третий слой (ultra) на планшете/телефоне: слабее наискосок + меньше сдвиг вниз — без полосы снизу */
-@media (max-width: 1023px) {
-  .hero-card-stack-visual > .card-side {
-    transform: translate3d(-36px, 6px, 0) rotate(-6deg);
-    transform-origin: 48% 44%;
-  }
+.product-card-page-stack.hero-card-stack-visual {
+  transform: none;
 }
 
 .card-main {
@@ -426,11 +725,15 @@ body::after {
   z-index: 20;
   background: black;
   width: 100%;
-  height: 100%;
   min-height: 0;
 }
 
-.card-main img {
+.illucards-card .card-main {
+  height: auto;
+  min-height: 0;
+}
+
+.card-stack-visual-art .card-main img {
   display: block;
 }
 
@@ -473,6 +776,15 @@ body::after {
   );
   background-size: 220% 220%;
   animation: hero-holo-iridescent-move 10s ease-in-out infinite;
+}
+
+/*
+ * Сетка каталога: много карточек на экране — десятки бесконечных анимаций перелива
+ * дают лишнюю нагрузку на GPU/CPU и нагрев.
+ */
+.catalog-card-stack .hero-holo-iridescent {
+  animation: none;
+  background-position: 50% 48%;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -597,6 +909,27 @@ body::after {
 
 @media (prefers-reduced-motion: reduce) {
   .animate-card-float {
+    animation: none;
+  }
+}
+
+/* Подсказка «поверните карточку» (иконка на первом визите) */
+@keyframes card-hint-wiggle {
+  0%,
+  100% {
+    transform: rotate(-11deg);
+  }
+  50% {
+    transform: rotate(11deg);
+  }
+}
+
+.animate-card-hint-icon {
+  animation: card-hint-wiggle 2.4s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-card-hint-icon {
     animation: none;
   }
 }

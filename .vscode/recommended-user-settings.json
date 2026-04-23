@@ -1,0 +1,8 @@
+{
+  "_readme": "Optional: merge keys below into Cursor User settings.json (not workspace). Remove _readme. macOS path: ~/Library/Application Support/Cursor/User/settings.json",
+  "telemetry.telemetryLevel": "off",
+  "update.mode": "manual",
+  "extensions.autoUpdate": false,
+  "extensions.autoCheckUpdates": false,
+  "workbench.settings.enableNaturalLanguageSearch": false
+}

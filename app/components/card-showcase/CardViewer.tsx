@@ -1,92 +1,159 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useRef, type TouchEvent } from "react";
+import { useCallback, useEffect, useRef, type TouchEvent } from "react";
 import type { StoredCard } from "../../api/cards/route";
 import { ultraOrHeroBgUrl } from "../../lib/cardUltraBg";
 import { CardStackVisual } from "@/components/hero/CardStackVisual";
 
 type Props = {
   activeCard: StoredCard;
-  categoryCards: StoredCard[];
+  /** Порядок и набор карточек для стрелок и свайпа (категория или каталог). */
+  browseCards: StoredCard[];
   onNavigate?: (nextId: string) => void;
   /** Крупнее превью на странице товара. */
   layout?: "default" | "product";
 };
 
-function ArrowButton({
+/** Кнопки листания карточки на странице товара — те же классы можно использовать в герое. */
+export const PRODUCT_CARD_NAV_ARROW_CLASS =
+  "relative z-20 flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-white/12 bg-zinc-950/90 text-zinc-100 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] transition hover:border-purple-400/50 hover:bg-purple-950/55 hover:shadow-[0_0_24px_rgba(168,85,247,0.45),0_0_40px_rgba(139,92,246,0.15)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-500/70 md:h-11 md:w-11";
+
+const arrowClassName = PRODUCT_CARD_NAV_ARROW_CLASS;
+
+export function ProductCardNavArrowIcon({
+  direction,
+}: {
+  direction: "prev" | "next";
+}) {
+  return (
+    <svg
+      className="h-4 w-4 md:h-[1.125rem] md:w-[1.125rem]"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+      strokeWidth="2"
+      aria-hidden
+    >
+      {direction === "prev" ? (
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          d="M15 19l-7-7 7-7"
+        />
+      ) : (
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          d="M9 5l7 7-7 7"
+        />
+      )}
+    </svg>
+  );
+}
+
+function ArrowControl({
   direction,
   disabled,
+  href,
   onClick,
 }: {
   direction: "prev" | "next";
   disabled: boolean;
+  href?: string;
   onClick: () => void;
 }) {
+  const label =
+    direction === "prev" ? "Предыдущая карточка" : "Следующая карточка";
+  if (disabled) {
+    return (
+      <span
+        className={`${arrowClassName} pointer-events-none cursor-not-allowed opacity-35`}
+        aria-hidden
+      >
+        <ProductCardNavArrowIcon direction={direction} />
+      </span>
+    );
+  }
+  if (href) {
+    return (
+      <Link
+        href={href}
+        prefetch
+        scroll
+        aria-label={label}
+        className={arrowClassName}
+      >
+        <ProductCardNavArrowIcon direction={direction} />
+      </Link>
+    );
+  }
   return (
     <button
       type="button"
-      disabled={disabled}
       onClick={onClick}
-      aria-label={
-        direction === "prev"
-          ? "Предыдущая в категории"
-          : "Следующая в категории"
-      }
-      className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-white/12 bg-zinc-950/85 text-zinc-100 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] transition hover:border-purple-400/50 hover:bg-purple-950/55 hover:shadow-[0_0_32px_rgba(168,85,247,0.5),0_0_56px_rgba(139,92,246,0.18)] disabled:cursor-not-allowed disabled:opacity-30 disabled:hover:border-white/12 disabled:hover:bg-zinc-950/85 disabled:hover:shadow-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-500/70 md:h-12 md:w-12"
+      aria-label={label}
+      className={arrowClassName}
     >
-      <svg
-        className="h-5 w-5 md:h-[1.35rem] md:w-[1.35rem]"
-        fill="none"
-        viewBox="0 0 24 24"
-        stroke="currentColor"
-        strokeWidth="2"
-        aria-hidden
-      >
-        {direction === "prev" ? (
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            d="M15 19l-7-7 7-7"
-          />
-        ) : (
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            d="M9 5l7 7-7 7"
-          />
-        )}
-      </svg>
+      <ProductCardNavArrowIcon direction={direction} />
     </button>
   );
 }
 
 const SWIPE_PX = 56;
 
-/** Та же стопка, что на герое; стрелки листают карточки категории. */
+/** Стопка карточки; стрелки листают по списку `browseCards` (на товаре — обычно весь каталог). */
 export function CardViewer({
   activeCard,
-  categoryCards,
+  browseCards,
   onNavigate,
   layout = "default",
 }: Props) {
   const router = useRouter();
   const touchStartX = useRef<number | null>(null);
-  const n = categoryCards.length;
-  const rawIdx = categoryCards.findIndex((c) => c.id === activeCard.id);
+  const n = browseCards.length;
+  const rawIdx = browseCards.findIndex((c) => c.id === activeCard.id);
   const idx = rawIdx >= 0 ? rawIdx : 0;
-  const active = categoryCards[idx] ?? categoryCards[0];
+  const active = browseCards[idx] ?? browseCards[0];
 
-  const go = (delta: -1 | 1) => {
+  const go = useCallback(
+    (delta: -1 | 1) => {
+      if (n <= 1) return;
+      const ni = (idx + delta + n) % n;
+      const nextId = browseCards[ni]!.id;
+      if (onNavigate) {
+        onNavigate(nextId);
+      } else {
+        router.push(`/card/${nextId}`);
+      }
+    },
+    [n, idx, browseCards, onNavigate, router]
+  );
+
+  const prevHref =
+    !onNavigate && n > 1
+      ? `/card/${browseCards[(idx - 1 + n) % n]!.id}`
+      : undefined;
+  const nextHref =
+    !onNavigate && n > 1
+      ? `/card/${browseCards[(idx + 1) % n]!.id}`
+      : undefined;
+
+  useEffect(() => {
     if (n <= 1) return;
-    const ni = (idx + delta + n) % n;
-    const nextId = categoryCards[ni]!.id;
-    if (onNavigate) {
-      onNavigate(nextId);
-    } else {
-      router.push(`/card/${nextId}`);
-    }
-  };
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key !== "ArrowLeft" && e.key !== "ArrowRight") return;
+      const el = e.target as HTMLElement | null;
+      if (el?.closest("input, textarea, select, [contenteditable='true']")) {
+        return;
+      }
+      e.preventDefault();
+      go(e.key === "ArrowLeft" ? -1 : 1);
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [n, go]);
 
   const onTouchStart = (e: TouchEvent) => {
     touchStartX.current = e.touches[0]?.clientX ?? null;
@@ -107,38 +174,41 @@ export function CardViewer({
   const front = active?.frontImage?.trim();
   if (!active || !front) return null;
 
-  /**
-   * Страница товара: компактное превью (не «вылезает» за экран), без вложенных min()
-   * в одном классе — стабильнее в Safari/Tailwind.
-   */
+  /** Превью товара: высота от изображения; padding даёт запас под 3D-наклон/тени. */
   const productRoot =
-    "relative mx-auto aspect-[3/4] w-full max-w-[min(100%,280px)] overflow-visible rounded-2xl sm:max-w-[min(100%,320px)] md:max-w-[min(100%,380px)] lg:max-w-[min(100%,440px)] xl:max-w-[min(100%,500px)] 2xl:max-w-[min(100%,560px)]";
+    "product-card-page-stack relative mx-auto w-full max-w-full overflow-visible rounded-xl px-1 pb-10 pt-4 sm:px-2 sm:pb-12 sm:pt-5 md:pb-14 md:pt-6";
   const defaultRoot =
-    "relative mx-auto aspect-[3/4] w-[260px] max-w-[min(100%,calc(100vw-4rem))] overflow-visible rounded-2xl sm:w-[300px] lg:w-[380px] xl:w-[440px] 2xl:w-[500px]";
+    "relative mx-auto w-full max-w-[min(100%,calc(100vw-4rem))] overflow-visible rounded-2xl";
 
   const wrapMax =
     layout === "product"
-      ? "max-w-[min(100%,min(92vw,820px))]"
-      : "max-w-[min(100%,520px)]";
+      ? "max-w-[min(100%,min(96vw,1600px))]"
+      : "max-w-[min(100%,min(96vw,720px))]";
 
   return (
-    <div className="flex w-full max-w-full items-center justify-center gap-1.5 sm:gap-4">
-      <ArrowButton direction="prev" disabled={n <= 1} onClick={() => go(-1)} />
+    <div className="flex w-full max-w-full items-center justify-center gap-1.5 overflow-visible sm:gap-2 md:gap-3">
+      <ArrowControl
+        direction="prev"
+        disabled={n <= 1}
+        href={prevHref}
+        onClick={() => go(-1)}
+      />
 
       <div
-        className={`relative flex min-w-0 flex-1 touch-pan-y justify-center px-0.5 ${wrapMax}`}
+        className={`relative z-0 flex min-h-0 min-w-0 flex-1 touch-pan-y justify-center overflow-visible px-0.5 ${wrapMax}`}
         onTouchStart={onTouchStart}
         onTouchEnd={onTouchEnd}
       >
-        <div className="grid w-full min-w-0 place-items-center py-1">
+        <div className="grid w-full min-w-0 min-h-0 place-items-start justify-items-center overflow-visible py-1">
           <div
-            className={`relative z-0 w-full overflow-visible ${layout === "product" ? "max-w-[min(100%,560px)] shrink-0" : "max-w-full"}`}
+            className={`relative z-0 flex w-full min-h-0 justify-center overflow-visible ${layout === "product" ? "max-w-full px-2 pb-2 pt-0 sm:px-4 sm:pb-4" : "max-w-full"}`}
           >
             <CardStackVisual
               key={active.id}
               card={active}
               ultraBgUrl={ultraOrHeroBgUrl(active)}
               heroStack={layout !== "product"}
+              heroDiagonalLayout={layout === "product"}
               dataCartFlySource
               rootClassName={layout === "product" ? productRoot : defaultRoot}
             />
@@ -146,7 +216,12 @@ export function CardViewer({
         </div>
       </div>
 
-      <ArrowButton direction="next" disabled={n <= 1} onClick={() => go(1)} />
+      <ArrowControl
+        direction="next"
+        disabled={n <= 1}
+        href={nextHref}
+        onClick={() => go(1)}
+      />
     </div>
   );
 }

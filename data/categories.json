@@ -27,7 +27,7 @@
   },
   {
     "name": "TMNT",
-    "image": "/uploads/1775866836232-e9e3bcf2.webp",
+    "image": "/uploads/1776041136317-7f9b736c.webp",
     "imageFocus": {
       "x": 50,
       "y": 50
@@ -40,12 +40,12 @@
   },
   {
     "name": "Stranger Things",
-    "image": "/uploads/1775824883355-86de583c.webp",
+    "image": "/uploads/1776034678871-66c8491c.webp",
     "imageFocus": {
-      "x": 49.950078125000005,
-      "y": 42.90265625000001
+      "x": 50,
+      "y": 50
     },
-    "plateImage": "/uploads/1775881773285-abd30fb3.webp",
+    "plateImage": "/uploads/1776034744237-4d62f263.webp",
     "plateImageFocus": {
       "x": 50,
       "y": 50

@@ -14,6 +14,7 @@ export type MarketplaceCatalogFilter =
   | "common"
   | "limited"
   | "adult"
+  | "replica"
   | "novelty"
   | "hot_price";
 
@@ -42,6 +43,7 @@ function matchesCatalogFilter(
   if (filter === "common") return card.rarity === "common";
   if (filter === "limited") return card.rarity === "limited";
   if (filter === "adult") return card.rarity === "adult";
+  if (filter === "replica") return card.rarity === "replica";
   if (filter === "novelty") return card.rarity === "novelty";
   if (filter === "hot_price") return card.rarity === "hot_price";
   return false;

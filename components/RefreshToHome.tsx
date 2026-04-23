@@ -19,11 +19,15 @@ function isPageReload(): boolean {
   return legacy.navigation?.type === 1;
 }
 
+const isDev = process.env.NODE_ENV === "development";
+
 /**
- * Полное обновление страницы (F5):
- * — не главная → переход на `/`;
- * — главная с якорем (`/#collection`, `#collection-…`) → убираем хэш и скролл к герою,
- *   иначе после reload браузер открывает блок «Коллекции».
+ * После полного обновления (F5), только в production:
+ * — не главная → переход на `/` (как просили ранее).
+ * — главная с якорем → убрать # и скролл к герою.
+ *
+ * В development не трогаем путь: иначе любая перезагрузка/HMR считается «reload»
+ * и сбрасывает `/admin`, `/card/…` на главную — кажется, что «на сайт не зайти».
  */
 export function RefreshToHome() {
   useLayoutEffect(() => {
@@ -32,10 +36,12 @@ export function RefreshToHome() {
     const path = window.location.pathname;
     const hash = window.location.hash;
 
-    if (path !== "/") {
+    if (!isDev && path !== "/") {
       window.location.replace("/");
       return;
     }
+
+    if (path !== "/") return;
 
     try {
       if ("scrollRestoration" in history) {
@@ -49,7 +55,6 @@ export function RefreshToHome() {
       window.history.replaceState(null, "", "/");
     }
 
-    /* Без этого после reload часто восстанавливается скролл к «Коллекциям», даже без # в URL */
     window.scrollTo(0, 0);
     requestAnimationFrame(() => {
       window.scrollTo(0, 0);

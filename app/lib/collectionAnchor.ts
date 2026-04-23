@@ -1,6 +1,6 @@
 import { slugForCategoryName } from "@/data/categories";
 
-/** Стабильный `id` секции каталога для якорей из героя (`#collection-…`). */
+/** Стабильный `id` секции каталога для якорей (`#collection-…` на главной). */
 export function collectionSectionId(categoryName: string): string {
   const n = categoryName.trim();
   const slug = slugForCategoryName(n);

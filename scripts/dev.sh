@@ -14,6 +14,11 @@ if command -v lsof >/dev/null 2>&1; then
 fi
 # Next.js 16: lock «другой dev уже запущен»
 rm -f .next/dev/lock 2>/dev/null || true
+# Если Turbopack «ломается» (panic, missing *.sst) — остановите dev и выполните: rm -rf .next
+#
+# По умолчанию — webpack: на macOS при «too many open files» (EMFILE) Turbopack/Watchpack может
+# не подхватить маршруты, и тогда / и /api/* отдают 404. Webpack стабильнее. Для Turbopack:
+#   NEXT_DEV_TURBOPACK=1 npm run dev
 
 # Подсказка для входа с телефона / планшета в той же Wi‑Fi (см. -H 0.0.0.0 ниже)
 LAN_IP=""
@@ -37,4 +42,8 @@ else
 fi
 echo ""
 
-exec next dev -H 0.0.0.0 -p "$PORT"
+if [ -n "${NEXT_DEV_TURBOPACK:-}" ]; then
+  exec next dev -H 0.0.0.0 -p "$PORT"
+else
+  exec next dev -H 0.0.0.0 -p "$PORT" --webpack
+fi

@@ -9,6 +9,9 @@ import {
   type MouseEvent,
 } from "react";
 import { useCurrency } from "../context/CurrencyContext";
+import { useCategoryTiles } from "../context/CategoryFramesContext";
+import { getCardArtIntrinsicSize } from "../lib/cardArtIntrinsicSize";
+import { NEXT_IMAGE_CARD_ART_SIZES } from "../lib/imageFocus";
 import { formatCardPrice } from "../lib/formatPrice";
 
 const HERO_CARD_IMAGE =
@@ -20,6 +23,8 @@ const PRICE_BYN = 45;
 const OLD_PRICE_BYN = 60;
 
 export function PremiumHero() {
+  const categoryTiles = useCategoryTiles();
+  const heroArtSize = getCardArtIntrinsicSize("Marvel", categoryTiles);
   const { currency } = useCurrency();
   const wrapRef = useRef<HTMLDivElement>(null);
   const [rx, setRx] = useState(5);
@@ -41,7 +46,7 @@ export function PremiumHero() {
   }, []);
 
   return (
-    <section className="relative -mx-6 mb-20 min-h-[min(88vh,880px)] w-auto sm:-mx-10 sm:mb-28">
+    <section className="relative -mx-6 mb-20 w-auto sm:-mx-10 sm:mb-28">
       {/* Cinematic background */}
       <div
         className="pointer-events-none absolute inset-0 -z-0 overflow-hidden"
@@ -60,7 +65,7 @@ export function PremiumHero() {
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_60%_50%_at_20%_80%,rgba(220,38,38,0.08),transparent_50%)]" />
       </div>
 
-      <div className="relative z-10 mx-auto flex min-h-[min(88vh,880px)] max-w-7xl flex-col items-center gap-12 px-6 py-14 lg:flex-row lg:items-center lg:justify-between lg:gap-16 lg:px-10 lg:py-16">
+      <div className="relative z-10 mx-auto flex max-w-7xl flex-col items-start gap-12 px-6 py-14 lg:flex-row lg:items-start lg:justify-between lg:gap-16 lg:px-10 lg:py-16">
         {/* Left copy */}
         <div className="max-w-xl flex-1 text-left">
           <p className="mb-5 inline-flex items-center rounded-full border border-red-500/35 bg-red-950/40 px-4 py-1.5 text-[11px] font-bold uppercase tracking-[0.2em] text-red-200/95 shadow-[0_0_24px_rgba(220,38,38,0.2)]">
@@ -104,17 +109,17 @@ export function PremiumHero() {
 
         {/* Right: 3D card */}
         <div
-          className="flex w-full max-w-md flex-1 justify-center lg:max-w-lg lg:justify-end"
+          className="flex w-full max-w-2xl flex-1 justify-center lg:max-w-3xl lg:justify-end"
           style={{ perspective: "1400px" }}
         >
           <div
             ref={wrapRef}
-            className="relative w-full max-w-[320px] cursor-grab sm:max-w-[380px] lg:max-w-[420px]"
+            className="relative w-full max-w-[min(92vw,720px)] cursor-grab"
             onMouseMove={handleMove}
             onMouseLeave={handleLeave}
           >
             <div
-              className="relative aspect-[3/4] w-full origin-center will-change-transform transition-transform duration-300 ease-out"
+              className="relative w-full origin-center will-change-transform transition-transform duration-300 ease-out"
               style={{
                 transform: `rotateX(${rx}deg) rotateY(${ry}deg)`,
                 transformStyle: "preserve-3d",
@@ -124,14 +129,20 @@ export function PremiumHero() {
                 className="absolute -inset-8 rounded-[2rem] bg-gradient-to-br from-orange-600/30 via-red-600/20 to-transparent opacity-60 blur-3xl"
                 aria-hidden
               />
-              <div className="relative h-full w-full overflow-hidden rounded-2xl ring-1 ring-white/20 shadow-[0_32px_80px_-12px_rgba(0,0,0,0.9),0_0_0_1px_rgba(255,255,255,0.08)_inset,0_0_60px_rgba(220,38,38,0.15)]">
+              <div className="relative flex w-full items-start justify-center overflow-visible rounded-2xl bg-black ring-1 ring-white/20 shadow-[0_32px_80px_-12px_rgba(0,0,0,0.9),0_0_0_1px_rgba(255,255,255,0.08)_inset,0_0_60px_rgba(220,38,38,0.15)]">
                 <Image
                   src={HERO_CARD_IMAGE}
                   alt="Призрачный Гонщик — коллекционная карточка"
-                  fill
-                  className="rounded-2xl object-cover transition-all duration-300 ease-out hover:brightness-110"
-                  sizes="(max-width: 1024px) 90vw, 420px"
+                  width={heroArtSize.width}
+                  height={heroArtSize.height}
+                  className="h-auto w-full rounded-2xl transition-all duration-300 ease-out hover:brightness-110"
+                  sizes={NEXT_IMAGE_CARD_ART_SIZES}
                   priority
+                  style={{
+                    width: "100%",
+                    height: "auto",
+                    objectFit: "unset",
+                  }}
                 />
                 <div
                   className="pointer-events-none absolute inset-0 bg-gradient-to-tr from-black/50 via-transparent to-white/10 opacity-80 mix-blend-overlay"

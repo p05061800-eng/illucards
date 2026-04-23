@@ -115,7 +115,7 @@ export default function CategorySlider(props: CategorySliderProps) {
               onClick={() => goCategory(cat.name)}
               aria-label={cat.name}
               className={[
-                "group relative z-0 h-[80px] min-w-[80px] shrink-0 cursor-pointer overflow-hidden rounded-xl bg-zinc-950",
+                "group relative z-0 flex h-[80px] min-w-[80px] shrink-0 cursor-pointer items-center justify-center overflow-hidden rounded-xl bg-zinc-950",
                 "will-change-transform [transform:translateZ(0)]",
                 "transition-transform duration-300 ease-out",
                 "hover:scale-[1.15] active:scale-[1.08] hover:z-20",
@@ -130,7 +130,7 @@ export default function CategorySlider(props: CategorySliderProps) {
               <img
                 src={cat.image}
                 alt=""
-                className="category-tile-img h-full w-full rounded-xl object-contain"
+                className="category-tile-img rounded-xl"
                 draggable={false}
               />
 

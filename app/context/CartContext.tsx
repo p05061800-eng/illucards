@@ -1,8 +1,8 @@
 "use client";
 
 /**
- * Корзина: `cartItems`, добавление, `removeFromCart`, `setQuantity`, `totalPrice`.
- * После гидрации состояние сохраняется в `localStorage` под ключом `CART_STORAGE_KEY`.
+ * Корзина: позиции с ценой в BYN и в RUB (руб. из карточки или × курс).
+ * Итого для оплаты — всегда в BYN (`totalPriceByn`).
  */
 
 import {
@@ -14,19 +14,45 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import type { StoredCard } from "../api/cards/route";
+import type { CardRarity, StoredCard } from "../api/cards/route";
+import {
+  ADULT_FIXED_PRICE_BYN,
+  ADULT_FIXED_PRICE_RUB,
+  rubFromByn,
+} from "../lib/formatPrice";
 
 export type CartLine = {
   id: string;
   title: string;
-  price: number;
+  /** Цена за единицу в бел. руб. */
+  priceByn: number;
+  /** Цена за единицу в руб. РФ (для витрины). */
+  priceRub: number;
   frontImage: string;
+  /** Для эталонных размеров next/image (Marvel / Stranger Things и т.д.) */
+  category?: string;
+  /** Порядок в категории (для правил 18+ помимо редкости adult). */
+  categoryOrder?: number;
+  /** Для размытия 18+ в корзине до подтверждения возраста. */
+  rarity?: CardRarity;
   quantity: number;
 };
 
 /** Ключ записи корзины в `localStorage` */
 export const CART_STORAGE_KEY = "illucards-cart";
 const STORAGE_KEY = CART_STORAGE_KEY;
+
+function lineFromCard(card: StoredCard): Pick<CartLine, "priceByn" | "priceRub"> {
+  if (card.rarity === "adult") {
+    return { priceByn: ADULT_FIXED_PRICE_BYN, priceRub: ADULT_FIXED_PRICE_RUB };
+  }
+  const priceByn = Number.isFinite(card.price) ? card.price : 0;
+  const priceRub =
+    card.priceRub != null && Number.isFinite(card.priceRub)
+      ? Math.round(card.priceRub)
+      : rubFromByn(priceByn);
+  return { priceByn, priceRub };
+}
 
 function normalizeLines(raw: unknown): CartLine[] {
   if (!Array.isArray(raw)) return [];
@@ -36,13 +62,58 @@ function normalizeLines(raw: unknown): CartLine[] {
     const o = item as Record<string, unknown>;
     const id = typeof o.id === "string" ? o.id : "";
     const title = typeof o.title === "string" ? o.title : "";
-    const price = typeof o.price === "number" ? o.price : Number(o.price);
     const frontImage =
       typeof o.frontImage === "string" ? o.frontImage : "";
+    const category =
+      typeof o.category === "string" ? o.category.trim() : undefined;
+    const co = o.categoryOrder;
+    const categoryOrder =
+      typeof co === "number" && Number.isFinite(co) ? co : undefined;
+    const rarityRaw = typeof o.rarity === "string" ? o.rarity.trim() : "";
+    const rarity =
+      rarityRaw === "adult" ||
+      rarityRaw === "common" ||
+      rarityRaw === "limited" ||
+      rarityRaw === "replica" ||
+      rarityRaw === "novelty" ||
+      rarityRaw === "hot_price"
+        ? (rarityRaw as CardRarity)
+        : undefined;
     const q = typeof o.quantity === "number" ? o.quantity : Number(o.quantity);
     const quantity = Number.isFinite(q) && q >= 1 ? Math.floor(q) : 1;
-    if (!id || !Number.isFinite(price)) continue;
-    out.push({ id, title, price, frontImage, quantity });
+    if (!id) continue;
+
+    let priceByn: number;
+    let priceRub: number;
+    if (typeof o.priceByn === "number" && Number.isFinite(o.priceByn)) {
+      priceByn = o.priceByn;
+      priceRub =
+        typeof o.priceRub === "number" && Number.isFinite(o.priceRub)
+          ? o.priceRub
+          : rubFromByn(priceByn);
+    } else if (typeof o.price === "number" && Number.isFinite(o.price)) {
+      priceByn = o.price;
+      priceRub = rubFromByn(priceByn);
+    } else {
+      continue;
+    }
+
+    if (rarity === "adult") {
+      priceByn = ADULT_FIXED_PRICE_BYN;
+      priceRub = ADULT_FIXED_PRICE_RUB;
+    }
+
+    out.push({
+      id,
+      title,
+      priceByn,
+      priceRub,
+      frontImage,
+      ...(category ? { category } : {}),
+      ...(categoryOrder != null ? { categoryOrder } : {}),
+      ...(rarity ? { rarity } : {}),
+      quantity,
+    });
   }
   return out;
 }
@@ -59,11 +130,13 @@ function loadFromStorage(): CartLine[] {
 }
 
 type CartContextValue = {
-  /** Позиции корзины (синхронизируются с localStorage после гидрации) */
   cartItems: CartLine[];
   hydrated: boolean;
   itemCount: number;
-  totalPrice: number;
+  /** Сумма в бел. руб. */
+  totalPriceByn: number;
+  /** Сумма в руб. РФ (по ценам на витрине). */
+  totalPriceRub: number;
   cartOpen: boolean;
   openCart: () => void;
   closeCart: () => void;
@@ -100,6 +173,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
   }, [cartItems, hydrated]);
 
   const addToCart = useCallback((card: StoredCard) => {
+    const { priceByn, priceRub } = lineFromCard(card);
     setCartItems((prev) => {
       const i = prev.findIndex((l) => l.id === card.id);
       if (i >= 0) {
@@ -107,6 +181,9 @@ export function CartProvider({ children }: { children: ReactNode }) {
         next[i] = {
           ...next[i],
           quantity: next[i].quantity + 1,
+          priceByn,
+          priceRub,
+          rarity: card.rarity ?? next[i].rarity,
         };
         return next;
       }
@@ -115,8 +192,12 @@ export function CartProvider({ children }: { children: ReactNode }) {
         {
           id: card.id,
           title: card.title,
-          price: card.price,
+          priceByn,
+          priceRub,
           frontImage: card.frontImage,
+          category: card.category,
+          categoryOrder: card.categoryOrder,
+          rarity: card.rarity,
           quantity: 1,
         },
       ];
@@ -147,12 +228,15 @@ export function CartProvider({ children }: { children: ReactNode }) {
     [cartItems]
   );
 
-  const totalPrice = useMemo(
+  const totalPriceByn = useMemo(
     () =>
-      cartItems.reduce(
-        (s, l) => s + l.price * l.quantity,
-        0
-      ),
+      cartItems.reduce((s, l) => s + l.priceByn * l.quantity, 0),
+    [cartItems]
+  );
+
+  const totalPriceRub = useMemo(
+    () =>
+      cartItems.reduce((s, l) => s + l.priceRub * l.quantity, 0),
     [cartItems]
   );
 
@@ -161,7 +245,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
       cartItems,
       hydrated,
       itemCount,
-      totalPrice,
+      totalPriceByn,
+      totalPriceRub,
       cartOpen,
       openCart,
       closeCart,
@@ -175,7 +260,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
       cartItems,
       hydrated,
       itemCount,
-      totalPrice,
+      totalPriceByn,
+      totalPriceRub,
       cartOpen,
       openCart,
       closeCart,

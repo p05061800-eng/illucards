@@ -1,11 +1,19 @@
 "use client";
 
-import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useRef, type TouchEvent } from "react";
+import { CardDescriptionText } from "../CardDescriptionText";
 import type { CardRarity, StoredCard } from "../../api/cards/route";
+import { AdultContentBlurGate } from "../AdultContentBlurGate";
+import { cardRequiresAgeConfirmation } from "../../lib/cardRequiresAgeConfirmation";
 import { categories } from "@/data/categories";
-import { focusToStyle } from "../../lib/imageFocus";
+import { isFixedCardArtFramePreset } from "../../lib/cardAspectRatio";
+import {
+  cardArtFaceFitStyle,
+  cardArtFaceObjectFitClass,
+  cardArtFixedFrameImgClass,
+  cardArtFixedFrameShellClass,
+} from "../../lib/imageFocus";
 import { RARITY_STYLES } from "../../lib/cardRarityUi";
 import { Card3D } from "./Card3D";
 
@@ -13,6 +21,7 @@ const RARITY_LABELS: Record<CardRarity, string> = {
   common: "Обычная",
   limited: "Лимитированная",
   adult: "18+",
+  replica: "Реплики",
   novelty: "Новинки",
   hot_price: "Горячая цена",
 };
@@ -51,6 +60,10 @@ function DecorCard({
       : `0 0 26px ${glow}, 0 12px 30px rgba(0,0,0,0.34)`;
 
   const src = safeFront(card.frontImage);
+  const faceCls = cardArtFaceObjectFitClass(card.cardArtFramePreset);
+  const fixed = isFixedCardArtFramePreset(card.cardArtFramePreset);
+  const fixedShell = cardArtFixedFrameShellClass(fixed);
+  const fixedImg = cardArtFixedFrameImgClass(fixed);
   if (!src) {
     return (
       <div
@@ -62,20 +75,31 @@ function DecorCard({
   }
   return (
     <div
-      className={`pointer-events-none absolute overflow-hidden rounded-2xl ring-1 ring-white/14 ${className}`}
+      className={`pointer-events-none absolute overflow-visible rounded-2xl bg-black ring-1 ring-white/14 ${className}`}
       style={{ boxShadow: shadowStyle }}
       aria-hidden
     >
-      <Image
-        src={src}
-        alt=""
-        fill
-        className={`rounded-2xl object-cover ${
-          emphasis === "rearmost" ? "brightness-[1.1] contrast-[1.03]" : ""
-        }`}
-        style={focusToStyle(card.frontImageFocus)}
-        sizes="200px"
-      />
+      <AdultContentBlurGate
+        isAdult={cardRequiresAgeConfirmation(card)}
+        mode="blurOnly"
+      >
+        <div className={`relative h-full w-full min-h-0 ${fixedShell}`}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={src}
+            alt=""
+            className={`${fixedImg} rounded-2xl ${faceCls} ${
+              emphasis === "rearmost" ? "brightness-[1.1] contrast-[1.03]" : ""
+            }`}
+            style={cardArtFaceFitStyle(
+              card.cardArtFramePreset,
+              card.frontImageFocus,
+            )}
+            draggable={false}
+            decoding="async"
+          />
+        </div>
+      </AdultContentBlurGate>
     </div>
   );
 }
@@ -202,7 +226,7 @@ export function CardStack({
       />
 
       <div
-        className="relative min-h-[min(88vw,480px)] w-full min-w-0 max-w-[min(100%,380px)] touch-pan-y px-0.5"
+        className="relative w-full min-w-0 max-w-[min(100%,min(92vw,720px))] touch-pan-y px-0.5"
         onTouchStart={onTouchStart}
         onTouchEnd={onTouchEnd}
       >
@@ -236,7 +260,11 @@ export function CardStack({
               {RARITY_LABELS[rarity]}
             </span>
             <p className="mt-1 line-clamp-2 text-sm text-gray-400 transition animate-fade-up delay-100 hover:text-gray-200">
-              {active.description?.trim() || "Описание скоро появится"}
+              <CardDescriptionText
+                text={active.description}
+                fallback="Описание скоро появится"
+                className="block"
+              />
             </p>
           </div>
         </div>

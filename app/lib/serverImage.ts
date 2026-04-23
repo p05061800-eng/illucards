@@ -1,12 +1,28 @@
 import sharp from "sharp";
+import { TMNT_REFERENCE_POSTER_DIMENSIONS } from "./cardAspectRatio";
 
-/** Выход 3:4 для обложек и карточек (как 600×800). */
+/** Выход для лиц карточек после аплоада — 600×900 (2:3). */
 export const UPLOAD_IMAGE_WIDTH = 600;
-export const UPLOAD_IMAGE_HEIGHT = 800;
+export const UPLOAD_IMAGE_HEIGHT = 900;
 
 export async function imageBufferTo34Webp(buffer: Buffer): Promise<Buffer> {
   return sharp(buffer)
     .resize(UPLOAD_IMAGE_WIDTH, UPLOAD_IMAGE_HEIGHT, {
+      fit: "cover",
+      position: "attention",
+    })
+    .webp({ quality: 86 })
+    .toBuffer();
+}
+
+/** Фон категории для TMNT — как постер-референс (761×1024). */
+export async function imageBufferToTmntPosterWebp(
+  buffer: Buffer,
+): Promise<Buffer> {
+  const { width: w, height: h } = TMNT_REFERENCE_POSTER_DIMENSIONS;
+  return sharp(buffer)
+    .rotate()
+    .resize(w, h, {
       fit: "cover",
       position: "attention",
     })

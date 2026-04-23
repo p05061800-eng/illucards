@@ -1,4 +1,5 @@
 import type { StoredCard } from "@/app/api/cards/route";
+import { effectiveCardPriceByn } from "@/app/lib/formatPrice";
 
 export type PriceSort = "default" | "asc" | "desc";
 
@@ -7,6 +8,7 @@ export type TypeFilterState = {
   adult: boolean;
   limited: boolean;
   common: boolean;
+  replica: boolean;
   hotPrice: boolean;
   novelties: boolean;
 };
@@ -15,12 +17,20 @@ export const EMPTY_TYPE_FILTER: TypeFilterState = {
   adult: false,
   limited: false,
   common: false,
+  replica: false,
   hotPrice: false,
   novelties: false,
 };
 
 function anyTypeFilterOn(f: TypeFilterState): boolean {
-  return f.adult || f.limited || f.common || f.hotPrice || f.novelties;
+  return (
+    f.adult ||
+    f.limited ||
+    f.common ||
+    f.replica ||
+    f.hotPrice ||
+    f.novelties
+  );
 }
 
 export function cardMatchesTypeFilters(
@@ -31,6 +41,7 @@ export function cardMatchesTypeFilters(
   if (f.adult && card.rarity === "adult") return true;
   if (f.limited && card.rarity === "limited") return true;
   if (f.common && card.rarity === "common") return true;
+  if (f.replica && card.rarity === "replica") return true;
   if (f.hotPrice && card.rarity === "hot_price") return true;
   if (f.novelties && (card.isNew || card.rarity === "novelty")) return true;
   return false;
@@ -71,7 +82,56 @@ export function sortCardsByPrice(
 ): StoredCard[] {
   if (sort === "default") return cards;
   const copy = [...cards];
-  if (sort === "asc") copy.sort((a, b) => a.price - b.price);
-  else copy.sort((a, b) => b.price - a.price);
+  if (sort === "asc")
+    copy.sort(
+      (a, b) =>
+        effectiveCardPriceByn(a) - effectiveCardPriceByn(b)
+    );
+  else
+    copy.sort(
+      (a, b) =>
+        effectiveCardPriceByn(b) - effectiveCardPriceByn(a)
+    );
   return copy;
+}
+
+/**
+ * Порядок карточек внутри секции категории при сортировке «по умолчанию»:
+ * сначала по `categoryOrder`, без номера — как в исходном массиве каталога.
+ */
+export function sortSectionCardsForDefaultCatalog(
+  sectionCards: StoredCard[],
+  globalCardsInFileOrder: StoredCard[]
+): StoredCard[] {
+  const idx = new Map(globalCardsInFileOrder.map((c, i) => [c.id, i]));
+  return [...sectionCards].sort((a, b) => {
+    const oa = a.categoryOrder;
+    const ob = b.categoryOrder;
+    if (oa != null && ob != null && oa !== ob) return oa - ob;
+    if (oa != null && ob == null) return -1;
+    if (oa == null && ob != null) return 1;
+    return (idx.get(a.id) ?? 0) - (idx.get(b.id) ?? 0);
+  });
+}
+
+/**
+ * Порядок листания по всему каталогу на странице товара: категория (A–Я), внутри — `categoryOrder`, затем порядок в файле.
+ */
+export function sortCardsForGalleryBrowse(
+  cards: StoredCard[],
+  globalCardsInFileOrder: StoredCard[]
+): StoredCard[] {
+  const idx = new Map(globalCardsInFileOrder.map((c, i) => [c.id, i]));
+  return [...cards].sort((a, b) => {
+    const ca = (a.category ?? "")
+      .trim()
+      .localeCompare((b.category ?? "").trim(), "ru");
+    if (ca !== 0) return ca;
+    const oa = a.categoryOrder;
+    const ob = b.categoryOrder;
+    if (oa != null && ob != null && oa !== ob) return oa - ob;
+    if (oa != null && ob == null) return -1;
+    if (oa == null && ob != null) return 1;
+    return (idx.get(a.id) ?? 0) - (idx.get(b.id) ?? 0);
+  });
 }

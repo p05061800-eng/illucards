@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import {
   useCallback,
   useEffect,
@@ -11,8 +10,21 @@ import {
   type MouseEvent,
 } from "react";
 import type { CardRarity, StoredCard } from "../../api/cards/route";
-import { focusToStyle } from "../../lib/imageFocus";
+import {
+  isFixedCardArtFramePreset,
+  resolveCardArtBoxAspectCss,
+} from "../../lib/cardAspectRatio";
+import { AdultContentBlurGate } from "../AdultContentBlurGate";
+import { cardRequiresAgeConfirmation } from "../../lib/cardRequiresAgeConfirmation";
+import {
+  cardArtFaceFitStyle,
+  cardArtFaceObjectFitClass,
+  cardArtFixedFrameImgClass,
+  cardArtFixedFrameShellClass,
+} from "../../lib/imageFocus";
+import { FrontHoverMotionOverlay } from "../FrontHoverMotionOverlay";
 import { CardRarityGlowShell } from "../CardRarityGlowShell";
+import { useIntrinsicImageAspect } from "../../lib/useIntrinsicImageAspect";
 
 const RARITY_FRAME: Record<CardRarity, string> = {
   common:
@@ -21,6 +33,8 @@ const RARITY_FRAME: Record<CardRarity, string> = {
     "ring-1 ring-amber-400/55 shadow-[0_0_22px_rgba(251,191,36,0.4)] group-hover/card3d:shadow-[0_0_48px_rgba(251,191,36,0.5)]",
   adult:
     "ring-1 ring-rose-400/55 shadow-[0_0_22px_rgba(244,63,94,0.4)] group-hover/card3d:shadow-[0_0_48px_rgba(244,63,94,0.5)]",
+  replica:
+    "ring-1 ring-sky-400/55 shadow-[0_0_22px_rgba(56,189,248,0.4)] group-hover/card3d:shadow-[0_0_48px_rgba(56,189,248,0.5)]",
   novelty:
     "ring-1 ring-emerald-400/55 shadow-[0_0_22px_rgba(52,211,153,0.4)] group-hover/card3d:shadow-[0_0_48px_rgba(52,211,153,0.5)]",
   hot_price:
@@ -34,6 +48,8 @@ const RARITY_CORNER_BADGE: Record<CardRarity, string> = {
     "border-amber-400/70 bg-amber-950/90 text-amber-100 shadow-[0_0_14px_rgba(251,191,36,0.5)]",
   adult:
     "border-rose-400/70 bg-rose-950/90 text-rose-100 shadow-[0_0_14px_rgba(244,63,94,0.55)]",
+  replica:
+    "border-sky-400/70 bg-sky-950/90 text-sky-100 shadow-[0_0_14px_rgba(56,189,248,0.5)]",
   novelty:
     "border-emerald-400/70 bg-emerald-950/90 text-emerald-100 shadow-[0_0_14px_rgba(52,211,153,0.55)]",
   hot_price:
@@ -44,6 +60,7 @@ const RARITY_CORNER_SHORT: Record<CardRarity, string> = {
   common: "Обыч",
   limited: "Лим",
   adult: "18+",
+  replica: "Реп",
   novelty: "Нов",
   hot_price: "🔥",
 };
@@ -52,6 +69,7 @@ const RARITY_LABELS: Record<CardRarity, string> = {
   common: "Обычная",
   limited: "Лимитированная",
   adult: "18+",
+  replica: "Реплики",
   novelty: "Новинки",
   hot_price: "Горячая цена",
 };
@@ -60,6 +78,7 @@ const PARTICLE_RGB: Record<CardRarity, { r: number; g: number; b: number }> = {
   common: { r: 161, g: 161, b: 170 },
   limited: { r: 255, g: 200, b: 80 },
   adult: { r: 255, g: 80, b: 120 },
+  replica: { r: 56, g: 189, b: 248 },
   novelty: { r: 52, g: 211, b: 153 },
   hot_price: { r: 217, g: 70, b: 239 },
 };
@@ -68,6 +87,8 @@ const CURSOR_GLOW: Record<CardRarity, string> = {
   common: "radial-gradient(circle, rgba(161,161,170,0.3), transparent 70%)",
   limited: "radial-gradient(circle, rgba(251,191,36,0.35), transparent 70%)",
   adult: "radial-gradient(circle, rgba(244,63,94,0.35), transparent 70%)",
+  replica:
+    "radial-gradient(circle, rgba(56,189,248,0.35), transparent 70%)",
   novelty: "radial-gradient(circle, rgba(52,211,153,0.35), transparent 70%)",
   hot_price:
     "radial-gradient(circle, rgba(217,70,239,0.4), transparent 70%)",
@@ -105,6 +126,19 @@ type Props = {
 };
 
 export function Card3D({ card }: Props) {
+  const frontSrc = safeImage(card.frontImage);
+  const faceCls = cardArtFaceObjectFitClass(card.cardArtFramePreset);
+  const fixedCatalogFrame = isFixedCardArtFramePreset(card.cardArtFramePreset);
+  const fixedShell = cardArtFixedFrameShellClass(fixedCatalogFrame);
+  const fixedImg = cardArtFixedFrameImgClass(fixedCatalogFrame);
+  const { aspectRatioCss: spacerIntrinsicCss } = useIntrinsicImageAspect(
+    frontSrc || undefined,
+  );
+  const stackBoxAspectCss = resolveCardArtBoxAspectCss(
+    card,
+    spacerIntrinsicCss,
+    null,
+  );
   const rarity = card.rarity ?? "limited";
   const magneticRef = useRef<HTMLDivElement>(null);
   const wrapperRef = useRef<HTMLDivElement>(null);
@@ -112,6 +146,7 @@ export function Card3D({ card }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const cursorGlowRef = useRef<HTMLDivElement>(null);
   const audioRef = useRef<HTMLAudioElement>(null);
+  const hoverMotionVideoRef = useRef<HTMLVideoElement | null>(null);
   const shineRef = useRef<HTMLDivElement>(null);
   const tiltLightRef = useRef<HTMLDivElement>(null);
   const flippedRef = useRef(false);
@@ -162,10 +197,11 @@ export function Card3D({ card }: Props) {
     const canvas = canvasRef.current;
     const wrap = wrapperRef.current;
     if (!canvas || !wrap) return;
-    const ctx = canvas.getContext("2d");
+    const ctx = canvas.getContext("2d", { alpha: true });
     if (!ctx) return;
 
     const rgb = PARTICLE_RGB[rarity];
+    const PARTICLE_COUNT = 22;
 
     function createParticle(w: number, h: number) {
       return {
@@ -180,6 +216,7 @@ export function Card3D({ card }: Props) {
 
     let particles: ReturnType<typeof createParticle>[] = [];
     let raf = 0;
+    let runParticles = false;
 
     function resize() {
       if (!wrap || !canvas) return;
@@ -187,7 +224,9 @@ export function Card3D({ card }: Props) {
       const h = wrap.clientHeight;
       canvas.width = w;
       canvas.height = h;
-      particles = Array.from({ length: 40 }, () => createParticle(w, h));
+      particles = Array.from({ length: PARTICLE_COUNT }, () =>
+        createParticle(w, h)
+      );
     }
 
     resize();
@@ -195,7 +234,10 @@ export function Card3D({ card }: Props) {
     ro.observe(wrap);
 
     function animate() {
-      if (!canvas || !ctx) return;
+      if (!runParticles || !canvas || !ctx || document.hidden) {
+        raf = 0;
+        return;
+      }
       const w = canvas.width;
       const h = canvas.height;
       ctx.clearRect(0, 0, w, h);
@@ -213,10 +255,51 @@ export function Card3D({ card }: Props) {
       });
       raf = requestAnimationFrame(animate);
     }
-    animate();
+
+    function startLoop() {
+      if (raf !== 0 || document.hidden) return;
+      raf = requestAnimationFrame(animate);
+    }
+
+    function stopLoop() {
+      if (raf !== 0) {
+        cancelAnimationFrame(raf);
+        raf = 0;
+      }
+    }
+
+    const io = new IntersectionObserver(
+      ([entry]) => {
+        const vis = Boolean(entry?.isIntersecting);
+        if (vis) {
+          runParticles = true;
+          startLoop();
+        } else {
+          runParticles = false;
+          stopLoop();
+        }
+      },
+      { root: null, rootMargin: "80px", threshold: 0 }
+    );
+    io.observe(wrap);
+
+    const onVisibility = () => {
+      if (document.hidden) {
+        stopLoop();
+      } else if (runParticles) {
+        startLoop();
+      }
+    };
+    document.addEventListener("visibilitychange", onVisibility);
+
+    runParticles = true;
+    startLoop();
 
     return () => {
-      cancelAnimationFrame(raf);
+      runParticles = false;
+      stopLoop();
+      document.removeEventListener("visibilitychange", onVisibility);
+      io.disconnect();
       ro.disconnect();
     };
   }, [reduceMotion, rarity]);
@@ -321,6 +404,7 @@ export function Card3D({ card }: Props) {
 
   const handleMouseEnter = () => {
     hoveringRef.current = true;
+    void hoverMotionVideoRef.current?.play()?.catch(() => {});
     if (reduceMotion) return;
     playHover();
     if (cursorGlowRef.current) {
@@ -330,6 +414,11 @@ export function Card3D({ card }: Props) {
 
   const handleMouseLeave = () => {
     hoveringRef.current = false;
+    const hv = hoverMotionVideoRef.current;
+    if (hv) {
+      hv.pause();
+      hv.currentTime = 0;
+    }
     pendingMouseRef.current = null;
     if (mouseMoveRafRef.current !== 0) {
       cancelAnimationFrame(mouseMoveRafRef.current);
@@ -366,9 +455,16 @@ export function Card3D({ card }: Props) {
     }
   };
 
-  const frontSrc = safeImage(card.frontImage);
   const backSrc = safeImage(card.backImage);
-  const canFlip = card.effect === "vario" && Boolean(backSrc);
+  const hoverGifSrc = safeImage(card.frontHoverGif);
+  const canFlip =
+    (card.effect === "vario" || card.effect === "morphing") &&
+    Boolean(backSrc);
+
+  const hoverMotionLayerClass = [
+    "pointer-events-none absolute inset-0 z-[5] flex min-h-0 min-w-0 items-center justify-center overflow-hidden rounded-2xl bg-black",
+    "opacity-0 transition-opacity duration-200 group-hover/card3d:opacity-100",
+  ].join(" ");
 
   return (
     <article className="group/card3d mx-auto w-full max-w-[min(100%,380px)]">
@@ -385,25 +481,42 @@ export function Card3D({ card }: Props) {
             ref={magneticRef}
             className="transition-transform duration-200 ease-out will-change-transform"
           >
+            <AdultContentBlurGate isAdult={cardRequiresAgeConfirmation(card)}>
             <div
-              ref={wrapperRef}
-              role={canFlip ? "button" : undefined}
-              tabIndex={canFlip ? 0 : undefined}
-              aria-label={
-                canFlip
-                  ? `${card.title}. Нажмите, чтобы перевернуть.`
-                  : card.title
-              }
-              aria-pressed={canFlip ? flipped : undefined}
-              className={`relative mx-auto h-[min(480px,85vh)] w-[min(320px,calc(100vw-2rem))] perspective-[1400px] touch-manipulation selection:bg-transparent ${
-                canFlip ? "cursor-pointer" : "cursor-default"
-              }`}
-              onMouseEnter={handleMouseEnter}
-              onMouseMove={handleMouseMove}
-              onMouseLeave={handleMouseLeave}
-              onClick={canFlip ? toggleFlip : undefined}
-              onKeyDown={canFlip ? onKeyDown : undefined}
+              className="relative mx-auto w-full max-w-[min(100%,380px)]"
+              style={{ width: "min(320px, calc(100vw - 2rem))" }}
             >
+              {frontSrc ? (
+                <div
+                  aria-hidden
+                  className="invisible block w-full max-w-full rounded-2xl"
+                  style={{ aspectRatio: stackBoxAspectCss }}
+                />
+              ) : (
+                <div
+                  className="min-h-[240px] w-full rounded-2xl bg-gradient-to-br from-zinc-800 to-purple-950/50"
+                  aria-hidden
+                />
+              )}
+              <div
+                ref={wrapperRef}
+                role={canFlip ? "button" : undefined}
+                tabIndex={canFlip ? 0 : undefined}
+                aria-label={
+                  canFlip
+                    ? `${card.title}. Нажмите, чтобы перевернуть.`
+                    : card.title
+                }
+                aria-pressed={canFlip ? flipped : undefined}
+                className={`absolute inset-0 z-10 perspective-[1400px] touch-manipulation selection:bg-transparent ${
+                  canFlip ? "cursor-pointer" : "cursor-default"
+                }`}
+                onMouseEnter={handleMouseEnter}
+                onMouseMove={handleMouseMove}
+                onMouseLeave={handleMouseLeave}
+                onClick={canFlip ? toggleFlip : undefined}
+                onKeyDown={canFlip ? onKeyDown : undefined}
+              >
               <audio
                 ref={audioRef}
                 src={HOVER_SOUND_SRC}
@@ -413,7 +526,7 @@ export function Card3D({ card }: Props) {
 
               <div
                 ref={cardRef}
-                className="relative z-10 h-full w-full transition-transform duration-500 ease-out will-change-transform [transform-style:preserve-3d]"
+                className="absolute inset-0 z-10 transition-transform duration-500 ease-out will-change-transform [transform-style:preserve-3d]"
                 data-cart-fly-source
               >
                 <div
@@ -421,7 +534,9 @@ export function Card3D({ card }: Props) {
                   aria-hidden
                 />
 
-                <div className="absolute inset-0 z-[1] overflow-hidden rounded-2xl [backface-visibility:hidden]">
+                <div
+                  className={`absolute inset-0 z-[1] overflow-visible rounded-2xl bg-black [backface-visibility:hidden] ${fixedShell}`}
+                >
                   <span
                     className={`pointer-events-none absolute right-3 top-3 z-20 flex h-8 min-w-[2rem] items-center justify-center rounded-md border px-2 text-xs font-extrabold uppercase leading-none backdrop-blur-sm ${RARITY_CORNER_BADGE[rarity]}`}
                     title={RARITY_LABELS[rarity]}
@@ -429,29 +544,53 @@ export function Card3D({ card }: Props) {
                     {RARITY_CORNER_SHORT[rarity]}
                   </span>
                   {frontSrc ? (
-                    <Image
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
                       src={frontSrc}
                       alt={`${card.title} — лицевая сторона`}
-                      fill
-                      className="rounded-2xl object-cover"
-                      style={focusToStyle(card.frontImageFocus)}
-                      sizes="320px"
-                      priority
+                      className={`${fixedImg} rounded-2xl ${faceCls}${
+                        hoverGifSrc && !reduceMotion
+                          ? " transition-opacity duration-200 group-hover/card3d:opacity-0"
+                          : ""
+                      }`}
+                      style={cardArtFaceFitStyle(
+                        card.cardArtFramePreset,
+                        card.frontImageFocus,
+                      )}
+                      draggable={false}
+                      decoding="async"
                     />
                   ) : (
                     <ImagePlaceholder />
                   )}
+                  {hoverGifSrc && !reduceMotion ? (
+                    <FrontHoverMotionOverlay
+                      url={hoverGifSrc}
+                      videoRef={hoverMotionVideoRef}
+                      className={hoverMotionLayerClass}
+                      style={cardArtFaceFitStyle(
+                        card.cardArtFramePreset,
+                        card.frontImageFocus,
+                      )}
+                    />
+                  ) : null}
                 </div>
 
-                <div className="absolute inset-0 z-[1] overflow-hidden rounded-2xl [backface-visibility:hidden] [transform:rotateY(180deg)]">
+                <div
+                  className={`absolute inset-0 z-[1] overflow-visible rounded-2xl bg-black [backface-visibility:hidden] [transform:rotateY(180deg)] ${fixedShell}`}
+                >
                   {backSrc ? (
-                    <Image
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
                       src={backSrc}
                       alt={`${card.title} — оборот`}
-                      fill
-                      className="rounded-2xl object-cover"
-                      style={focusToStyle(card.backImageFocus)}
-                      sizes="320px"
+                      className={`${fixedImg} rounded-2xl ${faceCls}`}
+                      style={cardArtFaceFitStyle(
+                        card.cardArtFramePreset,
+                        card.backImageFocus,
+                      )}
+                      draggable={false}
+                      decoding="async"
                     />
                   ) : (
                     <ImagePlaceholder />
@@ -499,7 +638,9 @@ export function Card3D({ card }: Props) {
                   />
                 </>
               ) : null}
+              </div>
             </div>
+            </AdultContentBlurGate>
           </div>
         </div>
       </CardRarityGlowShell>

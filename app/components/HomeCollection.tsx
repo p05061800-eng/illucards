@@ -37,14 +37,15 @@ type Props = {
 const filterLabelClass =
   "mb-1.5 block text-[10px] font-semibold uppercase tracking-[0.18em] text-violet-300/75";
 
-/** Число колонок для превью «Смотреть ещё» — в духе `.collection-card-grid` (4 / 5; compact lg — 3). */
+/** Число колонок для превью «Смотреть ещё» — как у `.collection-card-grid` (3 / 5; compact: 3 / 4 / 3). */
 function useCatalogGridColumns(viewportCompact: boolean): number {
   const [cols, setCols] = useState(5);
   useEffect(() => {
     const read = () => {
       const w = window.innerWidth;
       if (viewportCompact && w >= 1024) setCols(3);
-      else if (w < 1024) setCols(4);
+      else if (viewportCompact && w >= 640) setCols(4);
+      else if (w < 1024) setCols(3);
       else setCols(5);
     };
     read();

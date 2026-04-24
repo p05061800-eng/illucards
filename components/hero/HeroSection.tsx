@@ -9,7 +9,6 @@ import {
   useState,
   type KeyboardEvent,
   type PointerEvent,
-  type TouchEvent,
 } from "react";
 import type { StoredCard } from "@/app/api/cards/route";
 import type { CategoryTile } from "@/app/lib/categoriesJson";
@@ -35,7 +34,7 @@ import {
   HERO_CARD_STACK_WIDTH_NOVELTY_NARROW_CLASS,
 } from "./heroCardStackClasses";
 
-/** Горизонтальный свайп по стопке «Новинки»: тот же порог, что и для touch. */
+/** Горизонтальный жест мышью по стопке «Новинки» (на таче только стрелки — см. обработчики). */
 const NOVELTY_SWIPE_MIN_PX = 56;
 
 type Props = {
@@ -250,36 +249,6 @@ export default function HeroSection({
       }
     },
     [isNoveltiesSlide, noveltiesCards.length]
-  );
-
-  const onNoveltySwipeStart = useCallback(
-    (e: TouchEvent<HTMLDivElement>) => {
-      if (!isNoveltiesSlide || noveltiesCards.length < 2) {
-        return;
-      }
-      const t = e.touches[0];
-      if (!t) return;
-      const target = e.target as HTMLElement | null;
-      if (
-        target?.closest?.(
-          "[data-novelty-hero-chrome], [data-hero-novelty-flank-nav]"
-        )
-      )
-        return;
-      noveltyDragStartRef.current = { x: t.clientX, y: t.clientY };
-    },
-    [isNoveltiesSlide, noveltiesCards.length]
-  );
-
-  const onNoveltySwipeEnd = useCallback(
-    (e: TouchEvent<HTMLDivElement>) => {
-      const start = noveltyDragStartRef.current;
-      noveltyDragStartRef.current = null;
-      if (!start || e.changedTouches.length === 0) return;
-      const t = e.changedTouches[0];
-      applyNoveltySwipeFromDelta(start, t.clientX, t.clientY);
-    },
-    [applyNoveltySwipeFromDelta]
   );
 
   const onNoveltyPointerDown = useCallback(
@@ -520,11 +489,6 @@ export default function HeroSection({
               >
                 <div
                   ref={heroCardFlyRef}
-                  onTouchStart={onNoveltySwipeStart}
-                  onTouchEnd={onNoveltySwipeEnd}
-                  onTouchCancel={() => {
-                    noveltyDragStartRef.current = null;
-                  }}
                   onPointerDown={onNoveltyPointerDown}
                   onPointerUp={onNoveltyPointerUp}
                   onPointerCancel={onNoveltyPointerCancel}
@@ -595,7 +559,7 @@ export default function HeroSection({
                         )}
                       </div>
                       <div
-                        className={`flex min-h-0 min-w-0 flex-1 justify-center ${HERO_CARD_STACK_WIDTH_NOVELTY_NARROW_CLASS} translate-x-6 sm:translate-x-8 lg:translate-x-10 xl:translate-x-12 max-[768px]:max-w-[min(24rem,100%)] max-[768px]:translate-x-0`}
+                        className={`flex min-h-0 min-w-0 flex-1 justify-center ${HERO_CARD_STACK_WIDTH_NOVELTY_NARROW_CLASS} translate-x-6 sm:translate-x-8 lg:translate-x-10 xl:translate-x-12 max-[768px]:max-w-[min(100%,min(26.5rem,calc(100vw-4.25rem)))] max-[768px]:translate-x-0`}
                       >
                         <HeroCardStack
                           displayCard={stackCard}

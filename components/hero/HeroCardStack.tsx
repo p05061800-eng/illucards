@@ -57,7 +57,7 @@ export function HeroCardStack({
 
   const href = `/card/${displayCard.id}`;
   const buttonClass = noveltyNarrow
-    ? HERO_CARD_STACK_BUTTON_CLASS_NOVELTY_NARROW
+    ? `${HERO_CARD_STACK_BUTTON_CLASS_NOVELTY_NARROW} max-[768px]:max-w-[min(100%,min(26.5rem,calc(100vw-4.25rem)))]`
     : HERO_CARD_STACK_BUTTON_CLASS;
 
   const rowJustify = noveltyNarrow

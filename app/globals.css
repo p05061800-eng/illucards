@@ -97,8 +97,8 @@ html.home-one-screen main.home-one-screen-main {
   align-items: stretch;
   align-content: start;
   grid-auto-rows: minmax(0, auto);
-  /* Телефон и узкое окно: 4 карты в ряд */
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  /* Телефон: 3 карточки в ряд */
+  grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
 @media (min-width: 1024px) {
@@ -111,7 +111,13 @@ html.home-one-screen main.home-one-screen-main {
 /* Компактная сетка под колонку «один экран» на главной */
 .collection-card-grid--viewport-compact {
   gap: 0.5rem;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+@media (min-width: 640px) {
+  .collection-card-grid--viewport-compact {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
 }
 
 @media (min-width: 1024px) {
@@ -456,12 +462,17 @@ body::after {
     min-width: 0;
   }
 
+  /* Витрина на всю ширину окна (как баннер категорий): выход из px героя */
   .hero-body .hero-cell-spotlight.hero-info {
     grid-column: 1 / -1;
     grid-row: 2;
-    width: 100%;
-    max-width: none;
+    position: relative;
+    z-index: 5;
+    width: 100vw;
+    max-width: 100vw;
     min-width: 0;
+    box-sizing: border-box;
+    margin-left: calc(50% - 50vw);
   }
 
   .hero-body:has(.hero-category-empty-msg) .hero-cell-spotlight.hero-info {
@@ -473,9 +484,9 @@ body::after {
     grid-row: 1;
     justify-self: stretch;
     box-sizing: border-box;
-    max-width: min(24rem, calc(100vw - 4.35rem));
+    max-width: min(26.5rem, calc(100vw - 3.85rem));
     width: 100%;
-    padding-inline-start: clamp(48px, 13vw, 80px);
+    padding-inline-start: clamp(28px, 9vw, 56px);
     padding-top: 10px;
     margin-left: 0;
     margin-right: 0;

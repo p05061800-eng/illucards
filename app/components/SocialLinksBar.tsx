@@ -16,11 +16,11 @@ type Props = {
   className?: string;
 };
 
-const cubeClassPage =
-  "flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-white/10 text-[11px] font-bold uppercase tracking-tight text-white shadow-lg transition will-change-transform [transform:translateZ(0)] hover:scale-[1.08] hover:shadow-xl active:scale-[1.02] sm:h-14 sm:w-14 sm:text-xs focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-violet-400";
+const socialItemPage =
+  "social-item rounded-xl border border-white/10 text-[clamp(9px,1.8vw,11px)] font-bold uppercase tracking-tight text-white shadow-lg transition will-change-transform [transform:translateZ(0)] hover:scale-[1.08] hover:shadow-xl active:scale-[1.02] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-violet-400";
 
-const cubeClassHeader =
-  "flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-white/10 text-[10px] font-bold uppercase tracking-tight text-white shadow-md transition will-change-transform [transform:translateZ(0)] hover:scale-[1.06] hover:shadow-lg active:scale-[1.02] sm:h-10 sm:w-10 sm:text-[11px] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-violet-400 [&_svg]:!h-[18px] [&_svg]:!w-[18px] sm:[&_svg]:!h-5 sm:[&_svg]:!w-5";
+const socialItemHeader =
+  "social-item rounded-lg border border-white/10 text-[clamp(8px,1.6vw,10px)] font-bold uppercase tracking-tight text-white shadow-md transition will-change-transform [transform:translateZ(0)] hover:scale-[1.06] hover:shadow-lg active:scale-[1.02] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-violet-400";
 
 const brandCube: Record<
   SocialNetworkId,
@@ -37,7 +37,7 @@ const brandCube: Record<
   tiktok: {
     gradient: "bg-gradient-to-br from-[#00f2ea] via-[#ff0050] to-[#0a0a0a]",
     content: (
-      <span className="select-none text-[13px] font-extrabold leading-none tracking-tight sm:text-sm">
+      <span className="select-none text-[clamp(11px,2.2vw,13px)] font-extrabold leading-none tracking-tight">
         TT
       </span>
     ),
@@ -127,13 +127,13 @@ export function SocialLinksBar({
 
   if (items.length === 0) return null;
 
-  const cubeClass = compact ? cubeClassHeader : cubeClassPage;
+  const itemClass = compact ? socialItemHeader : socialItemPage;
 
   return (
     <nav
       className={
         compact
-          ? className ?? ""
+          ? ["min-w-0 max-w-full", className].filter(Boolean).join(" ")
           : "relative z-20 mx-auto w-full max-w-[1400px] px-6 lg:px-10"
       }
       aria-label="Социальные сети"
@@ -141,20 +141,20 @@ export function SocialLinksBar({
       <ul
         className={
           compact
-            ? "flex flex-wrap items-center justify-center gap-2 sm:gap-2.5"
-            : "flex flex-wrap items-center justify-center gap-3 pb-4 pt-1 sm:gap-4 sm:pb-5 sm:pt-2"
+            ? "socials"
+            : "socials justify-center px-0 pb-4 pt-1 lg:px-4"
         }
       >
         {items.map(({ id, href, label }) => {
           const b = brandCube[id];
           return (
-            <li key={id}>
+            <li key={id} className="shrink-0">
               <a
                 href={href}
                 target="_blank"
                 rel="noopener noreferrer"
                 aria-label={label}
-                className={`${cubeClass} ${b.gradient}`}
+                className={`${itemClass} ${b.gradient}`}
               >
                 {b.content}
               </a>

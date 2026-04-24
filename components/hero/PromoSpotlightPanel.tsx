@@ -138,8 +138,8 @@ export function PromoSpotlightPanel({
 
   const shellClass = embedded
     ? compact
-      ? "relative w-full rounded-xl border border-white/[0.08] bg-zinc-950/40 p-2.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] sm:p-3 lg:p-3.5"
-      : "relative w-full rounded-2xl border border-white/[0.08] bg-zinc-950/40 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] sm:p-5 lg:p-6"
+      ? "promo-spotlight-shell relative w-full rounded-xl border border-white/[0.08] bg-zinc-950/40 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]"
+      : "promo-spotlight-shell relative w-full rounded-2xl border border-white/[0.08] bg-zinc-950/40 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]"
     : "relative rounded-2xl border border-white/[0.08] bg-zinc-950/40 p-5 shadow-[0_0_40px_rgba(0,0,0,0.45)] backdrop-blur-sm sm:p-7";
 
   return (
@@ -156,7 +156,7 @@ export function PromoSpotlightPanel({
           key={slideIndex}
           className={
             embedded
-              ? "min-h-0 pt-0"
+              ? "promo-spotlight-body min-h-0 pt-0"
               : "min-h-[180px] sm:min-h-[200px]"
           }
         >
@@ -181,12 +181,12 @@ export function PromoSpotlightPanel({
                 даже если список «Новинки» в слайде пуст — предупреждение только путало.
               */}
               {embedded && commerceFooter ? null : (
-                <div>
-                  <h2 className="text-xl font-bold tracking-tight text-white sm:text-2xl">
+                <div className="hero-spotlight-copy">
+                  <h2 className="font-bold tracking-tight text-white">
                     {current.title}
                   </h2>
                   {current.description.trim() ? (
-                    <p className="mt-2 max-w-2xl whitespace-pre-line text-sm leading-relaxed text-zinc-400 sm:text-base">
+                    <p className="mt-2 max-w-2xl whitespace-pre-line leading-relaxed text-zinc-400">
                       {current.description}
                     </p>
                   ) : null}
@@ -203,8 +203,8 @@ export function PromoSpotlightPanel({
                   className={
                     embedded
                       ? compact
-                        ? "border-t border-white/[0.07] pt-2 sm:pt-2.5"
-                        : "border-t border-white/[0.07] pt-4 sm:pt-5"
+                        ? "border-t border-white/[0.07] pt-[clamp(0.35rem,1.2vw,0.65rem)]"
+                        : "border-t border-white/[0.07] pt-[clamp(0.65rem,1.8vw,1.1rem)]"
                       : "mt-5"
                   }
                 >
@@ -224,12 +224,12 @@ export function PromoSpotlightPanel({
                   />
                 </div>
               ) : null}
-              <div>
-                <h2 className="text-xl font-bold tracking-tight text-white sm:text-2xl">
+              <div className="hero-spotlight-copy">
+                <h2 className="font-bold tracking-tight text-white">
                   {current.title}
                 </h2>
                 {current.description.trim() ? (
-                  <p className="mt-2 max-w-2xl whitespace-pre-line text-sm leading-relaxed text-zinc-400 sm:text-base">
+                  <p className="mt-2 max-w-2xl whitespace-pre-line leading-relaxed text-zinc-400">
                     {current.description}
                   </p>
                 ) : null}

@@ -7,13 +7,13 @@
  * Ширина стопки: `w-full` обязателен — иначе при сбое разбора длинного `w-[min(...)]]` в Tailwind блок схлопывается в 0.
  * Ограничение справа — только `max-w` (без вложенного min(dvh) в arbitrary, ломало сборку/рендер).
  */
-/** Ширина стопки в герое (узкая колонка справа в сетке 12). */
+/** Ширина стопки в герое — fluid; на моб. в колонке справа `.hero-stack-max` → 100% (globals). */
 export const HERO_CARD_STACK_WIDTH_MATCH_CLASS =
-  "w-full max-w-[min(100%,calc(100vw-2rem),22rem)] sm:max-w-[min(100%,24rem)] lg:max-w-[min(100%,26rem)]";
+  "hero-stack-max w-full max-w-[min(100%,clamp(180px,25vw,360px))]";
 
-/** Чуть компактнее стопка в блоке «Новинки» рядом с крупным заголовком. */
+/** Чуть уже стопка в блоке «Новинки» рядом с заголовком. */
 export const HERO_CARD_STACK_WIDTH_NOVELTY_NARROW_CLASS =
-  "w-full max-w-[min(100%,calc(100vw-2rem),18rem)] sm:max-w-[min(100%,20rem)] lg:max-w-[min(100%,22rem)]";
+  "hero-stack-max w-full max-w-[min(100%,clamp(160px,22vw,320px))]";
 
 /** Рамка — aspect-ratio по метаданным лица или рамке категории, см. `CardStackVisual`. */
 export function heroCardStackRootClass(): string {

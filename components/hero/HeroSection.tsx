@@ -19,6 +19,7 @@ import {
 } from "@/app/lib/cardUltraBg";
 import { collectionSectionId } from "@/app/lib/collectionAnchor";
 import { categoryFocusToStyle } from "@/app/lib/imageFocus";
+import { buildNoveltiesCarouselCards } from "@/app/lib/noveltiesHeroCarousel";
 import type { SpotlightSlideRow } from "@/app/lib/spotlightJson";
 import { DEFAULT_SPOTLIGHT_SLIDES } from "@/app/lib/spotlightJson";
 import {
@@ -29,10 +30,7 @@ import { HeroCardCommerce } from "./HeroCardCommerce";
 import { HeroCardStack } from "./HeroCardStack";
 import { HeroIlluCardsLogo } from "./HeroIlluCardsLogo";
 import { PromoSpotlightPanel } from "./PromoSpotlightPanel";
-import {
-  HERO_CARD_STACK_WIDTH_MATCH_CLASS,
-  HERO_CARD_STACK_WIDTH_NOVELTY_NARROW_CLASS,
-} from "./heroCardStackClasses";
+import { HERO_CARD_STACK_WIDTH_NOVELTY_NARROW_CLASS } from "./heroCardStackClasses";
 
 /** Горизонтальный жест мышью по стопке «Новинки» (на таче только стрелки — см. обработчики). */
 const NOVELTY_SWIPE_MIN_PX = 56;
@@ -137,19 +135,10 @@ export default function HeroSection({
   const currentSpotlightSlide = spotlightSlides[safeSpotlightIndex];
   const isNoveltiesSlide = currentSpotlightSlide?.kind === "novelties";
 
-  const noveltiesCards = useMemo(() => {
-    if (!currentSpotlightSlide || currentSpotlightSlide.kind !== "novelties") {
-      return [];
-    }
-    const ids = currentSpotlightSlide.cardIds?.filter(Boolean) ?? [];
-    if (ids.length > 0) {
-      const map = new Map(cards.map((c) => [c.id, c]));
-      return ids.map((id) => map.get(id)).filter((c): c is StoredCard =>
-        Boolean(c)
-      );
-    }
-    return cards.filter((c) => c.isNew || c.rarity === "novelty");
-  }, [cards, currentSpotlightSlide]);
+  const noveltiesCards = useMemo(
+    () => buildNoveltiesCarouselCards(cards, currentSpotlightSlide),
+    [cards, currentSpotlightSlide]
+  );
 
   useEffect(() => {
     setSpotlightSlide((i) =>
@@ -319,7 +308,7 @@ export default function HeroSection({
         className={`relative flex flex-col items-center justify-center px-6 py-8 ${
           viewportCompact
             ? "min-h-0 flex-1"
-            : "mb-12 min-h-[600px] py-16"
+            : "mb-12 min-h-[clamp(20rem,55vh,37.5rem)] py-16"
         }`}
       >
         <p className="relative z-10 text-lg text-zinc-400">
@@ -356,10 +345,8 @@ export default function HeroSection({
           aria-label="Витрина: логотип IlluCards, категории, подборки и карточка"
         >
           <div
-            className={`flex flex-col px-[clamp(1rem,3.5vw,2.5rem)] ${
-              viewportCompact
-                ? "min-h-0 flex-1 gap-2 pb-2 pt-2 sm:gap-2.5 sm:pb-3 sm:pt-2.5 lg:gap-3 lg:pb-3 lg:pt-3"
-                : "gap-5 pb-10 pt-5 sm:gap-6 sm:pb-12 sm:pt-6 lg:gap-7 lg:pb-14 lg:pt-8"
+            className={`hero min-w-0 ${
+              viewportCompact ? "hero--compact min-h-0 flex-1" : ""
             }`}
           >
             {/* 1. Логотип */}
@@ -367,20 +354,10 @@ export default function HeroSection({
               <HeroIlluCardsLogo />
             </div>
 
-            {/* 2–3. Категории + блок витрины/карточки: на lg+ как в макете; ≤768 — сетка «категории слева | карточка + витрина» (globals) */}
+            {/* 2–3. Категории + витрина/карточка: десктоп — две колонки в .hero-main-grid; ≤768 — в globals сетка «плашки слева | карточка», витрина на всю ширину ниже */}
             <div className="hero-body min-w-0 w-full">
-            <div
-              className={`hero-categories-outer relative z-30 w-full min-w-0 ${
-                viewportCompact ? "pb-2 sm:pb-2.5" : "pb-4 sm:pb-5"
-              }`}
-            >
-              <div
-                className={`hero-categories relative flex min-w-0 w-full justify-start overflow-x-auto overflow-y-visible py-0.5 scrollbar-hide ${
-                  viewportCompact
-                    ? "min-h-[2.75rem] gap-1.5 sm:min-h-12 sm:gap-2"
-                    : "min-h-[clamp(3.25rem,16vw,5rem)] gap-2 sm:gap-2.5 max-[768px]:min-h-0"
-                }`}
-              >
+            <div className="hero-categories-outer relative z-30 w-full min-w-0">
+              <div className="hero-categories relative flex min-w-0 w-full justify-start overflow-x-auto overflow-y-visible py-0.5 scrollbar-hide">
               {apiCategories.map((cat) => {
                 const selected =
                   selectedCategoryName != null &&
@@ -400,10 +377,7 @@ export default function HeroSection({
                     aria-label={cat.name}
                     aria-current={selected}
                     className={[
-                      "category-item group relative shrink-0 cursor-pointer overflow-hidden rounded-xl bg-zinc-950",
-                      viewportCompact
-                        ? "h-11 w-11 max-h-12 max-w-12 sm:h-12 sm:w-12 max-[768px]:!h-[50px] max-[768px]:!w-[50px] max-[768px]:!max-h-[50px] max-[768px]:!max-w-[50px]"
-                        : "h-[clamp(3.25rem,16vw,5rem)] w-[clamp(3.25rem,16vw,5rem)] max-h-[5rem] max-w-[5rem] max-[768px]:!h-[50px] max-[768px]:!w-[50px] max-[768px]:!max-h-[50px] max-[768px]:!max-w-[50px]",
+                      "category-item group shrink-0 cursor-pointer overflow-hidden rounded-xl bg-zinc-950",
                       "will-change-transform [transform:translateZ(0)]",
                       "transition-transform duration-300 ease-out",
                       "hover:scale-[1.08] active:scale-[1.04]",
@@ -414,24 +388,24 @@ export default function HeroSection({
                       .join(" ")}
                   >
                     {plateSrc ? (
-                      <div className="absolute inset-0 flex items-center justify-center">
+                      <div className="category-tile-wrap">
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img
                           src={plateSrc}
                           alt=""
-                          className="category-tile-img rounded-[inherit]"
+                          className="category-tile-img h-full w-full max-h-full max-w-full rounded-[inherit] object-contain"
                           style={categoryFocusToStyle(plateFocus)}
                           draggable={false}
                         />
                       </div>
                     ) : (
                       <div
-                        className="h-full w-full rounded-xl bg-zinc-800"
+                        className="category-tile-wrap rounded-[inherit] bg-zinc-800"
                         aria-hidden
                       />
                     )}
 
-                    <div className="hero-category-label pointer-events-none absolute bottom-1 left-1 right-1 z-10 text-center font-semibold leading-tight text-white drop-shadow-[0_1px_3px_rgba(0,0,0,0.95),0_0_8px_rgba(0,0,0,0.65)]">
+                    <div className="hero-category-label z-10 text-center leading-tight">
                       {cat.name}
                     </div>
                   </button>
@@ -449,16 +423,14 @@ export default function HeroSection({
             ) : null}
 
             {/*
-              Десктоп: 12 колонок — витрина слева (7), карточка справа (5). ≤768: колонка справа — карточка, затем витрина (flex в globals).
+              Десктоп: витрина слева, карточка справа (.hero-main-grid). ≤768: плашки | карточка в одном ряду, витрина снизу (display: contents в globals).
             */}
             <div
-              className={`hero-main-grid relative z-0 grid grid-cols-1 items-start overflow-x-clip pb-0 max-[768px]:overflow-x-visible lg:grid-cols-12 lg:gap-y-0 lg:overflow-visible ${
-                viewportCompact
-                  ? "mt-1 min-h-0 flex-1 gap-4 sm:mt-1.5 sm:gap-5 lg:mt-2 lg:gap-x-5 xl:gap-x-6"
-                  : "mt-2 gap-9 sm:mt-3 sm:gap-10 lg:mt-4 lg:gap-x-8 xl:gap-x-10"
+              className={`hero-main-grid relative z-0 min-h-0 w-full overflow-x-visible pb-0 ${
+                viewportCompact ? "min-h-0 flex-1" : ""
               }`}
             >
-              <div className="hero-cell-spotlight hero-info relative z-10 order-2 min-h-0 min-w-0 lg:order-1 lg:col-span-7">
+              <div className="hero-cell-spotlight hero-info relative z-10 min-h-0 min-w-0">
                 <PromoSpotlightPanel
                   embedded
                   compact={viewportCompact}
@@ -479,13 +451,15 @@ export default function HeroSection({
 
               {/* z выше колонки витрины (z-10): иначе при overflow/transform левый блок перекрывает карточку */}
               <div
-                className={`hero-cell-card hero-card relative z-20 order-1 flex w-full min-w-0 flex-col justify-start max-[768px]:mt-0 max-[768px]:mb-0 lg:order-2 lg:col-span-5 lg:justify-self-stretch ${
-                  viewportCompact ? "min-h-0 lg:min-h-0" : "lg:min-h-0"
-                } ${
+                className={[
+                  "hero-cell-card hero-card relative z-20 flex w-full min-w-0 flex-col justify-start",
+                  viewportCompact ? "min-h-0" : "",
                   showNoveltiesHeroChrome
-                    ? "items-center -mt-16 sm:-mt-24 lg:-mt-40 xl:-mt-44 max-[768px]:!mt-0 max-[768px]:!mb-0 max-[768px]:items-center"
-                    : "items-center lg:items-end"
-                }`}
+                    ? "hero-card--novelty-overlap items-center"
+                    : "items-end",
+                ]
+                  .filter(Boolean)
+                  .join(" ")}
               >
                 <div
                   ref={heroCardFlyRef}
@@ -498,18 +472,10 @@ export default function HeroSection({
                     e.stopPropagation();
                     blockHeroCardLinkClickRef.current = false;
                   }}
-                  className={`relative z-[15] grid w-full min-h-0 min-w-0 touch-pan-y overflow-visible px-0 pt-0 [&>div]:max-w-full ${
-                    viewportCompact
-                      ? showNoveltiesHeroChrome
-                        ? "gap-2 pb-0 sm:gap-2.5 -translate-y-4 sm:-translate-y-5 max-[768px]:translate-y-0 max-[768px]:gap-y-6"
-                        : "gap-1.5 pb-0 sm:gap-2 max-[768px]:translate-y-0"
-                      : showNoveltiesHeroChrome
-                        ? "gap-3 pb-0 sm:gap-4 lg:gap-5 -translate-y-6 sm:-translate-y-7 lg:-translate-y-9 max-[768px]:translate-y-0 max-[768px]:gap-y-8"
-                        : "gap-3 pb-1 sm:gap-3.5 max-[768px]:translate-y-0"
-                  } ${
+                  className={`hero-card-stack-wrap relative z-[15] grid w-full min-h-0 min-w-0 touch-pan-y overflow-visible px-0 pt-0 [&>div]:max-w-full ${
                     showNoveltiesHeroChrome
-                      ? "max-w-[min(100%,40rem)] justify-items-center max-[768px]:max-w-full"
-                      : "max-w-full justify-items-center lg:justify-items-end"
+                      ? "max-w-[min(100%,min(40rem,92vw))] justify-items-center"
+                      : "max-w-full justify-items-end"
                   }`}
                 >
                   {showNoveltiesHeroChrome ? (
@@ -520,14 +486,10 @@ export default function HeroSection({
                     >
                       <div
                         data-novelty-hero-chrome
-                        className="w-full max-w-full -translate-y-4 sm:-translate-y-5 lg:-translate-y-6 translate-x-6 sm:translate-x-8 lg:translate-x-10 xl:translate-x-12 max-[768px]:translate-x-0 max-[768px]:translate-y-0"
+                        className="hero-novelty-chrome-shift w-full max-w-full"
                       >
                         <h2
-                          className={`hero-wordmark-shine hero-wordmark-shine--mirror mx-auto block w-full max-w-full origin-center text-balance text-center font-bold uppercase tracking-[0.1em] drop-shadow-[0_1px_0_rgba(0,0,0,0.5),0_8px_28px_rgba(109,40,217,0.35)] transition-transform duration-300 ease-out hover:scale-[1.04] motion-reduce:transition-none motion-reduce:hover:scale-100 ${
-                            viewportCompact
-                              ? "text-xl leading-tight sm:text-2xl lg:text-[1.5rem]"
-                              : "text-3xl leading-none sm:text-4xl lg:text-[2.35rem] xl:text-[2.65rem] lg:leading-none"
-                          }`}
+                          className="hero-wordmark-shine hero-wordmark-shine--mirror hero-novelties-title mx-auto block w-full max-w-full origin-center text-balance text-center font-bold uppercase tracking-[0.1em] drop-shadow-[0_1px_0_rgba(0,0,0,0.5),0_8px_28px_rgba(109,40,217,0.35)] transition-transform duration-300 ease-out hover:scale-[1.04] motion-reduce:transition-none motion-reduce:hover:scale-100"
                         >
                           Новинки
                         </h2>
@@ -535,31 +497,29 @@ export default function HeroSection({
                     </div>
                   ) : null}
                   {showNoveltiesHeroChrome ? (
-                    <div className="flex w-full min-w-0 max-w-full items-center justify-center gap-x-2 overflow-visible sm:gap-x-2.5 max-[768px]:gap-x-1">
-                      <div className="flex shrink-0 justify-end">
-                        {canCycleNoveltiesWithArrows ? (
-                          <button
-                            type="button"
-                            data-hero-novelty-flank-nav
-                            aria-label="Предыдущая новинка"
-                            onClick={() => stepNoveltyIndex(-1)}
-                            onKeyDown={onNoveltyArrowKeyDown}
-                            className={PRODUCT_CARD_NAV_ARROW_CLASS}
-                          >
-                            <ProductCardNavArrowIcon direction="prev" />
-                          </button>
-                        ) : (
-                          <span
-                            data-hero-novelty-flank-nav
-                            className={`${PRODUCT_CARD_NAV_ARROW_CLASS} pointer-events-none cursor-not-allowed opacity-35`}
-                            aria-hidden
-                          >
-                            <ProductCardNavArrowIcon direction="prev" />
-                          </span>
-                        )}
-                      </div>
+                    <div className="hero-novelty-carousel w-full min-w-0 max-w-full overflow-visible">
+                      {canCycleNoveltiesWithArrows ? (
+                        <button
+                          type="button"
+                          data-hero-novelty-flank-nav
+                          aria-label="Предыдущая новинка"
+                          onClick={() => stepNoveltyIndex(-1)}
+                          onKeyDown={onNoveltyArrowKeyDown}
+                          className={`hero-novelty-arrow hero-novelty-arrow--prev ${PRODUCT_CARD_NAV_ARROW_CLASS}`}
+                        >
+                          <ProductCardNavArrowIcon direction="prev" />
+                        </button>
+                      ) : (
+                        <span
+                          data-hero-novelty-flank-nav
+                          className={`hero-novelty-arrow hero-novelty-arrow--prev ${PRODUCT_CARD_NAV_ARROW_CLASS} pointer-events-none cursor-not-allowed opacity-35`}
+                          aria-hidden
+                        >
+                          <ProductCardNavArrowIcon direction="prev" />
+                        </span>
+                      )}
                       <div
-                        className={`flex min-h-0 min-w-0 flex-1 justify-center ${HERO_CARD_STACK_WIDTH_NOVELTY_NARROW_CLASS} translate-x-6 sm:translate-x-8 lg:translate-x-10 xl:translate-x-12 max-[768px]:max-w-[min(100%,min(26.5rem,calc(100vw-4.25rem)))] max-[768px]:translate-x-0`}
+                        className={`hero-novelty-flank-inner hero-novelty-card-stage flex min-h-0 min-w-0 flex-1 justify-center ${HERO_CARD_STACK_WIDTH_NOVELTY_NARROW_CLASS}`}
                       >
                         <HeroCardStack
                           displayCard={stackCard}
@@ -567,28 +527,26 @@ export default function HeroSection({
                           noveltyNarrow
                         />
                       </div>
-                      <div className="flex shrink-0 justify-start">
-                        {canCycleNoveltiesWithArrows ? (
-                          <button
-                            type="button"
-                            data-hero-novelty-flank-nav
-                            aria-label="Следующая новинка"
-                            onClick={() => stepNoveltyIndex(1)}
-                            onKeyDown={onNoveltyArrowKeyDown}
-                            className={PRODUCT_CARD_NAV_ARROW_CLASS}
-                          >
-                            <ProductCardNavArrowIcon direction="next" />
-                          </button>
-                        ) : (
-                          <span
-                            data-hero-novelty-flank-nav
-                            className={`${PRODUCT_CARD_NAV_ARROW_CLASS} pointer-events-none cursor-not-allowed opacity-35`}
-                            aria-hidden
-                          >
-                            <ProductCardNavArrowIcon direction="next" />
-                          </span>
-                        )}
-                      </div>
+                      {canCycleNoveltiesWithArrows ? (
+                        <button
+                          type="button"
+                          data-hero-novelty-flank-nav
+                          aria-label="Следующая новинка"
+                          onClick={() => stepNoveltyIndex(1)}
+                          onKeyDown={onNoveltyArrowKeyDown}
+                          className={`hero-novelty-arrow hero-novelty-arrow--next ${PRODUCT_CARD_NAV_ARROW_CLASS}`}
+                        >
+                          <ProductCardNavArrowIcon direction="next" />
+                        </button>
+                      ) : (
+                        <span
+                          data-hero-novelty-flank-nav
+                          className={`hero-novelty-arrow hero-novelty-arrow--next ${PRODUCT_CARD_NAV_ARROW_CLASS} pointer-events-none cursor-not-allowed opacity-35`}
+                          aria-hidden
+                        >
+                          <ProductCardNavArrowIcon direction="next" />
+                        </span>
+                      )}
                     </div>
                   ) : (
                     <HeroCardStack

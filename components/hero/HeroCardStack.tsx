@@ -16,14 +16,14 @@ import {
 type Props = {
   displayCard: StoredCard;
   ultraBgUrl: string;
-  /** Чуть уже карточка в колонке «Новинки» героя. */
+  /** Чуть уже карточка в колонке «Новинки» рядом с заголовком — без перехода по тапу, только превью/эффект. */
   noveltyNarrow?: boolean;
 };
 
 /**
- * Переход — `<Link>` + на таче явный `router.push` при коротком тапе: иначе WebKit не шлёт click после micro-move (vario).
+ * Обычный герой: `<Link>` + на таче явный `router.push` при коротком тапе (vario/WebKit).
+ * Блок «Новинки»: без ссылки — листание только стрелками, тап не уводит со страницы.
  */
-/** Порог: если палец сдвинулся меньше — считаем тапом (Safari часто не шлёт click после micro-move для vario). */
 const TAP_MAX_PX = 22;
 
 export function HeroCardStack({
@@ -38,7 +38,6 @@ export function HeroCardStack({
     cardRequiresAgeConfirmation(displayCard) &&
     !(adultGate?.confirmed ?? false);
 
-  /** Без лица в JSON герой не пустой: фон категории или слой ultra (как на витрине). */
   const cardForVisual = useMemo((): StoredCard => {
     if (displayCard.frontImage?.trim()) return displayCard;
     const fb = (
@@ -57,18 +56,44 @@ export function HeroCardStack({
 
   const href = `/card/${displayCard.id}`;
   const buttonClass = noveltyNarrow
-    ? `${HERO_CARD_STACK_BUTTON_CLASS_NOVELTY_NARROW} max-[768px]:max-w-[min(100%,min(26.5rem,calc(100vw-4.25rem)))]`
+    ? HERO_CARD_STACK_BUTTON_CLASS_NOVELTY_NARROW
     : HERO_CARD_STACK_BUTTON_CLASS;
 
-  const rowJustify = noveltyNarrow
-    ? "justify-center"
-    : "justify-center lg:justify-end";
+  const rowJustify = "justify-center";
+
+  const stack = (
+    <CardStackVisual
+      card={cardForVisual}
+      ultraBgUrl={ultraBgUrl}
+      heroStack
+      catalogLikeDiagonal
+      dataCartFlySource
+      rootClassName={heroRootClass}
+    />
+  );
+
+  if (noveltyNarrow) {
+    return (
+      <div className={`flex w-full min-w-0 shrink-0 ${rowJustify}`}>
+        <div
+          className={`relative z-0 flex w-full min-w-0 max-w-full overflow-visible justify-center`}
+        >
+          <div
+            className={`${buttonClass}${adultLocked ? " pointer-events-none" : ""}`}
+            aria-label={`Интерактивное превью: ${displayCard.title}`}
+          >
+            {stack}
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className={`flex w-full min-w-0 shrink-0 ${rowJustify}`}>
-      <div
-        className={`relative z-0 flex w-full min-w-0 max-w-full overflow-visible ${noveltyNarrow ? "justify-center" : "lg:justify-end"}`}
-      >
+      <div className={`flex w-full min-w-0 shrink-0 ${rowJustify}`}>
+        <div
+          className="relative z-0 flex w-full min-w-0 max-w-full justify-center overflow-visible"
+        >
         <Link
           href={href}
           className={`${buttonClass}${adultLocked ? " pointer-events-none" : ""}`}
@@ -95,14 +120,7 @@ export function HeroCardStack({
             touchStartRef.current = null;
           }}
         >
-          <CardStackVisual
-            card={cardForVisual}
-            ultraBgUrl={ultraBgUrl}
-            heroStack
-            catalogLikeDiagonal
-            dataCartFlySource
-            rootClassName={heroRootClass}
-          />
+          {stack}
         </Link>
       </div>
     </div>

@@ -13,7 +13,15 @@ import {
   Sparkles,
 } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+  type RefObject,
+} from "react";
 import type { StoredCard } from "../api/cards/route";
 import type { CategoryTile } from "../lib/categoriesJson";
 import { useCatalogFilter } from "../context/CatalogFilterContext";
@@ -37,21 +45,62 @@ type Props = {
 const filterLabelClass =
   "mb-1.5 block text-[10px] font-semibold uppercase tracking-[0.18em] text-violet-300/75";
 
-/** Число колонок для превью «Смотреть ещё» — как у `.collection-card-grid` (3 / 5; compact: 3 / 4 / 3). */
-function useCatalogGridColumns(viewportCompact: boolean): number {
-  const [cols, setCols] = useState(5);
-  useEffect(() => {
-    const read = () => {
-      const w = window.innerWidth;
-      if (viewportCompact && w >= 1024) setCols(3);
-      else if (viewportCompact && w >= 640) setCols(4);
-      else if (w < 1024) setCols(3);
-      else setCols(5);
+/**
+ * Число карточек в свёрнутой строке «Смотреть ещё» — по фактической ширине списка
+ * (ResizeObserver), в духе плавной сетки `.collection-card-grid`, без скачков по innerWidth.
+ */
+function useCollectionPreviewColumns(
+  widthRef: RefObject<HTMLDivElement | null>,
+  viewportCompact: boolean
+): number {
+  const [cols, setCols] = useState(3);
+
+  useLayoutEffect(() => {
+    const el = widthRef.current;
+    if (!el || typeof window === "undefined") return;
+
+    const compute = () => {
+      const w = el.getBoundingClientRect().width;
+      const gapPx = 14;
+      const compactLg =
+        viewportCompact && window.matchMedia("(min-width: 1024px)").matches;
+      if (compactLg) {
+        setCols((c) => (c !== 3 ? 3 : c));
+        return;
+      }
+      const desktopFive =
+        !viewportCompact && window.matchMedia("(min-width: 1280px)").matches;
+      if (desktopFive) {
+        setCols((c) => (c !== 5 ? 5 : c));
+        return;
+      }
+      const minCell = viewportCompact ? 128 : 156;
+      const approx = Math.max(
+        2,
+        Math.min(6, Math.floor((w + gapPx) / (minCell + gapPx)))
+      );
+      setCols((c) => (c !== approx ? approx : c));
     };
-    read();
-    window.addEventListener("resize", read, { passive: true });
-    return () => window.removeEventListener("resize", read);
-  }, [viewportCompact]);
+
+    compute();
+    const ro = new ResizeObserver(() => {
+      requestAnimationFrame(compute);
+    });
+    ro.observe(el);
+
+    const mqWide = window.matchMedia("(min-width: 1280px)");
+    const mqCompactLg = window.matchMedia("(min-width: 1024px)");
+    const onMq = () => compute();
+    mqWide.addEventListener("change", onMq);
+    mqCompactLg.addEventListener("change", onMq);
+
+    return () => {
+      ro.disconnect();
+      mqWide.removeEventListener("change", onMq);
+      mqCompactLg.removeEventListener("change", onMq);
+    };
+  }, [widthRef, viewportCompact]);
+
   return cols;
 }
 
@@ -127,7 +176,11 @@ export function HomeCollection({
   const searchInputRef = useRef<HTMLInputElement>(null);
   /** Не запускать автопереход в карточку на первом прогоне эффекта после загрузки/обновления страницы. */
   const skipSearchAutoNavOnceRef = useRef(true);
-  const previewCols = useCatalogGridColumns(viewportCompact);
+  const collectionMeasureRef = useRef<HTMLDivElement>(null);
+  const previewCols = useCollectionPreviewColumns(
+    collectionMeasureRef,
+    viewportCompact
+  );
   const [expandedCategoryRows, setExpandedCategoryRows] = useState<
     Record<string, boolean>
   >({});
@@ -503,7 +556,7 @@ export function HomeCollection({
           Ничего не найдено — измените фильтры или поиск.
         </p>
       ) : (
-        <div className={sectionStack}>
+        <div ref={collectionMeasureRef} className={sectionStack}>
           {sections
             .map((cat) => {
               const rawSection = filteredSorted.filter(

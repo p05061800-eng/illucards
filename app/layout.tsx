@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import { SiteFooter } from "@/components/SiteFooter";
 import Header from "@/components/Header";
 import { RefreshToHome } from "@/components/RefreshToHome";
+import { FloatingCartFab } from "@/components/FloatingCartFab";
 import { ScrollToTopButton } from "@/components/ScrollToTopButton";
 import { Providers } from "./providers";
 import "./globals.css";
@@ -49,6 +50,7 @@ export default function RootLayout({
             {children}
           </div>
           <SiteFooter />
+          <FloatingCartFab />
           <ScrollToTopButton />
         </Providers>
       </body>

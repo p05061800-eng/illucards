@@ -292,11 +292,8 @@ export default function Header() {
         </div>
       </div>
 
-      <div className="flex justify-center scrollbar-hide overflow-x-auto border-t border-white/[0.06] bg-[#070510]/95 px-3 py-2 md:hidden">
-        <SocialLinksBar
-          compact
-          className="w-max max-w-full [&_ul]:flex-nowrap [&_ul]:justify-center [&_ul]:gap-2"
-        />
+      <div className="flex justify-center border-t border-white/[0.06] bg-[#070510]/95 px-3 py-2 md:hidden">
+        <SocialLinksBar compact className="w-full justify-center" />
       </div>
 
       {mobileNavOpen ? (

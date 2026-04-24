@@ -97,11 +97,17 @@ html.home-one-screen main.home-one-screen-main {
   align-items: stretch;
   align-content: start;
   grid-auto-rows: minmax(0, auto);
-  /* Телефон: 3 карточки в ряд */
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  /*
+   * Плавное число колонок при ресайзе (как у стриминговых витрин):
+   * min ширины трека растёт с vw через clamp — без скачков 2→3→5.
+   */
+  grid-template-columns: repeat(
+    auto-fill,
+    minmax(min(100%, clamp(8.75rem, 24vw, 13rem)), 1fr)
+  );
 }
 
-@media (min-width: 1024px) {
+@media (min-width: 1280px) {
   .collection-card-grid {
     gap: 1.25rem;
     grid-template-columns: repeat(5, minmax(0, 1fr));
@@ -111,13 +117,10 @@ html.home-one-screen main.home-one-screen-main {
 /* Компактная сетка под колонку «один экран» на главной */
 .collection-card-grid--viewport-compact {
   gap: 0.5rem;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-}
-
-@media (min-width: 640px) {
-  .collection-card-grid--viewport-compact {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-  }
+  grid-template-columns: repeat(
+    auto-fill,
+    minmax(min(100%, clamp(7rem, 20vw, 10rem)), 1fr)
+  );
 }
 
 @media (min-width: 1024px) {
@@ -213,6 +216,49 @@ img.category-tile-img {
 .scrollbar-hide {
   -ms-overflow-style: none;
   scrollbar-width: none;
+}
+
+/* Шапка / полоска: горизонтальный ряд соцсетей, плавный размер иконок */
+.socials {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: clamp(8px, 2vw, 16px);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.socials::-webkit-scrollbar {
+  display: none;
+}
+
+.social-item {
+  display: flex;
+  width: clamp(36px, 5vw, 60px);
+  height: clamp(36px, 5vw, 60px);
+  flex: 0 0 auto;
+  box-sizing: border-box;
+  align-items: center;
+  justify-content: center;
+}
+
+.social-item > svg {
+  width: min(55%, 1.35rem);
+  height: min(55%, 1.35rem);
+  max-width: 100%;
+  max-height: 100%;
+}
+
+@media (max-width: 768px) {
+  .socials {
+    overflow-x: auto;
+    padding-bottom: 4px;
+    max-width: 100%;
+  }
 }
 
 :root {
@@ -361,24 +407,24 @@ body::after {
   color: var(--foreground-muted);
 }
 
-/* Плавный масштаб без скачков sm/md/lg — вместе с окном */
+/* Логотип героя — один fluid-диапазон без sm/lg */
 .hero-scale-wordmark {
-  font-size: clamp(1.75rem, 0.65rem + 3.6vw, 4.25rem);
+  font-size: clamp(28px, 4vw, 56px);
   line-height: 1.06;
 }
 
 .hero-scale-tagline {
-  margin-top: clamp(0.35rem, 0.4vw + 0.2rem, 0.85rem);
-  font-size: clamp(0.625rem, 0.42rem + 0.42vw, 0.8125rem);
+  margin-top: clamp(0.35rem, 0.35vw + 0.2rem, 0.75rem);
+  font-size: clamp(14px, 1.5vw, 18px);
 }
 
 .hero-viewport-compact .hero-scale-wordmark {
-  font-size: clamp(1.2rem, 0.4rem + 2.4vw, 1.85rem);
+  font-size: clamp(1.05rem, 0.35rem + 2.2vw, 1.75rem);
 }
 
 .hero-viewport-compact .hero-scale-tagline {
-  margin-top: 0.15rem;
-  font-size: clamp(0.5rem, 0.32rem + 0.35vw, 0.65rem);
+  margin-top: 0.12rem;
+  font-size: clamp(0.5rem, 0.28rem + 0.45vw, 0.7rem);
 }
 
 .hero-commerce-title {
@@ -397,21 +443,198 @@ body::after {
 }
 
 .hero-category-label {
-  font-size: clamp(0.5625rem, 0.42rem + 0.35vw, 0.625rem);
+  font-size: clamp(0.5rem, 0.35rem + 0.35vw, 0.625rem);
+  line-height: 1.1;
+  font-weight: 600;
+  color: #fff;
+  text-shadow:
+    0 1px 3px rgba(0, 0, 0, 0.95),
+    0 0 8px rgba(0, 0, 0, 0.65);
+  pointer-events: none;
+}
+
+/* Герой: padding/gap через clamp; без скачков sm/md/lg */
+.hero {
+  --hero-inline-pad: clamp(16px, 4vw, 60px);
+  display: flex;
+  flex-direction: column;
+  gap: clamp(20px, 5vw, 80px);
+  padding: var(--hero-inline-pad);
+  min-width: 0;
+}
+
+.hero.hero--compact {
+  --hero-inline-pad: clamp(8px, 2.5vw, 20px);
+  gap: clamp(8px, 2vw, 28px);
+  padding: var(--hero-inline-pad);
+}
+
+.hero-categories-outer {
+  padding-bottom: clamp(0.5rem, 1.5vw, 1.25rem);
+}
+
+.hero-categories {
+  gap: clamp(8px, 2vw, 14px);
+  min-height: clamp(40px, 6vw, 70px);
+}
+
+/* Плитка категории: одна ячейка grid, подпись снизу без absolute */
+.category-item {
+  width: clamp(40px, 6vw, 70px);
+  height: clamp(40px, 6vw, 70px);
+  min-width: clamp(40px, 6vw, 70px);
+  min-height: clamp(40px, 6vw, 70px);
+  max-width: clamp(40px, 6vw, 70px);
+  max-height: clamp(40px, 6vw, 70px);
+  box-sizing: border-box;
+  display: grid;
+  grid-template-columns: 1fr;
+  grid-template-rows: 1fr;
+}
+
+.category-item .category-tile-wrap {
+  grid-column: 1;
+  grid-row: 1;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  border-radius: inherit;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.category-item .hero-category-label {
+  grid-column: 1;
+  grid-row: 1;
+  align-self: end;
+  justify-self: stretch;
+  position: static;
+  padding: 0 0.125rem 0.125rem;
+  margin: 0;
+  text-align: center;
+}
+
+/* Витрина | карточка — fluid две колонки */
+.hero-main-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, min(100%, clamp(180px, 25vw, 360px)));
+  column-gap: clamp(20px, 5vw, 64px);
+  row-gap: clamp(12px, 2.5vw, 40px);
+  align-items: start;
+  margin-top: clamp(0.25rem, 1.2vw, 1rem);
+}
+
+.hero-cell-card.hero-card {
+  width: 100%;
+  max-width: min(100%, clamp(180px, 25vw, 360px));
+  height: auto;
+  justify-self: end;
+  box-sizing: border-box;
+}
+
+.hero-novelties-title {
+  font-size: clamp(1.35rem, 0.9rem + 2.2vw, 2.65rem);
+  line-height: 1.05;
+}
+
+.hero-novelty-chrome-shift {
+  transform: translate(
+    clamp(0.25rem, 4vw, 3rem),
+    clamp(-0.35rem, -1.2vw, -0.1rem)
+  );
+}
+
+.hero-novelty-flank-inner {
+  transform: translateX(clamp(0.25rem, 4vw, 3rem));
+}
+
+.hero .promo-spotlight-shell {
+  padding: clamp(0.75rem, 2.2vw, 1.5rem);
+}
+
+.hero.hero--compact .promo-spotlight-shell {
+  padding: clamp(0.5rem, 1.5vw, 0.85rem);
+}
+
+.hero .promo-spotlight-body {
+  min-height: clamp(10rem, 22vw, 12.5rem);
+}
+
+.hero.hero--compact .promo-spotlight-body {
+  min-height: 0;
+}
+
+.hero .hero-spotlight-copy h2 {
+  font-size: clamp(1.125rem, 0.85rem + 1vw, 1.5rem);
+}
+
+.hero .hero-spotlight-copy p {
+  font-size: clamp(14px, 1.5vw, 18px);
+}
+
+.hero-card-stack-wrap {
+  gap: clamp(0.45rem, 1.8vw, 1.15rem);
+}
+
+/* Карусель «Новинки» в герое: стрелки по центру по вертикали, чуть заходят на превью (как на странице товара) */
+.hero-novelty-carousel {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(6px, 1.2vw, 14px);
+}
+
+.hero-novelty-carousel .hero-novelty-card-stage {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.hero-novelty-carousel .hero-novelty-arrow {
+  position: relative;
+  z-index: 25;
+  flex: 0 0 auto;
+  align-self: center;
+  width: clamp(2.25rem, 7vw, 2.75rem) !important;
+  height: clamp(2.25rem, 7vw, 2.75rem) !important;
+}
+
+.hero-novelty-carousel .hero-novelty-arrow--prev {
+  margin-right: clamp(-12px, -2.5vw, -4px);
+}
+
+.hero-novelty-carousel .hero-novelty-arrow--next {
+  margin-left: clamp(-12px, -2.5vw, -4px);
+}
+
+.hero-novelty-carousel .hero-novelty-arrow svg {
+  width: clamp(0.85rem, 2.8vw, 1.125rem);
+  height: clamp(0.85rem, 2.8vw, 1.125rem);
+}
+
+/* Лёгкое перекрытие колонок; на ≤768 сбрасывается внутри единственного media-блока */
+.hero-cell-card.hero-card.hero-card--novelty-overlap {
+  margin-top: clamp(-3.25rem, -5.5vw, -0.5rem);
 }
 
 /*
- * Герой ≤768px: ряд 1 — слева категории, справа укрупнённая карточка;
- * ряд 2 — витрина (цены, кнопки) на всю ширину под обоими колонками.
- * display: contents у колонки/внутренней сетки — только в этом брейкпоинте.
+ * Узкий экран: слева колонка плашек, справа карточка (ряд 1) + витрина на всю ширину (ряд 2).
+ * Зазор между плашками и карточкой = --hero-inline-pad (как у краёв экрана); справа у карточки
+ * столько же «воздуха» под вылет третьего слоя («ступ»), чтобы бока выглядели симметрично.
  */
 @media (max-width: 768px) {
+  .hero-main-grid {
+    grid-template-columns: 1fr;
+  }
+
   .hero-body {
     display: grid;
     grid-template-columns: auto minmax(0, 1fr);
     grid-template-rows: auto auto;
-    column-gap: 16px;
-    row-gap: 14px;
+    column-gap: var(--hero-inline-pad);
+    row-gap: clamp(10px, 2.5vw, 18px);
     align-items: start;
   }
 
@@ -419,32 +642,16 @@ body::after {
     grid-column: 1;
     grid-row: 1;
     align-self: start;
+    padding-bottom: 0;
   }
 
   .hero-categories-outer .hero-categories {
     flex-direction: column;
     align-items: center;
-    gap: 10px;
+    justify-content: flex-start;
+    gap: clamp(8px, 2vw, 12px);
     overflow-x: visible;
     overflow-y: visible;
-    justify-content: flex-start;
-  }
-
-  .hero-body .category-item {
-    width: 50px;
-    height: 50px;
-    min-width: 50px;
-    min-height: 50px;
-    max-width: 50px;
-    max-height: 50px;
-  }
-
-  .hero-body .category-item .hero-category-label {
-    font-size: 0.5rem;
-    line-height: 1.05;
-    bottom: 0.125rem;
-    left: 0.125rem;
-    right: 0.125rem;
   }
 
   .hero-body .hero-main-column {
@@ -462,17 +669,18 @@ body::after {
     min-width: 0;
   }
 
-  /* Витрина на всю ширину окна (как баннер категорий): выход из px героя */
   .hero-body .hero-cell-spotlight.hero-info {
     grid-column: 1 / -1;
     grid-row: 2;
+    order: 0;
     position: relative;
     z-index: 5;
-    width: 100vw;
-    max-width: 100vw;
+    width: calc(100% + 2 * var(--hero-inline-pad));
+    max-width: none;
     min-width: 0;
     box-sizing: border-box;
-    margin-left: calc(50% - 50vw);
+    margin-left: calc(-1 * var(--hero-inline-pad));
+    margin-right: calc(-1 * var(--hero-inline-pad));
   }
 
   .hero-body:has(.hero-category-empty-msg) .hero-cell-spotlight.hero-info {
@@ -482,25 +690,38 @@ body::after {
   .hero-body .hero-cell-card.hero-card {
     grid-column: 2;
     grid-row: 1;
+    order: 0;
     justify-self: stretch;
-    box-sizing: border-box;
-    max-width: min(26.5rem, calc(100vw - 3.85rem));
     width: 100%;
-    padding-inline-start: clamp(28px, 9vw, 56px);
-    padding-top: 10px;
+    max-width: 100%;
+    box-sizing: border-box;
+    transform: none !important;
+    margin-top: 0;
+    margin-bottom: 0;
     margin-left: 0;
     margin-right: 0;
-    position: relative !important;
-    transform: none !important;
-    overflow: visible;
-    min-width: 0;
+    padding-top: 0;
+    padding-inline-start: 0;
+    /* Совпадает с column-gap: визуально столько же места под «ступ» справа */
+    padding-inline-end: var(--hero-inline-pad);
+  }
+
+  .hero-body .hero-cell-card.hero-card .hero-stack-max {
+    max-width: 100%;
+  }
+
+  .hero-novelty-chrome-shift,
+  .hero-novelty-flank-inner {
+    transform: none;
   }
 
   .hero-body [data-novelty-hero-chrome] {
     transform: none !important;
   }
 
-  /* Третий слой «наискосок»: transform на .card-side не сбрасывать */
+  .hero-cell-card.hero-card.hero-card--novelty-overlap {
+    margin-top: 0;
+  }
 }
 
 /* Крупный логотип на главной — статичный градиент (если нужен без анимации) */

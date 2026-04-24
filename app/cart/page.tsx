@@ -8,7 +8,7 @@ export const metadata: Metadata = {
 
 export default function CartPage() {
   return (
-    <main className="relative overflow-visible text-white">
+    <main className="main relative overflow-x-hidden text-white">
       <div
         className="pointer-events-none absolute inset-0 -z-0"
         aria-hidden

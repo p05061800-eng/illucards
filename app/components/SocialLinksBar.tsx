@@ -17,10 +17,10 @@ type Props = {
 };
 
 const socialItemPage =
-  "social-item rounded-xl border border-white/10 text-[clamp(9px,1.8vw,11px)] font-bold uppercase tracking-tight text-white shadow-lg transition will-change-transform [transform:translateZ(0)] hover:scale-[1.08] hover:shadow-xl active:scale-[1.02] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-violet-400";
+  "social-item rounded-lg border border-white/10 text-[clamp(8px,1.4vw,10px)] font-bold uppercase tracking-tight text-white shadow-md transition will-change-transform [transform:translateZ(0)] hover:scale-[1.06] hover:shadow-lg active:scale-[1.02] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-violet-400";
 
 const socialItemHeader =
-  "social-item rounded-lg border border-white/10 text-[clamp(8px,1.6vw,10px)] font-bold uppercase tracking-tight text-white shadow-md transition will-change-transform [transform:translateZ(0)] hover:scale-[1.06] hover:shadow-lg active:scale-[1.02] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-violet-400";
+  "social-item rounded-md border border-white/10 text-[clamp(7px,1.2vw,9px)] font-bold uppercase tracking-tight text-white shadow-sm transition will-change-transform [transform:translateZ(0)] hover:scale-[1.05] hover:shadow-md active:scale-[1.02] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-violet-400";
 
 const brandCube: Record<
   SocialNetworkId,
@@ -37,7 +37,7 @@ const brandCube: Record<
   tiktok: {
     gradient: "bg-gradient-to-br from-[#00f2ea] via-[#ff0050] to-[#0a0a0a]",
     content: (
-      <span className="select-none text-[clamp(11px,2.2vw,13px)] font-extrabold leading-none tracking-tight">
+      <span className="select-none text-[clamp(9px,1.8vw,11px)] font-extrabold leading-none tracking-tight">
         TT
       </span>
     ),
@@ -48,7 +48,7 @@ const brandCube: Record<
     content: (
       <svg
         viewBox="0 0 24 24"
-        className="h-6 w-6 text-white"
+        className="h-4 w-4 text-white"
         fill="none"
         stroke="currentColor"
         strokeWidth="2"
@@ -65,7 +65,7 @@ const brandCube: Record<
     content: (
       <svg
         viewBox="0 0 24 24"
-        className="h-7 w-7 text-white"
+        className="h-4 w-4 text-white"
         fill="currentColor"
         aria-hidden
       >
@@ -76,7 +76,7 @@ const brandCube: Record<
   threads: {
     gradient: "bg-gradient-to-br from-zinc-700 to-zinc-950",
     content: (
-      <span className="select-none text-lg font-bold leading-none">@</span>
+      <span className="select-none text-sm font-bold leading-none">@</span>
     ),
   },
   telegram: {
@@ -84,7 +84,7 @@ const brandCube: Record<
     content: (
       <svg
         viewBox="0 0 24 24"
-        className="h-6 w-6 text-white"
+        className="h-4 w-4 text-white"
         fill="currentColor"
         aria-hidden
       >

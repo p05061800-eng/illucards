@@ -14,7 +14,15 @@ type Props = {
   onNavigate?: (nextId: string) => void;
   /** Крупнее превью на странице товара. */
   layout?: "default" | "product";
+  /** Только центральная колонка со стопкой (стрелки снаружи, напр. герой). */
+  hideNavigation?: boolean;
+  /** Для `layout="product"`: ограничение ширины центра как на странице товара. */
+  productCenterConstrained?: boolean;
 };
+
+/** Корневая оболочка стопки на странице товара — та же разметка в герое при `productPageLike`. */
+export const PRODUCT_PAGE_STACK_ROOT_CLASS =
+  "product-card-page-stack relative mx-auto w-full max-w-full overflow-visible rounded-xl px-1 pb-10 pt-4 sm:px-2 sm:pb-12 sm:pt-5 md:pb-14 md:pt-6";
 
 /** Кнопки листания карточки на странице товара — те же классы можно использовать в герое. */
 export const PRODUCT_CARD_NAV_ARROW_CLASS =
@@ -109,6 +117,8 @@ export function CardViewer({
   browseCards,
   onNavigate,
   layout = "default",
+  hideNavigation = false,
+  productCenterConstrained = true,
 }: Props) {
   const router = useRouter();
   const touchStartX = useRef<number | null>(null);
@@ -175,15 +185,44 @@ export function CardViewer({
   if (!active || !front) return null;
 
   /** Превью товара: высота от изображения; padding даёт запас под 3D-наклон/тени. */
-  const productRoot =
-    "product-card-page-stack relative mx-auto w-full max-w-full overflow-visible rounded-xl px-1 pb-10 pt-4 sm:px-2 sm:pb-12 sm:pt-5 md:pb-14 md:pt-6";
+  const productRoot = PRODUCT_PAGE_STACK_ROOT_CLASS;
   const defaultRoot =
-    "relative mx-auto w-full max-w-[min(100%,calc(100vw-4rem))] overflow-visible rounded-2xl";
+    "relative mx-auto w-full max-w-[min(100%,calc(100%-4rem))] overflow-visible rounded-2xl";
 
   const wrapMax =
     layout === "product"
-      ? "max-w-[min(100%,min(96vw,1600px))]"
+      ? productCenterConstrained
+        ? "max-w-[min(100%,min(96vw,1600px))]"
+        : "max-w-none"
       : "max-w-[min(100%,min(96vw,720px))]";
+
+  const centerColumn = (
+    <div
+      className={`relative z-0 flex min-h-0 min-w-0 touch-pan-y justify-center overflow-visible px-0.5 ${hideNavigation ? "w-full flex-none" : `flex-1 ${wrapMax}`}`}
+      onTouchStart={onTouchStart}
+      onTouchEnd={onTouchEnd}
+    >
+      <div className="grid w-full min-w-0 min-h-0 place-items-start justify-items-center overflow-visible py-1">
+        <div
+          className={`relative z-0 flex w-full min-h-0 justify-center overflow-visible ${layout === "product" ? "max-w-full px-2 pb-2 pt-0 sm:px-4 sm:pb-4" : "max-w-full"}`}
+        >
+          <CardStackVisual
+            key={active.id}
+            card={active}
+            ultraBgUrl={ultraOrHeroBgUrl(active)}
+            heroStack={layout !== "product"}
+            heroDiagonalLayout={layout === "product"}
+            dataCartFlySource
+            rootClassName={layout === "product" ? productRoot : defaultRoot}
+          />
+        </div>
+      </div>
+    </div>
+  );
+
+  if (hideNavigation) {
+    return centerColumn;
+  }
 
   return (
     <div className="flex w-full max-w-full items-center justify-center gap-1.5 overflow-visible sm:gap-2 md:gap-3">
@@ -194,27 +233,7 @@ export function CardViewer({
         onClick={() => go(-1)}
       />
 
-      <div
-        className={`relative z-0 flex min-h-0 min-w-0 flex-1 touch-pan-y justify-center overflow-visible px-0.5 ${wrapMax}`}
-        onTouchStart={onTouchStart}
-        onTouchEnd={onTouchEnd}
-      >
-        <div className="grid w-full min-w-0 min-h-0 place-items-start justify-items-center overflow-visible py-1">
-          <div
-            className={`relative z-0 flex w-full min-h-0 justify-center overflow-visible ${layout === "product" ? "max-w-full px-2 pb-2 pt-0 sm:px-4 sm:pb-4" : "max-w-full"}`}
-          >
-            <CardStackVisual
-              key={active.id}
-              card={active}
-              ultraBgUrl={ultraOrHeroBgUrl(active)}
-              heroStack={layout !== "product"}
-              heroDiagonalLayout={layout === "product"}
-              dataCartFlySource
-              rootClassName={layout === "product" ? productRoot : defaultRoot}
-            />
-          </div>
-        </div>
-      </div>
+      {centerColumn}
 
       <ArrowControl
         direction="next"

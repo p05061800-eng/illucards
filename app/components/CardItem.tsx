@@ -8,6 +8,7 @@ import type { StoredCard } from "../api/cards/route";
 import { useAdultContentGateOptional } from "../context/AdultContentContext";
 import { useMergedRating } from "../context/CardRatingsContext";
 import { useFavorites } from "../context/FavoritesContext";
+import { isTmntCatalogCard } from "../lib/isTmntCatalogCard";
 import { cardRequiresAgeConfirmation } from "../lib/cardRequiresAgeConfirmation";
 import { useAddToCartWithFeedback } from "../lib/cartUx/useAddToCartWithFeedback";
 import { ultraOrHeroBgUrl } from "../lib/cardUltraBg";
@@ -53,8 +54,12 @@ export function CardItem({ card, hideUltraLayer = false }: Props) {
 
   const cardHref = `/card/${card.id}`;
 
+  const tmntTile = isTmntCatalogCard(card);
+
   return (
-    <div className="card flex h-full min-h-0 w-full min-w-0 flex-col overflow-visible text-left">
+    <div
+      className={`card flex min-h-0 min-w-0 flex-col overflow-visible text-left${tmntTile ? " tmnt self-start" : " h-full w-full"}`}
+    >
       <Link
         ref={flyRef}
         href={cardHref}

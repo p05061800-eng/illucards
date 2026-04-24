@@ -34,7 +34,7 @@ export default function Home() {
   }
 
   return (
-    <main className="relative min-h-screen overflow-visible text-white">
+    <main className="main relative min-h-screen overflow-x-hidden text-white">
       <div className="relative z-10 overflow-visible px-6 pb-16 pt-6 sm:px-10 sm:pb-20 sm:pt-8">
         <HeroSection
           cards={cards}

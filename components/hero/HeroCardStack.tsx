@@ -6,6 +6,7 @@ import { useMemo, useRef } from "react";
 import type { StoredCard } from "@/app/api/cards/route";
 import { useAdultContentGateOptional } from "@/app/context/AdultContentContext";
 import { cardRequiresAgeConfirmation } from "@/app/lib/cardRequiresAgeConfirmation";
+import { PRODUCT_PAGE_STACK_ROOT_CLASS } from "@/app/components/card-showcase/CardViewer";
 import { CardStackVisual } from "./CardStackVisual";
 import {
   HERO_CARD_STACK_BUTTON_CLASS,
@@ -13,23 +14,32 @@ import {
   heroCardStackRootClass,
 } from "./heroCardStackClasses";
 
+const HERO_CARD_STACK_BUTTON_CLASS_PRODUCT_LIKE =
+  "group/cardstack relative block w-full min-w-0 shrink-0 cursor-pointer overflow-visible border-0 bg-transparent p-0 text-left";
+
 type Props = {
   displayCard: StoredCard;
   ultraBgUrl: string;
-  /** Чуть уже карточка в колонке «Новинки» рядом с заголовком — без перехода по тапу, только превью/эффект. */
+  /** Чуть уже карточка в колонке «Новинки» рядом с заголовком. */
   noveltyNarrow?: boolean;
+  /**
+   * Та же отрисовка стопки, что в каталоге (`CardItem`): `catalogStack`, рамка и наклон слоя 3.
+   * Для героя «Новинки» — вместе с `noveltyNarrow`.
+   */
+  catalogStackMatch?: boolean;
+  /** Как на странице товара: крупнее, `heroDiagonalLayout`, без max-width на обёртке. */
+  productPageLike?: boolean;
 };
 
-/**
- * Обычный герой: `<Link>` + на таче явный `router.push` при коротком тапе (vario/WebKit).
- * Блок «Новинки»: без ссылки — листание только стрелками, тап не уводит со страницы.
- */
+/** Обычный герой: `<Link>` + на таче явный `router.push` при коротком тапе (vario/WebKit). */
 const TAP_MAX_PX = 22;
 
 export function HeroCardStack({
   displayCard,
   ultraBgUrl,
   noveltyNarrow = false,
+  catalogStackMatch = false,
+  productPageLike = false,
 }: Props) {
   const router = useRouter();
   const adultGate = useAdultContentGateOptional();
@@ -55,13 +65,31 @@ export function HeroCardStack({
   const heroRootClass = heroCardStackRootClass();
 
   const href = `/card/${displayCard.id}`;
-  const buttonClass = noveltyNarrow
-    ? HERO_CARD_STACK_BUTTON_CLASS_NOVELTY_NARROW
-    : HERO_CARD_STACK_BUTTON_CLASS;
+  const buttonClass = productPageLike
+    ? HERO_CARD_STACK_BUTTON_CLASS_PRODUCT_LIKE
+    : noveltyNarrow
+      ? HERO_CARD_STACK_BUTTON_CLASS_NOVELTY_NARROW
+      : HERO_CARD_STACK_BUTTON_CLASS;
 
   const rowJustify = "justify-center";
 
-  const stack = (
+  const stack = productPageLike ? (
+    <CardStackVisual
+      card={cardForVisual}
+      ultraBgUrl={ultraBgUrl}
+      heroDiagonalLayout
+      dataCartFlySource
+      rootClassName={PRODUCT_PAGE_STACK_ROOT_CLASS}
+    />
+  ) : catalogStackMatch ? (
+    <CardStackVisual
+      card={cardForVisual}
+      ultraBgUrl={ultraBgUrl}
+      catalogStack
+      dataCartFlySource
+      rootClassName="relative mx-auto max-w-full rounded-2xl"
+    />
+  ) : (
     <CardStackVisual
       card={cardForVisual}
       ultraBgUrl={ultraBgUrl}
@@ -72,28 +100,11 @@ export function HeroCardStack({
     />
   );
 
-  if (noveltyNarrow) {
-    return (
-      <div className={`flex w-full min-w-0 shrink-0 ${rowJustify}`}>
-        <div
-          className={`relative z-0 flex w-full min-w-0 max-w-full overflow-visible justify-center`}
-        >
-          <div
-            className={`${buttonClass}${adultLocked ? " pointer-events-none" : ""}`}
-            aria-label={`Интерактивное превью: ${displayCard.title}`}
-          >
-            {stack}
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   return (
-      <div className={`flex w-full min-w-0 shrink-0 ${rowJustify}`}>
-        <div
-          className="relative z-0 flex w-full min-w-0 max-w-full justify-center overflow-visible"
-        >
+    <div className={`flex w-full min-w-0 shrink-0 ${rowJustify}`}>
+      <div
+        className="relative z-0 flex w-full min-w-0 max-w-full justify-center overflow-visible"
+      >
         <Link
           href={href}
           className={`${buttonClass}${adultLocked ? " pointer-events-none" : ""}`}

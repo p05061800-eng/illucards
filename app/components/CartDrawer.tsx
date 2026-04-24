@@ -179,7 +179,7 @@ export function CartDrawer() {
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
-        className="relative flex h-full w-full max-w-[min(100vw,420px)] flex-col border-l border-white/[0.08] bg-zinc-950 shadow-[0_0_80px_rgba(0,0,0,0.85),inset_1px_0_0_rgba(255,255,255,0.06)] motion-reduce:transition-none"
+        className="relative flex h-full w-full max-w-[min(100%,420px)] flex-col border-l border-white/[0.08] bg-zinc-950 shadow-[0_0_80px_rgba(0,0,0,0.85),inset_1px_0_0_rgba(255,255,255,0.06)] motion-reduce:transition-none"
         style={{
           backgroundImage: `
             radial-gradient(ellipse 120% 80% at 100% 0%, rgba(88, 28, 135, 0.22), transparent 50%),

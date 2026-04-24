@@ -8,7 +8,7 @@ export function LegalPageShell({
   children: ReactNode;
 }) {
   return (
-    <main className="mx-auto max-w-2xl px-4 pb-28 pt-12 sm:pt-16">
+    <main className="main mx-auto max-w-2xl px-4 pb-28 pt-12 sm:pt-16">
       <h1 className="text-2xl font-semibold tracking-tight text-white sm:text-3xl">
         {title}
       </h1>

@@ -29,6 +29,8 @@ type Props = {
   onSlideChange: Dispatch<SetStateAction<number>>;
   /** Для слайда «Новинки»: сколько новинок (для пустого состояния) */
   noveltyTotal: number;
+  /** Герой: слайд «Новинки» — пустое тело слева (карточка с ценой только справа). */
+  noveltiesLeftEmpty?: boolean;
   /** Цена, название карточки и кнопки под заголовком/описанием (как у «Новинки») */
   commerceFooter?: ReactNode;
 };
@@ -41,6 +43,7 @@ export function PromoSpotlightPanel({
   slideIndex,
   onSlideChange,
   noveltyTotal,
+  noveltiesLeftEmpty = false,
   commerceFooter,
 }: Props) {
   const list = slides.length > 0 ? slides : DEFAULT_SPOTLIGHT_SLIDES;
@@ -162,6 +165,8 @@ export function PromoSpotlightPanel({
         >
           {current.kind === "novelties" ? (
             <div className={compact ? "space-y-2" : "space-y-4"}>
+              {embedded && noveltiesLeftEmpty ? null : (
+              <>
               {/*
                 В герое рядом с большой карточкой — только блок товара: без баннера витрины
                 и без заголовка/описания слайда (дублируют карточку).
@@ -211,6 +216,8 @@ export function PromoSpotlightPanel({
                   {commerceFooter}
                 </div>
               ) : null}
+              </>
+              )}
             </div>
           ) : (
             <div className={compact ? "space-y-2" : "space-y-4"}>

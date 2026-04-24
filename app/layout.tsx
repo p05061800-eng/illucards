@@ -42,11 +42,11 @@ export default function RootLayout({
       lang="ru"
       className={`${geistSans.variable} ${geistMono.variable} antialiased`}
     >
-      <body className="flex flex-col overflow-x-visible bg-[var(--background)] text-zinc-100 antialiased [color-scheme:dark]">
+      <body className="flex flex-col overflow-x-hidden bg-[var(--background)] text-zinc-100 antialiased [color-scheme:dark]">
         <Providers>
           <RefreshToHome />
           <Header />
-          <div className="wrapper relative z-0 flex w-full min-w-0 flex-col overflow-visible">
+          <div className="wrapper main relative z-0 flex w-full min-w-0 flex-col overflow-x-hidden">
             {children}
           </div>
           <SiteFooter />

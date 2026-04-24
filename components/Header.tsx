@@ -95,13 +95,16 @@ export default function Header() {
 
   return (
     <header className="sticky top-0 z-[200] border-b border-white/10 bg-[#070510]/90 text-white shadow-[0_8px_32px_rgba(0,0,0,0.35)] backdrop-blur-md">
-      <div className="relative mx-auto flex max-w-[1400px] items-center justify-between gap-3 px-4 py-3 sm:gap-4 sm:px-6 sm:py-4 lg:px-10">
-        <Link
-          href="/"
-          className="site-wordmark shrink-0 text-xl font-bold tracking-tight"
-        >
-          IlluCards
-        </Link>
+      <div className="relative mx-auto flex max-w-[1400px] flex-col gap-3 px-4 py-3 sm:gap-4 sm:px-6 sm:py-4 lg:px-10 md:flex-row md:items-center md:justify-between">
+        <div className="flex min-w-0 flex-col gap-2 md:flex-none md:gap-0">
+          <Link
+            href="/"
+            className="site-wordmark shrink-0 text-xl font-bold tracking-tight"
+          >
+            IlluCards
+          </Link>
+          <SocialLinksBar compact className="w-full md:hidden" />
+        </div>
 
         <nav className="hidden min-w-0 flex-1 items-center justify-center gap-5 md:flex lg:gap-7">
           <SocialLinksBar compact />
@@ -157,7 +160,7 @@ export default function Header() {
           ))}
         </nav>
 
-        <div className="flex shrink-0 items-center gap-1.5 sm:gap-3">
+        <div className="flex w-full shrink-0 items-center justify-between gap-1.5 border-t border-white/[0.06] pt-3 sm:gap-3 md:w-auto md:justify-start md:border-t-0 md:pt-0">
           <button
             type="button"
             className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-white/15 bg-white/[0.06] text-zinc-200 transition hover:border-white/25 hover:bg-white/10 md:hidden"
@@ -173,8 +176,8 @@ export default function Header() {
             )}
           </button>
 
-          <div className="flex min-w-0 items-center gap-1.5 md:gap-2">
-            <div className="relative w-[min(132px,calc(100vw-10rem))] sm:w-[200px] md:w-[260px] lg:w-[300px]">
+          <div className="flex min-w-0 flex-1 items-center gap-1.5 md:flex-none md:gap-2">
+            <div className="relative min-w-0 flex-1 max-w-[min(180px,100%)] sm:w-[200px] sm:max-w-none md:w-[260px] md:flex-none lg:w-[300px]">
               <Search
                 className="pointer-events-none absolute left-2.5 top-1/2 z-10 h-3.5 w-3.5 -translate-y-1/2 text-zinc-500"
                 aria-hidden
@@ -290,10 +293,6 @@ export default function Header() {
             ) : null}
           </button>
         </div>
-      </div>
-
-      <div className="flex justify-center border-t border-white/[0.06] bg-[#070510]/95 px-3 py-2 md:hidden">
-        <SocialLinksBar compact className="w-full justify-center" />
       </div>
 
       {mobileNavOpen ? (

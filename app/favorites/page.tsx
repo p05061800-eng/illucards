@@ -22,7 +22,7 @@ export default function FavoritesPage() {
   const list = cards.filter((c) => favoriteIds.includes(c.id));
 
   return (
-    <main className="relative overflow-x-visible bg-black px-4 pb-16 pt-8 text-white sm:px-6">
+    <main className="main relative overflow-x-hidden bg-black px-4 pb-16 pt-8 text-white sm:px-6">
       <div
         className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_100%_70%_at_50%_-15%,rgba(88,28,135,0.18),transparent_55%)]"
         aria-hidden

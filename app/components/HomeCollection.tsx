@@ -595,10 +595,10 @@ export function HomeCollection({
                 aria-labelledby={`${sectionId}-heading`}
               >
                 {/*
-                  Плашка на всю ширину окна: выходим из padding/max-width секции «Коллекции».
+                  Плашка на всю ширину контентной колонки: выход из px-6 / sm:px-10 без 100vw (нет гориз. скролла).
                 */}
                 <div
-                  className="relative left-1/2 z-0 w-screen max-w-[100vw] -translate-x-1/2"
+                  className="relative z-0 -mx-6 w-[calc(100%+3rem)] max-w-none sm:-mx-10 sm:w-[calc(100%+5rem)]"
                   role="presentation"
                 >
                   <CategoryRowBanner

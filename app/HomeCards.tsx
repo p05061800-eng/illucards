@@ -456,7 +456,7 @@ export default function HomeCards({ cards }: Props) {
           <p className="mb-6 text-center text-xs text-zinc-600 sm:text-sm">
             Свайп влево/вправо — карточки · вверх/вниз — категории
           </p>
-          <div className="flex w-full items-start justify-center gap-2 sm:gap-6 md:items-center">
+          <div className="flex w-full items-start justify-center gap-2 sm:gap-6">
             <button
               type="button"
               className={catalogArrowBtnClass}

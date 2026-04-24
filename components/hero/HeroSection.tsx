@@ -23,17 +23,20 @@ import { buildNoveltiesCarouselCards } from "@/app/lib/noveltiesHeroCarousel";
 import type { SpotlightSlideRow } from "@/app/lib/spotlightJson";
 import { DEFAULT_SPOTLIGHT_SLIDES } from "@/app/lib/spotlightJson";
 import {
+  CardViewer,
   PRODUCT_CARD_NAV_ARROW_CLASS,
   ProductCardNavArrowIcon,
 } from "@/app/components/card-showcase/CardViewer";
+import { HeroCatalogCardFooter } from "./HeroCatalogCardFooter";
 import { HeroCardCommerce } from "./HeroCardCommerce";
-import { HeroCardStack } from "./HeroCardStack";
 import { HeroIlluCardsLogo } from "./HeroIlluCardsLogo";
 import { PromoSpotlightPanel } from "./PromoSpotlightPanel";
-import { HERO_CARD_STACK_WIDTH_NOVELTY_NARROW_CLASS } from "./heroCardStackClasses";
 
 /** Горизонтальный жест мышью по стопке «Новинки» (на таче только стрелки — см. обработчики). */
 const NOVELTY_SWIPE_MIN_PX = 56;
+
+/** Автосмена карточки в блоке «Новинки» (стрелки и ручной свайп по-прежнему доступны). */
+const NOVELTY_AUTO_ADVANCE_MS = 5500;
 
 type Props = {
   cards: StoredCard[];
@@ -59,12 +62,16 @@ export default function HeroSection({
   const noveltyDragStartRef = useRef<{ x: number; y: number } | null>(null);
   /** После свайпа гасим синтетический click по `<Link>` на карточке. */
   const blockHeroCardLinkClickRef = useRef(false);
+  /** Пауза автолистания при наведении на колонку «Новинки». */
+  const noveltyAutoPausedRef = useRef(false);
+  const noveltiesLenRef = useRef(0);
   const [spotlightSlides, setSpotlightSlides] = useState<SpotlightSlideRow[]>(
     () =>
       initialSpotlightSlides.length > 0
         ? initialSpotlightSlides
         : DEFAULT_SPOTLIGHT_SLIDES
   );
+  const [isMobileHeroLayout, setIsMobileHeroLayout] = useState(false);
   const [apiCategories, setApiCategories] = useState<CategoryTile[]>(
     () => initialCategories
   );
@@ -82,6 +89,15 @@ export default function HeroSection({
         }
       })
       .catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const mq = window.matchMedia("(max-width: 768px)");
+    const sync = () => setIsMobileHeroLayout(mq.matches);
+    sync();
+    mq.addEventListener("change", sync);
+    return () => mq.removeEventListener("change", sync);
   }, []);
 
   useEffect(() => {
@@ -139,6 +155,42 @@ export default function HeroSection({
     () => buildNoveltiesCarouselCards(cards, currentSpotlightSlide),
     [cards, currentSpotlightSlide]
   );
+
+  const heroBrowseNonNovelty = useMemo(
+    () => (filteredCards.length > 0 ? filteredCards : cards),
+    [filteredCards, cards]
+  );
+
+  const onNoveltyBrowseNavigate = useCallback(
+    (nextId: string) => {
+      const j = noveltiesCards.findIndex((c) => c.id === nextId);
+      if (j >= 0) setNoveltyIndex(j);
+    },
+    [noveltiesCards]
+  );
+
+  useEffect(() => {
+    noveltiesLenRef.current = noveltiesCards.length;
+  }, [noveltiesCards.length]);
+
+  useEffect(() => {
+    if (!isNoveltiesSlide || noveltiesCards.length < 2) return;
+    if (typeof window === "undefined") return;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      return;
+    }
+
+    const tick = () => {
+      if (noveltyAutoPausedRef.current) return;
+      if (document.visibilityState !== "visible") return;
+      const n = noveltiesLenRef.current;
+      if (n < 2) return;
+      setNoveltyIndex((i) => (i + 1) % n);
+    };
+
+    const id = window.setInterval(tick, NOVELTY_AUTO_ADVANCE_MS);
+    return () => window.clearInterval(id);
+  }, [isNoveltiesSlide, noveltiesCards.length, safeSpotlightIndex]);
 
   useEffect(() => {
     setSpotlightSlide((i) =>
@@ -200,6 +252,14 @@ export default function HeroSection({
     },
     [isNoveltiesSlide, noveltiesCards.length]
   );
+
+  const onNoveltyAutoPauseEnter = useCallback(() => {
+    noveltyAutoPausedRef.current = true;
+  }, []);
+
+  const onNoveltyAutoPauseLeave = useCallback(() => {
+    noveltyAutoPausedRef.current = false;
+  }, []);
 
   const onNoveltyArrowKeyDown = useCallback(
     (e: KeyboardEvent<HTMLButtonElement>) => {
@@ -354,10 +414,16 @@ export default function HeroSection({
               <HeroIlluCardsLogo />
             </div>
 
-            {/* 2–3. Категории + витрина/карточка: десктоп — две колонки в .hero-main-grid; ≤768 — в globals сетка «плашки слева | карточка», витрина на всю ширину ниже */}
+            {/* 2–3. Десктоп: .hero-main-desktop — слева 60% (категории + витрина), справа 40% (карточка). ≤768 — см. globals. */}
             <div className="hero-body min-w-0 w-full">
-            <div className="hero-categories-outer relative z-30 w-full min-w-0">
-              <div className="hero-categories relative flex min-w-0 w-full justify-start overflow-x-auto overflow-y-visible py-0.5 scrollbar-hide">
+              <div
+                className={`hero-main-desktop min-w-0 w-full ${
+                  viewportCompact ? "min-h-0 flex-1" : ""
+                }`}
+              >
+                <div className="hero-left-side min-w-0">
+                  <div className="hero-categories-outer relative z-30 w-full min-w-0">
+                    <div className="hero-categories hero-categories-strip relative flex min-w-0 w-full justify-start overflow-x-auto overflow-y-visible py-0.5 scrollbar-hide">
               {apiCategories.map((cat) => {
                 const selected =
                   selectedCategoryName != null &&
@@ -411,56 +477,67 @@ export default function HeroSection({
                   </button>
                 );
               })}
-              </div>
-            </div>
+                    </div>
+                  </div>
 
-            <div className="hero-main-column min-w-0">
-            {noCardsInCategory ? (
-              <p className="hero-category-empty-msg text-center text-sm text-amber-400/90">
-                В категории «{selectedCategoryName}» пока нет карточек — показана
-                первая доступная.
-              </p>
-            ) : null}
+                  {noCardsInCategory ? (
+                    <p className="hero-category-empty-msg text-center text-sm text-amber-400/90">
+                      В категории «{selectedCategoryName}» пока нет карточек —
+                      показана первая доступная.
+                    </p>
+                  ) : null}
 
-            {/*
-              Десктоп: витрина слева, карточка справа (.hero-main-grid). ≤768: плашки | карточка в одном ряду, витрина снизу (display: contents в globals).
-            */}
-            <div
-              className={`hero-main-grid relative z-0 min-h-0 w-full overflow-x-visible pb-0 ${
-                viewportCompact ? "min-h-0 flex-1" : ""
-              }`}
-            >
-              <div className="hero-cell-spotlight hero-info relative z-10 min-h-0 min-w-0">
-                <PromoSpotlightPanel
-                  embedded
-                  compact={viewportCompact}
-                  slides={spotlightSlides}
-                  slideIndex={spotlightSlide}
-                  onSlideChange={setSpotlightSlide}
-                  noveltyTotal={noveltiesCards.length}
-                  commerceFooter={
-                    <HeroCardCommerce
-                      variant="noveltiesBlock"
-                      card={stackCard}
-                      flySourceRef={heroCardFlyRef}
-                      onOpenCard={() => router.push(`/card/${stackCard.id}`)}
+                  <div className="hero-cell-spotlight hero-info hero-left-spotlight relative z-10 min-h-0 min-w-0 w-full max-w-full">
+                    <PromoSpotlightPanel
+                      embedded
+                      compact={viewportCompact}
+                      slides={spotlightSlides}
+                      slideIndex={spotlightSlide}
+                      onSlideChange={setSpotlightSlide}
+                      noveltyTotal={noveltiesCards.length}
+                      noveltiesLeftEmpty={
+                        showNoveltiesHeroChrome && !isMobileHeroLayout
+                      }
+                      commerceFooter={
+                        showNoveltiesHeroChrome && !isMobileHeroLayout ? (
+                          undefined
+                        ) : (
+                          <HeroCardCommerce
+                            variant="noveltiesBlock"
+                            card={stackCard}
+                            flySourceRef={heroCardFlyRef}
+                            onOpenCard={() =>
+                              router.push(`/card/${stackCard.id}`)
+                            }
+                          />
+                        )
+                      }
                     />
-                  }
-                />
-              </div>
+                  </div>
+                </div>
 
-              {/* z выше колонки витрины (z-10): иначе при overflow/transform левый блок перекрывает карточку */}
-              <div
-                className={[
-                  "hero-cell-card hero-card relative z-20 flex w-full min-w-0 flex-col justify-start",
-                  viewportCompact ? "min-h-0" : "",
-                  showNoveltiesHeroChrome
-                    ? "hero-card--novelty-overlap items-center"
-                    : "items-end",
-                ]
-                  .filter(Boolean)
-                  .join(" ")}
-              >
+                <div className="hero-right-side min-w-0">
+                  <div
+                    className={[
+                      "hero-cell-card hero-card relative z-20 flex w-full min-w-0 max-w-full flex-col justify-start",
+                      viewportCompact ? "min-h-0" : "",
+                      showNoveltiesHeroChrome
+                        ? "hero-card--novelty-overlap items-center"
+                        : "items-end",
+                    ]
+                      .filter(Boolean)
+                      .join(" ")}
+                    onMouseEnter={
+                      showNoveltiesHeroChrome
+                        ? onNoveltyAutoPauseEnter
+                        : undefined
+                    }
+                    onMouseLeave={
+                      showNoveltiesHeroChrome
+                        ? onNoveltyAutoPauseLeave
+                        : undefined
+                    }
+                  >
                 <div
                   ref={heroCardFlyRef}
                   onPointerDown={onNoveltyPointerDown}
@@ -474,22 +551,22 @@ export default function HeroSection({
                   }}
                   className={`hero-card-stack-wrap relative z-[15] grid w-full min-h-0 min-w-0 touch-pan-y overflow-visible px-0 pt-0 [&>div]:max-w-full ${
                     showNoveltiesHeroChrome
-                      ? "max-w-[min(100%,min(40rem,92vw))] justify-items-center"
-                      : "max-w-full justify-items-end"
+                      ? "max-w-none justify-items-center"
+                      : "max-w-none justify-items-end"
                   }`}
                 >
                   {showNoveltiesHeroChrome ? (
                     <div
                       role="group"
                       aria-label="Новинки"
-                      className="flex w-full max-w-full flex-col items-center"
+                      className="hero-novelty-heading-group flex w-full max-w-full flex-col items-center"
                     >
                       <div
                         data-novelty-hero-chrome
-                        className="hero-novelty-chrome-shift w-full max-w-full"
+                        className="hero-novelty-heading hero-novelty-chrome-shift w-full max-w-full"
                       >
                         <h2
-                          className="hero-wordmark-shine hero-wordmark-shine--mirror hero-novelties-title mx-auto block w-full max-w-full origin-center text-balance text-center font-bold uppercase tracking-[0.1em] drop-shadow-[0_1px_0_rgba(0,0,0,0.5),0_8px_28px_rgba(109,40,217,0.35)] transition-transform duration-300 ease-out hover:scale-[1.04] motion-reduce:transition-none motion-reduce:hover:scale-100"
+                          className="hero-novelties-title hero-novelties-title--static mx-auto block w-full max-w-full origin-center text-balance text-center font-bold uppercase tracking-[0.1em]"
                         >
                           Новинки
                         </h2>
@@ -497,66 +574,100 @@ export default function HeroSection({
                     </div>
                   ) : null}
                   {showNoveltiesHeroChrome ? (
-                    <div className="hero-novelty-carousel w-full min-w-0 max-w-full overflow-visible">
-                      {canCycleNoveltiesWithArrows ? (
-                        <button
-                          type="button"
-                          data-hero-novelty-flank-nav
-                          aria-label="Предыдущая новинка"
-                          onClick={() => stepNoveltyIndex(-1)}
-                          onKeyDown={onNoveltyArrowKeyDown}
-                          className={`hero-novelty-arrow hero-novelty-arrow--prev ${PRODUCT_CARD_NAV_ARROW_CLASS}`}
-                        >
-                          <ProductCardNavArrowIcon direction="prev" />
-                        </button>
-                      ) : (
-                        <span
-                          data-hero-novelty-flank-nav
-                          className={`hero-novelty-arrow hero-novelty-arrow--prev ${PRODUCT_CARD_NAV_ARROW_CLASS} pointer-events-none cursor-not-allowed opacity-35`}
-                          aria-hidden
-                        >
-                          <ProductCardNavArrowIcon direction="prev" />
-                        </span>
+                    <>
+                      <div className="col-span-full w-full max-w-none justify-self-center px-1">
+                        <div className="hero-novelty-carousel flex w-full min-w-0 max-w-none flex-row flex-nowrap items-center justify-center gap-2 overflow-visible px-1 py-1">
+                          {canCycleNoveltiesWithArrows ? (
+                            <button
+                              type="button"
+                              data-hero-novelty-flank-nav
+                              aria-label="Предыдущая новинка"
+                              onClick={() => stepNoveltyIndex(-1)}
+                              onKeyDown={onNoveltyArrowKeyDown}
+                              className={`hero-novelty-arrow hero-novelty-arrow--prev ${PRODUCT_CARD_NAV_ARROW_CLASS}`}
+                            >
+                              <ProductCardNavArrowIcon direction="prev" />
+                            </button>
+                          ) : (
+                            <span
+                              data-hero-novelty-flank-nav
+                              className={`hero-novelty-arrow hero-novelty-arrow--prev ${PRODUCT_CARD_NAV_ARROW_CLASS} pointer-events-none cursor-not-allowed opacity-35`}
+                              aria-hidden
+                            >
+                              <ProductCardNavArrowIcon direction="prev" />
+                            </span>
+                          )}
+                          <div
+                            className="min-h-[2.5rem] min-w-0 flex-1 shrink"
+                            aria-hidden
+                          />
+                          {canCycleNoveltiesWithArrows ? (
+                            <button
+                              type="button"
+                              data-hero-novelty-flank-nav
+                              aria-label="Следующая новинка"
+                              onClick={() => stepNoveltyIndex(1)}
+                              onKeyDown={onNoveltyArrowKeyDown}
+                              className={`hero-novelty-arrow hero-novelty-arrow--next ${PRODUCT_CARD_NAV_ARROW_CLASS}`}
+                            >
+                              <ProductCardNavArrowIcon direction="next" />
+                            </button>
+                          ) : (
+                            <span
+                              data-hero-novelty-flank-nav
+                              className={`hero-novelty-arrow hero-novelty-arrow--next ${PRODUCT_CARD_NAV_ARROW_CLASS} pointer-events-none cursor-not-allowed opacity-35`}
+                              aria-hidden
+                            >
+                              <ProductCardNavArrowIcon direction="next" />
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                      {isMobileHeroLayout ? null : (
+                        <div className="col-span-full w-full max-w-none justify-self-center px-1">
+                          <HeroCatalogCardFooter
+                            card={stackCard}
+                            flySourceRef={heroCardFlyRef}
+                            size="novelty"
+                          />
+                        </div>
                       )}
-                      <div
-                        className={`hero-novelty-flank-inner hero-novelty-card-stage flex min-h-0 min-w-0 flex-1 justify-center ${HERO_CARD_STACK_WIDTH_NOVELTY_NARROW_CLASS}`}
-                      >
-                        <HeroCardStack
-                          displayCard={stackCard}
-                          ultraBgUrl={ultraBgUrl}
-                          noveltyNarrow
+                    </>
+                  ) : null}
+                  </div>
+                  {showNoveltiesHeroChrome ? (
+                    <div className="hero-right-product flex w-full max-w-none min-w-0 justify-center overflow-visible py-3">
+                      <div className="max-w-none origin-top scale-[1.3] motion-reduce:scale-100">
+                        <CardViewer
+                          layout="product"
+                          activeCard={stackCard}
+                          browseCards={noveltiesCards}
+                          onNavigate={onNoveltyBrowseNavigate}
+                          hideNavigation
+                          productCenterConstrained={false}
                         />
                       </div>
-                      {canCycleNoveltiesWithArrows ? (
-                        <button
-                          type="button"
-                          data-hero-novelty-flank-nav
-                          aria-label="Следующая новинка"
-                          onClick={() => stepNoveltyIndex(1)}
-                          onKeyDown={onNoveltyArrowKeyDown}
-                          className={`hero-novelty-arrow hero-novelty-arrow--next ${PRODUCT_CARD_NAV_ARROW_CLASS}`}
-                        >
-                          <ProductCardNavArrowIcon direction="next" />
-                        </button>
-                      ) : (
-                        <span
-                          data-hero-novelty-flank-nav
-                          className={`hero-novelty-arrow hero-novelty-arrow--next ${PRODUCT_CARD_NAV_ARROW_CLASS} pointer-events-none cursor-not-allowed opacity-35`}
-                          aria-hidden
-                        >
-                          <ProductCardNavArrowIcon direction="next" />
-                        </span>
-                      )}
                     </div>
                   ) : (
-                    <HeroCardStack
-                      displayCard={stackCard}
-                      ultraBgUrl={ultraBgUrl}
-                    />
+                    <div className="hero-right-product flex w-full max-w-none min-w-0 flex-col items-end gap-0 overflow-visible py-3">
+                      <div className="max-w-none origin-top scale-[1.3] motion-reduce:scale-100">
+                        <CardViewer
+                          layout="product"
+                          activeCard={stackCard}
+                          browseCards={heroBrowseNonNovelty}
+                          hideNavigation
+                          productCenterConstrained={false}
+                        />
+                      </div>
+                      <HeroCatalogCardFooter
+                        card={stackCard}
+                        flySourceRef={heroCardFlyRef}
+                        size="default"
+                      />
+                    </div>
                   )}
                 </div>
               </div>
-            </div>
             </div>
             </div>
           </div>

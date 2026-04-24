@@ -38,7 +38,7 @@ export function HomeOneScreenShell({ children }: { children: ReactNode }) {
   return (
     <main
       ref={mainRef}
-      className="home-one-screen-main relative flex min-h-0 w-full flex-col overflow-hidden text-white"
+      className="main home-one-screen-main relative flex min-h-0 w-full flex-col overflow-hidden text-white"
     >
       {children}
     </main>

@@ -484,7 +484,7 @@ export function Card3D({ card }: Props) {
             <AdultContentBlurGate isAdult={cardRequiresAgeConfirmation(card)}>
             <div
               className="relative mx-auto w-full max-w-[min(100%,380px)]"
-              style={{ width: "min(320px, calc(100vw - 2rem))" }}
+              style={{ width: "min(320px, calc(100% - 2rem))" }}
             >
               {frontSrc ? (
                 <div

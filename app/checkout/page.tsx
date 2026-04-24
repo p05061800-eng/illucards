@@ -9,7 +9,7 @@ export const metadata: Metadata = {
 
 export default function CheckoutPage() {
   return (
-    <main className="relative overflow-x-visible text-white">
+    <main className="main relative overflow-x-hidden text-white">
       <div
         className="pointer-events-none absolute inset-0 -z-10"
         aria-hidden

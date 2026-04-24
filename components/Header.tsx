@@ -292,6 +292,13 @@ export default function Header() {
         </div>
       </div>
 
+      <div className="flex justify-center scrollbar-hide overflow-x-auto border-t border-white/[0.06] bg-[#070510]/95 px-3 py-2 md:hidden">
+        <SocialLinksBar
+          compact
+          className="w-max max-w-full [&_ul]:flex-nowrap [&_ul]:justify-center [&_ul]:gap-2"
+        />
+      </div>
+
       {mobileNavOpen ? (
         <div
           id="mobile-nav-panel"
@@ -338,13 +345,6 @@ export default function Header() {
               >
                 {authHydrated && authUser ? "Личный кабинет" : "Войти"}
               </Link>
-            </div>
-
-            <div className="border-b border-white/[0.06] pb-4">
-              <SocialLinksBar
-                compact
-                className="w-full [&_ul]:justify-start"
-              />
             </div>
 
             {menu.map((section) => (

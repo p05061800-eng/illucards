@@ -92,22 +92,18 @@ html.home-one-screen main.home-one-screen-main {
   width: 100%;
   max-width: 100%;
   box-sizing: border-box;
-  gap: 1.25rem;
+  gap: clamp(0.5rem, 1.5vw, 1.25rem);
   /* stretch: одна высота строки — цены и кнопки визуально на одной линии */
   align-items: stretch;
   align-content: start;
   grid-auto-rows: minmax(0, auto);
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-}
-
-@media (min-width: 640px) {
-  .collection-card-grid {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
+  /* Телефон и узкое окно: 4 карты в ряд */
+  grid-template-columns: repeat(4, minmax(0, 1fr));
 }
 
 @media (min-width: 1024px) {
   .collection-card-grid {
+    gap: 1.25rem;
     grid-template-columns: repeat(5, minmax(0, 1fr));
   }
 }
@@ -115,13 +111,7 @@ html.home-one-screen main.home-one-screen-main {
 /* Компактная сетка под колонку «один экран» на главной */
 .collection-card-grid--viewport-compact {
   gap: 0.5rem;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-}
-
-@media (min-width: 640px) {
-  .collection-card-grid--viewport-compact {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-  }
+  grid-template-columns: repeat(4, minmax(0, 1fr));
 }
 
 @media (min-width: 1024px) {
@@ -402,6 +392,104 @@ body::after {
 
 .hero-category-label {
   font-size: clamp(0.5625rem, 0.42rem + 0.35vw, 0.625rem);
+}
+
+/*
+ * Герой ≤768px: ряд 1 — слева категории, справа укрупнённая карточка;
+ * ряд 2 — витрина (цены, кнопки) на всю ширину под обоими колонками.
+ * display: contents у колонки/внутренней сетки — только в этом брейкпоинте.
+ */
+@media (max-width: 768px) {
+  .hero-body {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    grid-template-rows: auto auto;
+    column-gap: 16px;
+    row-gap: 14px;
+    align-items: start;
+  }
+
+  .hero-categories-outer {
+    grid-column: 1;
+    grid-row: 1;
+    align-self: start;
+  }
+
+  .hero-categories-outer .hero-categories {
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    overflow-x: visible;
+    overflow-y: visible;
+    justify-content: flex-start;
+  }
+
+  .hero-body .category-item {
+    width: 50px;
+    height: 50px;
+    min-width: 50px;
+    min-height: 50px;
+    max-width: 50px;
+    max-height: 50px;
+  }
+
+  .hero-body .category-item .hero-category-label {
+    font-size: 0.5rem;
+    line-height: 1.05;
+    bottom: 0.125rem;
+    left: 0.125rem;
+    right: 0.125rem;
+  }
+
+  .hero-body .hero-main-column {
+    display: contents;
+  }
+
+  .hero-body .hero-main-grid {
+    display: contents !important;
+    margin-top: 0 !important;
+  }
+
+  .hero-body .hero-category-empty-msg {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    min-width: 0;
+  }
+
+  .hero-body .hero-cell-spotlight.hero-info {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    width: 100%;
+    max-width: none;
+    min-width: 0;
+  }
+
+  .hero-body:has(.hero-category-empty-msg) .hero-cell-spotlight.hero-info {
+    grid-row: 3;
+  }
+
+  .hero-body .hero-cell-card.hero-card {
+    grid-column: 2;
+    grid-row: 1;
+    justify-self: stretch;
+    box-sizing: border-box;
+    max-width: min(24rem, calc(100vw - 4.35rem));
+    width: 100%;
+    padding-inline-start: clamp(48px, 13vw, 80px);
+    padding-top: 10px;
+    margin-left: 0;
+    margin-right: 0;
+    position: relative !important;
+    transform: none !important;
+    overflow: visible;
+    min-width: 0;
+  }
+
+  .hero-body [data-novelty-hero-chrome] {
+    transform: none !important;
+  }
+
+  /* Третий слой «наискосок»: transform на .card-side не сбрасывать */
 }
 
 /* Крупный логотип на главной — статичный градиент (если нужен без анимации) */

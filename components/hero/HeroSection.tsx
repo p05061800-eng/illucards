@@ -149,7 +149,7 @@ export default function HeroSection({
         Boolean(c)
       );
     }
-    return cards.filter((c) => c.isNew);
+    return cards.filter((c) => c.isNew || c.rarity === "novelty");
   }, [cards, currentSpotlightSlide]);
 
   useEffect(() => {
@@ -398,17 +398,18 @@ export default function HeroSection({
               <HeroIlluCardsLogo />
             </div>
 
-            {/* 2. Плашки категорий — полоса под логотипом */}
+            {/* 2–3. Категории + блок витрины/карточки: на lg+ как в макете; ≤768 — сетка «категории слева | карточка + витрина» (globals) */}
+            <div className="hero-body min-w-0 w-full">
             <div
-              className={`relative z-30 w-full min-w-0 ${
+              className={`hero-categories-outer relative z-30 w-full min-w-0 ${
                 viewportCompact ? "pb-2 sm:pb-2.5" : "pb-4 sm:pb-5"
               }`}
             >
               <div
-                className={`relative flex min-w-0 w-full justify-start overflow-x-auto overflow-y-visible py-0.5 scrollbar-hide ${
+                className={`hero-categories relative flex min-w-0 w-full justify-start overflow-x-auto overflow-y-visible py-0.5 scrollbar-hide ${
                   viewportCompact
                     ? "min-h-[2.75rem] gap-1.5 sm:min-h-12 sm:gap-2"
-                    : "min-h-[clamp(3.25rem,16vw,5rem)] gap-2 sm:gap-2.5"
+                    : "min-h-[clamp(3.25rem,16vw,5rem)] gap-2 sm:gap-2.5 max-[768px]:min-h-0"
                 }`}
               >
               {apiCategories.map((cat) => {
@@ -430,10 +431,10 @@ export default function HeroSection({
                     aria-label={cat.name}
                     aria-current={selected}
                     className={[
-                      "group relative shrink-0 cursor-pointer overflow-hidden rounded-xl bg-zinc-950",
+                      "category-item group relative shrink-0 cursor-pointer overflow-hidden rounded-xl bg-zinc-950",
                       viewportCompact
-                        ? "h-11 w-11 max-h-12 max-w-12 sm:h-12 sm:w-12"
-                        : "h-[clamp(3.25rem,16vw,5rem)] w-[clamp(3.25rem,16vw,5rem)] max-h-[5rem] max-w-[5rem]",
+                        ? "h-11 w-11 max-h-12 max-w-12 sm:h-12 sm:w-12 max-[768px]:!h-[50px] max-[768px]:!w-[50px] max-[768px]:!max-h-[50px] max-[768px]:!max-w-[50px]"
+                        : "h-[clamp(3.25rem,16vw,5rem)] w-[clamp(3.25rem,16vw,5rem)] max-h-[5rem] max-w-[5rem] max-[768px]:!h-[50px] max-[768px]:!w-[50px] max-[768px]:!max-h-[50px] max-[768px]:!max-w-[50px]",
                       "will-change-transform [transform:translateZ(0)]",
                       "transition-transform duration-300 ease-out",
                       "hover:scale-[1.08] active:scale-[1.04]",
@@ -470,24 +471,25 @@ export default function HeroSection({
               </div>
             </div>
 
+            <div className="hero-main-column min-w-0">
             {noCardsInCategory ? (
-              <p className="text-center text-sm text-amber-400/90">
+              <p className="hero-category-empty-msg text-center text-sm text-amber-400/90">
                 В категории «{selectedCategoryName}» пока нет карточек — показана
                 первая доступная.
               </p>
             ) : null}
 
             {/*
-              Десктоп: 12 колонок — витрина слева (7), карточка справа (5). Мобилка: карточка, затем витрина.
+              Десктоп: 12 колонок — витрина слева (7), карточка справа (5). ≤768: колонка справа — карточка, затем витрина (flex в globals).
             */}
             <div
-              className={`relative z-0 grid grid-cols-1 items-start overflow-x-clip pb-0 lg:grid-cols-12 lg:gap-y-0 lg:overflow-visible ${
+              className={`hero-main-grid relative z-0 grid grid-cols-1 items-start overflow-x-clip pb-0 max-[768px]:overflow-x-visible lg:grid-cols-12 lg:gap-y-0 lg:overflow-visible ${
                 viewportCompact
                   ? "mt-1 min-h-0 flex-1 gap-4 sm:mt-1.5 sm:gap-5 lg:mt-2 lg:gap-x-5 xl:gap-x-6"
                   : "mt-2 gap-9 sm:mt-3 sm:gap-10 lg:mt-4 lg:gap-x-8 xl:gap-x-10"
               }`}
             >
-              <div className="relative z-10 order-2 min-h-0 min-w-0 lg:order-1 lg:col-span-7">
+              <div className="hero-cell-spotlight hero-info relative z-10 order-2 min-h-0 min-w-0 lg:order-1 lg:col-span-7">
                 <PromoSpotlightPanel
                   embedded
                   compact={viewportCompact}
@@ -508,11 +510,11 @@ export default function HeroSection({
 
               {/* z выше колонки витрины (z-10): иначе при overflow/transform левый блок перекрывает карточку */}
               <div
-                className={`relative z-20 order-1 flex w-full min-w-0 flex-col justify-start lg:order-2 lg:col-span-5 lg:justify-self-stretch ${
+                className={`hero-cell-card hero-card relative z-20 order-1 flex w-full min-w-0 flex-col justify-start max-[768px]:mt-0 max-[768px]:mb-0 lg:order-2 lg:col-span-5 lg:justify-self-stretch ${
                   viewportCompact ? "min-h-0 lg:min-h-0" : "lg:min-h-0"
                 } ${
                   showNoveltiesHeroChrome
-                    ? "items-center -mt-16 sm:-mt-24 lg:-mt-40 xl:-mt-44"
+                    ? "items-center -mt-16 sm:-mt-24 lg:-mt-40 xl:-mt-44 max-[768px]:!mt-0 max-[768px]:!mb-0 max-[768px]:items-center"
                     : "items-center lg:items-end"
                 }`}
               >
@@ -535,14 +537,14 @@ export default function HeroSection({
                   className={`relative z-[15] grid w-full min-h-0 min-w-0 touch-pan-y overflow-visible px-0 pt-0 [&>div]:max-w-full ${
                     viewportCompact
                       ? showNoveltiesHeroChrome
-                        ? "gap-2 pb-0 sm:gap-2.5 -translate-y-4 sm:-translate-y-5"
-                        : "gap-1.5 pb-0 sm:gap-2"
+                        ? "gap-2 pb-0 sm:gap-2.5 -translate-y-4 sm:-translate-y-5 max-[768px]:translate-y-0 max-[768px]:gap-y-6"
+                        : "gap-1.5 pb-0 sm:gap-2 max-[768px]:translate-y-0"
                       : showNoveltiesHeroChrome
-                        ? "gap-3 pb-0 sm:gap-4 lg:gap-5 -translate-y-6 sm:-translate-y-7 lg:-translate-y-9"
-                        : "gap-3 pb-1 sm:gap-3.5"
+                        ? "gap-3 pb-0 sm:gap-4 lg:gap-5 -translate-y-6 sm:-translate-y-7 lg:-translate-y-9 max-[768px]:translate-y-0 max-[768px]:gap-y-8"
+                        : "gap-3 pb-1 sm:gap-3.5 max-[768px]:translate-y-0"
                   } ${
                     showNoveltiesHeroChrome
-                      ? "max-w-[min(100%,40rem)] justify-items-center"
+                      ? "max-w-[min(100%,40rem)] justify-items-center max-[768px]:max-w-full"
                       : "max-w-full justify-items-center lg:justify-items-end"
                   }`}
                 >
@@ -554,7 +556,7 @@ export default function HeroSection({
                     >
                       <div
                         data-novelty-hero-chrome
-                        className="w-full max-w-full -translate-y-4 sm:-translate-y-5 lg:-translate-y-6 translate-x-6 sm:translate-x-8 lg:translate-x-10 xl:translate-x-12"
+                        className="w-full max-w-full -translate-y-4 sm:-translate-y-5 lg:-translate-y-6 translate-x-6 sm:translate-x-8 lg:translate-x-10 xl:translate-x-12 max-[768px]:translate-x-0 max-[768px]:translate-y-0"
                       >
                         <h2
                           className={`hero-wordmark-shine hero-wordmark-shine--mirror mx-auto block w-full max-w-full origin-center text-balance text-center font-bold uppercase tracking-[0.1em] drop-shadow-[0_1px_0_rgba(0,0,0,0.5),0_8px_28px_rgba(109,40,217,0.35)] transition-transform duration-300 ease-out hover:scale-[1.04] motion-reduce:transition-none motion-reduce:hover:scale-100 ${
@@ -569,7 +571,7 @@ export default function HeroSection({
                     </div>
                   ) : null}
                   {showNoveltiesHeroChrome ? (
-                    <div className="flex w-full min-w-0 max-w-full items-center justify-center gap-x-2 overflow-visible sm:gap-x-2.5">
+                    <div className="flex w-full min-w-0 max-w-full items-center justify-center gap-x-2 overflow-visible sm:gap-x-2.5 max-[768px]:gap-x-1">
                       <div className="flex shrink-0 justify-end">
                         {canCycleNoveltiesWithArrows ? (
                           <button
@@ -593,7 +595,7 @@ export default function HeroSection({
                         )}
                       </div>
                       <div
-                        className={`flex min-h-0 min-w-0 flex-1 justify-center ${HERO_CARD_STACK_WIDTH_NOVELTY_NARROW_CLASS} translate-x-6 sm:translate-x-8 lg:translate-x-10 xl:translate-x-12`}
+                        className={`flex min-h-0 min-w-0 flex-1 justify-center ${HERO_CARD_STACK_WIDTH_NOVELTY_NARROW_CLASS} translate-x-6 sm:translate-x-8 lg:translate-x-10 xl:translate-x-12 max-[768px]:max-w-[min(24rem,100%)] max-[768px]:translate-x-0`}
                       >
                         <HeroCardStack
                           displayCard={stackCard}
@@ -632,6 +634,8 @@ export default function HeroSection({
                   )}
                 </div>
               </div>
+            </div>
+            </div>
             </div>
           </div>
         </section>

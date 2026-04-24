@@ -37,20 +37,20 @@ type Props = {
 const filterLabelClass =
   "mb-1.5 block text-[10px] font-semibold uppercase tracking-[0.18em] text-violet-300/75";
 
-/** Число колонок для превью «Смотреть ещё» — совпадает с `.collection-card-grid` (2 / 3 / 5). */
-function useCatalogGridColumns(): number {
+/** Число колонок для превью «Смотреть ещё» — в духе `.collection-card-grid` (4 / 5; compact lg — 3). */
+function useCatalogGridColumns(viewportCompact: boolean): number {
   const [cols, setCols] = useState(5);
   useEffect(() => {
     const read = () => {
       const w = window.innerWidth;
-      if (w < 640) setCols(2);
-      else if (w < 1024) setCols(3);
+      if (viewportCompact && w >= 1024) setCols(3);
+      else if (w < 1024) setCols(4);
       else setCols(5);
     };
     read();
     window.addEventListener("resize", read, { passive: true });
     return () => window.removeEventListener("resize", read);
-  }, []);
+  }, [viewportCompact]);
   return cols;
 }
 
@@ -126,7 +126,7 @@ export function HomeCollection({
   const searchInputRef = useRef<HTMLInputElement>(null);
   /** Не запускать автопереход в карточку на первом прогоне эффекта после загрузки/обновления страницы. */
   const skipSearchAutoNavOnceRef = useRef(true);
-  const previewCols = useCatalogGridColumns();
+  const previewCols = useCatalogGridColumns(viewportCompact);
   const [expandedCategoryRows, setExpandedCategoryRows] = useState<
     Record<string, boolean>
   >({});

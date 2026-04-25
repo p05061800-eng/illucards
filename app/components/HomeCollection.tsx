@@ -574,7 +574,6 @@ export function HomeCollection({
             )
             .map(({ cat, sectionCards }) => {
             const sectionId = collectionSectionId(cat.name);
-            const isTmntSection = cat.name.trim().toLowerCase() === "tmnt";
             const expanded = expandedCategoryRows[cat.name] ?? false;
             const canCollapseRow =
               useCategoryRowPreview &&
@@ -628,7 +627,7 @@ export function HomeCollection({
                       ))}
                     </div>
                     {canCollapseRow ? (
-                      <div className={`flex justify-center w-full ${isTmntSection ? "mt-40" : "mt-6"}`}>
+                      <div className="mt-6 flex w-full justify-center">
                         {expanded ? (
                           <button
                             type="button"

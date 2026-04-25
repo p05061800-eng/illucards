@@ -78,17 +78,10 @@ export const TMNT_REFERENCE_POSTER_DIMENSIONS = {
   height: 1024,
 } as const;
 
-export const TMNT_REFERENCE_POSTER_ASPECT_CSS = aspectRatioCssFromDimensions(
-  TMNT_REFERENCE_POSTER_DIMENSIONS.width,
-  TMNT_REFERENCE_POSTER_DIMENSIONS.height,
-);
-
 /**
  * Рамка витрины = **пропорции лицевого файла**: сначала `frontImageWidth`/`Height` с карточки,
  * иначе `aspectFromClientHook` (`useIntrinsicImageAspect`). Рамки категории и жёсткие пресеты
  * не участвуют — кадр целиком в `contain` без полей при совпадении с пикселями арта.
- *
- * Исключение: **TMNT** — одна эталонная рамка как у референсного постера (`761 / 1024`).
  */
 export function resolveCardArtBoxAspectCss(
   card: {
@@ -101,9 +94,6 @@ export function resolveCardArtBoxAspectCss(
   _categoryFrameAspectCss?: string | null,
 ): string {
   void card.cardArtFramePreset;
-  if (card.category?.trim() === "TMNT") {
-    return TMNT_REFERENCE_POSTER_ASPECT_CSS;
-  }
   if (
     typeof card.frontImageWidth === "number" &&
     typeof card.frontImageHeight === "number" &&

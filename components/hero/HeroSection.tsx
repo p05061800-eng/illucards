@@ -400,8 +400,9 @@ export default function HeroSection({
   }
 
   const stackCard = heroShowcaseCard ?? focusCard;
-  const isMarvelHeroCard =
-    (stackCard.category ?? "").trim().toLowerCase() === "marvel";
+  const stackCategoryLower = (stackCard.category ?? "").trim().toLowerCase();
+  const isMarvelHeroCard = stackCategoryLower === "marvel";
+  const isTmntHeroCard = stackCategoryLower === "tmnt";
 
   return (
     <div
@@ -441,7 +442,7 @@ export default function HeroSection({
                 }`}
               >
                 <div className="hero-left-side min-w-0">
-                  <div className="hero-categories-outer relative z-30 w-full min-w-0">
+                  <div className="categories hero-categories-outer relative z-30 w-full min-w-0">
                     <div className="hero-categories hero-categories-strip relative flex min-w-0 w-full justify-start overflow-x-auto overflow-y-visible py-0.5 scrollbar-hide">
               {apiCategories.map((cat) => {
                 const selected =
@@ -537,9 +538,10 @@ export default function HeroSection({
 
                 <div
                   className={[
-                    "hero-right-side min-w-0",
+                    "hero-content hero-right-side min-w-0",
                     showNoveltiesHeroChrome ? "hero-right-side--novelty" : "",
                     isMarvelHeroCard ? "hero-right-side--marvel" : "",
+                    isTmntHeroCard ? "hero-right-side--tmnt" : "",
                   ]
                     .filter(Boolean)
                     .join(" ")}
@@ -568,7 +570,7 @@ export default function HeroSection({
                   {showNoveltiesHeroChrome ? (
                     <div className="hero-right-product flex w-full max-w-none min-w-0 flex-col items-center gap-0 overflow-visible py-1 md:gap-4 md:py-3">
                       <div className="hero-novelties-mobile-stack flex w-full max-w-full flex-col items-center gap-3 max-md:mx-auto max-md:max-w-[min(100%,22rem)] max-md:px-0 md:contents md:max-w-none">
-                      <div className="hero-novelty-header w-full shrink-0 text-center">
+                      <div className="hero-title hero-novelty-header w-full shrink-0 text-center">
                         <h2 className="hero-novelties-title hero-novelties-title--static mx-auto block w-full max-w-full origin-center text-balance text-center font-bold uppercase tracking-[0.1em]">
                           Новинки
                         </h2>
@@ -585,7 +587,7 @@ export default function HeroSection({
                           e.stopPropagation();
                           blockHeroCardLinkClickRef.current = false;
                         }}
-                        className="hero-novelty-card-shell relative flex w-full max-w-[min(100%,40rem)] shrink-0 items-center justify-center gap-2 px-1 md:gap-3 md:px-2"
+                        className="hero-slider hero-novelty-card-shell relative flex w-full max-w-[min(100%,40rem)] shrink-0 items-center justify-center gap-2 px-1 md:gap-3 md:px-2"
                       >
                         {canCycleNoveltiesWithArrows ? (
                           <button
@@ -594,21 +596,21 @@ export default function HeroSection({
                             aria-label="Предыдущая новинка"
                             onClick={() => stepNoveltyIndex(-1)}
                             onKeyDown={onNoveltyArrowKeyDown}
-                            className={`hero-novelty-side-arrow hero-novelty-arrow--prev ${PRODUCT_CARD_NAV_ARROW_CLASS}`}
+                            className={`arrow arrow--left hero-novelty-side-arrow hero-novelty-arrow--prev ${PRODUCT_CARD_NAV_ARROW_CLASS}`}
                           >
                             <ProductCardNavArrowIcon direction="prev" />
                           </button>
                         ) : (
                           <span
                             data-hero-novelty-flank-nav
-                            className={`hero-novelty-side-arrow hero-novelty-arrow--prev ${PRODUCT_CARD_NAV_ARROW_CLASS} pointer-events-none cursor-not-allowed opacity-35`}
+                            className={`arrow arrow--left hero-novelty-side-arrow hero-novelty-arrow--prev ${PRODUCT_CARD_NAV_ARROW_CLASS} pointer-events-none cursor-not-allowed opacity-35`}
                             aria-hidden
                           >
                             <ProductCardNavArrowIcon direction="prev" />
                           </span>
                         )}
 
-                        <div className="hero-novelty-card-wrap flex-1 min-w-0">
+                        <div className="hero-card hero-novelty-card-wrap flex-1 min-w-0">
                           <CardViewer
                             layout="product"
                             activeCard={stackCard}
@@ -627,14 +629,14 @@ export default function HeroSection({
                             aria-label="Следующая новинка"
                             onClick={() => stepNoveltyIndex(1)}
                             onKeyDown={onNoveltyArrowKeyDown}
-                            className={`hero-novelty-side-arrow hero-novelty-arrow--next ${PRODUCT_CARD_NAV_ARROW_CLASS}`}
+                            className={`arrow arrow--right hero-novelty-side-arrow hero-novelty-arrow--next ${PRODUCT_CARD_NAV_ARROW_CLASS}`}
                           >
                             <ProductCardNavArrowIcon direction="next" />
                           </button>
                         ) : (
                           <span
                             data-hero-novelty-flank-nav
-                            className={`hero-novelty-side-arrow hero-novelty-arrow--next ${PRODUCT_CARD_NAV_ARROW_CLASS} pointer-events-none cursor-not-allowed opacity-35`}
+                            className={`arrow arrow--right hero-novelty-side-arrow hero-novelty-arrow--next ${PRODUCT_CARD_NAV_ARROW_CLASS} pointer-events-none cursor-not-allowed opacity-35`}
                             aria-hidden
                           >
                             <ProductCardNavArrowIcon direction="next" />
@@ -644,13 +646,13 @@ export default function HeroSection({
 
                       <div className="hero-novelty-meta flex w-full max-w-[min(100%,36rem)] shrink-0 flex-col gap-2 px-2 text-center md:gap-3 md:px-3 md:text-left">
                         <div className="hero-novelty-meta-row flex w-full flex-col items-stretch gap-2 md:flex-row md:items-center md:justify-between md:gap-3">
-                          <p className="hero-novelty-card-title text-base font-semibold text-white md:text-lg lg:text-xl">
+                          <p className="hero-name hero-novelty-card-title text-base font-semibold text-white md:text-lg lg:text-xl">
                             {stackCard.title}
                           </p>
                           <button
                             type="button"
                             onClick={openNoveltiesSection}
-                            className="hero-novelty-buy-first inline-flex min-h-10 w-full min-w-0 items-center justify-center rounded-xl bg-gradient-to-r from-purple-600 via-violet-600 to-fuchsia-600 px-4 py-2 text-xs font-semibold text-white shadow-[0_16px_40px_-12px_rgba(168,85,247,0.55)] transition hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-500/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black md:w-auto md:min-h-[44px] md:min-w-[160px] md:px-6 md:py-3 md:text-sm"
+                            className="hero-button hero-novelty-buy-first inline-flex min-h-10 w-full min-w-0 items-center justify-center rounded-xl bg-gradient-to-r from-purple-600 via-violet-600 to-fuchsia-600 px-4 py-2 text-xs font-semibold text-white shadow-[0_16px_40px_-12px_rgba(168,85,247,0.55)] transition hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-500/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black md:w-auto md:min-h-[44px] md:min-w-[160px] md:px-6 md:py-3 md:text-sm"
                           >
                             Купить первым
                           </button>
@@ -661,7 +663,14 @@ export default function HeroSection({
                   ) : (
                     <div className="hero-right-product flex w-full max-w-none min-w-0 flex-col items-end gap-0 overflow-visible py-3">
                       <div className="mt-16 md:mt-0 flex w-full justify-center">
-                      <div className="mx-auto w-full max-w-[min(100%,28rem)] sm:max-w-[min(100%,32rem)] md:max-w-[min(100%,36rem)] lg:max-w-[min(100%,38rem)] xl:max-w-[min(100%,40rem)] origin-top motion-reduce:scale-100">
+                      <div
+                        className={[
+                          "hero-primary-card-shell mx-auto w-full origin-top motion-reduce:scale-100",
+                          isTmntHeroCard
+                            ? "max-w-[min(100%,32rem)] sm:max-w-[min(100%,36rem)] md:max-w-[min(100%,40rem)] lg:max-w-[min(100%,42rem)] xl:max-w-[min(100%,44rem)]"
+                            : "max-w-[min(100%,28rem)] sm:max-w-[min(100%,32rem)] md:max-w-[min(100%,36rem)] lg:max-w-[min(100%,38rem)] xl:max-w-[min(100%,40rem)]",
+                        ].join(" ")}
+                      >
                         <CardViewer
                           layout="product"
                           activeCard={stackCard}

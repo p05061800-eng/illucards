@@ -8,7 +8,6 @@ import type { StoredCard } from "../api/cards/route";
 import { useAdultContentGateOptional } from "../context/AdultContentContext";
 import { useMergedRating } from "../context/CardRatingsContext";
 import { useFavorites } from "../context/FavoritesContext";
-import { isTmntCatalogCard } from "../lib/isTmntCatalogCard";
 import {
   cardRequiresAgeConfirmation,
   catalogCardFrameClass,
@@ -75,12 +74,8 @@ export function CardItem({ card, hideUltraLayer = false }: Props) {
     openCardNav(cardHref);
   }
 
-  const tmntTile = isTmntCatalogCard(card);
-
   return (
-    <div
-      className={`card flex min-h-0 min-w-0 flex-col overflow-visible text-left${tmntTile ? " tmnt self-start" : " h-full w-full"}`}
-    >
+    <div className="card flex h-full min-h-0 min-w-0 w-full flex-col overflow-visible text-left">
       <AgeConfirmDialog
         open={ageOpen}
         onClose={() => {

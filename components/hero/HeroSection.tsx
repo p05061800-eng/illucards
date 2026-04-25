@@ -566,7 +566,7 @@ export default function HeroSection({
                     }
                   >
                   {showNoveltiesHeroChrome ? (
-                    <div className="hero-right-product flex w-full max-w-none min-w-0 flex-col items-center gap-4 overflow-visible py-3">
+                    <div className="hero-right-product flex w-full max-w-none min-w-0 flex-col items-center gap-2 overflow-visible py-1 md:gap-4 md:py-3">
                       <div className="hero-novelty-header w-full text-center">
                         <h2 className="hero-novelties-title hero-novelties-title--static mx-auto block w-full max-w-full origin-center text-balance text-center font-bold uppercase tracking-[0.1em]">
                           Новинки
@@ -641,15 +641,15 @@ export default function HeroSection({
                         )}
                       </div>
 
-                      <div className="hero-novelty-meta flex w-full max-w-[min(100%,36rem)] flex-col gap-3 px-3 text-left">
+                      <div className="hero-novelty-meta flex w-full max-w-[min(100%,36rem)] flex-col gap-2 px-2 text-left md:gap-3 md:px-3">
                         <div className="hero-novelty-meta-row">
-                          <p className="hero-novelty-card-title text-lg font-semibold text-white sm:text-xl">
+                          <p className="hero-novelty-card-title text-base font-semibold text-white md:text-lg lg:text-xl">
                             {stackCard.title}
                           </p>
                           <button
                             type="button"
                             onClick={openNoveltiesSection}
-                            className="hero-novelty-buy-first inline-flex min-h-[44px] min-w-[160px] items-center justify-center rounded-xl bg-gradient-to-r from-purple-600 via-violet-600 to-fuchsia-600 px-6 py-3 text-sm font-semibold text-white shadow-[0_16px_40px_-12px_rgba(168,85,247,0.55)] transition hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-500/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
+                            className="hero-novelty-buy-first inline-flex min-h-10 min-w-[9.5rem] items-center justify-center rounded-xl bg-gradient-to-r from-purple-600 via-violet-600 to-fuchsia-600 px-4 py-2 text-xs font-semibold text-white shadow-[0_16px_40px_-12px_rgba(168,85,247,0.55)] transition hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-500/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black md:min-h-[44px] md:min-w-[160px] md:px-6 md:py-3 md:text-sm"
                           >
                             Купить первым
                           </button>
@@ -658,6 +658,7 @@ export default function HeroSection({
                     </div>
                   ) : (
                     <div className="hero-right-product flex w-full max-w-none min-w-0 flex-col items-end gap-0 overflow-visible py-3">
+                      <div className="mt-16 md:mt-0 flex w-full justify-center">
                       <div className="mx-auto w-full max-w-[min(100%,28rem)] sm:max-w-[min(100%,32rem)] md:max-w-[min(100%,36rem)] lg:max-w-[min(100%,38rem)] xl:max-w-[min(100%,40rem)] origin-top motion-reduce:scale-100">
                         <CardViewer
                           layout="product"
@@ -667,6 +668,7 @@ export default function HeroSection({
                           productCenterConstrained={true}
                           onCardClick={(cardId) => router.push(`/card/${cardId}`)}
                         />
+                      </div>
                       </div>
                       <HeroCatalogCardFooter
                         card={stackCard}

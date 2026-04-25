@@ -632,6 +632,12 @@ body::after {
     padding-inline: clamp(0.75rem, 4vw, 1.5rem);
   }
 
+  /* «Новинки»: заголовок + карточка + название + «Купить первым» — без обрезки по 70vh и без искусственной высоты карты */
+  .hero-right-side--novelty .hero-right-product {
+    max-height: none;
+    isolation: isolate;
+  }
+
   .hero-right-side .hero-right-product > div {
     max-width: 100%;
     width: 100%;
@@ -642,19 +648,51 @@ body::after {
     max-width: 100%;
   }
 
+  .hero-right-side--novelty .hero-right-product .product-card-page-stack.hero-card-stack-visual {
+    padding-top: 0.25rem;
+    padding-bottom: 0.35rem;
+  }
+
   .hero-right-side--novelty {
     margin-top: 0;
   }
 
+  .hero-right-side--novelty .hero-novelty-header {
+    position: relative;
+    z-index: 40;
+    margin-bottom: 0.65rem;
+  }
+
+  .hero-right-side--novelty .hero-novelties-title.hero-novelties-title--static {
+    font-size: clamp(1rem, 3.8vw + 0.55rem, 1.45rem);
+    line-height: 1.08;
+  }
+
   .hero-novelty-card-shell {
+    position: relative;
+    z-index: 10;
     flex-direction: column;
-    padding-bottom: clamp(2rem, 4vw, 3rem);
-    min-height: clamp(22rem, 52vw, 30rem);
+    min-height: 0;
+    padding-bottom: 0.25rem;
+    margin-top: 0.15rem;
+    gap: 0.35rem;
+  }
+
+  .hero-novelty-card-wrap {
+    min-height: 0;
   }
 
   .hero-novelty-meta {
     transform: none;
-    margin-top: clamp(0.75rem, 1.5vw, 1rem);
+    margin-top: 0.5rem;
+  }
+
+  .hero-right-side--marvel .hero-novelty-card-wrap {
+    min-height: 0;
+  }
+
+  .hero-right-side--marvel .hero-novelty-card-shell {
+    padding-bottom: 0.25rem;
   }
 
   .hero-novelty-meta-row {
@@ -891,7 +929,12 @@ body::after {
   width: 100%;
   position: relative;
   z-index: 30;
-  transform: translateY(-0.75rem);
+}
+
+@media (min-width: 769px) {
+  .hero-novelty-meta {
+    transform: translateY(-0.75rem);
+  }
 }
 
 .hero-novelty-meta-row {
@@ -921,9 +964,12 @@ body::after {
   white-space: nowrap;
 }
 
-.hero-right-side--novelty {
-  align-items: flex-end;
-  margin-top: -5rem;
+/* Перекрытие с витриной слева — только от md; на мобильных иначе карта заезжает на «Новинки» */
+@media (min-width: 769px) {
+  .hero-right-side--novelty {
+    align-items: flex-end;
+    margin-top: -5rem;
+  }
 }
 
 .hero-right-side--novelty .hero-card--novelty-overlap .hero-right-product {
@@ -1339,7 +1385,7 @@ body::after {
 @media (max-width: 768px) {
   .hero-main-desktop {
     display: grid;
-    grid-template-columns: clamp(3.75rem, 14vw, 4.75rem) minmax(0, 1fr);
+    grid-template-columns: clamp(4.1rem, 15vw, 5.35rem) minmax(0, 1fr);
     grid-template-rows: auto auto;
     column-gap: clamp(0.85rem, 3vw, 1.35rem);
     row-gap: clamp(0.75rem, 2.8vw, 1.1rem);
@@ -1362,9 +1408,18 @@ body::after {
     flex-direction: column;
     align-items: center;
     justify-content: flex-start;
-    gap: clamp(8px, 2vw, 12px);
+    gap: clamp(9px, 2.2vw, 13px);
     overflow-x: visible;
     overflow-y: visible;
+  }
+
+  .hero-main-desktop > .hero-left-side > .hero-categories-outer .hero-categories .category-item {
+    width: clamp(46px, 7.2vw, 76px);
+    height: clamp(46px, 7.2vw, 76px);
+    min-width: clamp(46px, 7.2vw, 76px);
+    min-height: clamp(46px, 7.2vw, 76px);
+    max-width: clamp(46px, 7.2vw, 76px);
+    max-height: clamp(46px, 7.2vw, 76px);
   }
 
   .hero-main-desktop > .hero-left-side > .hero-category-empty-msg {

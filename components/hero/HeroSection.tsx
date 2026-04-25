@@ -429,12 +429,13 @@ export default function HeroSection({
               viewportCompact ? "hero--compact min-h-0 flex-1" : ""
             }`}
           >
-            {/* 1. Логотип */}
-            <div className="min-w-0 w-full shrink-0">
+            <div className="hero-stage min-w-0 w-full">
+            {/* 1. Логотип — на широком экране та же строка сетки, что верх правой колонки (см. .hero-stage в globals). */}
+            <div className="hero-wordmark-row min-w-0 w-full shrink-0">
               <HeroIlluCardsLogo />
             </div>
 
-            {/* 2–3. Десктоп: .hero-main-desktop — слева 60% (категории + витрина), справа 40% (карточка). ≤768 — см. globals. */}
+            {/* 2–3. Десктоп: слева категории + витрина, справа карточка. ≤768 — см. globals. */}
             <div className="hero-body min-w-0 w-full">
               <div
                 className={`hero-main-desktop min-w-0 w-full ${
@@ -568,8 +569,8 @@ export default function HeroSection({
                     }
                   >
                   {showNoveltiesHeroChrome ? (
-                    <div className="hero-right-product flex w-full max-w-none min-w-0 flex-col items-center gap-0 overflow-visible py-1 md:gap-4 md:py-3">
-                      <div className="hero-novelties-mobile-stack flex w-full max-w-full flex-col items-center gap-3 max-md:mx-auto max-md:max-w-[min(100%,22rem)] max-md:px-0 md:contents md:max-w-none">
+                    <div className="hero-right-product flex w-full max-w-none min-w-0 flex-col items-center gap-0 overflow-visible py-0 md:gap-4 md:py-0">
+                      <div className="hero-novelties-mobile-stack flex w-full max-w-full flex-col items-stretch gap-3 max-md:w-full max-md:px-0 md:contents md:max-w-none">
                       <div className="hero-title hero-novelty-header w-full shrink-0 text-center">
                         <h2 className="hero-novelties-title hero-novelties-title--static mx-auto block w-full max-w-full origin-center text-balance text-center font-bold uppercase tracking-[0.1em]">
                           Новинки
@@ -587,7 +588,7 @@ export default function HeroSection({
                           e.stopPropagation();
                           blockHeroCardLinkClickRef.current = false;
                         }}
-                        className="hero-slider hero-novelty-card-shell relative flex w-full max-w-[min(100%,40rem)] shrink-0 items-center justify-center gap-2 px-1 md:gap-3 md:px-2"
+                        className="hero-slider hero-novelty-card-shell relative flex w-full max-w-full shrink-0 items-center justify-center gap-2 px-0 md:max-w-[min(100%,40rem)] md:gap-3 md:px-2"
                       >
                         {canCycleNoveltiesWithArrows ? (
                           <button
@@ -644,7 +645,7 @@ export default function HeroSection({
                         )}
                       </div>
 
-                      <div className="hero-novelty-meta flex w-full max-w-[min(100%,36rem)] shrink-0 flex-col gap-2 px-2 text-center md:gap-3 md:px-3 md:text-left">
+                      <div className="hero-novelty-meta flex w-full max-w-full shrink-0 flex-col gap-2 px-0 text-center md:max-w-[min(100%,36rem)] md:gap-3 md:px-3 md:text-left">
                         <div className="hero-novelty-meta-row flex w-full flex-col items-stretch gap-2 md:flex-row md:items-center md:justify-between md:gap-3">
                           <p className="hero-name hero-novelty-card-title text-base font-semibold text-white md:text-lg lg:text-xl">
                             {stackCard.title}
@@ -690,6 +691,7 @@ export default function HeroSection({
                   )}
                 </div>
               </div>
+            </div>
             </div>
             </div>
           </div>

@@ -133,7 +133,7 @@ export function SocialLinksBar({
     <nav
       className={
         compact
-          ? ["min-w-0 max-w-full", className].filter(Boolean).join(" ")
+          ? ["flex shrink-0 items-center", className].filter(Boolean).join(" ")
           : "relative z-20 mx-auto w-full max-w-[1400px] px-6 lg:px-10"
       }
       aria-label="Социальные сети"

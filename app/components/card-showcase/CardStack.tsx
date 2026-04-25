@@ -81,6 +81,7 @@ function DecorCard({
     >
       <AdultContentBlurGate
         isAdult={cardRequiresAgeConfirmation(card)}
+        cardId={card.id}
         mode="blurOnly"
       >
         <div className={`relative h-full w-full min-h-0 ${fixedShell}`}>

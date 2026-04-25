@@ -26,18 +26,21 @@ export function buildNoveltiesCarouselCards(
   const ids = slide.cardIds?.filter(Boolean) ?? [];
   if (ids.length === 0) return pool;
 
-  const map = new Map(pool.map((c) => [c.id, c]));
+  const allCardsMap = new Map(cards.map((c) => [c.id, c]));
   const out: StoredCard[] = [];
   const seen = new Set<string>();
+
   for (const id of ids) {
-    const c = map.get(id);
+    const c = allCardsMap.get(id);
     if (c && !seen.has(c.id)) {
       seen.add(c.id);
       out.push(c);
     }
   }
+
   for (const c of pool) {
     if (!seen.has(c.id)) out.push(c);
   }
+
   return out;
 }

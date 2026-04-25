@@ -9,10 +9,14 @@ import { useAdultContentGateOptional } from "../context/AdultContentContext";
 import { useMergedRating } from "../context/CardRatingsContext";
 import { useFavorites } from "../context/FavoritesContext";
 import { isTmntCatalogCard } from "../lib/isTmntCatalogCard";
-import { cardRequiresAgeConfirmation } from "../lib/cardRequiresAgeConfirmation";
+import {
+  cardRequiresAgeConfirmation,
+  catalogCardFrameClass,
+} from "../lib/cardRequiresAgeConfirmation";
 import { useAddToCartWithFeedback } from "../lib/cartUx/useAddToCartWithFeedback";
 import { ultraOrHeroBgUrl } from "../lib/cardUltraBg";
 import { CardStackVisual } from "@/components/hero/CardStackVisual";
+import { AgeConfirmDialog } from "./AdultContentBlurGate";
 import { CardPriceDualRow } from "./CardPriceDualRow";
 import { CardRatingStars } from "./CardRatingStars";
 import { FavoritePopup } from "./FavoritePopup";
@@ -26,11 +30,19 @@ type Props = {
 /** Как в HeroCardStack: короткий тап — переход; микросдвиг — vario/3D без потери click в WebKit */
 const TAP_MAX_PX = 22;
 
+const ADULT_BADGE_CLASS =
+  "pointer-events-none absolute right-1 top-1 z-[130] rounded border border-rose-400/85 bg-rose-950/92 px-1.5 py-0.5 text-[10px] font-extrabold uppercase leading-none tracking-wide text-rose-50 shadow-[0_0_12px_rgba(244,63,94,0.35)]";
+
 export function CardItem({ card, hideUltraLayer = false }: Props) {
   const router = useRouter();
   const adultGate = useAdultContentGateOptional();
-  const adultLocked =
-    cardRequiresAgeConfirmation(card) && !(adultGate?.confirmed ?? false);
+  const needs18 = cardRequiresAgeConfirmation(card);
+  const confirmed18 = needs18
+    ? (adultGate?.isAdultConfirmed(card.id) ?? false)
+    : true;
+  const adultBlockedNav = needs18 && !confirmed18;
+  const [ageOpen, setAgeOpen] = useState(false);
+  const pendingNavRef = useRef<string | null>(null);
   const merged = useMergedRating(card);
   const { isFavorite, toggleFavorite } = useFavorites();
   const addToCartWithFeedback = useAddToCartWithFeedback();
@@ -48,11 +60,20 @@ export function CardItem({ card, hideUltraLayer = false }: Props) {
     if (!wasLiked) setShowPopup(true);
   }
 
-  function goToCardPage() {
-    router.push(`/card/${card.id}`);
+  const cardHref = `/card/${card.id}`;
+
+  function openCardNav(href: string) {
+    if (adultBlockedNav) {
+      pendingNavRef.current = href;
+      setAgeOpen(true);
+    } else {
+      router.push(href);
+    }
   }
 
-  const cardHref = `/card/${card.id}`;
+  function goToCardPage() {
+    openCardNav(cardHref);
+  }
 
   const tmntTile = isTmntCatalogCard(card);
 
@@ -60,12 +81,34 @@ export function CardItem({ card, hideUltraLayer = false }: Props) {
     <div
       className={`card flex min-h-0 min-w-0 flex-col overflow-visible text-left${tmntTile ? " tmnt self-start" : " h-full w-full"}`}
     >
+      <AgeConfirmDialog
+        open={ageOpen}
+        onClose={() => {
+          setAgeOpen(false);
+          pendingNavRef.current = null;
+        }}
+        onConfirm={() => {
+          adultGate?.confirmAdultForCard(card.id);
+          setAgeOpen(false);
+          const h = pendingNavRef.current;
+          pendingNavRef.current = null;
+          if (h) router.push(h);
+        }}
+      />
+
       <Link
         ref={flyRef}
         href={cardHref}
         prefetch
-        className={`relative block w-full min-w-0 shrink-0 cursor-pointer overflow-visible${adultLocked ? " pointer-events-none" : ""}`}
+        className="relative block w-full min-w-0 shrink-0 cursor-pointer overflow-visible"
         aria-label={`Открыть карточку: ${card.title}`}
+        onClick={(e) => {
+          if (adultBlockedNav) {
+            e.preventDefault();
+            pendingNavRef.current = cardHref;
+            setAgeOpen(true);
+          }
+        }}
         onTouchStartCapture={(e) => {
           if (e.touches.length === 0) return;
           const t = e.touches[0];
@@ -80,21 +123,30 @@ export function CardItem({ card, hideUltraLayer = false }: Props) {
           const dy = Math.abs(t.clientY - start.y);
           if (dx <= TAP_MAX_PX && dy <= TAP_MAX_PX) {
             e.preventDefault();
-            router.push(cardHref);
+            openCardNav(cardHref);
           }
         }}
         onTouchCancel={() => {
           touchStartRef.current = null;
         }}
       >
-        <CardStackVisual
-          card={card}
-          ultraBgUrl={ultraOrHeroBgUrl(card)}
-          catalogStack
-          hideUltraLayer={hideUltraLayer}
-          rootClassName="relative mx-auto max-w-full rounded-2xl"
-          dataCartFlySource
-        />
+        <div
+          className={`relative overflow-visible rounded-2xl ${catalogCardFrameClass(card)}`}
+        >
+          {needs18 ? (
+            <span className={ADULT_BADGE_CLASS} aria-hidden>
+              18+
+            </span>
+          ) : null}
+          <CardStackVisual
+            card={card}
+            ultraBgUrl={ultraOrHeroBgUrl(card)}
+            catalogStack
+            hideUltraLayer={hideUltraLayer}
+            rootClassName="relative mx-auto max-w-full rounded-2xl"
+            dataCartFlySource
+          />
+        </div>
       </Link>
 
       <FavoritePopup show={showPopup} onClose={closePopup} />

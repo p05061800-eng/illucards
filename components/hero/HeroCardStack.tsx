@@ -46,7 +46,7 @@ export function HeroCardStack({
   const touchStartRef = useRef<{ x: number; y: number } | null>(null);
   const adultLocked =
     cardRequiresAgeConfirmation(displayCard) &&
-    !(adultGate?.confirmed ?? false);
+    !(adultGate?.isAdultConfirmed(displayCard.id) ?? false);
 
   const cardForVisual = useMemo((): StoredCard => {
     if (displayCard.frontImage?.trim()) return displayCard;

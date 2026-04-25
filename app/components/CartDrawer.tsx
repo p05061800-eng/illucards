@@ -293,6 +293,7 @@ export function CartDrawer() {
                             category: line.category,
                             categoryOrder: line.categoryOrder,
                           })}
+                          cardId={line.id}
                           mode="blurOnly"
                         >
                           <Image

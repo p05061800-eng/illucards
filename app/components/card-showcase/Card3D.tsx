@@ -481,7 +481,10 @@ export function Card3D({ card }: Props) {
             ref={magneticRef}
             className="transition-transform duration-200 ease-out will-change-transform"
           >
-            <AdultContentBlurGate isAdult={cardRequiresAgeConfirmation(card)}>
+            <AdultContentBlurGate
+              isAdult={cardRequiresAgeConfirmation(card)}
+              cardId={card.id}
+            >
             <div
               className="relative mx-auto w-full max-w-[min(100%,380px)]"
               style={{ width: "min(320px, calc(100% - 2rem))" }}

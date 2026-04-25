@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useRef, type TouchEvent } from "react";
+import { useCallback, useEffect, useRef, type KeyboardEvent, type TouchEvent } from "react";
 import type { StoredCard } from "../../api/cards/route";
 import { ultraOrHeroBgUrl } from "../../lib/cardUltraBg";
 import { CardStackVisual } from "@/components/hero/CardStackVisual";
@@ -119,6 +119,7 @@ export function CardViewer({
   layout = "default",
   hideNavigation = false,
   productCenterConstrained = true,
+  onCardClick,
 }: Props) {
   const router = useRouter();
   const touchStartX = useRef<number | null>(null);
@@ -126,6 +127,23 @@ export function CardViewer({
   const rawIdx = browseCards.findIndex((c) => c.id === activeCard.id);
   const idx = rawIdx >= 0 ? rawIdx : 0;
   const active = browseCards[idx] ?? browseCards[0];
+  const clickable = Boolean(onCardClick);
+
+  const handleCardClick = useCallback(() => {
+    if (!active || !clickable) return;
+    onCardClick?.(active.id);
+  }, [active, clickable, onCardClick]);
+
+  const onCardKeyDown = useCallback(
+    (e: KeyboardEvent<HTMLDivElement>) => {
+      if (!clickable) return;
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        handleCardClick();
+      }
+    },
+    [clickable, handleCardClick]
+  );
 
   const go = useCallback(
     (delta: -1 | 1) => {
@@ -198,9 +216,13 @@ export function CardViewer({
 
   const centerColumn = (
     <div
-      className={`relative z-0 flex min-h-0 min-w-0 touch-pan-y justify-center overflow-visible px-0.5 ${hideNavigation ? "w-full flex-none" : `flex-1 ${wrapMax}`}`}
+      role={clickable ? "button" : undefined}
+      tabIndex={clickable ? 0 : undefined}
+      className={`relative z-0 flex min-h-0 min-w-0 touch-pan-y justify-center overflow-visible px-0.5 ${hideNavigation ? "w-full flex-none" : `flex-1 ${wrapMax}`} ${clickable ? "cursor-pointer" : ""}`}
       onTouchStart={onTouchStart}
       onTouchEnd={onTouchEnd}
+      onClick={clickable ? handleCardClick : undefined}
+      onKeyDown={clickable ? onCardKeyDown : undefined}
     >
       <div className="grid w-full min-w-0 min-h-0 place-items-start justify-items-center overflow-visible py-1">
         <div

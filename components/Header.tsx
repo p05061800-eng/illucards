@@ -96,14 +96,14 @@ export default function Header() {
   return (
     <header className="sticky top-0 z-[200] border-b border-white/10 bg-[#070510]/90 text-white shadow-[0_8px_32px_rgba(0,0,0,0.35)] backdrop-blur-md">
       <div className="relative mx-auto flex max-w-[1400px] flex-col gap-3 px-4 py-3 sm:gap-4 sm:px-6 sm:py-4 lg:px-10 md:flex-row md:items-center md:justify-between">
-        <div className="flex min-w-0 flex-col gap-2 md:flex-none md:gap-0">
+        <div className="flex w-full min-w-0 flex-row items-center justify-between gap-2 md:w-auto md:flex-none md:flex-col md:items-start md:justify-start md:gap-0">
           <Link
             href="/"
             className="site-wordmark shrink-0 text-xl font-bold tracking-tight"
           >
             IlluCards
           </Link>
-          <SocialLinksBar compact className="w-full md:hidden" />
+          <SocialLinksBar compact className="md:hidden" />
         </div>
 
         <nav className="hidden min-w-0 flex-1 items-center justify-center gap-5 md:flex lg:gap-7">

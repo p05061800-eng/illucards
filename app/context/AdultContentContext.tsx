@@ -10,12 +10,23 @@ import {
   type ReactNode,
 } from "react";
 
-const STORAGE_KEY = "illucards-adult-content-confirmed-v1";
+const STORAGE_KEY = "illucards-adult-confirmed-ids-v2";
+
+function loadIdsFromStorage(): Set<string> {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return new Set();
+    const parsed = JSON.parse(raw) as unknown;
+    if (!Array.isArray(parsed)) return new Set();
+    return new Set(parsed.filter((x): x is string => typeof x === "string"));
+  } catch {
+    return new Set();
+  }
+}
 
 export type AdultContentContextValue = {
-  /** Пользователь нажал «Мне есть 18 лет» (сохранено в localStorage). */
-  confirmed: boolean;
-  confirmAdult: () => void;
+  isAdultConfirmed: (cardId: string) => boolean;
+  confirmAdultForCard: (cardId: string) => void;
 };
 
 const AdultContentContext = createContext<AdultContentContextValue | null>(
@@ -23,37 +34,47 @@ const AdultContentContext = createContext<AdultContentContextValue | null>(
 );
 
 export function AdultContentProvider({ children }: { children: ReactNode }) {
-  const [confirmed, setConfirmed] = useState(false);
+  const [confirmedIds, setConfirmedIds] = useState<Set<string>>(() =>
+    typeof window === "undefined" ? new Set() : loadIdsFromStorage(),
+  );
 
   useEffect(() => {
-    try {
-      if (localStorage.getItem(STORAGE_KEY) === "1") setConfirmed(true);
-    } catch {
-      /* ignore */
-    }
+    setConfirmedIds(loadIdsFromStorage());
   }, []);
 
   useEffect(() => {
     const onStorage = (e: StorageEvent) => {
       if (e.key !== STORAGE_KEY) return;
-      setConfirmed(e.newValue === "1");
+      setConfirmedIds(loadIdsFromStorage());
     };
     window.addEventListener("storage", onStorage);
     return () => window.removeEventListener("storage", onStorage);
   }, []);
 
-  const confirmAdult = useCallback(() => {
-    try {
-      localStorage.setItem(STORAGE_KEY, "1");
-    } catch {
-      /* ignore */
-    }
-    setConfirmed(true);
+  const isAdultConfirmed = useCallback(
+    (cardId: string) => confirmedIds.has(cardId),
+    [confirmedIds],
+  );
+
+  const confirmAdultForCard = useCallback((cardId: string) => {
+    const id = cardId.trim();
+    if (!id) return;
+    setConfirmedIds((prev) => {
+      if (prev.has(id)) return prev;
+      const next = new Set(prev);
+      next.add(id);
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify([...next]));
+      } catch {
+        /* ignore */
+      }
+      return next;
+    });
   }, []);
 
   const value = useMemo(
-    () => ({ confirmed, confirmAdult }),
-    [confirmed, confirmAdult],
+    () => ({ isAdultConfirmed, confirmAdultForCard }),
+    [isAdultConfirmed, confirmAdultForCard],
   );
 
   return (

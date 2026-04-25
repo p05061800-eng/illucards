@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { ShoppingBag } from "lucide-react";
 import { CardStackVisual } from "@/components/hero/CardStackVisual";
 import CategorySlider from "@/components/ui/CategorySlider";
@@ -17,8 +18,12 @@ import type { CardRarity, StoredCard } from "./api/cards/route";
 import { CardDescriptionText } from "./components/CardDescriptionText";
 import { PurchaseModal } from "./components/PurchaseModal";
 import { RARITY_STYLES } from "./lib/cardRarityUi";
+import { AgeConfirmDialog } from "./components/AdultContentBlurGate";
 import { useAdultContentGateOptional } from "./context/AdultContentContext";
-import { cardRequiresAgeConfirmation } from "./lib/cardRequiresAgeConfirmation";
+import {
+  cardRequiresAgeConfirmation,
+  catalogCardFrameClass,
+} from "./lib/cardRequiresAgeConfirmation";
 import { useAddToCartWithFeedback } from "./lib/cartUx/useAddToCartWithFeedback";
 import { CardPriceDualRow } from "./components/CardPriceDualRow";
 import { effectiveCardPriceByn } from "./lib/formatPrice";
@@ -41,6 +46,11 @@ const RARITY_LABELS: Record<CardRarity, string> = {
 const fieldClass =
   "w-full rounded-xl border border-white/10 bg-zinc-950/90 px-4 py-2.5 text-sm text-zinc-100 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] transition placeholder:text-zinc-600 focus:border-purple-500/45 focus:outline-none focus:ring-2 focus:ring-purple-500/25";
 
+const TAP_MAX_PX = 22;
+
+const ADULT_BADGE_CLASS =
+  "pointer-events-none absolute right-0.5 top-0.5 z-[130] rounded border border-rose-400/85 bg-rose-950/92 px-1 py-0.5 text-[9px] font-extrabold uppercase leading-none tracking-wide text-rose-50 shadow-[0_0_12px_rgba(244,63,94,0.35)]";
+
 function CardItem({
   card,
   onBuy,
@@ -50,16 +60,33 @@ function CardItem({
   onBuy: () => void;
   variant?: "grid" | "list";
 }) {
+  const router = useRouter();
   const addToCartWithFeedback = useAddToCartWithFeedback();
   const adultGate = useAdultContentGateOptional();
-  const adultLocked =
-    cardRequiresAgeConfirmation(card) && !(adultGate?.confirmed ?? false);
+  const needs18 = cardRequiresAgeConfirmation(card);
+  const confirmed18 = needs18
+    ? (adultGate?.isAdultConfirmed(card.id) ?? false)
+    : true;
+  const adultBlockedNav = needs18 && !confirmed18;
+  const [ageOpen, setAgeOpen] = useState(false);
+  const pendingNavRef = useRef<string | null>(null);
+  const touchStartRef = useRef<{ x: number; y: number } | null>(null);
   const categoryDisplay = card.category
     ? categoryLabel(card.category)
     : "—";
 
   const rarity = card.rarity ?? "limited";
   const isList = variant === "list";
+  const cardHref = `/card/${card.id}`;
+
+  function openNav(href: string) {
+    if (adultBlockedNav) {
+      pendingNavRef.current = href;
+      setAgeOpen(true);
+    } else {
+      router.push(href);
+    }
+  }
 
   return (
     <article
@@ -74,8 +101,22 @@ function CardItem({
           isList
             ? "[transform-style:preserve-3d]"
             : "flex flex-col rounded-2xl [transform-style:preserve-3d]"
-        }
-      >
+      }
+    >
+      <AgeConfirmDialog
+        open={ageOpen}
+        onClose={() => {
+          setAgeOpen(false);
+          pendingNavRef.current = null;
+        }}
+        onConfirm={() => {
+          adultGate?.confirmAdultForCard(card.id);
+          setAgeOpen(false);
+          const h = pendingNavRef.current;
+          pendingNavRef.current = null;
+          if (h) router.push(h);
+        }}
+      />
         <div
           className={
             isList
@@ -84,19 +125,53 @@ function CardItem({
           }
         >
         <Link
-          href={`/card/${card.id}`}
+          href={cardHref}
           className={`${
             isList
               ? "group/card flex min-w-0 flex-1 cursor-pointer flex-row gap-4 rounded-xl p-0.5 transition-[filter] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] sm:items-start"
               : "group/card flex cursor-pointer flex-col gap-2 rounded-2xl p-0.5 transition-[filter] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)]"
-          }${adultLocked ? " pointer-events-none" : ""}`}
+          }`}
+          onClick={(e) => {
+            if (adultBlockedNav) {
+              e.preventDefault();
+              pendingNavRef.current = cardHref;
+              setAgeOpen(true);
+            }
+          }}
+          onTouchStartCapture={(e) => {
+            if (e.touches.length === 0) return;
+            const t = e.touches[0];
+            touchStartRef.current = { x: t.clientX, y: t.clientY };
+          }}
+          onTouchEnd={(e) => {
+            const start = touchStartRef.current;
+            touchStartRef.current = null;
+            if (!start || e.changedTouches.length === 0) return;
+            const t = e.changedTouches[0];
+            const dx = Math.abs(t.clientX - start.x);
+            const dy = Math.abs(t.clientY - start.y);
+            if (dx <= TAP_MAX_PX && dy <= TAP_MAX_PX) {
+              e.preventDefault();
+              openNav(cardHref);
+            }
+          }}
+          onTouchCancel={() => {
+            touchStartRef.current = null;
+          }}
         >
           <div
             className={
               isList ? "relative w-[104px] shrink-0 sm:w-[118px]" : "relative w-full"
             }
           >
-            <div className="relative w-full [transform-style:preserve-3d]">
+            <div
+              className={`relative w-full overflow-visible rounded-2xl [transform-style:preserve-3d] ${catalogCardFrameClass(card)}`}
+            >
+              {needs18 ? (
+                <span className={ADULT_BADGE_CLASS} aria-hidden>
+                  18+
+                </span>
+              ) : null}
               <CardStackVisual
                 card={card}
                 ultraBgUrl={ultraOrHeroBgUrl(card)}

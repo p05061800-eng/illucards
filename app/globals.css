@@ -522,8 +522,8 @@ body::after {
 .hero-main-desktop {
   display: flex;
   justify-content: space-between;
-  /* stretch: высота ряда = max(лево, право); левая колонка не перецентрируется при смене новинки */
-  align-items: stretch;
+  /* На смену карточек не тянем левую колонку по высоте. */
+  align-items: flex-start;
   gap: 40px;
   width: 100%;
   min-width: 0;
@@ -547,7 +547,101 @@ body::after {
   flex: 0 1 40%;
   min-width: 0;
   justify-content: center;
-  align-items: flex-start;
+  align-items: center;
+}
+
+.hero-right-side .hero-right-product {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  max-height: min(80vh, 44rem);
+  min-height: 0;
+  overflow: visible;
+}
+
+.hero-right-side .hero-right-product > div {
+  width: 100%;
+  max-height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: visible;
+}
+
+.hero-right-side .hero-right-product .product-card-page-stack {
+  max-height: 100%;
+  overflow: visible;
+  padding-top: 0;
+  padding-bottom: 0;
+}
+
+.hero-right-side .hero-right-product .product-card-page-stack.hero-card-stack-visual {
+  max-height: 100%;
+}
+
+.hero-right-side .hero-right-product .card-stack-visual-art .card-main,
+.hero-right-side .hero-right-product .card-stack-visual-art .card-side-img {
+  max-height: 100%;
+  height: auto;
+  object-fit: contain;
+}
+
+@media (max-width: 768px) {
+  .hero-right-side {
+    justify-content: center;
+  }
+
+  .hero-right-side .hero-right-product {
+    max-height: min(70vh, 34rem);
+    padding-inline: clamp(0.75rem, 4vw, 1.5rem);
+  }
+
+  .hero-right-side .hero-right-product > div {
+    max-width: 100%;
+    width: 100%;
+  }
+
+  .hero-right-side .hero-right-product .product-card-page-stack {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .hero-right-side--novelty {
+    margin-top: 0;
+  }
+
+  .hero-novelty-card-shell {
+    flex-direction: column;
+    padding-bottom: clamp(2rem, 4vw, 3rem);
+    min-height: clamp(22rem, 52vw, 30rem);
+  }
+
+  .hero-novelty-meta {
+    transform: none;
+    margin-top: clamp(0.75rem, 1.5vw, 1rem);
+  }
+
+  .hero-novelty-meta-row {
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+}
+
+@media (min-width: 1600px) {
+  .hero-right-side {
+    width: 38%;
+    max-width: 38%;
+  }
+
+  .hero-right-side .hero-right-product {
+    max-height: min(80vh, 48rem);
+  }
+
+  .hero-right-side .hero-right-product > div {
+    max-width: min(100%, 44rem);
+  }
 }
 
 /* Блок витрины («Легендарное трио» и т.п.) на всю ширину левой колонки */
@@ -725,6 +819,86 @@ body::after {
 .hero-novelty-carousel .hero-novelty-arrow svg {
   width: clamp(0.85rem, 2.8vw, 1.125rem);
   height: clamp(0.85rem, 2.8vw, 1.125rem);
+}
+
+.hero-novelty-header {
+  margin-bottom: clamp(0.5rem, 1vw, 0.9rem);
+}
+
+.hero-novelty-card-shell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(0.75rem, 1.5vw, 1.25rem);
+  width: 100%;
+  max-width: 100%;
+  padding-bottom: clamp(4rem, 5vw, 5rem);
+  margin-top: 0;
+  min-height: clamp(32rem, 35vw, 40rem);
+}
+
+.hero-novelty-card-wrap {
+  width: 100%;
+  min-width: 0;
+  min-height: clamp(28rem, 30vw, 34rem);
+}
+
+.hero-novelty-side-arrow {
+  flex: 0 0 auto;
+  width: clamp(2.15rem, 5vw, 2.75rem);
+  height: clamp(2.15rem, 5vw, 2.75rem);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.hero-novelty-meta {
+  margin-top: clamp(1rem, 1.5vw, 1.5rem);
+  width: 100%;
+  position: relative;
+  z-index: 30;
+  transform: translateY(-0.75rem);
+}
+
+.hero-novelty-meta-row {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: clamp(0.75rem, 1vw, 1rem);
+  width: 100%;
+}
+
+.hero-novelty-card-title {
+  margin-bottom: 0;
+  text-align: left;
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.hero-novelty-buy-first {
+  flex: 0 0 auto;
+}
+
+.hero-novelty-buy-first {
+  white-space: nowrap;
+}
+
+.hero-right-side--novelty {
+  align-items: flex-end;
+  margin-top: -5rem;
+}
+
+.hero-right-side--novelty .hero-card--novelty-overlap .hero-right-product {
+  justify-content: flex-start;
+  padding-top: 0;
+}
+
+.hero-novelty-buy-first {
+  white-space: nowrap;
 }
 
 @keyframes hero-showcase-limited-glow {
@@ -1204,7 +1378,7 @@ body::after {
   }
 
   .hero-main-desktop .hero-cell-card.hero-card .hero-stack-max {
-    max-width: none;
+    max-width: min(100%, clamp(24rem, 40vw, 42rem));
   }
 
   .hero-novelty-chrome-shift,

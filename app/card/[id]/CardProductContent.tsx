@@ -1,8 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { BadgePercent, Heart, ShieldCheck, Truck } from "lucide-react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
+import { BadgePercent, Heart, ShieldCheck, SlidersHorizontal, Truck } from "lucide-react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { CardRarity, StoredCard } from "../../api/cards/route";
 import type { UserReviewEntry } from "@/app/lib/userReviews";
 import { CardDescriptionText } from "../../components/CardDescriptionText";
@@ -21,9 +22,18 @@ import {
   cardArtFaceFitStyle,
   cardArtFaceObjectFitClass,
 } from "../../lib/imageFocus";
+import { EMPTY_TYPE_FILTER } from "@/app/lib/collectionFilter";
+import { useCatalogFilter } from "@/app/context/CatalogFilterContext";
 import { CardPriceDualRow } from "../../components/CardPriceDualRow";
-import { AdultContentBlurGate } from "../../components/AdultContentBlurGate";
-import { cardRequiresAgeConfirmation } from "../../lib/cardRequiresAgeConfirmation";
+import {
+  AdultContentBlurGate,
+  AgeConfirmDialog,
+} from "../../components/AdultContentBlurGate";
+import {
+  cardRequiresAgeConfirmation,
+  catalogCardFrameClass,
+} from "../../lib/cardRequiresAgeConfirmation";
+import { useAdultContentGateOptional } from "../../context/AdultContentContext";
 import { ProductReviewsSection } from "../../components/ProductReviewsSection";
 import { CardProductGallery } from "./CardProductGallery";
 
@@ -60,46 +70,120 @@ function ratingCountWord(n: number): string {
   return "оценок";
 }
 
+const MINI_RAIL_TAP_MAX_PX = 22;
+
+const MINI_RAIL_ADULT_BADGE =
+  "pointer-events-none absolute right-0.5 top-0.5 z-[130] rounded border border-rose-400/85 bg-rose-950/92 px-1 py-0.5 text-[9px] font-extrabold uppercase leading-none text-rose-50 shadow-[0_0_12px_rgba(244,63,94,0.35)]";
+
 function MiniRailCard({ card: c }: { card: StoredCard }) {
+  const router = useRouter();
+  const adultGate = useAdultContentGateOptional();
   const merged = useMergedRating(c);
   const img = c.frontImage?.trim();
+  const needs18 = cardRequiresAgeConfirmation(c);
+  const blocked = needs18 && !(adultGate?.isAdultConfirmed(c.id) ?? false);
+  const [ageOpen, setAgeOpen] = useState(false);
+  const pendingHrefRef = useRef<string | null>(null);
+  const touchStartRef = useRef<{ x: number; y: number } | null>(null);
+  const href = `/card/${c.id}`;
+
+  function openNav() {
+    if (blocked) {
+      pendingHrefRef.current = href;
+      setAgeOpen(true);
+    } else {
+      router.push(href);
+    }
+  }
+
   return (
-    <Link
-      href={`/card/${c.id}`}
-      className="group flex w-[min(148px,40vw)] shrink-0 flex-col overflow-visible rounded-lg border border-white/10 bg-zinc-950/60 transition hover:border-purple-500/40 hover:bg-zinc-900/80 sm:w-[148px]"
-    >
-      <div className="relative w-full overflow-visible rounded-t-lg bg-zinc-900">
-        {img ? (
-          <AdultContentBlurGate
-            isAdult={cardRequiresAgeConfirmation(c)}
-            mode="blurOnly"
-          >
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={img}
-              alt=""
-              className={`block h-auto w-full max-w-full ${cardArtFaceObjectFitClass(c.cardArtFramePreset)}`}
-              style={cardArtFaceFitStyle(
-                c.cardArtFramePreset,
-                c.frontImageFocus,
-              )}
-            />
-          </AdultContentBlurGate>
-        ) : null}
-      </div>
-      <div className="flex min-h-[3.5rem] flex-col gap-1.5 p-2">
-        <p className="line-clamp-2 text-xs font-medium leading-tight text-zinc-100">
-          {c.title}
-        </p>
-        <div className="flex items-center gap-1.5">
-          <CardRatingStars value={merged.avg} compact />
-          <span className="text-[10px] font-semibold tabular-nums text-amber-200/95">
-            {merged.avg.toFixed(1)}
-          </span>
+    <>
+      <AgeConfirmDialog
+        open={ageOpen}
+        onClose={() => {
+          setAgeOpen(false);
+          pendingHrefRef.current = null;
+        }}
+        onConfirm={() => {
+          adultGate?.confirmAdultForCard(c.id);
+          setAgeOpen(false);
+          const h = pendingHrefRef.current;
+          pendingHrefRef.current = null;
+          if (h) router.push(h);
+        }}
+      />
+      <Link
+        href={href}
+        className="group flex w-[min(148px,40vw)] shrink-0 flex-col overflow-visible rounded-lg border border-white/10 bg-zinc-950/60 transition hover:border-purple-500/40 hover:bg-zinc-900/80 sm:w-[148px]"
+        onClick={(e) => {
+          if (blocked) {
+            e.preventDefault();
+            pendingHrefRef.current = href;
+            setAgeOpen(true);
+          }
+        }}
+        onTouchStartCapture={(e) => {
+          if (e.touches.length === 0) return;
+          const t = e.touches[0];
+          touchStartRef.current = { x: t.clientX, y: t.clientY };
+        }}
+        onTouchEnd={(e) => {
+          const start = touchStartRef.current;
+          touchStartRef.current = null;
+          if (!start || e.changedTouches.length === 0) return;
+          const t = e.changedTouches[0];
+          const dx = Math.abs(t.clientX - start.x);
+          const dy = Math.abs(t.clientY - start.y);
+          if (dx <= MINI_RAIL_TAP_MAX_PX && dy <= MINI_RAIL_TAP_MAX_PX) {
+            e.preventDefault();
+            openNav();
+          }
+        }}
+        onTouchCancel={() => {
+          touchStartRef.current = null;
+        }}
+      >
+        <div
+          className={`relative w-full overflow-visible rounded-t-lg bg-zinc-900 ${catalogCardFrameClass(c)}`}
+        >
+          {needs18 ? (
+            <span className={MINI_RAIL_ADULT_BADGE} aria-hidden>
+              18+
+            </span>
+          ) : null}
+          {img ? (
+            <AdultContentBlurGate
+              isAdult={needs18}
+              cardId={c.id}
+              mode="blurOnly"
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={img}
+                alt=""
+                className={`block h-auto w-full max-w-full ${cardArtFaceObjectFitClass(c.cardArtFramePreset)}`}
+                style={cardArtFaceFitStyle(
+                  c.cardArtFramePreset,
+                  c.frontImageFocus,
+                )}
+              />
+            </AdultContentBlurGate>
+          ) : null}
         </div>
-        <CardPriceDualRow card={c} variant="rail" />
-      </div>
-    </Link>
+        <div className="flex min-h-[3.5rem] flex-col gap-1.5 p-2">
+          <p className="line-clamp-2 text-xs font-medium leading-tight text-zinc-100">
+            {c.title}
+          </p>
+          <div className="flex items-center gap-1.5">
+            <CardRatingStars value={merged.avg} compact />
+            <span className="text-[10px] font-semibold tabular-nums text-amber-200/95">
+              {merged.avg.toFixed(1)}
+            </span>
+          </div>
+          <CardPriceDualRow card={c} variant="rail" />
+        </div>
+      </Link>
+    </>
   );
 }
 
@@ -137,6 +221,14 @@ export default function CardProductContent({
 }: Props) {
   const [favoritePopup, setFavoritePopup] = useState(false);
   const { isFavorite, toggleFavorite } = useFavorites();
+  const {
+    setSearch,
+    setCategoryFilter,
+    setTypeFilter,
+    setPriceSort,
+    openFiltersAndScrollToCollection,
+  } = useCatalogFilter();
+  const router = useRouter();
   const liked = isFavorite(card.id);
   const addToCartWithFeedback = useAddToCartWithFeedback();
   const rarity = card.rarity ?? "limited";
@@ -160,6 +252,35 @@ export default function CardProductContent({
   }, [refreshUserReviews]);
 
   const moreFromCategory = categoryCards.filter((c) => c.id !== card.id);
+
+  const allCategoryNames = useMemo(() => {
+    return [
+      ...new Set(
+        allCards
+          .map((c) => c.category?.trim() ?? "")
+          .filter((n) => n.length > 0)
+      ),
+    ].sort((a, b) => a.localeCompare(b, "ru"));
+  }, [allCards]);
+
+  const openCategory = useCallback(
+    (categoryName: string) => {
+      setSearch("");
+      setCategoryFilter(categoryName);
+      setTypeFilter(EMPTY_TYPE_FILTER);
+      setPriceSort("default");
+      router.push("/#collection");
+    },
+    [router, setCategoryFilter, setPriceSort, setSearch, setTypeFilter]
+  );
+
+  const openFilterPanel = useCallback(() => {
+    setSearch("");
+    setCategoryFilter("");
+    setTypeFilter(EMPTY_TYPE_FILTER);
+    setPriceSort("default");
+    openFiltersAndScrollToCollection();
+  }, [openFiltersAndScrollToCollection, setCategoryFilter, setPriceSort, setSearch, setTypeFilter]);
 
   /**
    * Листание стрелками: в категории — по `categoryOrder`, как в каталоге;
@@ -196,6 +317,33 @@ export default function CardProductContent({
             </span>
             Назад к коллекции
           </Link>
+        </div>
+
+        <div className="mb-4 flex flex-wrap items-center gap-3">
+          <div className="flex flex-wrap gap-2 overflow-x-auto pb-1 scrollbar-hide">
+            {allCategoryNames.map((name) => (
+              <button
+                key={name}
+                type="button"
+                onClick={() => openCategory(name)}
+                className={`inline-flex items-center justify-center rounded-full border px-3 py-1.5 text-xs font-semibold transition ${
+                  name === card.category
+                    ? "border-violet-400/70 bg-violet-500/15 text-violet-100"
+                    : "border-white/10 bg-white/5 text-zinc-300 hover:border-violet-400/30 hover:bg-white/10 hover:text-white"
+                }`}
+              >
+                {name}
+              </button>
+            ))}
+          </div>
+          <button
+            type="button"
+            onClick={openFilterPanel}
+            className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-black/60 px-4 py-2 text-sm font-semibold text-white transition hover:border-violet-400/30 hover:bg-violet-950/60"
+          >
+            <SlidersHorizontal className="h-4 w-4 text-violet-300" aria-hidden />
+            Фильтр
+          </button>
         </div>
 
         <div className="overflow-visible rounded-2xl border border-white/[0.07] bg-gradient-to-br from-zinc-950/95 via-zinc-950/80 to-violet-950/[0.35] p-4 shadow-[0_0_56px_-20px_rgba(88,28,135,0.4)] sm:p-6 lg:p-8 xl:p-9">

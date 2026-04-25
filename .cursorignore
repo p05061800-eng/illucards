@@ -5,7 +5,7 @@ node_modules/
 dist/
 build/
 coverage/
-public/uploads/
+# public/uploads/ — не скрывать от инструментов: иначе `git add .` из Cursor может не увидеть каталог. Тяжёлые ассеты скрыты в VS Code (files.exclude).
 
 # Extra heavy / generated
 out/

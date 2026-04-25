@@ -23,6 +23,7 @@ import {
   cardArtFixedFrameShellClass,
 } from "../../lib/imageFocus";
 import { FrontHoverMotionOverlay } from "../FrontHoverMotionOverlay";
+import { isFrontHoverVideoUrl } from "../../lib/frontHoverMotionUrl";
 import { CardRarityGlowShell } from "../CardRarityGlowShell";
 import { useIntrinsicImageAspect } from "../../lib/useIntrinsicImageAspect";
 
@@ -173,6 +174,20 @@ export function Card3D({ card }: Props) {
     mq.addEventListener("change", fn);
     return () => mq.removeEventListener("change", fn);
   }, []);
+
+  /** Без :hover (телефон) — показываем hover-motion; для видео запускаем воспроизведение. */
+  useEffect(() => {
+    if (reduceMotion) return;
+    const hm = card.frontHoverGif?.trim() ?? "";
+    if (!hm || !isFrontHoverVideoUrl(hm)) return;
+    if (typeof window === "undefined") return;
+    const mq = window.matchMedia("(hover: none), (pointer: coarse)");
+    if (!mq.matches) return;
+    const id = requestAnimationFrame(() => {
+      void hoverMotionVideoRef.current?.play()?.catch(() => {});
+    });
+    return () => cancelAnimationFrame(id);
+  }, [reduceMotion, card.frontHoverGif, card.id]);
 
   useEffect(() => {
     if (process.env.NODE_ENV === "development") {
@@ -463,7 +478,7 @@ export function Card3D({ card }: Props) {
 
   const hoverMotionLayerClass = [
     "pointer-events-none absolute inset-0 z-[5] flex min-h-0 min-w-0 items-center justify-center overflow-hidden rounded-2xl bg-black",
-    "opacity-0 transition-opacity duration-200 group-hover/card3d:opacity-100",
+    "opacity-100 transition-opacity duration-200 motion-reduce:opacity-0 [@media(hover:hover)_and_(pointer:fine)]:opacity-0 [@media(hover:hover)_and_(pointer:fine)]:group-hover/card3d:opacity-100",
   ].join(" ");
 
   return (
@@ -553,7 +568,7 @@ export function Card3D({ card }: Props) {
                       alt={`${card.title} — лицевая сторона`}
                       className={`${fixedImg} rounded-2xl ${faceCls}${
                         hoverGifSrc && !reduceMotion
-                          ? " transition-opacity duration-200 group-hover/card3d:opacity-0"
+                          ? " opacity-0 transition-opacity duration-200 [@media(hover:hover)_and_(pointer:fine)]:opacity-100 [@media(hover:hover)_and_(pointer:fine)]:group-hover/card3d:opacity-0"
                           : ""
                       }`}
                       style={cardArtFaceFitStyle(

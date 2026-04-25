@@ -26,6 +26,7 @@ import { useIntrinsicImageAspect } from "@/app/lib/useIntrinsicImageAspect";
 import { AdultContentBlurGate } from "@/app/components/AdultContentBlurGate";
 import { cardRequiresAgeConfirmation } from "@/app/lib/cardRequiresAgeConfirmation";
 import { FrontHoverMotionOverlay } from "@/app/components/FrontHoverMotionOverlay";
+import { isFrontHoverVideoUrl } from "@/app/lib/frontHoverMotionUrl";
 import {
   FirstVisitCardTiltHint,
   useFirstVisitCardTiltHint,
@@ -544,6 +545,20 @@ export function CardStackVisual({
     };
   }, [hasVario, applyTilt, card.id, dismissTiltHint]);
 
+  /** Телефоны без :hover — оверлей с GIF/видео должен быть виден; видео стартуем после монтирования. */
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    const hm = card.frontHoverGif?.trim() ?? "";
+    if (!hm || !isFrontHoverVideoUrl(hm)) return;
+    const mq = window.matchMedia("(hover: none), (pointer: coarse)");
+    if (!mq.matches) return;
+    const id = requestAnimationFrame(() => {
+      void hoverMotionVideoRef.current?.play()?.catch(() => {});
+    });
+    return () => cancelAnimationFrame(id);
+  }, [card.frontHoverGif, card.id]);
+
   const faceCls = cardArtFaceObjectFitClass(card.cardArtFramePreset);
   const fixedShell = cardArtFixedFrameShellClass(fixedCatalogFrame);
   const fixedImg = cardArtFixedFrameImgClass(fixedCatalogFrame);
@@ -616,7 +631,7 @@ export function CardStackVisual({
 
   const hoverMotionLayerClass = [
     "pointer-events-none absolute inset-0 z-[4] flex min-h-0 min-w-0 items-center justify-center overflow-hidden rounded-2xl bg-black",
-    "opacity-0 transition-opacity duration-200 group-hover/cardstack-hover:opacity-100 motion-reduce:opacity-0",
+    "opacity-100 transition-opacity duration-200 motion-reduce:opacity-0 [@media(hover:hover)_and_(pointer:fine)]:opacity-0 [@media(hover:hover)_and_(pointer:fine)]:group-hover/cardstack-hover:opacity-100",
   ].join(" ");
 
   return (
@@ -632,7 +647,10 @@ export function CardStackVisual({
         .join(" ")}
       {...(dataCartFlySource ? { "data-cart-fly-source": true } : {})}
     >
-      <AdultContentBlurGate isAdult={cardRequiresAgeConfirmation(card)}>
+      <AdultContentBlurGate
+        isAdult={cardRequiresAgeConfirmation(card)}
+        cardId={card.id}
+      >
       <div className="relative block w-full max-w-full min-h-0 min-w-0">
         {frontSrc ? (
           <div

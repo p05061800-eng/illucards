@@ -14,15 +14,17 @@ import { useMergedRating } from "../../context/CardRatingsContext";
 import { useFavorites } from "../../context/FavoritesContext";
 import { useAddToCartWithFeedback } from "../../lib/cartUx/useAddToCartWithFeedback";
 import {
+  EMPTY_TYPE_FILTER,
+  filterCollectionCards,
+  sortCardsByPrice,
   sortCardsForGalleryBrowse,
   sortSectionCardsForDefaultCatalog,
-} from "../../lib/collectionFilter";
+} from "@/app/lib/collectionFilter";
 import { collectionSectionId } from "../../lib/collectionAnchor";
 import {
   cardArtFaceFitStyle,
   cardArtFaceObjectFitClass,
 } from "../../lib/imageFocus";
-import { EMPTY_TYPE_FILTER } from "@/app/lib/collectionFilter";
 import { useCatalogFilter } from "@/app/context/CatalogFilterContext";
 import { CardPriceDualRow } from "../../components/CardPriceDualRow";
 import {
@@ -222,12 +224,14 @@ export default function CardProductContent({
   const [favoritePopup, setFavoritePopup] = useState(false);
   const { isFavorite, toggleFavorite } = useFavorites();
   const {
+    search,
     setSearch,
     categoryFilter,
     setCategoryFilter,
     typeFilter,
     setTypeFilter,
     toggleType,
+    priceSort,
     setPriceSort,
     filtersOpen,
     setFiltersOpen,
@@ -296,18 +300,36 @@ export default function CardProductContent({
   }, [setFiltersOpen]);
 
   /**
-   * Листание стрелками: в категории — по `categoryOrder`, как в каталоге;
-   * если в категории одна карточка — по всему каталогу (категория A–Я, внутри — номер).
+   * Листание стрелками: тот же порядок, что в каталоге, плюс фильтры из шапки/панели
+   * (категория, тип, цена, поиск). Если текущая карточка не попадает в фильтр — остаётся
+   * первой в списке, дальше листаются только отфильтрованные.
    */
   const galleryBrowseCards = useMemo(() => {
-    if (categoryCards.length > 1) {
-      return sortSectionCardsForDefaultCatalog([...categoryCards], allCards);
-    }
-    if (allCards.length > 1) {
-      return sortCardsForGalleryBrowse(allCards, allCards);
-    }
-    return [card];
-  }, [categoryCards, allCards, card]);
+    const base =
+      allCards.length > 1
+        ? sortCardsForGalleryBrowse([...allCards], allCards)
+        : categoryCards.length > 1
+          ? sortSectionCardsForDefaultCatalog([...categoryCards], allCards)
+          : [card];
+
+    const filtered = filterCollectionCards(base, {
+      search,
+      category: categoryFilter,
+      typeFilter,
+    });
+    const sorted = sortCardsByPrice(filtered, priceSort);
+    if (sorted.length === 0) return [card];
+    if (sorted.some((c) => c.id === card.id)) return sorted;
+    return [card, ...sorted];
+  }, [
+    allCards,
+    categoryCards,
+    card,
+    search,
+    categoryFilter,
+    typeFilter,
+    priceSort,
+  ]);
 
   const onFavoriteClick = useCallback(() => {
     const was = isFavorite(card.id);

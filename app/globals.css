@@ -1543,8 +1543,14 @@ body::after {
  * flex order выставляет: ряд 1 — категории | контент; далее сообщение и витрина на полную ширину.
  */
 @media (max-width: 768px) {
+  /* Минимум слева: только safe-area на вырезе; .hero--compact иначе перебивает общий .hero padding-left */
   .hero {
-    padding-left: 0;
+    --hero-inline-pad: clamp(8px, 3vw, 18px);
+    padding-left: env(safe-area-inset-left, 0px);
+  }
+
+  .hero.hero--compact {
+    padding-left: env(safe-area-inset-left, 0px);
   }
 
   /* Перебиваем max-1024 column: здесь нужен ряд категории | карточка */
@@ -1554,7 +1560,7 @@ body::after {
     flex-wrap: wrap;
     align-items: flex-start;
     justify-content: flex-start;
-    column-gap: 14px;
+    column-gap: 6px;
     row-gap: clamp(0.75rem, 2.8vw, 1.1rem);
     margin-top: 0;
     padding-left: 0;

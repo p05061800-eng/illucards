@@ -223,10 +223,14 @@ export default function CardProductContent({
   const { isFavorite, toggleFavorite } = useFavorites();
   const {
     setSearch,
+    categoryFilter,
     setCategoryFilter,
+    typeFilter,
     setTypeFilter,
+    toggleType,
     setPriceSort,
-    openFiltersAndScrollToCollection,
+    filtersOpen,
+    setFiltersOpen,
   } = useCatalogFilter();
   const router = useRouter();
   const liked = isFavorite(card.id);
@@ -265,22 +269,31 @@ export default function CardProductContent({
 
   const openCategory = useCallback(
     (categoryName: string) => {
+      const normalized = categoryName.trim();
+      const categoryCards = allCards.filter(
+        (c) => (c.category?.trim() ?? "") === normalized
+      );
+      const firstCard = categoryCards.length
+        ? sortSectionCardsForDefaultCatalog(categoryCards, allCards)[0]
+        : undefined;
+
+      if (firstCard) {
+        router.push(`/card/${firstCard.id}`);
+        return;
+      }
+
       setSearch("");
       setCategoryFilter(categoryName);
       setTypeFilter(EMPTY_TYPE_FILTER);
       setPriceSort("default");
       router.push("/#collection");
     },
-    [router, setCategoryFilter, setPriceSort, setSearch, setTypeFilter]
+    [allCards, router, setCategoryFilter, setPriceSort, setSearch, setTypeFilter]
   );
 
   const openFilterPanel = useCallback(() => {
-    setSearch("");
-    setCategoryFilter("");
-    setTypeFilter(EMPTY_TYPE_FILTER);
-    setPriceSort("default");
-    openFiltersAndScrollToCollection();
-  }, [openFiltersAndScrollToCollection, setCategoryFilter, setPriceSort, setSearch, setTypeFilter]);
+    setFiltersOpen((open) => !open);
+  }, [setFiltersOpen]);
 
   /**
    * Листание стрелками: в категории — по `categoryOrder`, как в каталоге;
@@ -307,7 +320,7 @@ export default function CardProductContent({
       <FavoritePopup show={favoritePopup} onClose={() => setFavoritePopup(false)} />
 
       <div className="relative z-10 mx-auto flex w-full max-w-[1200px] flex-col gap-7 px-4 pb-20 pt-5 sm:gap-8 sm:px-5 sm:pt-8 lg:gap-10 lg:px-8 xl:max-w-[1240px] xl:px-10">
-        <div>
+        <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <Link
             href={backHref}
             className="inline-flex items-center gap-1.5 text-xs font-medium text-zinc-400 transition-colors hover:text-purple-300 sm:text-sm"
@@ -317,34 +330,104 @@ export default function CardProductContent({
             </span>
             Назад к коллекции
           </Link>
+
+          <div className="flex min-w-0 flex-1 items-center justify-end gap-2">
+            <div className="flex min-w-0 flex-wrap gap-2 overflow-x-auto pb-1 scrollbar-hide">
+              {allCategoryNames.map((name) => (
+                <button
+                  key={name}
+                  type="button"
+                  onClick={() => openCategory(name)}
+                  className={`inline-flex shrink-0 items-center justify-center rounded-full border px-3 py-1.5 text-xs font-semibold transition ${
+                    name === card.category
+                      ? "border-violet-400/70 bg-violet-500/15 text-violet-100"
+                      : "border-white/10 bg-white/5 text-zinc-300 hover:border-violet-400/30 hover:bg-white/10 hover:text-white"
+                  }`}
+                >
+                  {name}
+                </button>
+              ))}
+            </div>
+            <button
+              type="button"
+              onClick={openFilterPanel}
+              className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-black/60 px-4 py-2 text-sm font-semibold text-white transition hover:border-violet-400/30 hover:bg-violet-950/60"
+            >
+              <SlidersHorizontal className="h-4 w-4 text-violet-300" aria-hidden />
+              {filtersOpen ? "Свернуть фильтр" : "Фильтр"}
+            </button>
+          </div>
         </div>
 
-        <div className="mb-4 flex flex-wrap items-center gap-3">
-          <div className="flex flex-wrap gap-2 overflow-x-auto pb-1 scrollbar-hide">
-            {allCategoryNames.map((name) => (
-              <button
-                key={name}
-                type="button"
-                onClick={() => openCategory(name)}
-                className={`inline-flex items-center justify-center rounded-full border px-3 py-1.5 text-xs font-semibold transition ${
-                  name === card.category
-                    ? "border-violet-400/70 bg-violet-500/15 text-violet-100"
-                    : "border-white/10 bg-white/5 text-zinc-300 hover:border-violet-400/30 hover:bg-white/10 hover:text-white"
-                }`}
-              >
-                {name}
-              </button>
-            ))}
+        {filtersOpen ? (
+          <div className="mb-4 rounded-2xl border border-white/10 bg-zinc-950/80 p-4 text-sm text-zinc-200 shadow-[0_0_30px_rgba(0,0,0,0.25)]">
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div>
+                <label className="mb-2 block text-xs font-semibold uppercase tracking-wide text-zinc-400">
+                  Категория
+                </label>
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setCategoryFilter("");
+                    }}
+                    className={`inline-flex items-center justify-center rounded-full border px-3 py-1.5 text-xs font-semibold transition ${
+                      !categoryFilter
+                        ? "border-violet-400/70 bg-violet-500/15 text-violet-100"
+                        : "border-white/10 bg-white/5 text-zinc-300 hover:border-violet-400/30 hover:bg-white/10 hover:text-white"
+                    }`}
+                  >
+                    Все категории
+                  </button>
+                  {allCategoryNames.map((name) => (
+                    <button
+                      key={`filter-${name}`}
+                      type="button"
+                      onClick={() => setCategoryFilter(name)}
+                      className={`inline-flex shrink-0 items-center justify-center rounded-full border px-3 py-1.5 text-xs font-semibold transition ${
+                        categoryFilter === name
+                          ? "border-violet-400/70 bg-violet-500/15 text-violet-100"
+                          : "border-white/10 bg-white/5 text-zinc-300 hover:border-violet-400/30 hover:bg-white/10 hover:text-white"
+                      }`}
+                    >
+                      {name}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <label className="mb-2 block text-xs font-semibold uppercase tracking-wide text-zinc-400">
+                  Тип карточки
+                </label>
+                <div className="grid gap-2 sm:grid-cols-2">
+                  {[
+                    { key: "adult", label: "18+" },
+                    { key: "limited", label: "Лимитированные" },
+                    { key: "common", label: "Обычные" },
+                    { key: "replica", label: "Реплики" },
+                    { key: "hotPrice", label: "Горячая цена" },
+                    { key: "novelties", label: "Новинки" },
+                  ].map(({ key, label }) => (
+                    <button
+                      key={key}
+                      type="button"
+                      onClick={() => toggleType(key as keyof typeof typeFilter)}
+                      className={`inline-flex items-center justify-center rounded-full border px-3 py-1.5 text-xs font-semibold transition ${
+                        typeFilter[key as keyof typeof typeFilter]
+                          ? "border-violet-400/70 bg-violet-500/15 text-violet-100"
+                          : "border-white/10 bg-white/5 text-zinc-300 hover:border-violet-400/30 hover:bg-white/10 hover:text-white"
+                      }`}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
           </div>
-          <button
-            type="button"
-            onClick={openFilterPanel}
-            className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-black/60 px-4 py-2 text-sm font-semibold text-white transition hover:border-violet-400/30 hover:bg-violet-950/60"
-          >
-            <SlidersHorizontal className="h-4 w-4 text-violet-300" aria-hidden />
-            Фильтр
-          </button>
-        </div>
+        ) : null}
 
         <div className="overflow-visible rounded-2xl border border-white/[0.07] bg-gradient-to-br from-zinc-950/95 via-zinc-950/80 to-violet-950/[0.35] p-4 shadow-[0_0_56px_-20px_rgba(88,28,135,0.4)] sm:p-6 lg:p-8 xl:p-9">
           <div className="grid gap-7 overflow-visible md:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)] md:items-start md:gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:gap-10 xl:gap-12">

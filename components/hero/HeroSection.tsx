@@ -400,6 +400,8 @@ export default function HeroSection({
   }
 
   const stackCard = heroShowcaseCard ?? focusCard;
+  const isMarvelHeroCard =
+    (stackCard.category ?? "").trim().toLowerCase() === "marvel";
 
   return (
     <div
@@ -537,6 +539,7 @@ export default function HeroSection({
                   className={[
                     "hero-right-side min-w-0",
                     showNoveltiesHeroChrome ? "hero-right-side--novelty" : "",
+                    isMarvelHeroCard ? "hero-right-side--marvel" : "",
                   ]
                     .filter(Boolean)
                     .join(" ")}

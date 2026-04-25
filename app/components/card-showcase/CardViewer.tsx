@@ -2,7 +2,13 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useRef, type KeyboardEvent, type TouchEvent } from "react";
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  type KeyboardEvent as ReactKeyboardEvent,
+  type TouchEvent,
+} from "react";
 import type { StoredCard } from "../../api/cards/route";
 import { ultraOrHeroBgUrl } from "../../lib/cardUltraBg";
 import { CardStackVisual } from "@/components/hero/CardStackVisual";
@@ -18,6 +24,7 @@ type Props = {
   hideNavigation?: boolean;
   /** Для `layout="product"`: ограничение ширины центра как на странице товара. */
   productCenterConstrained?: boolean;
+  onCardClick?: (cardId: string) => void;
 };
 
 /** Корневая оболочка стопки на странице товара — та же разметка в герое при `productPageLike`. */
@@ -135,7 +142,7 @@ export function CardViewer({
   }, [active, clickable, onCardClick]);
 
   const onCardKeyDown = useCallback(
-    (e: KeyboardEvent<HTMLDivElement>) => {
+    (e: ReactKeyboardEvent<HTMLDivElement>) => {
       if (!clickable) return;
       if (e.key === "Enter" || e.key === " ") {
         e.preventDefault();
@@ -170,7 +177,7 @@ export function CardViewer({
 
   useEffect(() => {
     if (n <= 1) return;
-    const onKeyDown = (e: KeyboardEvent) => {
+    const onKeyDown = (e: globalThis.KeyboardEvent) => {
       if (e.key !== "ArrowLeft" && e.key !== "ArrowRight") return;
       const el = e.target as HTMLElement | null;
       if (el?.closest("input, textarea, select, [contenteditable='true']")) {

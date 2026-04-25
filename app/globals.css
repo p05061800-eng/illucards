@@ -94,7 +94,7 @@ html.home-one-screen main.home-one-screen-main {
 
 /* Только TMNT (класс `tmnt` в CardItem). Обычный `.card` не меняем. */
 .card.tmnt {
-  width: 320px;
+  width: min(100%, 960px);
   aspect-ratio: 2 / 3;
   flex-shrink: 0;
   max-width: 100%;
@@ -167,7 +167,7 @@ html.home-one-screen main.home-one-screen-main {
 }
 
 .collection-card-grid .card.tmnt {
-  width: 320px;
+  width: min(100%, 960px);
   max-width: 100%;
   height: auto;
   flex-shrink: 0;
@@ -588,6 +588,40 @@ body::after {
   object-fit: contain;
 }
 
+@media (max-width: 1024px) {
+  .hero-main-desktop {
+    flex-direction: column;
+    gap: clamp(1rem, 2vw, 1.75rem);
+  }
+
+  .hero-left-side,
+  .hero-right-side {
+    width: 100%;
+    max-width: 100%;
+    flex: 1 1 100%;
+  }
+
+  .hero-right-side {
+    align-items: stretch;
+  }
+
+  .hero-right-side .hero-right-product {
+    max-height: none;
+    padding-inline: clamp(1rem, 4vw, 1.5rem);
+  }
+
+  .hero-right-side .hero-right-product > div,
+  .hero-right-side .hero-right-product .product-card-page-stack {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .hero-right-side .hero-right-product .card-stack-visual-art .card-main,
+  .hero-right-side .hero-right-product .card-stack-visual-art .card-side-img {
+    max-width: 100%;
+  }
+}
+
 @media (max-width: 768px) {
   .hero-right-side {
     justify-content: center;
@@ -895,6 +929,19 @@ body::after {
 .hero-right-side--novelty .hero-card--novelty-overlap .hero-right-product {
   justify-content: flex-start;
   padding-top: 0;
+}
+
+.hero-right-side--marvel .hero-right-product > div {
+  max-width: min(100%, 34rem) !important;
+}
+
+.hero-right-side--marvel .hero-novelty-card-wrap {
+  max-width: min(100%, 36rem);
+  min-height: clamp(26rem, 32vw, 34rem);
+}
+
+.hero-right-side--marvel .hero-novelty-card-shell {
+  padding-bottom: clamp(3rem, 4vw, 4rem);
 }
 
 .hero-novelty-buy-first {

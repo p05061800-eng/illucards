@@ -574,6 +574,7 @@ export function HomeCollection({
             )
             .map(({ cat, sectionCards }) => {
             const sectionId = collectionSectionId(cat.name);
+            const isTmntSection = cat.name.trim().toLowerCase() === "tmnt";
             const expanded = expandedCategoryRows[cat.name] ?? false;
             const canCollapseRow =
               useCategoryRowPreview &&
@@ -627,16 +628,12 @@ export function HomeCollection({
                       ))}
                     </div>
                     {canCollapseRow ? (
-                      <div
-                        className={`flex justify-center ${
-                          viewportCompact ? "mt-3" : "mt-6"
-                        }`}
-                      >
+                      <div className={`flex justify-center w-full ${isTmntSection ? "mt-40" : "mt-6"}`}>
                         {expanded ? (
                           <button
                             type="button"
                             onClick={() => setCategoryExpanded(cat.name, false)}
-                            className="rounded-full border border-white/12 bg-white/[0.04] px-5 py-2.5 text-sm font-medium text-zinc-200 transition hover:border-violet-400/40 hover:bg-violet-500/10 hover:text-white"
+                            className="rounded-xl border border-white/12 bg-white/[0.04] px-6 py-2 text-sm font-medium text-zinc-200 transition hover:border-violet-400/40 hover:bg-violet-500/10 hover:text-white"
                           >
                             Свернуть
                           </button>
@@ -644,7 +641,7 @@ export function HomeCollection({
                           <button
                             type="button"
                             onClick={() => setCategoryExpanded(cat.name, true)}
-                            className="rounded-full border border-violet-500/35 bg-violet-950/35 px-5 py-2.5 text-sm font-semibold text-violet-100 shadow-[0_0_24px_rgba(139,92,246,0.15)] transition hover:border-violet-400/55 hover:bg-violet-900/45"
+                            className="rounded-xl border border-violet-500/35 bg-violet-950/35 px-6 py-2 text-sm font-semibold text-violet-100 shadow-[0_0_24px_rgba(139,92,246,0.15)] transition hover:border-violet-400/55 hover:bg-violet-900/45"
                           >
                             Смотреть ещё
                             {restCount > 0 ? (

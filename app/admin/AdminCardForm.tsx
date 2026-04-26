@@ -456,7 +456,7 @@ export function AdminCardForm({
         setEffect("3d-horizontal");
         setPrice("");
         setPriceRub("");
-        setRarity("limited");
+        setSelectedRarities(["limited"]);
         setFrontImageUrl(null);
         setHoverMotionUrl(null);
         setMiddleImageUrl(null);

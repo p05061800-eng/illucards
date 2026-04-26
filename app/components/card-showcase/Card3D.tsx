@@ -9,8 +9,11 @@ import {
   type KeyboardEvent,
   type MouseEvent,
 } from "react";
-import type { CardRarity, StoredCard } from "../../api/cards/route";
+import type { StoredCard } from "../../api/cards/route";
+import type { CardRarity } from "../../lib/cardRarityTags";
+import { primaryRarityForUi } from "../../lib/cardRarityTags";
 import {
+  DEFAULT_CARD_ASPECT_RATIO_CSS,
   isFixedCardArtFramePreset,
   resolveCardArtBoxAspectCss,
 } from "../../lib/cardAspectRatio";
@@ -21,9 +24,13 @@ import {
   cardArtFaceObjectFitClass,
   cardArtFixedFrameImgClass,
   cardArtFixedFrameShellClass,
+  categoryFocusCoverStyle,
 } from "../../lib/imageFocus";
 import { FrontHoverMotionOverlay } from "../FrontHoverMotionOverlay";
-import { isFrontHoverVideoUrl } from "../../lib/frontHoverMotionUrl";
+import {
+  effectiveHoverMotionUrl,
+  isFrontHoverVideoUrl,
+} from "../../lib/frontHoverMotionUrl";
 import { CardRarityGlowShell } from "../CardRarityGlowShell";
 import { useIntrinsicImageAspect } from "../../lib/useIntrinsicImageAspect";
 
@@ -140,7 +147,10 @@ export function Card3D({ card }: Props) {
     spacerIntrinsicCss,
     null,
   );
-  const rarity = card.rarity ?? "limited";
+  const cardFaceShellClass = fixedCatalogFrame
+    ? fixedShell
+    : "absolute inset-0 overflow-hidden rounded-2xl bg-black";
+  const rarity = primaryRarityForUi(card);
   const magneticRef = useRef<HTMLDivElement>(null);
   const wrapperRef = useRef<HTMLDivElement>(null);
   const cardRef = useRef<HTMLDivElement>(null);
@@ -178,7 +188,7 @@ export function Card3D({ card }: Props) {
   /** Без :hover (телефон) — показываем hover-motion; для видео запускаем воспроизведение. */
   useEffect(() => {
     if (reduceMotion) return;
-    const hm = card.frontHoverGif?.trim() ?? "";
+    const hm = effectiveHoverMotionUrl(card.frontHoverGif);
     if (!hm || !isFrontHoverVideoUrl(hm)) return;
     if (typeof window === "undefined") return;
     const mq = window.matchMedia("(hover: none), (pointer: coarse)");
@@ -471,7 +481,7 @@ export function Card3D({ card }: Props) {
   };
 
   const backSrc = safeImage(card.backImage);
-  const hoverGifSrc = safeImage(card.frontHoverGif);
+  const hoverVideoSrc = effectiveHoverMotionUrl(card.frontHoverGif);
   const canFlip =
     (card.effect === "vario" || card.effect === "morphing") &&
     Boolean(backSrc);
@@ -512,7 +522,8 @@ export function Card3D({ card }: Props) {
                 />
               ) : (
                 <div
-                  className="min-h-[240px] w-full rounded-2xl bg-gradient-to-br from-zinc-800 to-purple-950/50"
+                  className="w-full rounded-2xl bg-gradient-to-br from-zinc-800 to-purple-950/50"
+                  style={{ aspectRatio: DEFAULT_CARD_ASPECT_RATIO_CSS }}
                   aria-hidden
                 />
               )}
@@ -553,7 +564,7 @@ export function Card3D({ card }: Props) {
                 />
 
                 <div
-                  className={`absolute inset-0 z-[1] overflow-visible rounded-2xl bg-black [backface-visibility:hidden] ${fixedShell}`}
+                  className={`absolute inset-0 z-[1] overflow-visible rounded-2xl bg-black [backface-visibility:hidden] ${cardFaceShellClass}`}
                 >
                   <span
                     className={`pointer-events-none absolute right-3 top-3 z-20 flex h-8 min-w-[2rem] items-center justify-center rounded-md border px-2 text-xs font-extrabold uppercase leading-none backdrop-blur-sm ${RARITY_CORNER_BADGE[rarity]}`}
@@ -566,47 +577,68 @@ export function Card3D({ card }: Props) {
                     <img
                       src={frontSrc}
                       alt={`${card.title} — лицевая сторона`}
-                      className={`${fixedImg} rounded-2xl ${faceCls}${
-                        hoverGifSrc && !reduceMotion
+                      className={`${
+                        fixedCatalogFrame
+                          ? `${fixedImg} rounded-2xl ${faceCls}`
+                          : `h-full w-full object-cover rounded-2xl ${faceCls}`
+                      }${
+                        hoverVideoSrc && !reduceMotion
                           ? " opacity-0 transition-opacity duration-200 [@media(hover:hover)_and_(pointer:fine)]:opacity-100 [@media(hover:hover)_and_(pointer:fine)]:group-hover/card3d:opacity-0"
                           : ""
                       }`}
-                      style={cardArtFaceFitStyle(
-                        card.cardArtFramePreset,
-                        card.frontImageFocus,
-                      )}
+                      style={
+                        fixedCatalogFrame
+                          ? cardArtFaceFitStyle(
+                              card.cardArtFramePreset,
+                              card.frontImageFocus,
+                            )
+                          : categoryFocusCoverStyle(card.frontImageFocus)
+                      }
                       draggable={false}
                       decoding="async"
                     />
                   ) : (
                     <ImagePlaceholder />
                   )}
-                  {hoverGifSrc && !reduceMotion ? (
+                  {hoverVideoSrc && !reduceMotion ? (
                     <FrontHoverMotionOverlay
-                      url={hoverGifSrc}
+                      url={hoverVideoSrc}
                       videoRef={hoverMotionVideoRef}
                       className={hoverMotionLayerClass}
-                      style={cardArtFaceFitStyle(
-                        card.cardArtFramePreset,
-                        card.frontImageFocus,
-                      )}
+                      style={
+                        fixedCatalogFrame
+                          ? cardArtFaceFitStyle(
+                              card.cardArtFramePreset,
+                              card.frontImageFocus,
+                            )
+                          : categoryFocusCoverStyle(card.frontImageFocus)
+                      }
+                      fillFaceFrame={!fixedCatalogFrame}
                     />
                   ) : null}
                 </div>
 
                 <div
-                  className={`absolute inset-0 z-[1] overflow-visible rounded-2xl bg-black [backface-visibility:hidden] [transform:rotateY(180deg)] ${fixedShell}`}
+                  className={`absolute inset-0 z-[1] overflow-visible rounded-2xl bg-black [backface-visibility:hidden] [transform:rotateY(180deg)] ${cardFaceShellClass}`}
                 >
                   {backSrc ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img
                       src={backSrc}
                       alt={`${card.title} — оборот`}
-                      className={`${fixedImg} rounded-2xl ${faceCls}`}
-                      style={cardArtFaceFitStyle(
-                        card.cardArtFramePreset,
-                        card.backImageFocus,
-                      )}
+                      className={
+                        fixedCatalogFrame
+                          ? `${fixedImg} rounded-2xl ${faceCls}`
+                          : `h-full w-full object-cover rounded-2xl ${faceCls}`
+                      }
+                      style={
+                        fixedCatalogFrame
+                          ? cardArtFaceFitStyle(
+                              card.cardArtFramePreset,
+                              card.backImageFocus,
+                            )
+                          : categoryFocusCoverStyle(card.backImageFocus)
+                      }
                       draggable={false}
                       decoding="async"
                     />

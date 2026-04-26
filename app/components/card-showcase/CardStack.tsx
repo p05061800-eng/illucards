@@ -3,7 +3,12 @@
 import { useRouter } from "next/navigation";
 import { useRef, type TouchEvent } from "react";
 import { CardDescriptionText } from "../CardDescriptionText";
-import type { CardRarity, StoredCard } from "../../api/cards/route";
+import type { StoredCard } from "../../api/cards/route";
+import {
+  formatRarityLabelsRu,
+  primaryRarityForUi,
+  type CardRarity,
+} from "../../lib/cardRarityTags";
 import { AdultContentBlurGate } from "../AdultContentBlurGate";
 import { cardRequiresAgeConfirmation } from "../../lib/cardRequiresAgeConfirmation";
 import { categories } from "@/data/categories";
@@ -16,15 +21,6 @@ import {
 } from "../../lib/imageFocus";
 import { RARITY_STYLES } from "../../lib/cardRarityUi";
 import { Card3D } from "./Card3D";
-
-const RARITY_LABELS: Record<CardRarity, string> = {
-  common: "Обычная",
-  limited: "Лимитированная",
-  adult: "18+",
-  replica: "Реплики",
-  novelty: "Новинки",
-  hot_price: "Горячая цена",
-};
 
 function categoryGlowRgba(category: string | undefined): string {
   const n = category?.trim() ?? "";
@@ -175,7 +171,10 @@ export function CardStack({
   const rawIdx = cards.findIndex((c) => c.id === activeId);
   const idx = rawIdx >= 0 ? rawIdx : 0;
   const active = cards[idx] ?? cards[0];
-  const rarity: CardRarity = active?.rarity ?? "limited";
+  const rarityStyleKey: CardRarity = active
+    ? primaryRarityForUi(active)
+    : "limited";
+  const rarityLine = active ? formatRarityLabelsRu(active) : "";
 
   const prevCard = n > 1 ? cards[(idx - 1 + n) % n] : null;
   const nextCard = n > 1 ? cards[(idx + 1) % n] : null;
@@ -256,9 +255,9 @@ export function CardStack({
               {active.title}
             </h3>
             <span
-              className={`mt-0.5 block text-xs uppercase tracking-wide ${RARITY_STYLES[rarity]}`}
+              className={`mt-0.5 block text-xs uppercase tracking-wide ${RARITY_STYLES[rarityStyleKey]}`}
             >
-              {RARITY_LABELS[rarity]}
+              {rarityLine}
             </span>
             <p className="mt-1 line-clamp-2 text-sm text-gray-400 transition animate-fade-up delay-100 hover:text-gray-200">
               <CardDescriptionText

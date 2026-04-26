@@ -107,7 +107,7 @@ function useCollectionPreviewColumns(
 /** Автопереход на страницу карточки: точное совпадение названия или ровно одна карточка по подстроке в title. */
 const SEARCH_NAV_DEBOUNCE_MS = 380;
 
-/** Баннер строки категории: высота от файла, без aspect-ratio на контейнере. */
+/** Баннер строки категории: высота по изображению, скруглённые углы. */
 function CategoryRowBanner({
   cat,
   sectionId,
@@ -118,43 +118,31 @@ function CategoryRowBanner({
   compact?: boolean;
 }) {
   return (
-    <div
-      className={`category-row-banner-card relative w-full rounded-none bg-zinc-950 ${
-        compact ? "h-12 overflow-hidden sm:h-14" : ""
-      }`}
-    >
+    <div className="category-row-banner-card relative w-full overflow-hidden rounded-2xl bg-zinc-950">
       {cat.image ? (
         <>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={cat.image}
             alt=""
-            className={`block w-full max-w-full ${
-              compact
-                ? "h-full min-h-0 object-cover"
-                : "h-auto"
-            }`}
+            className="pointer-events-none"
             style={categoryFocusToStyle(cat.imageFocus)}
             draggable={false}
           />
         </>
       ) : (
         <div
-          className={
-            compact
-              ? "h-full min-h-[3rem] bg-gradient-to-br from-zinc-900 via-zinc-950 to-[#070510]"
-              : "min-h-[120px] bg-gradient-to-br from-zinc-900 via-zinc-950 to-[#070510]"
-          }
+          className="absolute inset-0 bg-gradient-to-br from-zinc-900 via-zinc-950 to-[#070510]"
           aria-hidden
         />
       )}
       <div
-        className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/88 via-black/15 to-transparent"
+        className="pointer-events-none absolute inset-0 z-[1] bg-gradient-to-t from-black/88 via-black/15 to-transparent"
         aria-hidden
       />
       <h2
         id={`${sectionId}-heading`}
-        className={`absolute left-0 right-0 max-w-none truncate px-4 font-bold tracking-tight text-white drop-shadow-md sm:px-6 ${
+        className={`absolute left-0 right-0 z-[2] max-w-none truncate px-4 font-bold tracking-tight text-white drop-shadow-md sm:px-6 ${
           compact
             ? "bottom-1 text-xs sm:bottom-1.5 sm:text-sm"
             : "bottom-2 text-base sm:bottom-3 sm:px-10 sm:text-lg md:text-xl"

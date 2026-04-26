@@ -19,6 +19,7 @@ import {
   cardArtFaceFitStyle,
   cardArtFaceObjectFitClass,
   categoryFocusContainStyle,
+  categoryFocusCoverStyle,
   NEXT_IMAGE_CARD_ART_SIZES,
 } from "@/app/lib/imageFocus";
 
@@ -291,11 +292,8 @@ export function PremiumVaultCard({ card, className, overlay }: Props) {
             alt={card.title}
             fill
             priority={false}
-            className={cn("rounded-2xl", faceCls)}
-            style={cardArtFaceFitStyle(
-              card.cardArtFramePreset,
-              card.frontImageFocus,
-            )}
+            className={cn("rounded-2xl object-cover", faceCls)}
+            style={categoryFocusCoverStyle(card.frontImageFocus)}
             sizes={NEXT_IMAGE_CARD_ART_SIZES}
           />
           <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/18 via-transparent to-white/[0.06]" />

@@ -4,10 +4,15 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { categories } from "@/data/categories";
 import { DraggableImageFrame } from "./components/DraggableImageFrame";
 import type { StoredCard } from "../api/cards/route";
+import {
+  type CardRarity,
+  cardRarityTags,
+  canonicalRarityFromTags,
+} from "../lib/cardRarityTags";
 import { maxCategoryOrderInCategory } from "../lib/adminCategoryOrder";
 import { resolveCardArtBoxAspectCss } from "../lib/cardAspectRatio";
 import {
-  categoryFocusContainStyle,
+  categoryFocusCoverStyle,
   DEFAULT_IMAGE_FOCUS,
 } from "../lib/imageFocus";
 import { useIntrinsicImageAspect } from "../lib/useIntrinsicImageAspect";
@@ -67,6 +72,15 @@ async function uploadVideoFile(
   return { url: data.url, transcoded: data.transcoded };
 }
 
+const RARITY_CHECKBOXES: { id: CardRarity; label: string }[] = [
+  { id: "common", label: "Обычная" },
+  { id: "limited", label: "Лимитированная" },
+  { id: "adult", label: "18+" },
+  { id: "replica", label: "Реплики" },
+  { id: "novelty", label: "Новинки" },
+  { id: "hot_price", label: "Горячая цена" },
+];
+
 export function AdminCardForm({
   allCards = [],
   editingCard = null,
@@ -91,7 +105,9 @@ export function AdminCardForm({
   const [price, setPrice] = useState("");
   /** Рубли РФ для витрины (если пусто — на сайте считается × курс). */
   const [priceRub, setPriceRub] = useState("");
-  const [rarity, setRarity] = useState("limited");
+  const [selectedRarities, setSelectedRarities] = useState<CardRarity[]>([
+    "limited",
+  ]);
   const [frontImageUrl, setFrontImageUrl] = useState<string | null>(null);
   /** Короткое MP4 при наведении в 3D (тот же кадр, что лицевая картинка). */
   const [hoverMotionUrl, setHoverMotionUrl] = useState<string | null>(null);
@@ -123,6 +139,7 @@ export function AdminCardForm({
       setMiddleFocus(DEFAULT_IMAGE_FOCUS);
       setBackFocus(DEFAULT_IMAGE_FOCUS);
       setCategoryBgFocus(DEFAULT_IMAGE_FOCUS);
+      setSelectedRarities(["limited"]);
       return;
     }
     setTitle(editingCard.title ?? "");
@@ -148,7 +165,7 @@ export function AdminCardForm({
         ? String(editingCard.priceRub)
         : ""
     );
-    setRarity(editingCard.rarity ?? "limited");
+    setSelectedRarities(cardRarityTags(editingCard));
     setFrontImageUrl(editingCard.frontImage?.trim() || null);
     setHoverMotionUrl(editingCard.frontHoverGif?.trim() || null);
     setMiddleImageUrl(
@@ -213,8 +230,8 @@ export function AdminCardForm({
     ],
   );
 
-  /** Превью: `contain` + фокус; `aspect-ratio` как на витрине (для TMNT — постер 761×1024). */
-  const adminPreviewObjectFit = "contain" as const;
+  /** Превью: `cover` + фокус; рамка по ориентации, как на витрине. */
+  const adminPreviewObjectFit = "cover" as const;
 
   async function onHoverMotionChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -330,6 +347,16 @@ export function AdminCardForm({
     }
   }
 
+  const toggleRarityTag = (id: CardRarity) => {
+    setSelectedRarities((prev) => {
+      if (prev.includes(id)) {
+        const next = prev.filter((x) => x !== id);
+        return next.length > 0 ? next : ["limited"];
+      }
+      return [...prev, id];
+    });
+  };
+
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
 
@@ -351,6 +378,12 @@ export function AdminCardForm({
       return;
     }
 
+    if (selectedRarities.length === 0) {
+      setStatus("error");
+      setMessage("Отметьте хотя бы одну редкость.");
+      return;
+    }
+
     setStatus("loading");
     setMessage("");
 
@@ -364,7 +397,13 @@ export function AdminCardForm({
     fd.set("effect", effect);
     fd.set("price", price.trim() === "" ? "0" : price.trim());
     fd.set("priceRub", priceRub.trim());
-    fd.set("rarity", rarity);
+    fd.set("rarities", JSON.stringify(selectedRarities));
+    fd.set(
+      "rarity",
+      canonicalRarityFromTags(
+        selectedRarities.length > 0 ? selectedRarities : ["limited"]
+      )
+    );
 
     fd.set("frontImageUrl", frontImageUrl);
     fd.set(
@@ -717,27 +756,28 @@ export function AdminCardForm({
             className={inputClass}
           />
         </div>
-        <div>
-          <label
-            htmlFor="rarity"
-            className={fieldLabelClass}
-          >
-            Редкость
-          </label>
-          <select
-            id="rarity"
-            name="rarity"
-            value={rarity}
-            onChange={(e) => setRarity(e.target.value)}
-            className={selectClass}
-          >
-            <option value="common">Обычная</option>
-            <option value="limited">Лимитированная</option>
-            <option value="adult">18+</option>
-            <option value="replica">Реплики</option>
-            <option value="novelty">Новинки</option>
-            <option value="hot_price">Горячая цена</option>
-          </select>
+        <div className="sm:col-span-3">
+          <p className={fieldLabelClass}>Редкость (можно несколько)</p>
+          <p className="mb-2 text-[11px] font-normal text-zinc-500">
+            18+ — только с этой меткой карточка скрывается до подтверждения возраста
+            на сайте. Остальные метки влияют на фильтры и подписи.
+          </p>
+          <div className="flex flex-wrap gap-x-4 gap-y-2">
+            {RARITY_CHECKBOXES.map(({ id, label }) => (
+              <label
+                key={id}
+                className="flex cursor-pointer items-center gap-2 text-sm text-zinc-200"
+              >
+                <input
+                  type="checkbox"
+                  checked={selectedRarities.includes(id)}
+                  onChange={() => toggleRarityTag(id)}
+                  className="h-3.5 w-3.5 rounded border-purple-500/40 text-purple-600"
+                />
+                {label}
+              </label>
+            ))}
+          </div>
         </div>
       </div>
 
@@ -814,7 +854,7 @@ export function AdminCardForm({
                 onChange={setFrontFocus}
                 aspectRatioCss={resolvedCardArtAspectCss}
                 objectFit={adminPreviewObjectFit}
-                imageStyle={categoryFocusContainStyle(frontFocus)}
+                imageStyle={categoryFocusCoverStyle(frontFocus)}
               />
             </div>
           </div>
@@ -847,47 +887,35 @@ export function AdminCardForm({
         />
         {hoverMotionUrl ? (
           <div className="mt-2 flex w-full max-w-[11rem] flex-col items-stretch gap-1.5 sm:max-w-[12rem]">
-            {resolvedCardArtAspectCss ? (
-              <div
-                className="relative w-full max-w-full overflow-hidden rounded-lg border border-purple-500/25 bg-black"
-                style={{ aspectRatio: resolvedCardArtAspectCss }}
-              >
-                {isFrontHoverVideoUrl(hoverMotionUrl) ? (
+            {isFrontHoverVideoUrl(hoverMotionUrl) ? (
+              resolvedCardArtAspectCss ? (
+                <div
+                  className="relative w-full max-w-full overflow-hidden rounded-lg border border-purple-500/25 bg-black"
+                  style={{ aspectRatio: resolvedCardArtAspectCss }}
+                >
                   <video
                     src={hoverMotionUrl}
                     controls
                     muted
                     playsInline
-                    className="absolute inset-0 h-full w-full object-contain"
-                    style={categoryFocusContainStyle(frontFocus)}
+                    className="absolute inset-0 h-full w-full object-cover"
+                    style={categoryFocusCoverStyle(frontFocus)}
                   />
-                ) : (
-                  // eslint-disable-next-line @next/next/no-img-element -- legacy GIF
-                  <img
-                    src={hoverMotionUrl}
-                    alt="Превью при наведении"
-                    className="absolute inset-0 h-full w-full object-contain"
-                    style={categoryFocusContainStyle(frontFocus)}
-                    draggable={false}
-                    decoding="async"
-                  />
-                )}
-              </div>
-            ) : isFrontHoverVideoUrl(hoverMotionUrl) ? (
-              <video
-                src={hoverMotionUrl}
-                controls
-                muted
-                playsInline
-                className="block h-auto w-full max-w-full rounded-lg border border-purple-500/25"
-              />
+                </div>
+              ) : (
+                <video
+                  src={hoverMotionUrl}
+                  controls
+                  muted
+                  playsInline
+                  className="block h-auto w-full max-w-full rounded-lg border border-purple-500/25"
+                />
+              )
             ) : (
-              // eslint-disable-next-line @next/next/no-img-element -- legacy GIF
-              <img
-                src={hoverMotionUrl}
-                alt="Превью при наведении"
-                className="block h-auto w-full max-w-full rounded-lg border border-purple-500/25"
-              />
+              <p className="rounded-lg border border-amber-500/40 bg-amber-950/40 px-2 py-2 text-xs text-amber-100/95">
+                В данных указан неподдерживаемый файл (GIF). Загрузите MP4 —
+                превью появится после сохранения.
+              </p>
             )}
             <button
               type="button"
@@ -940,7 +968,7 @@ export function AdminCardForm({
                 onChange={setMiddleFocus}
                 aspectRatioCss={resolvedCardArtAspectCss}
                 objectFit={adminPreviewObjectFit}
-                imageStyle={categoryFocusContainStyle(middleFocus)}
+                imageStyle={categoryFocusCoverStyle(middleFocus)}
               />
             </div>
           </div>
@@ -998,7 +1026,7 @@ export function AdminCardForm({
                 onChange={setBackFocus}
                 aspectRatioCss={resolvedCardArtAspectCss}
                 objectFit={adminPreviewObjectFit}
-                imageStyle={categoryFocusContainStyle(backFocus)}
+                imageStyle={categoryFocusCoverStyle(backFocus)}
               />
             </div>
           </div>

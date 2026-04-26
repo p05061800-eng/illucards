@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { BadgePercent, Heart, ShieldCheck, SlidersHorizontal, Truck } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import type { CardRarity, StoredCard } from "../../api/cards/route";
+import type { StoredCard } from "../../api/cards/route";
 import type { UserReviewEntry } from "@/app/lib/userReviews";
 import { CardDescriptionText } from "../../components/CardDescriptionText";
 import { CardRatingStars } from "../../components/CardRatingStars";
@@ -38,15 +38,11 @@ import {
 import { useAdultContentGateOptional } from "../../context/AdultContentContext";
 import { ProductReviewsSection } from "../../components/ProductReviewsSection";
 import { CardProductGallery } from "./CardProductGallery";
-
-const RARITY_LABELS: Record<CardRarity, string> = {
-  common: "Обычная",
-  limited: "Лимитированная",
-  adult: "18+",
-  replica: "Реплики",
-  novelty: "Новинки",
-  hot_price: "Горячая цена",
-};
+import type { CardRarity } from "../../lib/cardRarityTags";
+import {
+  formatRarityLabelsRu,
+  primaryRarityForUi,
+} from "../../lib/cardRarityTags";
 
 const RARITY_BADGE: Record<CardRarity, string> = {
   common:
@@ -239,7 +235,8 @@ export default function CardProductContent({
   const router = useRouter();
   const liked = isFavorite(card.id);
   const addToCartWithFeedback = useAddToCartWithFeedback();
-  const rarity = card.rarity ?? "limited";
+  const rarityUi = primaryRarityForUi(card);
+  const rarityLine = formatRarityLabelsRu(card);
   const backHref = "/#collection";
   const inStock = card.inStock !== false;
   const merged = useMergedRating(card);
@@ -460,9 +457,9 @@ export default function CardProductContent({
           <div className="order-2 flex min-w-0 flex-col pt-1 md:max-w-none md:pt-0 lg:pr-1">
             <div className="mb-3 flex flex-wrap gap-1.5">
               <span
-                className={`inline-flex rounded-full border px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-wide ${RARITY_BADGE[rarity]}`}
+                className={`inline-flex rounded-full border px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-wide ${RARITY_BADGE[rarityUi]}`}
               >
-                {RARITY_LABELS[rarity]}
+                {rarityLine}
               </span>
               {card.isNew ? (
                 <span className="inline-flex items-center rounded-full border border-emerald-400/45 bg-emerald-950/60 px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-emerald-100">

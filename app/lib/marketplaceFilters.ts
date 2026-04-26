@@ -1,4 +1,5 @@
 import type { StoredCard } from "../api/cards/route";
+import { cardHasRarityTag } from "@/app/lib/cardRarityTags";
 import {
   type CategoryFilterId,
   cardMatchesCategorySlug,
@@ -40,12 +41,12 @@ function matchesCatalogFilter(
   if (filter === "new") return card.isNew === true;
   if (filter === "popular") return card.isPopular === true;
   if (filter === "sale") return card.isSale === true;
-  if (filter === "common") return card.rarity === "common";
-  if (filter === "limited") return card.rarity === "limited";
-  if (filter === "adult") return card.rarity === "adult";
-  if (filter === "replica") return card.rarity === "replica";
-  if (filter === "novelty") return card.rarity === "novelty";
-  if (filter === "hot_price") return card.rarity === "hot_price";
+  if (filter === "common") return cardHasRarityTag(card, "common");
+  if (filter === "limited") return cardHasRarityTag(card, "limited");
+  if (filter === "adult") return cardHasRarityTag(card, "adult");
+  if (filter === "replica") return cardHasRarityTag(card, "replica");
+  if (filter === "novelty") return cardHasRarityTag(card, "novelty");
+  if (filter === "hot_price") return cardHasRarityTag(card, "hot_price");
   return false;
 }
 

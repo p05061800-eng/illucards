@@ -14,7 +14,12 @@ import {
   useState,
   type TouchEvent,
 } from "react";
-import type { CardRarity, StoredCard } from "./api/cards/route";
+import type { StoredCard } from "./api/cards/route";
+import {
+  type CardRarity,
+  formatRarityLabelsRu,
+  primaryRarityForUi,
+} from "./lib/cardRarityTags";
 import { CardDescriptionText } from "./components/CardDescriptionText";
 import { PurchaseModal } from "./components/PurchaseModal";
 import { RARITY_STYLES } from "./lib/cardRarityUi";
@@ -32,15 +37,6 @@ import { categoryLabel } from "./lib/categoryLabels";
 
 type Props = {
   cards: StoredCard[];
-};
-
-const RARITY_LABELS: Record<CardRarity, string> = {
-  common: "Обычная",
-  limited: "Лимитированная",
-  adult: "18+",
-  replica: "Реплики",
-  novelty: "Новинки",
-  hot_price: "Горячая цена",
 };
 
 const fieldClass =
@@ -75,7 +71,8 @@ function CardItem({
     ? categoryLabel(card.category)
     : "—";
 
-  const rarity = card.rarity ?? "limited";
+  const rarityStyleKey = primaryRarityForUi(card);
+  const rarityLine = formatRarityLabelsRu(card);
   const isList = variant === "list";
   const cardHref = `/card/${card.id}`;
 
@@ -187,9 +184,9 @@ function CardItem({
               {card.title}
             </h3>
             <span
-              className={`mt-0.5 block text-xs uppercase tracking-wide ${RARITY_STYLES[rarity]}`}
+              className={`mt-0.5 block text-xs uppercase tracking-wide ${RARITY_STYLES[rarityStyleKey]}`}
             >
-              {RARITY_LABELS[rarity]}
+              {rarityLine}
             </span>
             <p className="mt-1 line-clamp-2 text-sm text-gray-400 transition animate-fade-up delay-100 group-hover/card:text-gray-200">
               <CardDescriptionText
@@ -302,8 +299,8 @@ function sortCards(
     copy.sort((a, b) => indexOfId(b.id) - indexOfId(a.id));
   } else {
     copy.sort((a, b) => {
-      const ra = RARITY_SORT[a.rarity ?? "limited"];
-      const rb = RARITY_SORT[b.rarity ?? "limited"];
+      const ra = RARITY_SORT[primaryRarityForUi(a)];
+      const rb = RARITY_SORT[primaryRarityForUi(b)];
       if (rb !== ra) return rb - ra;
       return (a.title || "").localeCompare(b.title || "", "ru");
     });

@@ -1,5 +1,5 @@
 import { parseImageFocus, type ImageFocus } from "@/app/lib/imageFocus";
-import { aspectRatioCssFromDimensions } from "@/app/lib/cardAspectRatio";
+import { bucketCardArtFrameAspectCssFromDimensions } from "@/app/lib/cardAspectRatio";
 
 export type CategoryTile = {
   name: string;
@@ -87,7 +87,7 @@ export function categoryFrameAspectCssFromTile(
   ) {
     return undefined;
   }
-  return aspectRatioCssFromDimensions(w, h);
+  return bucketCardArtFrameAspectCssFromDimensions(w, h);
 }
 
 export function categoryFrameAspectCssFromTiles(

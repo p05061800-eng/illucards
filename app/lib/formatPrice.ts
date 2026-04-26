@@ -1,3 +1,5 @@
+import { cardTreatsAsAdultPricing } from "@/app/lib/cardRarityTags";
+
 /** Если в карточке не задан свой рубль — BYN × курс. */
 export const BYN_TO_RUB = 30;
 
@@ -41,17 +43,18 @@ export const ADULT_FIXED_PRICE_RUB = 800;
 
 export type CardPriceFields = {
   rarity?: string | undefined;
+  rarities?: readonly string[] | undefined;
   price: number;
   priceRub?: number | null;
 };
 
 export function effectiveCardPriceByn(card: CardPriceFields): number {
-  if (card.rarity === "adult") return ADULT_FIXED_PRICE_BYN;
+  if (cardTreatsAsAdultPricing(card)) return ADULT_FIXED_PRICE_BYN;
   return Number.isFinite(card.price) ? card.price : 0;
 }
 
 export function effectiveCardPriceRub(card: CardPriceFields): number {
-  if (card.rarity === "adult") return ADULT_FIXED_PRICE_RUB;
+  if (cardTreatsAsAdultPricing(card)) return ADULT_FIXED_PRICE_RUB;
   const byn = effectiveCardPriceByn(card);
   if (card.priceRub != null && Number.isFinite(card.priceRub)) {
     return Math.round(card.priceRub);

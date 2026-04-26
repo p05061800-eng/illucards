@@ -4,12 +4,13 @@ import { useEffect, useState } from "react";
 import {
   DEFAULT_CARD_ASPECT_RATIO_CSS,
   aspectRatioCssFromDimensions,
+  bucketCardArtFrameAspectCssFromDimensions,
 } from "@/app/lib/cardAspectRatio";
 
 export { aspectRatioCssFromDimensions } from "@/app/lib/cardAspectRatio";
 
 /**
- * Рамка под реальный файл: соотношение сторон = naturalWidth / naturalHeight лица карты.
+ * Рамка витрины по ориентации загруженного лица (16/6 или 3/4).
  * Пока грузится — `DEFAULT_CARD_ASPECT_RATIO_CSS`.
  * Если `src` пустой — не грузим (используйте `resolveCardArtBoxAspectCss` с размерами из API).
  */
@@ -29,7 +30,10 @@ export function useIntrinsicImageAspect(src: string | null | undefined): {
     img.onload = () => {
       if (cancelled) return;
       setAr(
-        aspectRatioCssFromDimensions(img.naturalWidth, img.naturalHeight),
+        bucketCardArtFrameAspectCssFromDimensions(
+          img.naturalWidth,
+          img.naturalHeight,
+        ),
       );
     };
     img.onerror = () => {

@@ -13,26 +13,16 @@ import {
 import type { StoredCard } from "@/app/api/cards/route";
 import type { CategoryTile } from "@/app/lib/categoriesJson";
 import { apiUrl } from "@/app/lib/apiUrl";
-import {
-  ultraOrHeroBgUrl,
-  ultraOrHeroBgUrlForCategoryName,
-} from "@/app/lib/cardUltraBg";
 import { collectionSectionId } from "@/app/lib/collectionAnchor";
 import { categoryFocusToStyle } from "@/app/lib/imageFocus";
 import { buildNoveltiesCarouselCards } from "@/app/lib/noveltiesHeroCarousel";
-import { EMPTY_TYPE_FILTER } from "@/app/lib/collectionFilter";
-import { useCatalogFilter } from "@/app/context/CatalogFilterContext";
-import type { SpotlightSlideRow } from "@/app/lib/spotlightJson";
-import { DEFAULT_SPOTLIGHT_SLIDES } from "@/app/lib/spotlightJson";
 import {
   CardViewer,
   PRODUCT_CARD_NAV_ARROW_CLASS,
   ProductCardNavArrowIcon,
 } from "@/app/components/card-showcase/CardViewer";
 import { HeroCatalogCardFooter } from "./HeroCatalogCardFooter";
-import { HeroCardCommerce } from "./HeroCardCommerce";
 import { HeroIlluCardsLogo } from "./HeroIlluCardsLogo";
-import { PromoSpotlightPanel } from "./PromoSpotlightPanel";
 
 /** Горизонтальный жест мышью по стопке «Новинки» (на таче только стрелки — см. обработчики). */
 const NOVELTY_SWIPE_MIN_PX = 56;
@@ -44,8 +34,6 @@ type Props = {
   cards: StoredCard[];
   /** Категория `cards[0]` с сервера — до ответа `/api/categories` фильтр героя совпадает с SSR. */
   initialHeroCategoryName: string | null;
-  /** Слайды витрины (редактируются в /admin/spotlight). */
-  initialSpotlightSlides: SpotlightSlideRow[];
   /** Плашки категорий в герое — с сервера, чтобы показывались даже если fetch на клиенте не сработал (Telegram, блокировки). */
   initialCategories?: CategoryTile[];
   /** Ужать герой по вертикали (главная «в один экран»). */
@@ -55,40 +43,17 @@ type Props = {
 export default function HeroSection({
   cards,
   initialHeroCategoryName,
-  initialSpotlightSlides,
   initialCategories = [],
   viewportCompact = false,
 }: Props) {
   const router = useRouter();
-  const {
-    setSearch,
-    setCategoryFilter,
-    setTypeFilter,
-    setPriceSort,
-    openFiltersAndScrollToCollection,
-  } = useCatalogFilter();
   const heroCardFlyRef = useRef<HTMLDivElement>(null);
   const noveltyDragStartRef = useRef<{ x: number; y: number } | null>(null);
   /** После свайпа гасим синтетический click по `<Link>` на карточке. */
   const blockHeroCardLinkClickRef = useRef(false);
-
-  const openNoveltiesSection = useCallback(() => {
-    setSearch("");
-    setCategoryFilter("");
-    setTypeFilter({ ...EMPTY_TYPE_FILTER, novelties: true });
-    setPriceSort("default");
-    openFiltersAndScrollToCollection();
-  }, [openFiltersAndScrollToCollection, setSearch, setCategoryFilter, setTypeFilter, setPriceSort]);
   /** Пауза автолистания при наведении на колонку «Новинки». */
   const noveltyAutoPausedRef = useRef(false);
   const noveltiesLenRef = useRef(0);
-  const [spotlightSlides, setSpotlightSlides] = useState<SpotlightSlideRow[]>(
-    () =>
-      initialSpotlightSlides.length > 0
-        ? initialSpotlightSlides
-        : DEFAULT_SPOTLIGHT_SLIDES
-  );
-  const [isMobileHeroLayout, setIsMobileHeroLayout] = useState(false);
   const [apiCategories, setApiCategories] = useState<CategoryTile[]>(
     () => initialCategories
   );
@@ -106,37 +71,6 @@ export default function HeroSection({
         }
       })
       .catch(() => {});
-  }, []);
-
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    const mq = window.matchMedia("(max-width: 768px)");
-    const sync = () => setIsMobileHeroLayout(mq.matches);
-    sync();
-    mq.addEventListener("change", sync);
-    return () => mq.removeEventListener("change", sync);
-  }, []);
-
-  useEffect(() => {
-    let cancelled = false;
-    fetch(apiUrl("/api/spotlight"))
-      .then((res) => (res.ok ? res.json() : Promise.reject(new Error(String(res.status)))))
-      .then((data: unknown) => {
-        if (cancelled) return;
-        if (
-          data &&
-          typeof data === "object" &&
-          "slides" in data &&
-          Array.isArray((data as { slides: unknown }).slides) &&
-          (data as { slides: SpotlightSlideRow[] }).slides.length > 0
-        ) {
-          setSpotlightSlides((data as { slides: SpotlightSlideRow[] }).slides);
-        }
-      })
-      .catch(() => {});
-    return () => {
-      cancelled = true;
-    };
   }, []);
 
   const autoCategoryName = useMemo(() => {
@@ -158,19 +92,16 @@ export default function HeroSection({
 
   const displayCard = filteredCards[0] ?? cards[0] ?? null;
 
-  const [spotlightSlide, setSpotlightSlide] = useState(0);
   const [noveltyIndex, setNoveltyIndex] = useState(0);
 
-  const safeSpotlightIndex = Math.min(
-    spotlightSlide,
-    Math.max(0, spotlightSlides.length - 1)
-  );
-  const currentSpotlightSlide = spotlightSlides[safeSpotlightIndex];
-  const isNoveltiesSlide = currentSpotlightSlide?.kind === "novelties";
-
   const noveltiesCards = useMemo(
-    () => buildNoveltiesCarouselCards(cards, currentSpotlightSlide),
-    [cards, currentSpotlightSlide]
+    () => buildNoveltiesCarouselCards(cards),
+    [cards]
+  );
+
+  const noveltiesCarouselKey = useMemo(
+    () => noveltiesCards.map((c) => c.id).join(","),
+    [noveltiesCards]
   );
 
   const heroBrowseNonNovelty = useMemo(
@@ -191,7 +122,7 @@ export default function HeroSection({
   }, [noveltiesCards.length]);
 
   useEffect(() => {
-    if (!isNoveltiesSlide || noveltiesCards.length < 2) return;
+    if (noveltiesCards.length < 2) return;
     if (typeof window === "undefined") return;
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
       return;
@@ -207,17 +138,11 @@ export default function HeroSection({
 
     const id = window.setInterval(tick, NOVELTY_AUTO_ADVANCE_MS);
     return () => window.clearInterval(id);
-  }, [isNoveltiesSlide, noveltiesCards.length, safeSpotlightIndex]);
-
-  useEffect(() => {
-    setSpotlightSlide((i) =>
-      Math.min(i, Math.max(0, spotlightSlides.length - 1))
-    );
-  }, [spotlightSlides.length]);
+  }, [noveltiesCards.length]);
 
   useEffect(() => {
     setNoveltyIndex(0);
-  }, [safeSpotlightIndex]);
+  }, [noveltiesCarouselKey]);
 
   useEffect(() => {
     setNoveltyIndex((i) => {
@@ -228,14 +153,14 @@ export default function HeroSection({
 
   const focusCard = useMemo((): StoredCard | null => {
     if (!displayCard) return null;
-    /** На слайде «Новинки» всегда крутим список новинок витрины, даже если выбрана плашка категории. */
-    if (isNoveltiesSlide && noveltiesCards.length > 0) {
+    /** Справа карусель новинок (категория «Новинки» или флаги новинки), пока есть что показывать. */
+    if (noveltiesCards.length > 0) {
       return noveltiesCards[noveltyIndex % noveltiesCards.length]!;
     }
     return displayCard;
-  }, [displayCard, isNoveltiesSlide, noveltiesCards, noveltyIndex]);
+  }, [displayCard, noveltiesCards, noveltyIndex]);
 
-  /** Витрина без «пустой» карточки: первый кандидат с непустым лицом. */
+  /** Герой без «пустой» карточки: первый кандидат с непустым лицом. */
   const heroShowcaseCard = useMemo((): StoredCard | null => {
     const ok = (c: StoredCard | null | undefined) =>
       c && c.frontImage?.trim() ? c : null;
@@ -254,20 +179,19 @@ export default function HeroSection({
     filteredCards.length === 0 &&
     cards.length > 0;
 
-  const showNoveltiesHeroChrome = isNoveltiesSlide;
+  const showNoveltiesHeroChrome = noveltiesCards.length > 0;
 
-  const canCycleNoveltiesWithArrows =
-    isNoveltiesSlide && noveltiesCards.length > 1;
+  const canCycleNoveltiesWithArrows = noveltiesCards.length > 1;
 
   const stepNoveltyIndex = useCallback(
     (delta: number) => {
-      if (!isNoveltiesSlide || noveltiesCards.length < 2) return;
+      if (noveltiesCards.length < 2) return;
       setNoveltyIndex((i) => {
         const n = noveltiesCards.length;
         return (i + delta + n * 16) % n;
       });
     },
-    [isNoveltiesSlide, noveltiesCards.length]
+    [noveltiesCards.length]
   );
 
   const onNoveltyAutoPauseEnter = useCallback(() => {
@@ -280,7 +204,7 @@ export default function HeroSection({
 
   const onNoveltyArrowKeyDown = useCallback(
     (e: KeyboardEvent<HTMLButtonElement>) => {
-      if (!isNoveltiesSlide || noveltiesCards.length < 2) return;
+      if (noveltiesCards.length < 2) return;
       if (e.key === "ArrowLeft") {
         e.preventDefault();
         stepNoveltyIndex(-1);
@@ -289,12 +213,12 @@ export default function HeroSection({
         stepNoveltyIndex(1);
       }
     },
-    [isNoveltiesSlide, noveltiesCards.length, stepNoveltyIndex]
+    [noveltiesCards.length, stepNoveltyIndex]
   );
 
   const applyNoveltySwipeFromDelta = useCallback(
     (start: { x: number; y: number }, endX: number, endY: number) => {
-      if (!isNoveltiesSlide || noveltiesCards.length < 2) {
+      if (noveltiesCards.length < 2) {
         return;
       }
       const dx = endX - start.x;
@@ -314,14 +238,14 @@ export default function HeroSection({
         );
       }
     },
-    [isNoveltiesSlide, noveltiesCards.length]
+    [noveltiesCards.length]
   );
 
   const onNoveltyPointerDown = useCallback(
     (e: PointerEvent<HTMLDivElement>) => {
       if (e.pointerType !== "mouse" && e.pointerType !== "pen") return;
       if (e.button !== 0) return;
-      if (!isNoveltiesSlide || noveltiesCards.length < 2) {
+      if (noveltiesCards.length < 2) {
         return;
       }
       const target = e.target as HTMLElement | null;
@@ -338,7 +262,7 @@ export default function HeroSection({
         /* ignore */
       }
     },
-    [isNoveltiesSlide, noveltiesCards.length]
+    [noveltiesCards.length]
   );
 
   const onNoveltyPointerUp = useCallback(
@@ -360,24 +284,6 @@ export default function HeroSection({
   const onNoveltyPointerCancel = useCallback(() => {
     noveltyDragStartRef.current = null;
   }, []);
-
-  /**
-   * Третий слой: если в полоске выбрана одна категория, а карусель «Новинки»
-   * показывает карточку из другой — фон как у линии полоски (первый представитель или статика).
-   */
-  const ultraBgUrl = useMemo(() => {
-    const cardForBg = heroShowcaseCard ?? focusCard;
-    if (!cardForBg) return "";
-    const strip = (selectedCategoryName ?? "").trim();
-    const fc = (cardForBg.category ?? "").trim();
-    if (strip && fc && strip !== fc) {
-      if (displayCard && (displayCard.category ?? "").trim() === strip) {
-        return ultraOrHeroBgUrl(displayCard);
-      }
-      return ultraOrHeroBgUrlForCategoryName(strip);
-    }
-    return ultraOrHeroBgUrl(cardForBg);
-  }, [selectedCategoryName, heroShowcaseCard, focusCard, displayCard]);
 
   if (cards.length === 0) {
     return (
@@ -422,7 +328,7 @@ export default function HeroSection({
           className={`relative z-20 overflow-visible rounded-2xl bg-transparent ${
             viewportCompact ? "flex min-h-0 min-w-0 flex-1 flex-col" : ""
           }`}
-          aria-label="Витрина: логотип IlluCards, категории, подборки и карточка"
+          aria-label="Герой: логотип IlluCards, категории и карточка"
         >
           <div
             className={`hero min-w-0 ${
@@ -435,7 +341,7 @@ export default function HeroSection({
               <HeroIlluCardsLogo />
             </div>
 
-            {/* 2–3. Десктоп: слева категории + витрина, справа карточка. ≤768 — см. globals. */}
+            {/* 2–3. Десктоп: слева категории, справа карточка. ≤768 — см. globals. */}
             <div className="hero-body min-w-0 w-full">
               <div
                 className={`hero-main-desktop min-w-0 w-full ${
@@ -464,7 +370,7 @@ export default function HeroSection({
                     aria-label={cat.name}
                     aria-current={selected}
                     className={[
-                      "category-item group shrink-0 cursor-pointer overflow-hidden rounded-xl bg-zinc-950",
+                      "category-item group shrink-0 cursor-pointer overflow-hidden rounded-2xl bg-zinc-950",
                       "will-change-transform [transform:translateZ(0)]",
                       "transition-transform duration-300 ease-out",
                       "hover:scale-[1.08] active:scale-[1.04]",
@@ -507,34 +413,6 @@ export default function HeroSection({
                       показана первая доступная.
                     </p>
                   ) : null}
-
-                  <div className="hero-cell-spotlight hero-info hero-left-spotlight relative z-10 min-h-0 min-w-0 w-full max-w-full">
-                    <PromoSpotlightPanel
-                      embedded
-                      compact={viewportCompact}
-                      slides={spotlightSlides}
-                      slideIndex={spotlightSlide}
-                      onSlideChange={setSpotlightSlide}
-                      noveltyTotal={noveltiesCards.length}
-                      noveltiesLeftEmpty={
-                        showNoveltiesHeroChrome && !isMobileHeroLayout
-                      }
-                      commerceFooter={
-                        showNoveltiesHeroChrome && !isMobileHeroLayout ? (
-                          undefined
-                        ) : (
-                          <HeroCardCommerce
-                            variant="noveltiesBlock"
-                            card={stackCard}
-                            flySourceRef={heroCardFlyRef}
-                            onOpenCard={() =>
-                              router.push(`/card/${stackCard.id}`)
-                            }
-                          />
-                        )
-                      }
-                    />
-                  </div>
                 </div>
 
                 <div
@@ -652,7 +530,10 @@ export default function HeroSection({
                           </p>
                           <button
                             type="button"
-                            onClick={openNoveltiesSection}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              router.push(`/card/${stackCard.id}`);
+                            }}
                             className="hero-button hero-novelty-buy-first inline-flex min-h-10 w-full min-w-0 items-center justify-center rounded-xl bg-gradient-to-r from-purple-600 via-violet-600 to-fuchsia-600 px-4 py-2 text-xs font-semibold text-white shadow-[0_16px_40px_-12px_rgba(168,85,247,0.55)] transition hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-500/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black md:w-auto md:min-h-[44px] md:min-w-[160px] md:px-6 md:py-3 md:text-sm"
                           >
                             Купить первым

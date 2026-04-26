@@ -290,8 +290,6 @@ export function CartDrawer() {
                         <AdultContentBlurGate
                           isAdult={cardRequiresAgeConfirmation({
                             rarity: line.rarity,
-                            category: line.category,
-                            categoryOrder: line.categoryOrder,
                           })}
                           cardId={line.id}
                           mode="blurOnly"

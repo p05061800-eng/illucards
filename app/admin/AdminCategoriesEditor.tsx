@@ -4,7 +4,10 @@ import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { DraggableImageFrame } from "@/app/admin/components/DraggableImageFrame";
 import type { CategoryTile } from "@/app/lib/categoriesJson";
-import { DEFAULT_IMAGE_FOCUS } from "@/app/lib/imageFocus";
+import {
+  categoryFocusToStyle,
+  DEFAULT_IMAGE_FOCUS,
+} from "@/app/lib/imageFocus";
 import { useCategoryFramesRefresh } from "@/app/context/CategoryFramesContext";
 import { apiUrl } from "@/app/lib/apiUrl";
 
@@ -200,10 +203,11 @@ export function AdminCategoriesEditor({ variant = "page" }: Props) {
                 className="max-w-[220px] text-zinc-300 file:mr-2 file:rounded file:border-0 file:bg-purple-600 file:px-3 file:py-1.5 file:text-xs file:text-white"
               />
             </label>
-            <div className="w-full max-w-[min(100%,320px)]">
+            <div className="w-full max-w-4xl">
               {cat.image ? (
                 <DraggableImageFrame
                   src={cat.image}
+                  aspectRatioCss="16 / 6"
                   value={cat.imageFocus ?? DEFAULT_IMAGE_FOCUS}
                   onChange={(v) => {
                     setCats((prev) => {
@@ -213,9 +217,15 @@ export function AdminCategoriesEditor({ variant = "page" }: Props) {
                       return next;
                     });
                   }}
+                  imageStyle={categoryFocusToStyle(
+                    cat.imageFocus ?? DEFAULT_IMAGE_FOCUS
+                  )}
                 />
               ) : (
-                <div className="flex min-h-[100px] w-full max-w-[min(100%,420px)] items-center justify-center rounded-xl border border-white/10 bg-zinc-900 text-xs text-zinc-600">
+                <div
+                  className="flex w-full items-center justify-center rounded-xl border border-white/10 bg-zinc-900 text-xs text-zinc-600"
+                  style={{ aspectRatio: "16 / 6" }}
+                >
                   нет баннера
                 </div>
               )}

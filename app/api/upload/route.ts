@@ -21,19 +21,14 @@ export async function POST(req: Request) {
   const bytes = await file.arrayBuffer();
   const buffer = Buffer.from(bytes);
 
-  /** GIF сохраняем как есть — иначе sharp сломает анимацию. */
   if (file.type === "image/gif") {
-    const maxBytes = 15 * 1024 * 1024;
-    if (buffer.length > maxBytes) {
-      return NextResponse.json(
-        { error: "GIF слишком большой (макс. 15 МБ)." },
-        { status: 400 }
-      );
-    }
-    const fileName = `${Date.now()}-${randomUUID().slice(0, 8)}.gif`;
-    await fs.mkdir(UPLOAD_ROOT, { recursive: true });
-    await fs.writeFile(path.join(UPLOAD_ROOT, fileName), buffer);
-    return NextResponse.json({ url: `/uploads/${fileName}` });
+    return NextResponse.json(
+      {
+        error:
+          "GIF не поддерживаются. Загрузите PNG/JPEG/WebP или короткое видео (MP4) для анимации при наведении.",
+      },
+      { status: 400 }
+    );
   }
 
   const purposeRaw = data.get("purpose");

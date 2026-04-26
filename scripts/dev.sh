@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 # Останавливает старый next dev на портах проекта и запускает новый (порт по умолчанию 3010).
 set -e
+# macOS: при низком ulimit Watchpack падает с EMFILE → маршруты не поднимаются (404).
+ulimit -n 10240 2>/dev/null || ulimit -n 8192 2>/dev/null || ulimit -n 4096 2>/dev/null || true
 PORT="${PORT:-3010}"
 if command -v lsof >/dev/null 2>&1; then
   for p in 3002 "$PORT"; do

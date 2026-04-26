@@ -221,19 +221,26 @@ export function CardViewer({
         : "max-w-none"
       : "max-w-[min(100%,min(96vw,720px))]";
 
+  /**
+   * В герое колонка может растягиваться по `min-height` родителя; кликабельным
+   * оставляем только область стопки — иначе «пустой» низ перехватывает клики
+   * по кнопкам под карточкой (напр. «Купить первым»).
+   */
   const centerColumn = (
     <div
-      role={clickable ? "button" : undefined}
-      tabIndex={clickable ? 0 : undefined}
-      className={`relative z-0 flex min-h-0 min-w-0 touch-pan-y justify-center overflow-visible px-0.5 ${hideNavigation ? "w-full flex-none" : `flex-1 ${wrapMax}`} ${clickable ? "cursor-pointer" : ""}`}
-      onTouchStart={onTouchStart}
-      onTouchEnd={onTouchEnd}
-      onClick={clickable ? handleCardClick : undefined}
-      onKeyDown={clickable ? onCardKeyDown : undefined}
+      className={`relative z-0 flex min-h-0 min-w-0 touch-pan-y justify-center overflow-visible px-0.5 ${hideNavigation ? "w-full flex-none" : `flex-1 ${wrapMax}`} ${clickable ? "pointer-events-none" : ""}`}
+      onTouchStart={clickable ? undefined : onTouchStart}
+      onTouchEnd={clickable ? undefined : onTouchEnd}
     >
       <div className="grid w-full min-w-0 min-h-0 place-items-start justify-items-center overflow-visible py-1">
         <div
-          className={`relative z-0 flex w-full min-h-0 justify-center overflow-visible ${layout === "product" ? "max-w-full px-2 pb-2 pt-0 sm:px-4 sm:pb-4" : "max-w-full"}`}
+          role={clickable ? "button" : undefined}
+          tabIndex={clickable ? 0 : undefined}
+          className={`relative z-0 flex w-full min-h-0 justify-center overflow-visible ${layout === "product" ? "max-w-full px-2 pb-2 pt-0 sm:px-4 sm:pb-4" : "max-w-full"} ${clickable ? "pointer-events-auto cursor-pointer" : ""}`}
+          onTouchStart={clickable ? onTouchStart : undefined}
+          onTouchEnd={clickable ? onTouchEnd : undefined}
+          onClick={clickable ? handleCardClick : undefined}
+          onKeyDown={clickable ? onCardKeyDown : undefined}
         >
           <CardStackVisual
             key={active.id}

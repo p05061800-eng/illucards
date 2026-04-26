@@ -8,3 +8,11 @@ export function isFrontHoverVideoUrl(url: string): boolean {
     t.endsWith(".mov")
   );
 }
+
+/** Только видео; GIF и прочие URL не используются. */
+export function effectiveHoverMotionUrl(
+  url: string | null | undefined
+): string {
+  const t = (url ?? "").trim();
+  return isFrontHoverVideoUrl(t) ? t : "";
+}

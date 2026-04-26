@@ -1,4 +1,5 @@
 import type { StoredCard } from "@/app/api/cards/route";
+import { cardHasRarityTag } from "@/app/lib/cardRarityTags";
 import { effectiveCardPriceByn } from "@/app/lib/formatPrice";
 
 export type PriceSort = "default" | "asc" | "desc";
@@ -38,12 +39,16 @@ export function cardMatchesTypeFilters(
   f: TypeFilterState
 ): boolean {
   if (!anyTypeFilterOn(f)) return true;
-  if (f.adult && card.rarity === "adult") return true;
-  if (f.limited && card.rarity === "limited") return true;
-  if (f.common && card.rarity === "common") return true;
-  if (f.replica && card.rarity === "replica") return true;
-  if (f.hotPrice && card.rarity === "hot_price") return true;
-  if (f.novelties && (card.isNew || card.rarity === "novelty")) return true;
+  if (f.adult && cardHasRarityTag(card, "adult")) return true;
+  if (f.limited && cardHasRarityTag(card, "limited")) return true;
+  if (f.common && cardHasRarityTag(card, "common")) return true;
+  if (f.replica && cardHasRarityTag(card, "replica")) return true;
+  if (f.hotPrice && cardHasRarityTag(card, "hot_price")) return true;
+  if (
+    f.novelties &&
+    (card.isNew || cardHasRarityTag(card, "novelty"))
+  )
+    return true;
   return false;
 }
 

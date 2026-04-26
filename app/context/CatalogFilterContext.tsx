@@ -30,6 +30,8 @@ type CatalogFilterContextValue = {
   setPriceSort: Dispatch<SetStateAction<PriceSort>>;
   filtersOpen: boolean;
   setFiltersOpen: Dispatch<SetStateAction<boolean>>;
+  /** Прокрутить к блоку «Коллекции» на главной или перейти на `/#collection` — без открытия панели фильтров */
+  scrollToCollection: () => void;
   /** Открыть панель фильтров и прокрутить к блоку «Коллекции» */
   openFiltersAndScrollToCollection: () => void;
   resetFilters: () => void;
@@ -68,8 +70,7 @@ export function CatalogFilterProvider({ children }: { children: ReactNode }) {
     }
   }, [pathname, setSearch]);
 
-  const openFiltersAndScrollToCollection = useCallback(() => {
-    setFiltersOpen(true);
+  const scrollToCollection = useCallback(() => {
     if (pathname === "/") {
       requestAnimationFrame(() => {
         document
@@ -80,6 +81,11 @@ export function CatalogFilterProvider({ children }: { children: ReactNode }) {
       router.push("/#collection");
     }
   }, [pathname, router]);
+
+  const openFiltersAndScrollToCollection = useCallback(() => {
+    setFiltersOpen(true);
+    scrollToCollection();
+  }, [scrollToCollection]);
 
   const value = useMemo(
     () => ({
@@ -94,6 +100,7 @@ export function CatalogFilterProvider({ children }: { children: ReactNode }) {
       setPriceSort,
       filtersOpen,
       setFiltersOpen,
+      scrollToCollection,
       openFiltersAndScrollToCollection,
       resetFilters,
     }),
@@ -105,6 +112,7 @@ export function CatalogFilterProvider({ children }: { children: ReactNode }) {
       filtersOpen,
       toggleType,
       resetFilters,
+      scrollToCollection,
       openFiltersAndScrollToCollection,
     ]
   );

@@ -126,7 +126,7 @@ export function CardItem({ card, hideUltraLayer = false }: Props) {
         }}
       >
         <div
-          className={`relative overflow-visible rounded-2xl ${catalogCardFrameClass(card)}`}
+          className={`relative overflow-visible rounded-t-2xl ${catalogCardFrameClass(card)}`}
         >
           {needs18 ? (
             <span className={ADULT_BADGE_CLASS} aria-hidden>
@@ -138,7 +138,7 @@ export function CardItem({ card, hideUltraLayer = false }: Props) {
             ultraBgUrl={ultraOrHeroBgUrl(card)}
             catalogStack
             hideUltraLayer={hideUltraLayer}
-            rootClassName="relative mx-auto max-w-full rounded-2xl"
+            rootClassName="relative mx-auto max-w-full rounded-t-2xl"
             dataCartFlySource
           />
         </div>
@@ -146,7 +146,7 @@ export function CardItem({ card, hideUltraLayer = false }: Props) {
 
       <FavoritePopup show={showPopup} onClose={closePopup} />
 
-      <div className="flex min-h-0 flex-1 flex-col justify-between gap-2 p-3 pt-2.5">
+      <div className="flex min-h-0 flex-1 flex-col justify-between gap-2 rounded-b-2xl border-t border-white/[0.06] bg-zinc-950/70 p-3 pt-2.5">
         <div className="min-h-0 shrink-0">
           <button
             type="button"

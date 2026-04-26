@@ -21,12 +21,13 @@ import {
   cardArtFixedFrameImgClass,
   cardArtFixedFrameShellClass,
   categoryFocusContainStyle,
+  categoryFocusCoverStyle,
 } from "@/app/lib/imageFocus";
 import { useIntrinsicImageAspect } from "@/app/lib/useIntrinsicImageAspect";
 import { AdultContentBlurGate } from "@/app/components/AdultContentBlurGate";
 import { cardRequiresAgeConfirmation } from "@/app/lib/cardRequiresAgeConfirmation";
 import { FrontHoverMotionOverlay } from "@/app/components/FrontHoverMotionOverlay";
-import { isFrontHoverVideoUrl } from "@/app/lib/frontHoverMotionUrl";
+import { effectiveHoverMotionUrl } from "@/app/lib/frontHoverMotionUrl";
 import {
   FirstVisitCardTiltHint,
   useFirstVisitCardTiltHint,
@@ -545,12 +546,12 @@ export function CardStackVisual({
     };
   }, [hasVario, applyTilt, card.id, dismissTiltHint]);
 
-  /** Телефоны без :hover — оверлей с GIF/видео должен быть виден; видео стартуем после монтирования. */
+  /** Телефоны без :hover — оверлей с видео должен быть виден; старт после монтирования. */
   useEffect(() => {
     if (typeof window === "undefined") return;
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-    const hm = card.frontHoverGif?.trim() ?? "";
-    if (!hm || !isFrontHoverVideoUrl(hm)) return;
+    const hm = effectiveHoverMotionUrl(card.frontHoverGif);
+    if (!hm) return;
     const mq = window.matchMedia("(hover: none), (pointer: coarse)");
     if (!mq.matches) return;
     const id = requestAnimationFrame(() => {
@@ -571,9 +572,9 @@ export function CardStackVisual({
     if (productFaceCoversFrame) {
       const cat = card.categoryBg?.trim();
       if (cat && ultraBgUrl === cat) {
-        return categoryFocusContainStyle(card.categoryBgFocus);
+        return categoryFocusCoverStyle(card.categoryBgFocus);
       }
-      return categoryFocusContainStyle(card.frontImageFocus);
+      return categoryFocusCoverStyle(card.frontImageFocus);
     }
     const cat = card.categoryBg?.trim();
     if (cat && ultraBgUrl === cat) {
@@ -596,18 +597,18 @@ export function CardStackVisual({
   if (!frontSrc) return null;
 
   const front = frontSrc;
-  const hoverMotion = card.frontHoverGif?.trim() ?? "";
+  const hoverMotion = effectiveHoverMotionUrl(card.frontHoverGif);
 
   const back = card.backImage?.trim() ?? "";
   const middle = card.middleImage?.trim() ?? "";
   const frontPosStyle: CSSProperties = productFaceCoversFrame
-    ? categoryFocusContainStyle(card.frontImageFocus)
+    ? categoryFocusCoverStyle(card.frontImageFocus)
     : cardArtFaceFitStyle(card.cardArtFramePreset, card.frontImageFocus);
   const backPosStyle: CSSProperties = productFaceCoversFrame
-    ? categoryFocusContainStyle(card.backImageFocus)
+    ? categoryFocusCoverStyle(card.backImageFocus)
     : cardArtFaceFitStyle(card.cardArtFramePreset, card.backImageFocus);
   const middlePosStyle: CSSProperties = productFaceCoversFrame
-    ? categoryFocusContainStyle(card.middleImageFocus)
+    ? categoryFocusCoverStyle(card.middleImageFocus)
     : cardArtFaceFitStyle(card.cardArtFramePreset, card.middleImageFocus);
 
   /** Боковые слои vario: заполняют родителя. Лицо: `relative` — якорь для hover-оверлея. */
@@ -618,15 +619,15 @@ export function CardStackVisual({
     ? "relative flex h-full min-h-0 w-full min-w-0 overflow-hidden rounded-2xl"
     : fixedShell;
   const faceImgClass = productFaceCoversFrame
-    ? `block h-full min-h-0 w-full min-w-0 max-h-full max-w-full rounded-2xl object-contain ${faceCls}`.trim()
+    ? `block h-full min-h-0 w-full min-w-0 max-h-full max-w-full rounded-2xl object-cover ${faceCls}`.trim()
     : `${fixedImg} rounded-2xl ${faceCls}`;
 
-  /** Согласовано с лицом: hover в каталоге/товаре при «по файлу» — contain, без обрезки. */
+  /** Согласовано с лицом: hover в каталоге/товаре — cover в той же рамке, что лицо. */
   const catalogOrProductHoverFillsFace =
     ((catalogStack || heroDiagonalLayout) && !fixedCatalogFrame) &&
-    Boolean(hoverMotion.trim());
+    Boolean(hoverMotion);
   const hoverMotionMediaStyle = catalogOrProductHoverFillsFace
-    ? categoryFocusContainStyle(card.frontImageFocus)
+    ? categoryFocusCoverStyle(card.frontImageFocus)
     : frontPosStyle;
 
   const hoverMotionLayerClass = [
@@ -677,7 +678,7 @@ export function CardStackVisual({
                   alt=""
                   className={`card-side-img rounded-2xl ${faceCls} ${
                     productFaceCoversFrame || !fixedCatalogFrame
-                      ? "h-full min-h-0 w-full min-w-0 max-h-full max-w-full object-contain"
+                      ? "h-full min-h-0 w-full min-w-0 max-h-full max-w-full object-cover"
                       : fixedImg
                   }`.trim()}
                   style={
@@ -863,7 +864,6 @@ export function CardStackVisual({
                               className={hoverMotionLayerClass}
                               style={hoverMotionMediaStyle}
                               fillFaceFrame={catalogOrProductHoverFillsFace}
-                              loading={eagerFaceImages ? "eager" : "lazy"}
                             />
                           ) : null}
                         </div>
@@ -913,7 +913,6 @@ export function CardStackVisual({
                             className={hoverMotionLayerClass}
                             style={hoverMotionMediaStyle}
                             fillFaceFrame={catalogOrProductHoverFillsFace}
-                            loading={eagerFaceImages ? "eager" : "lazy"}
                           />
                         ) : null}
                       </div>

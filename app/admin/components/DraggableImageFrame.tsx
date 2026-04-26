@@ -6,6 +6,11 @@ export {
 } from "@/app/lib/cardArtIntrinsicSize";
 
 import type { CSSProperties } from "react";
+import { useEffect, useState } from "react";
+import {
+  DEFAULT_CARD_ASPECT_RATIO_CSS,
+  bucketCardArtFrameAspectCssFromDimensions,
+} from "@/app/lib/cardAspectRatio";
 import type { ImageFocus } from "@/app/lib/imageFocus";
 
 type Props = {
@@ -26,6 +31,10 @@ type Props = {
    * При заданной рамке: `cover` (меню, баннеры) или `contain` (превью лица карты как на витрине).
    */
   objectFit?: "cover" | "contain";
+  /**
+   * Рамка после загрузки: 16/6 при w>h, иначе 3/4. Не задавайте вместе с `aspectClass` / `aspectRatioCss`.
+   */
+  orientationFromImage?: boolean;
   /** Стили на `<img>` (например `object-position` / `contain` с админского фокуса). */
   imageStyle?: CSSProperties;
   className?: string;
@@ -43,10 +52,23 @@ export function DraggableImageFrame({
   aspectClass,
   aspectRatioCss,
   objectFit = "cover",
+  orientationFromImage = false,
   imageStyle,
   hint = "",
 }: Props) {
-  const fixedFrame = Boolean(aspectClass) || Boolean(aspectRatioCss);
+  const [orientedAspect, setOrientedAspect] = useState(
+    DEFAULT_CARD_ASPECT_RATIO_CSS,
+  );
+
+  useEffect(() => {
+    if (!orientationFromImage) return;
+    setOrientedAspect(DEFAULT_CARD_ASPECT_RATIO_CSS);
+  }, [orientationFromImage, src]);
+
+  const fixedFrame =
+    orientationFromImage ||
+    Boolean(aspectClass) ||
+    Boolean(aspectRatioCss);
 
   if (!fixedFrame) {
     return (
@@ -70,13 +92,20 @@ export function DraggableImageFrame({
     );
   }
 
+  const frameAspectStyle =
+    orientationFromImage && objectFit === "cover"
+      ? { aspectRatio: orientedAspect }
+      : aspectRatioCss
+        ? { aspectRatio: aspectRatioCss }
+        : {};
+
   return (
     <div className={`w-full ${className}`}>
       <div
-        className={`relative w-full overflow-hidden rounded-2xl border border-white/15 bg-zinc-950 ${aspectClass ?? ""}`}
-        style={{
-          ...(aspectRatioCss ? { aspectRatio: aspectRatioCss } : {}),
-        }}
+        className={`relative w-full overflow-hidden rounded-2xl border border-white/15 bg-zinc-950 ${
+          orientationFromImage ? "" : (aspectClass ?? "")
+        }`}
+        style={frameAspectStyle}
       >
         {objectFit === "contain" ? (
           <div className="absolute inset-0 flex min-h-0 min-w-0 items-center justify-center">
@@ -98,6 +127,17 @@ export function DraggableImageFrame({
               draggable={false}
               className="pointer-events-none absolute inset-0 h-full w-full object-cover object-center"
               style={imageStyle}
+              onLoad={
+                orientationFromImage
+                  ? (e) =>
+                      setOrientedAspect(
+                        bucketCardArtFrameAspectCssFromDimensions(
+                          e.currentTarget.naturalWidth,
+                          e.currentTarget.naturalHeight,
+                        ),
+                      )
+                  : undefined
+              }
             />
           </>
         )}

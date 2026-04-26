@@ -130,6 +130,7 @@
     },
     "priceRub": 800,
     "categoryOrder": 8,
+    "varioSmoothing": 0.18,
     "frontImageWidth": 761,
     "frontImageHeight": 1024
   },
@@ -231,7 +232,7 @@
     "frontImage": "/uploads/1776085549889-4be4e8cb.webp",
     "backImage": "/uploads/1776085557356-7fe62cac.webp",
     "price": 40,
-    "rarity": "limited",
+    "rarity": "adult",
     "stats": {
       "power": 50,
       "speed": 50,
@@ -244,6 +245,10 @@
     "inStock": false,
     "ratingAvg": 5,
     "reviewCount": 0,
+    "rarities": [
+      "adult",
+      "limited"
+    ],
     "boughtTogetherIds": [
       "9a17e901-20c5-41cb-8515-d3e5d702b70d"
     ],
@@ -757,7 +762,7 @@
     "frontImage": "/uploads/1776103858314-4e54cb3a.webp",
     "backImage": "/uploads/1776103865395-d0f84262.webp",
     "price": 40,
-    "rarity": "limited",
+    "rarity": "adult",
     "stats": {
       "power": 50,
       "speed": 50,
@@ -770,6 +775,10 @@
     "inStock": false,
     "ratingAvg": 5,
     "reviewCount": 0,
+    "rarities": [
+      "adult",
+      "limited"
+    ],
     "boughtTogetherIds": [
       "9a17e901-20c5-41cb-8515-d3e5d702b70d",
       "b1ce562d-71ec-4480-86b0-10ba17d9e26f"
@@ -2803,7 +2812,7 @@
     "frontImage": "/uploads/1776712320770-5b5e7cc6.webp",
     "backImage": "/uploads/1776712472493-61484526.webp",
     "price": 40,
-    "rarity": "limited",
+    "rarity": "adult",
     "stats": {
       "power": 50,
       "speed": 50,
@@ -2816,6 +2825,10 @@
     "inStock": false,
     "ratingAvg": 5,
     "reviewCount": 0,
+    "rarities": [
+      "adult",
+      "limited"
+    ],
     "effect": "vario",
     "categoryBg": "/uploads/1776712280723-72c4f7fa.webp",
     "frontImageFocus": {
@@ -4906,5 +4919,284 @@
     "varioSmoothing": 0.18,
     "frontImageWidth": 761,
     "frontImageHeight": 1024
+  },
+  {
+    "id": "adbee5a6-495b-41e9-96f8-9cebb9fea625",
+    "title": "Безумный мутант (насекомообразное)",
+    "description": "Эксперимент, который должен был изменить всё, создал нечто иное. Она сохранила разум, но внутри пробудился хищник. Холодный расчёт заменил страх, а инстинкты стали её оружием. Она не атакует без причины — но если цель выбрана, скрыться или сбежать уже невозможно.",
+    "category": "TMNT",
+    "subcategory": "",
+    "frontImage": "/uploads/1777206544336-ed83d088.webp",
+    "backImage": "/uploads/1777206549597-9f09058e.webp",
+    "price": 25,
+    "rarity": "novelty",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "isNew": false,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": true,
+    "ratingAvg": 5,
+    "reviewCount": 0,
+    "effect": "vario",
+    "categoryBg": "/uploads/1777206520076-a39feb3d.webp",
+    "frontImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "backImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "priceRub": 750,
+    "categoryOrder": 10,
+    "varioSmoothing": 0.18,
+    "frontImageWidth": 761,
+    "frontImageHeight": 1024
+  },
+  {
+    "id": "a8e43454-76d8-417d-a724-a61b1c4b66d6",
+    "title": "Безумный мутант (одноглазый)",
+    "description": "Эксперимент изменил его навсегда, но снаружи это почти незаметно. Он всё ещё выглядит человеком, контролирует себя и скрывает правду. Но внутри нарастает сила, которую уже невозможно сдерживать. Каждое движение даётся с трудом… потому что трансформация уже началась.Б",
+    "category": "TMNT",
+    "subcategory": "",
+    "frontImage": "/uploads/1777207127318-b6597e80.webp",
+    "backImage": "/uploads/1777207132921-ce83678b.webp",
+    "price": 25,
+    "rarity": "novelty",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "isNew": false,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": true,
+    "ratingAvg": 5,
+    "reviewCount": 0,
+    "effect": "vario",
+    "categoryBg": "/uploads/1777207080763-d7a5b10c.webp",
+    "frontImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "backImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "priceRub": 750,
+    "categoryOrder": 20,
+    "varioSmoothing": 0.18,
+    "frontImageWidth": 761,
+    "frontImageHeight": 1024
+  },
+  {
+    "id": "c69952fc-8c8f-4f9d-aea8-ca265d5b455d",
+    "title": "Джуто Шишо  (Трибунал Ниндзя)",
+    "description": "Мастер оружия Трибунала ниндзя, чьи навыки отточены за пределами обычного понимания. Он ведёт избранных в Кузницу духа, где слабые ломаются, а сильные обретают новую силу. Его движения точны, а решения окончательны. В бою он не допускает ошибок — потому что сам стал воплощением мастерства.",
+    "category": "TMNT",
+    "subcategory": "",
+    "frontImage": "/uploads/1777207369104-fb528784.webp",
+    "backImage": "/uploads/1777207375237-6857cecb.webp",
+    "price": 25,
+    "rarity": "novelty",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "isNew": false,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": true,
+    "ratingAvg": 5,
+    "reviewCount": 0,
+    "effect": "vario",
+    "categoryBg": "/uploads/1777207326158-afa49cdb.webp",
+    "frontImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "backImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "priceRub": 750,
+    "categoryOrder": 28,
+    "varioSmoothing": 0.18,
+    "frontImageWidth": 761,
+    "frontImageHeight": 1024
+  },
+  {
+    "id": "a6448256-459d-4f2c-9159-6e736df8d8b0",
+    "title": "Сплинтер — боевая стойка",
+    "description": "Сплинтер не просто мастер — он воплощение дисциплины и опыта. Его движения точны и экономны, а каждый удар продуман заранее. Он не полагается на силу, а использует разум и технику. В бою он спокоен, потому что уже знает исход ещё до первого движения противника.",
+    "category": "TMNT",
+    "subcategory": "",
+    "frontImage": "/uploads/1777207480349-6ffd499b.webp",
+    "backImage": "",
+    "price": 25,
+    "rarity": "novelty",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "isNew": false,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": true,
+    "ratingAvg": 5,
+    "reviewCount": 0,
+    "effect": "3d-horizontal",
+    "categoryBg": "/uploads/1777207450695-f4f1fa86.webp",
+    "frontImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "priceRub": 750,
+    "categoryOrder": 26,
+    "frontImageWidth": 761,
+    "frontImageHeight": 1024
+  },
+  {
+    "id": "9e90191a-910a-4e46-9ebf-c897b8d7baff",
+    "title": "Возвращение Спайди",
+    "description": "Когда всё идёт не по плану, он возвращается в игру. Быстрее, резче и опаснее. Спайди использует скорость и ловкость, чтобы переломить ход боя в последний момент. Там, где другие сдаются, он делает невозможное — и вырывает победу буквально из рук противника.",
+    "category": "Marvel",
+    "subcategory": "",
+    "frontImage": "/uploads/1777207695877-60cbf7f9.webp",
+    "backImage": "",
+    "price": 40,
+    "rarity": "limited",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "isNew": false,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": true,
+    "ratingAvg": 5,
+    "reviewCount": 0,
+    "effect": "3d-horizontal",
+    "categoryBg": "/uploads/1777207665910-ce5dc3a4.webp",
+    "frontImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "priceRub": 1000,
+    "categoryOrder": 1,
+    "frontImageWidth": 600,
+    "frontImageHeight": 900
+  },
+  {
+    "id": "bca5fc63-31f1-4c36-bc3a-7cdb6544861a",
+    "title": "Что, если...",
+    "description": "",
+    "category": "Marvel",
+    "subcategory": "",
+    "frontImage": "/uploads/1777207764407-e9528e20.webp",
+    "backImage": "/uploads/1777207774120-6873d2d7.webp",
+    "price": 25,
+    "rarity": "novelty",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "isNew": false,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": true,
+    "ratingAvg": 5,
+    "reviewCount": 0,
+    "effect": "vario",
+    "categoryBg": "/uploads/1777207745616-2da1a4bc.webp",
+    "frontImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "backImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "priceRub": 750,
+    "categoryOrder": 10,
+    "varioSmoothing": 0.18,
+    "frontImageWidth": 600,
+    "frontImageHeight": 900
+  },
+  {
+    "id": "a2a40a99-88ab-49b1-8651-6d7bbc42561d",
+    "title": "Человек-паук Нуар",
+    "description": "Город утонул во тьме, где правда стоит дешевле страха. Он не герой — он приговор для тех, кто прячется в тенях. Человек-паук Нуар действует тихо, быстро и без лишних слов. Его не видят… но чувствуют. И если он вышел на охоту — значит, кто-то уже не доживёт до рассвета.",
+    "category": "Marvel",
+    "subcategory": "",
+    "frontImage": "/uploads/1777207862296-daaeca91.webp",
+    "backImage": "/uploads/1777207865644-0b606467.webp",
+    "price": 25,
+    "rarity": "novelty",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "isNew": false,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": true,
+    "ratingAvg": 5,
+    "reviewCount": 0,
+    "effect": "vario",
+    "frontImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "backImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "priceRub": 750,
+    "categoryOrder": 51,
+    "varioSmoothing": 0.18,
+    "frontImageWidth": 600,
+    "frontImageHeight": 900
   }
 ]

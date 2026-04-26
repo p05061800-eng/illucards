@@ -1,5 +1,11 @@
-/** Пока картинка не измерена — стабильный fallback для раскладки (как эталон аплоада 600×900). */
-export const DEFAULT_CARD_ASPECT_RATIO_CSS = "2 / 3";
+/** Вертикальная рамка витрины (портрет и квадрат: w ≤ h). */
+export const CARD_ART_PORTRAIT_FRAME_ASPECT_CSS = "3 / 4";
+
+/** Горизонтальный баннер на витрине (w > h). */
+export const CARD_ART_LANDSCAPE_FRAME_ASPECT_CSS = "16 / 6";
+
+/** Пока нет размеров файла — портретная рамка, без «сплющивания» в горизонталь. */
+export const DEFAULT_CARD_ASPECT_RATIO_CSS = CARD_ART_PORTRAIT_FRAME_ASPECT_CSS;
 
 /** @deprecated Жёсткие пресеты витрины отключены — оставлено для типов в API/JSON. */
 export const CARD_FRAME_LEGACY_ASPECT_CSS = "681 / 1024";
@@ -69,6 +75,19 @@ export function aspectRatioCssFromDimensions(w: number, h: number): string {
   return `${Math.round(w / g)} / ${Math.round(h / g)}`;
 }
 
+/** Рамка витрины по ориентации лица: баннер 16/6, иначе постер 3/4. */
+export function bucketCardArtFrameAspectCssFromDimensions(
+  w: number,
+  h: number,
+): string {
+  if (!Number.isFinite(w) || !Number.isFinite(h) || w <= 0 || h <= 0) {
+    return DEFAULT_CARD_ASPECT_RATIO_CSS;
+  }
+  return w > h
+    ? CARD_ART_LANDSCAPE_FRAME_ASPECT_CSS
+    : CARD_ART_PORTRAIT_FRAME_ASPECT_CSS;
+}
+
 /**
  * Пиксели референсного постера TMNT (файл пользователя) — единая рамка витрины и поля
  * `frontImageWidth` / `frontImageHeight` при сохранении карточки в API.
@@ -79,9 +98,8 @@ export const TMNT_REFERENCE_POSTER_DIMENSIONS = {
 } as const;
 
 /**
- * Рамка витрины = **пропорции лицевого файла**: сначала `frontImageWidth`/`Height` с карточки,
- * иначе `aspectFromClientHook` (`useIntrinsicImageAspect`). Рамки категории и жёсткие пресеты
- * не участвуют — кадр целиком в `contain` без полей при совпадении с пикселями арта.
+ * Рамка витрины по ориентации лица: `frontImageWidth`/`Height` с API или
+ * `aspectFromClientHook` (`useIntrinsicImageAspect`) — баннер 16/6 или постер 3/4.
  */
 export function resolveCardArtBoxAspectCss(
   card: {
@@ -100,7 +118,7 @@ export function resolveCardArtBoxAspectCss(
     card.frontImageWidth > 0 &&
     card.frontImageHeight > 0
   ) {
-    return aspectRatioCssFromDimensions(
+    return bucketCardArtFrameAspectCssFromDimensions(
       card.frontImageWidth,
       card.frontImageHeight,
     );

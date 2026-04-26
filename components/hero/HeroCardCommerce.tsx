@@ -2,20 +2,15 @@
 
 import { Heart, ShoppingBag } from "lucide-react";
 import { useCallback, useMemo, useState, type MouseEvent, type RefObject } from "react";
-import type { CardRarity, StoredCard } from "@/app/api/cards/route";
+import type { StoredCard } from "@/app/api/cards/route";
+import {
+  cardHasRarityTag,
+  formatRarityLabelsRu,
+} from "@/app/lib/cardRarityTags";
 import { FavoritePopup } from "@/app/components/FavoritePopup";
 import { useFavorites } from "@/app/context/FavoritesContext";
 import { useAddToCartWithFeedback } from "@/app/lib/cartUx/useAddToCartWithFeedback";
 import { CardPriceDualRow } from "@/app/components/CardPriceDualRow";
-
-const RARITY_LABELS: Record<CardRarity, string> = {
-  common: "Обычная",
-  limited: "Лимитированная",
-  adult: "18+",
-  replica: "Реплики",
-  novelty: "Новинки",
-  hot_price: "Горячая цена",
-};
 
 type Props = {
   card: StoredCard;
@@ -35,16 +30,15 @@ export function HeroCardCommerce({
   const addToCartWithFeedback = useAddToCartWithFeedback();
   const [showPopup, setShowPopup] = useState(false);
   const liked = isFavorite(card.id);
-  const rarity = card.rarity ?? "limited";
-  const showNewPill = card.isNew && rarity !== "novelty";
+  const showNewPill = card.isNew && !cardHasRarityTag(card, "novelty");
 
   const metaLine = useMemo(() => {
-    const parts: string[] = [RARITY_LABELS[rarity]];
+    const parts: string[] = [formatRarityLabelsRu(card)];
     if (showNewPill) parts.push("Новинка");
     if (card.isSale) parts.push("Акция");
     parts.push(card.inStock ? "В наличии" : "Уже раскупили");
     return parts.join(" · ");
-  }, [rarity, showNewPill, card.isSale, card.inStock]);
+  }, [card, showNewPill]);
 
   const closePopup = useCallback(() => setShowPopup(false), []);
 

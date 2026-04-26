@@ -17,6 +17,14 @@ import {
   TMNT_REFERENCE_POSTER_DIMENSIONS,
   type CardArtFramePreset,
 } from "@/app/lib/cardAspectRatio";
+import {
+  canonicalRarityFromTags,
+  normalizeRarityArrayFromJson,
+  parseCardRarity,
+  type CardRarity,
+} from "@/app/lib/cardRarityTags";
+
+export type { CardRarity } from "@/app/lib/cardRarityTags";
 
 const DATA_PATH = path.join(process.cwd(), "data", "cards.json");
 const UPLOAD_PUBLIC = path.join(process.cwd(), "public", "uploads");
@@ -25,30 +33,6 @@ async function ensureStorage() {
   await fs.mkdir(path.dirname(DATA_PATH), { recursive: true });
   await fs.mkdir(UPLOAD_PUBLIC, { recursive: true });
 }
-
-/** Витрины: обычная / лимитированная / 18+ / новинки / горячая цена */
-export type CardRarity =
-  | "common"
-  | "limited"
-  | "adult"
-  | "replica"
-  | "novelty"
-  | "hot_price";
-
-const RARITIES: CardRarity[] = [
-  "common",
-  "limited",
-  "adult",
-  "replica",
-  "novelty",
-  "hot_price",
-];
-
-const LEGACY_RARITY: Record<string, CardRarity> = {
-  rare: "novelty",
-  epic: "hot_price",
-  legendary: "limited",
-};
 
 /** Vario / Morphing (две картинки) или 3D (лицевая + наклон без смены сторон). */
 export type CardEffectKind = "vario" | "morphing" | "3d-horizontal";
@@ -60,10 +44,18 @@ export function normalizeCardEffect(raw: unknown): CardEffectKind {
   return "3d-horizontal";
 }
 
-function parseRarity(raw: unknown): CardRarity {
-  const s = typeof raw === "string" ? raw.trim().toLowerCase() : "";
-  if (RARITIES.includes(s as CardRarity)) return s as CardRarity;
-  return LEGACY_RARITY[s] ?? "limited";
+function parseRaritiesFromFormData(formData: FormData): CardRarity[] {
+  const j = String(formData.get("rarities") ?? "").trim();
+  if (j) {
+    try {
+      const parsed = JSON.parse(j) as unknown;
+      const arr = normalizeRarityArrayFromJson(parsed);
+      if (arr?.length) return arr;
+    } catch {
+      /* ignore */
+    }
+  }
+  return [parseCardRarity(formData.get("rarity"))];
 }
 
 function parseStatField(raw: unknown): number {
@@ -172,7 +164,7 @@ export type StoredCard = {
   ultraBg?: string;
   /**
    * Анимация при наведении на лицо в 3D-витрине (тот же кадр, что лицевая картинка):
-   * MP4/WebM/MOV в `/uploads/videos/` или legacy GIF в `/uploads/`.
+   * MP4/WebM/MOV в `/uploads/videos/` (GIF не поддерживаются).
    */
   frontHoverGif?: string;
   /** Видео товара (URL mp4/webm или загрузка в /uploads/). */
@@ -200,6 +192,8 @@ export type StoredCard = {
   /** Цена в рублях РФ для витрины (если не задана — BYN × курс на клиенте). */
   priceRub?: number;
   rarity: CardRarity;
+  /** Несколько меток редкости (если одна — поле не пишется, только `rarity`). */
+  rarities?: CardRarity[];
   stats: CardStats;
   effect?: string;
   /** Пиксели лица на диске (заполняется API при сохранении) — рамка без клиентского замера. */
@@ -229,7 +223,6 @@ export type StoredCard = {
 function isSafeFrontHoverMotionPath(p: string): boolean {
   const t = p.trim().toLowerCase();
   if (!isSafeUploadPublicPath(p)) return false;
-  if (t.endsWith(".gif")) return true;
   if (!t.startsWith("/uploads/videos/")) return false;
   return (
     t.endsWith(".mp4") ||
@@ -381,6 +374,11 @@ function normalizeCard(raw: Record<string, unknown>): StoredCard {
   const reviewsParsed = parseReviews(raw.reviews);
   const reviewCountRaw = parseReviewCount(raw.reviewCount);
   const countFromReviews = reviewsParsed?.length ?? 0;
+  const tagsMulti = normalizeRarityArrayFromJson(raw.rarities);
+  const singular = parseCardRarity(raw.rarity);
+  const rarityTags =
+    tagsMulti && tagsMulti.length > 0 ? tagsMulti : [singular];
+  const rarityValue = canonicalRarityFromTags(rarityTags);
   const card: StoredCard = {
     id: String(raw.id ?? ""),
     title: String(raw.title ?? ""),
@@ -391,7 +389,7 @@ function normalizeCard(raw: Record<string, unknown>): StoredCard {
     frontImage: front,
     backImage: back,
     price: parsePrice(raw.price),
-    rarity: parseRarity(raw.rarity),
+    rarity: rarityValue,
     stats: parseStats(raw.stats),
     isNew: parseCardFlag(raw.isNew),
     isPopular: parseCardFlag(raw.isPopular),
@@ -406,6 +404,9 @@ function normalizeCard(raw: Record<string, unknown>): StoredCard {
           ? countFromReviews
           : 0,
   };
+  if (rarityTags.length > 1) {
+    card.rarities = rarityTags;
+  }
   if (reviewsParsed) {
     card.reviews = reviewsParsed;
   }
@@ -578,7 +579,7 @@ export async function POST(req: NextRequest) {
   const category = String(formData.get("category") ?? "").trim();
   const effect = normalizeCardEffect(formData.get("effect"));
   const price = parsePrice(formData.get("price"));
-  const rarity = parseRarity(formData.get("rarity"));
+  const rarityTagsPost = parseRaritiesFromFormData(formData);
   const stats: CardStats = {
     power: parseStatField(formData.get("statPower")),
     speed: parseStatField(formData.get("statSpeed")),
@@ -665,7 +666,7 @@ export async function POST(req: NextRequest) {
     frontImage: frontImagePath,
     backImage: backImagePath,
     price,
-    rarity,
+    rarity: canonicalRarityFromTags(rarityTagsPost),
     stats,
     effect,
     isNew: false,
@@ -789,6 +790,10 @@ export async function POST(req: NextRequest) {
     newCard.cardArtFramePreset = framePost;
   }
 
+  if (rarityTagsPost.length > 1) {
+    newCard.rarities = rarityTagsPost;
+  }
+
   cards.push(newCard);
   await fs.writeFile(DATA_PATH, JSON.stringify(cards, null, 2), "utf-8");
 
@@ -823,7 +828,7 @@ export async function PATCH(req: NextRequest) {
   const category = String(formData.get("category") ?? "").trim();
   const effect = normalizeCardEffect(formData.get("effect"));
   const price = parsePrice(formData.get("price"));
-  const rarity = parseRarity(formData.get("rarity"));
+  const rarityTagsPatch = parseRaritiesFromFormData(formData);
   const stats: CardStats = {
     power: parseStatField(formData.get("statPower")),
     speed: parseStatField(formData.get("statSpeed")),
@@ -900,10 +905,15 @@ export async function PATCH(req: NextRequest) {
     frontImage: frontImagePath,
     backImage: backImagePath,
     price,
-    rarity,
+    rarity: canonicalRarityFromTags(rarityTagsPatch),
     stats,
     effect,
   };
+  if (rarityTagsPatch.length > 1) {
+    updated.rarities = rarityTagsPatch;
+  } else {
+    delete updated.rarities;
+  }
 
   if (effect === "vario") {
     if (middleResolved) {

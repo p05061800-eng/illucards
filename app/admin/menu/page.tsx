@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { DraggableImageFrame } from "@/app/admin/components/DraggableImageFrame";
 import type { MenuJsonSection } from "@/app/lib/menuJson";
+import { DEFAULT_CARD_ASPECT_RATIO_CSS } from "@/app/lib/cardAspectRatio";
 import { DEFAULT_IMAGE_FOCUS } from "@/app/lib/imageFocus";
 import { apiUrl } from "@/app/lib/apiUrl";
 
@@ -177,10 +178,13 @@ export default function AdminMenu() {
                         return next;
                       });
                     }}
-                    aspectClass="aspect-[3/4]"
+                    orientationFromImage
                   />
                 ) : (
-                  <div className="flex aspect-[3/4] w-full items-center justify-center rounded-2xl border border-white/10 bg-zinc-900 text-[10px] text-zinc-600">
+                  <div
+                    className="flex w-full items-center justify-center rounded-2xl border border-white/10 bg-zinc-900 text-[10px] text-zinc-600"
+                    style={{ aspectRatio: DEFAULT_CARD_ASPECT_RATIO_CSS }}
+                  >
                     нет
                   </div>
                 )}

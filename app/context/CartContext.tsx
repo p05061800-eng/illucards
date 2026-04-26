@@ -15,6 +15,7 @@ import {
   type ReactNode,
 } from "react";
 import type { CardRarity, StoredCard } from "../api/cards/route";
+import { cardTreatsAsAdultPricing } from "../lib/cardRarityTags";
 import {
   ADULT_FIXED_PRICE_BYN,
   ADULT_FIXED_PRICE_RUB,
@@ -31,7 +32,7 @@ export type CartLine = {
   frontImage: string;
   /** Для эталонных размеров next/image (Marvel / Stranger Things и т.д.) */
   category?: string;
-  /** Порядок в категории (для правил 18+ помимо редкости adult). */
+  /** Порядок в категории (сортировка / подсказки; 18+ только по `rarity: "adult"`). */
   categoryOrder?: number;
   /** Для размытия 18+ в корзине до подтверждения возраста. */
   rarity?: CardRarity;
@@ -42,8 +43,13 @@ export type CartLine = {
 export const CART_STORAGE_KEY = "illucards-cart";
 const STORAGE_KEY = CART_STORAGE_KEY;
 
+/** В строке корзины: `adult`, если у карточки есть метка 18+ — для размытия миниатюры. */
+function cartLineRarityForStorage(card: StoredCard): CardRarity {
+  return cardTreatsAsAdultPricing(card) ? "adult" : card.rarity;
+}
+
 function lineFromCard(card: StoredCard): Pick<CartLine, "priceByn" | "priceRub"> {
-  if (card.rarity === "adult") {
+  if (cardTreatsAsAdultPricing(card)) {
     return { priceByn: ADULT_FIXED_PRICE_BYN, priceRub: ADULT_FIXED_PRICE_RUB };
   }
   const priceByn = Number.isFinite(card.price) ? card.price : 0;
@@ -183,7 +189,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
           quantity: next[i].quantity + 1,
           priceByn,
           priceRub,
-          rarity: card.rarity ?? next[i].rarity,
+          rarity: cartLineRarityForStorage(card),
         };
         return next;
       }
@@ -197,7 +203,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
           frontImage: card.frontImage,
           category: card.category,
           categoryOrder: card.categoryOrder,
-          rarity: card.rarity,
+          rarity: cartLineRarityForStorage(card),
           quantity: 1,
         },
       ];

@@ -45,8 +45,9 @@ export function CardPriceDualRow({
   const defaultHeroRub =
     "shrink-0 whitespace-nowrap text-right text-zinc-400";
 
-  const defaultCatalogByn = "shrink-0 whitespace-nowrap text-white";
-  const defaultCatalogRub = "shrink-0 whitespace-nowrap text-zinc-400/95";
+  /** В сетке коллекции на телефоне рядом с кнопками — без shrink-0, иначе цена не сжимается по flex. */
+  const defaultCatalogByn = "min-w-0 whitespace-nowrap text-white";
+  const defaultCatalogRub = "min-w-0 whitespace-nowrap text-zinc-400/95";
 
   let spanClass: string;
   if (variant === "product") {
@@ -113,7 +114,7 @@ export function CardPriceDualRow({
   return (
     <div
       className={cx(
-        "flex min-w-0 flex-1 flex-nowrap items-center justify-start gap-2 text-sm font-semibold tabular-nums sm:text-base",
+        "flex min-w-0 flex-1 flex-nowrap items-center justify-start gap-1.5 text-xs font-semibold tabular-nums sm:gap-2 sm:text-sm md:text-base",
         className
       )}
     >

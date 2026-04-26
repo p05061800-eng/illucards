@@ -1785,14 +1785,15 @@ body::after {
     width: 100%;
   }
 
+  /* Как на макете телефона: слева вертикальная колонка категорий, справа «Новинки». */
   .hero-main-desktop {
     display: flex;
-    flex-direction: column;
-    align-items: stretch;
+    flex-direction: row;
+    align-items: flex-start;
     flex-wrap: nowrap;
     width: 100%;
-    row-gap: 16px;
-    column-gap: 0;
+    row-gap: 0;
+    column-gap: 10px;
     margin-top: 0;
     padding-left: 0;
     padding-right: 0;
@@ -1803,11 +1804,12 @@ body::after {
   .hero-left-side {
     display: flex;
     flex-direction: column;
-    align-items: stretch;
-    width: 100%;
-    max-width: 100%;
+    align-items: center;
+    width: auto;
+    max-width: 4.75rem;
+    flex: 0 0 auto;
     min-width: 0;
-    gap: 12px;
+    gap: 8px;
     order: 1;
   }
 
@@ -1821,26 +1823,30 @@ body::after {
 
   .hero-left-side .hero-categories.hero-categories-strip {
     display: flex;
-    flex-direction: row;
+    flex-direction: column;
     flex-wrap: nowrap;
-    align-items: flex-start;
+    align-items: center;
     justify-content: flex-start;
     gap: 10px;
     width: 100%;
     min-width: 0;
-    overflow-x: auto;
-    overflow-y: hidden;
+    max-height: min(68vh, 26rem);
+    overflow-x: visible;
+    overflow-y: auto;
+    overscroll-behavior: contain;
     -webkit-overflow-scrolling: touch;
-    padding-bottom: 6px;
+    padding-bottom: 4px;
+    padding-right: 2px;
+    scrollbar-width: thin;
   }
 
   .hero-left-side .hero-categories .category-item {
-    width: 60px;
-    height: 60px;
-    min-width: 60px;
-    min-height: 60px;
-    max-width: 60px;
-    max-height: 60px;
+    width: 56px;
+    height: 56px;
+    min-width: 56px;
+    min-height: 56px;
+    max-width: 56px;
+    max-height: 56px;
     flex-shrink: 0;
   }
 
@@ -1861,15 +1867,15 @@ body::after {
 
   .hero-main-desktop > .hero-right-side.hero-content {
     order: 2;
-    width: 100%;
-    max-width: 100%;
-    flex: 0 1 auto;
+    min-width: 0;
+    max-width: none;
+    flex: 1 1 0%;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: flex-start;
     text-align: center;
-    align-self: center;
+    align-self: stretch;
   }
 
   .hero-main-desktop > .hero-right-side .hero-cell-card.hero-card {
@@ -1956,6 +1962,10 @@ body::after {
 
   .hero-limited-card-footer--novelty {
     max-width: 100%;
+  }
+
+  .hero-mobile-akcii .hero-promo-slider {
+    margin-top: 0;
   }
 }
 

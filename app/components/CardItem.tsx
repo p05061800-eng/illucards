@@ -167,16 +167,22 @@ export function CardItem({ card, hideUltraLayer = false }: Props) {
             </span>
           </div>
 
-          <div className="flex min-w-0 items-center justify-between gap-2">
-            <CardPriceDualRow card={card} variant="catalog" />
-            <div className="flex shrink-0 items-center gap-1">
+          <div className="flex min-w-0 flex-nowrap items-center justify-between gap-1 sm:gap-2">
+            <div className="min-w-0 flex-1 overflow-hidden pr-0.5 sm:pr-0">
+              <CardPriceDualRow
+                card={card}
+                variant="catalog"
+                className="text-[11px] font-semibold leading-tight sm:text-sm sm:leading-normal md:text-base"
+              />
+            </div>
+            <div className="flex shrink-0 items-center gap-0.5 sm:gap-1">
               <button
                 type="button"
                 onClick={(e) => {
                   e.stopPropagation();
                   handleFavorite(e);
                 }}
-                className={`rounded-full p-2 text-lg transition hover:brightness-125 active:opacity-80 ${
+                className={`shrink-0 rounded-full p-1 text-sm transition hover:brightness-125 active:opacity-80 sm:p-2 sm:text-lg ${
                   liked ? "text-red-400" : "text-white/85"
                 }`}
                 aria-label={liked ? "Убрать из избранного" : "В избранное"}
@@ -190,10 +196,13 @@ export function CardItem({ card, hideUltraLayer = false }: Props) {
                   e.stopPropagation();
                   addToCartWithFeedback(card, flyRef.current);
                 }}
-                className="shrink-0 rounded-full bg-green-500 p-2 text-white transition-all duration-300 ease-out hover:shadow-lg hover:shadow-green-500/35 hover:brightness-110 active:opacity-90"
+                className="shrink-0 rounded-full bg-green-500 p-1 text-white transition-all duration-300 ease-out hover:shadow-lg hover:shadow-green-500/35 hover:brightness-110 active:opacity-90 sm:p-2"
                 aria-label="В корзину"
               >
-                <ShoppingBag className="h-5 w-5 text-white" aria-hidden />
+                <ShoppingBag
+                  className="h-4 w-4 text-white sm:h-5 sm:w-5"
+                  aria-hidden
+                />
               </button>
             </div>
           </div>

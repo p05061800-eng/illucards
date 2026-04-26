@@ -412,7 +412,9 @@ export default function HeroSection({
                     </div>
                   </div>
 
-                  <PromoSlider initialSlides={initialPromoSlides} />
+                  <div className="hero-promo-desktop-slot hidden min-w-0 md:block">
+                    <PromoSlider initialSlides={initialPromoSlides} />
+                  </div>
 
                   {noCardsInCategory ? (
                     <p className="hero-category-empty-msg text-center text-sm text-amber-400/90">
@@ -594,9 +596,19 @@ export default function HeroSection({
                 </div>
               </div>
             </div>
+
+              <div
+                className="hero-mobile-akcii mt-4 w-full min-w-0 shrink-0 md:hidden"
+                aria-label="Акции"
+              >
+                <h2 className="hero-akcii-mobile-title mb-2.5 text-center text-[0.7rem] font-bold uppercase tracking-[0.14em] text-white/90">
+                  Акции
+                </h2>
+                <PromoSlider initialSlides={initialPromoSlides} />
+              </div>
             </div>
             </div>
-          </div>
+            </div>
         </section>
       </div>
     </div>

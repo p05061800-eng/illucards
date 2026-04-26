@@ -221,7 +221,6 @@ export function AdminCardForm({
         null,
       ),
     [
-      editingCard?.id,
       editingCard?.category,
       category,
       editingCard?.frontImageWidth,

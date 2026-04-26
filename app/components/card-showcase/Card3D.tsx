@@ -200,10 +200,6 @@ export function Card3D({ card }: Props) {
   }, [reduceMotion, card.frontHoverGif, card.id, coarsePointerOrHoverNone]);
 
   useEffect(() => {
-    if (process.env.NODE_ENV === "development") {
-      // eslint-disable-next-line no-console -- отладка пути к hover-звуку
-      console.log("audio path:", HOVER_SOUND_SRC);
-    }
     const el = audioRef.current;
     if (el) {
       el.load();

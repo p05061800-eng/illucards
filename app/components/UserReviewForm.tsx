@@ -1,10 +1,24 @@
 "use client";
 
 import { Star } from "lucide-react";
-import { useCallback, useState } from "react";
+import Link from "next/link";
+import { useCallback, useEffect, useState } from "react";
 import { PrivacyConsentCheckbox } from "@/app/components/PrivacyConsentCheckbox";
 
-const MAX_IMAGES = 5;
+const MAX_IMAGES = 8;
+const MAX_VIDEOS = 5;
+
+const PURCHASED_LS_KEY = "illucards-purchased-cards";
+
+function readPurchasedFromLocalStorage(cardId: string): boolean {
+  try {
+    const raw = localStorage.getItem(PURCHASED_LS_KEY);
+    const p = raw ? (JSON.parse(raw) as unknown) : [];
+    return Array.isArray(p) && p.map(String).includes(cardId);
+  } catch {
+    return false;
+  }
+}
 
 async function uploadImage(file: File): Promise<string> {
   const fd = new FormData();
@@ -16,12 +30,29 @@ async function uploadImage(file: File): Promise<string> {
   return data.url;
 }
 
+async function uploadReviewVideo(
+  file: File,
+  cardCategory: string
+): Promise<string> {
+  const fd = new FormData();
+  fd.set("file", file);
+  if (cardCategory.trim()) fd.set("cardCategory", cardCategory.trim());
+  const res = await fetch("/api/upload-video", { method: "POST", body: fd });
+  const data = (await res.json()) as { url?: string; error?: string };
+  if (!res.ok) throw new Error(data.error ?? "Не удалось загрузить видео");
+  if (!data.url) throw new Error("Нет URL");
+  return data.url;
+}
+
 export function UserReviewForm({
   cardId,
+  cardCategory = "",
   onSubmitted,
   embedded = false,
 }: {
   cardId: string;
+  /** Для TMNT-транскода на сервере при загрузке видео. */
+  cardCategory?: string;
   onSubmitted?: () => void;
   /** Без внешней рамки и заголовка — внутри общего блока отзывов */
   embedded?: boolean;
@@ -31,10 +62,31 @@ export function UserReviewForm({
   const [rating, setRating] = useState(5);
   const [hover, setHover] = useState(0);
   const [imageFiles, setImageFiles] = useState<File[]>([]);
+  const [videoFiles, setVideoFiles] = useState<File[]>([]);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [ok, setOk] = useState(false);
   const [privacyOk, setPrivacyOk] = useState(false);
+  const [canReview, setCanReview] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    let cancel = false;
+    void fetch(`/api/purchases?cardId=${encodeURIComponent(cardId)}`)
+      .then((r) => r.json())
+      .then((d: { purchased?: boolean }) => {
+        if (cancel) return;
+        const server = Boolean(d.purchased);
+        setCanReview(server || readPurchasedFromLocalStorage(cardId));
+      })
+      .catch(() => {
+        if (!cancel) {
+          setCanReview(readPurchasedFromLocalStorage(cardId));
+        }
+      });
+    return () => {
+      cancel = true;
+    };
+  }, [cardId]);
 
   const onPickImages = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files ?? []);
@@ -45,8 +97,21 @@ export function UserReviewForm({
     e.target.value = "";
   }, []);
 
+  const onPickVideos = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files ?? []);
+    setVideoFiles((prev) => {
+      const next = [...prev, ...files].slice(0, MAX_VIDEOS);
+      return next;
+    });
+    e.target.value = "";
+  }, []);
+
   const removeImage = useCallback((i: number) => {
     setImageFiles((prev) => prev.filter((_, j) => j !== i));
+  }, []);
+
+  const removeVideo = useCallback((i: number) => {
+    setVideoFiles((prev) => prev.filter((_, j) => j !== i));
   }, []);
 
   const submit = useCallback(async () => {
@@ -67,6 +132,10 @@ export function UserReviewForm({
       for (const f of imageFiles) {
         imageUrls.push(await uploadImage(f));
       }
+      const videoUrls: string[] = [];
+      for (const f of videoFiles) {
+        videoUrls.push(await uploadReviewVideo(f, cardCategory));
+      }
       const res = await fetch("/api/user-reviews", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -76,6 +145,7 @@ export function UserReviewForm({
           text: t,
           rating,
           images: imageUrls,
+          videos: videoUrls,
         }),
       });
       const data = (await res.json()) as { ok?: boolean; error?: string };
@@ -86,6 +156,7 @@ export function UserReviewForm({
       setText("");
       setRating(5);
       setImageFiles([]);
+      setVideoFiles([]);
       setOk(true);
       setPrivacyOk(false);
       onSubmitted?.();
@@ -94,12 +165,55 @@ export function UserReviewForm({
     } finally {
       setBusy(false);
     }
-  }, [author, text, rating, imageFiles, cardId, onSubmitted, privacyOk]);
+  }, [
+    author,
+    text,
+    rating,
+    imageFiles,
+    videoFiles,
+    cardId,
+    cardCategory,
+    onSubmitted,
+    privacyOk,
+  ]);
 
   const shell =
     embedded
       ? "space-y-4"
       : "rounded-xl border border-white/10 bg-zinc-950/40 p-4 sm:p-5";
+
+  if (canReview === null) {
+    return (
+      <div className={shell}>
+        <p className="text-sm text-zinc-500">Проверка…</p>
+      </div>
+    );
+  }
+
+  if (!canReview) {
+    return (
+      <div className={shell}>
+        <p className="text-sm leading-relaxed text-zinc-400">
+          Отзыв можно оставить только после покупки этой карточки на сайте.
+          Фото и видео не обязательны — достаточно оценки и текста.
+        </p>
+        <div className="mt-4 flex flex-wrap gap-3">
+          <Link
+            href="/checkout"
+            className="inline-flex rounded-lg border border-violet-500/45 bg-violet-950/50 px-4 py-2 text-sm font-semibold text-violet-100 transition hover:bg-violet-900/60"
+          >
+            Перейти к оплате
+          </Link>
+          <Link
+            href="/#collection"
+            className="inline-flex rounded-lg border border-white/15 px-4 py-2 text-sm text-zinc-300 transition hover:border-white/25 hover:text-white"
+          >
+            В каталог
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className={shell}>
@@ -107,7 +221,8 @@ export function UserReviewForm({
         <>
           <h3 className="mb-3 text-base font-semibold text-white">Оставить отзыв</h3>
           <p className="mb-4 text-sm text-zinc-500">
-            Можно прикрепить до {MAX_IMAGES} фотографий.
+            Фото и видео по желанию: до {MAX_IMAGES} фото и до {MAX_VIDEOS} роликов
+            (MP4, WebM, MOV).
           </p>
         </>
       )}
@@ -168,7 +283,7 @@ export function UserReviewForm({
         />
       </label>
 
-      <div className="mb-3">
+      <div className="mb-3 flex flex-wrap gap-2">
         <label className="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-white/10 bg-zinc-900/60 px-3 py-2 text-sm text-zinc-300 transition hover:border-white/20">
           <input
             type="file"
@@ -180,13 +295,24 @@ export function UserReviewForm({
           />
           Добавить фото
         </label>
+        <label className="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-white/10 bg-zinc-900/60 px-3 py-2 text-sm text-zinc-300 transition hover:border-white/20">
+          <input
+            type="file"
+            accept="video/mp4,video/webm,video/quicktime,.mp4,.webm,.mov"
+            multiple
+            disabled={busy || videoFiles.length >= MAX_VIDEOS}
+            className="sr-only"
+            onChange={onPickVideos}
+          />
+          Добавить видео
+        </label>
       </div>
 
       {imageFiles.length > 0 ? (
         <ul className="mb-3 flex flex-wrap gap-2 text-xs text-zinc-400">
           {imageFiles.map((f, i) => (
             <li
-              key={`${f.name}-${i}`}
+              key={`${f.name}-img-${i}`}
               className="flex items-center gap-1 rounded-md border border-white/10 bg-black/30 px-2 py-1"
             >
               <span className="max-w-[140px] truncate">{f.name}</span>
@@ -194,6 +320,27 @@ export function UserReviewForm({
                 type="button"
                 disabled={busy}
                 onClick={() => removeImage(i)}
+                className="text-rose-400 hover:underline"
+              >
+                ×
+              </button>
+            </li>
+          ))}
+        </ul>
+      ) : null}
+
+      {videoFiles.length > 0 ? (
+        <ul className="mb-3 flex flex-wrap gap-2 text-xs text-zinc-400">
+          {videoFiles.map((f, i) => (
+            <li
+              key={`${f.name}-vid-${i}`}
+              className="flex items-center gap-1 rounded-md border border-white/10 bg-black/30 px-2 py-1"
+            >
+              <span className="max-w-[140px] truncate">{f.name}</span>
+              <button
+                type="button"
+                disabled={busy}
+                onClick={() => removeVideo(i)}
                 className="text-rose-400 hover:underline"
               >
                 ×

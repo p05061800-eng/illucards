@@ -32,7 +32,7 @@ type Props = {
    */
   objectFit?: "cover" | "contain";
   /**
-   * Рамка после загрузки: 16/6 при w>h, иначе 3/4. Не задавайте вместе с `aspectClass` / `aspectRatioCss`.
+   * Рамка после загрузки: 16/6 при w>h, иначе 2/3. Не задавайте вместе с `aspectClass` / `aspectRatioCss`.
    */
   orientationFromImage?: boolean;
   /** Стили на `<img>` (например `object-position` / `contain` с админского фокуса). */

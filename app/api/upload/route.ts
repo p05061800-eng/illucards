@@ -4,6 +4,7 @@ import { promises as fs } from "fs";
 import path from "path";
 import {
   imageBufferLogoWebp,
+  imageBufferPromoBannerWebp,
   imageBufferTo34Webp,
   imageBufferToTmntPosterWebp,
 } from "@/app/lib/serverImage";
@@ -35,6 +36,7 @@ export async function POST(req: Request) {
   const purpose =
     typeof purposeRaw === "string" ? purposeRaw.trim().toLowerCase() : "";
   const useLogoPipeline = purpose === "logo" || purpose === "category";
+  const usePromoPipeline = purpose === "promo";
 
   const cardCategoryRaw = data.get("cardCategory");
   const cardCategory =
@@ -42,11 +44,13 @@ export async function POST(req: Request) {
 
   let processed: Buffer;
   try {
-    processed = useLogoPipeline
-      ? await imageBufferLogoWebp(buffer)
-      : cardCategory === "TMNT"
-        ? await imageBufferToTmntPosterWebp(buffer)
-        : await imageBufferTo34Webp(buffer);
+    processed = usePromoPipeline
+      ? await imageBufferPromoBannerWebp(buffer)
+      : useLogoPipeline
+        ? await imageBufferLogoWebp(buffer)
+        : cardCategory === "TMNT"
+          ? await imageBufferToTmntPosterWebp(buffer)
+          : await imageBufferTo34Webp(buffer);
   } catch {
     return NextResponse.json(
       { error: "Не удалось обработать изображение." },

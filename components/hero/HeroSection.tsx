@@ -12,6 +12,8 @@ import {
 } from "react";
 import type { StoredCard } from "@/app/api/cards/route";
 import type { CategoryTile } from "@/app/lib/categoriesJson";
+import type { PromoSlide } from "@/app/lib/promoSlidesJson";
+import PromoSlider from "@/components/PromoSlider";
 import { apiUrl } from "@/app/lib/apiUrl";
 import { collectionSectionId } from "@/app/lib/collectionAnchor";
 import { categoryFocusToStyle } from "@/app/lib/imageFocus";
@@ -38,6 +40,8 @@ type Props = {
   initialCategories?: CategoryTile[];
   /** Ужать герой по вертикали (главная «в один экран»). */
   viewportCompact?: boolean;
+  /** Акции под категориями — с сервера для SSR без «мигания». */
+  initialPromoSlides?: PromoSlide[];
 };
 
 export default function HeroSection({
@@ -45,6 +49,7 @@ export default function HeroSection({
   initialHeroCategoryName,
   initialCategories = [],
   viewportCompact = false,
+  initialPromoSlides = [],
 }: Props) {
   const router = useRouter();
   const heroCardFlyRef = useRef<HTMLDivElement>(null);
@@ -407,6 +412,8 @@ export default function HeroSection({
                     </div>
                   </div>
 
+                  <PromoSlider initialSlides={initialPromoSlides} />
+
                   {noCardsInCategory ? (
                     <p className="hero-category-empty-msg text-center text-sm text-amber-400/90">
                       В категории «{selectedCategoryName}» пока нет карточек —
@@ -447,7 +454,7 @@ export default function HeroSection({
                     }
                   >
                   {showNoveltiesHeroChrome ? (
-                    <div className="hero-right-product flex w-full max-w-none min-w-0 flex-col items-center gap-0 overflow-visible py-0 md:gap-4 md:py-0">
+                    <div className="hero-right-product flex w-full max-w-none min-w-0 flex-col items-center gap-0 overflow-visible py-0 md:items-stretch md:gap-0 md:py-0">
                       <div className="hero-novelties-mobile-stack flex w-full max-w-full flex-col items-stretch gap-3 max-md:w-full max-md:px-0 md:contents md:max-w-none">
                       <div className="hero-title hero-novelty-header w-full shrink-0 text-center">
                         <h2 className="hero-novelties-title hero-novelties-title--static mx-auto block w-full max-w-full origin-center text-balance text-center font-bold uppercase tracking-[0.1em]">
@@ -466,7 +473,13 @@ export default function HeroSection({
                           e.stopPropagation();
                           blockHeroCardLinkClickRef.current = false;
                         }}
-                        className="hero-slider hero-novelty-card-shell relative flex w-full max-w-full shrink-0 items-center justify-center gap-2 px-0 md:max-w-[min(100%,40rem)] md:gap-3 md:px-2"
+                        className={`hero-slider hero-novelty-card-shell relative flex w-full max-w-full shrink-0 items-start justify-center gap-2 px-0 md:gap-3 md:px-2 ${
+                          isTmntHeroCard
+                            ? "md:max-w-[min(100%,52rem)]"
+                            : isMarvelHeroCard
+                              ? "md:max-w-[min(100%,58rem)]"
+                              : "md:max-w-[min(100%,47rem)]"
+                        }`}
                       >
                         {canCycleNoveltiesWithArrows ? (
                           <button
@@ -523,7 +536,15 @@ export default function HeroSection({
                         )}
                       </div>
 
-                      <div className="hero-novelty-meta flex w-full max-w-full shrink-0 flex-col gap-2 px-0 text-center md:max-w-[min(100%,36rem)] md:gap-3 md:px-3 md:text-left">
+                      <div
+                        className={`hero-novelty-meta flex w-full max-w-full shrink-0 flex-col gap-2 px-0 text-center md:gap-3 md:px-3 md:text-left ${
+                          isTmntHeroCard
+                            ? "md:max-w-[min(100%,50rem)]"
+                            : isMarvelHeroCard
+                              ? "md:max-w-[min(100%,50rem)]"
+                              : "md:max-w-[min(100%,42rem)]"
+                        }`}
+                      >
                         <div className="hero-novelty-meta-row flex w-full flex-col items-stretch gap-2 md:flex-row md:items-center md:justify-between md:gap-3">
                           <p className="hero-name hero-novelty-card-title text-base font-semibold text-white md:text-lg lg:text-xl">
                             {stackCard.title}
@@ -549,8 +570,8 @@ export default function HeroSection({
                         className={[
                           "hero-primary-card-shell mx-auto w-full origin-top motion-reduce:scale-100",
                           isTmntHeroCard
-                            ? "max-w-[min(100%,32rem)] sm:max-w-[min(100%,36rem)] md:max-w-[min(100%,40rem)] lg:max-w-[min(100%,42rem)] xl:max-w-[min(100%,44rem)]"
-                            : "max-w-[min(100%,28rem)] sm:max-w-[min(100%,32rem)] md:max-w-[min(100%,36rem)] lg:max-w-[min(100%,38rem)] xl:max-w-[min(100%,40rem)]",
+                            ? "max-w-[min(100%,36rem)] sm:max-w-[min(100%,40rem)] md:max-w-[min(100%,46rem)] lg:max-w-[min(100%,50rem)] xl:max-w-[min(100%,54rem)]"
+                            : "max-w-[min(100%,30rem)] sm:max-w-[min(100%,34rem)] md:max-w-[min(100%,38rem)] lg:max-w-[min(100%,40rem)] xl:max-w-[min(100%,42rem)]",
                         ].join(" ")}
                       >
                         <CardViewer

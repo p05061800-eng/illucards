@@ -74,6 +74,11 @@ function useCollectionPreviewColumns(
         setCols((c) => (c !== 5 ? 5 : c));
         return;
       }
+      /** Совпадает с `.collection-card-grid`: на телефоне три колонки. */
+      if (window.matchMedia("(max-width: 639px)").matches) {
+        setCols((c) => (c !== 3 ? 3 : c));
+        return;
+      }
       const minCell = viewportCompact ? 128 : 156;
       const approx = Math.max(
         2,
@@ -90,14 +95,17 @@ function useCollectionPreviewColumns(
 
     const mqWide = window.matchMedia("(min-width: 1280px)");
     const mqCompactLg = window.matchMedia("(min-width: 1024px)");
+    const mqPhone = window.matchMedia("(max-width: 639px)");
     const onMq = () => compute();
     mqWide.addEventListener("change", onMq);
     mqCompactLg.addEventListener("change", onMq);
+    mqPhone.addEventListener("change", onMq);
 
     return () => {
       ro.disconnect();
       mqWide.removeEventListener("change", onMq);
       mqCompactLg.removeEventListener("change", onMq);
+      mqPhone.removeEventListener("change", onMq);
     };
   }, [widthRef, viewportCompact]);
 

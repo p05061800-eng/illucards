@@ -578,6 +578,7 @@ export default function CardProductContent({
 
             <ProductReviewsSection
               cardId={card.id}
+              cardCategory={card.category}
               mergedAvg={merged.avg}
               mergedTotalCount={merged.totalCount}
               adminReviews={adminReviews}

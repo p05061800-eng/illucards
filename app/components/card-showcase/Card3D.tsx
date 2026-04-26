@@ -31,6 +31,7 @@ import {
   effectiveHoverMotionUrl,
   isFrontHoverVideoUrl,
 } from "../../lib/frontHoverMotionUrl";
+import { useCoarsePointerOrHoverNone } from "../../lib/useCoarsePointerOrHoverNone";
 import { CardRarityGlowShell } from "../CardRarityGlowShell";
 import { useIntrinsicImageAspect } from "../../lib/useIntrinsicImageAspect";
 
@@ -172,6 +173,7 @@ export function Card3D({ card }: Props) {
 
   const [flipped, setFlipped] = useState(false);
   const [reduceMotion, setReduceMotion] = useState(false);
+  const coarsePointerOrHoverNone = useCoarsePointerOrHoverNone();
 
   useEffect(() => {
     flippedRef.current = flipped;
@@ -185,19 +187,17 @@ export function Card3D({ card }: Props) {
     return () => mq.removeEventListener("change", fn);
   }, []);
 
-  /** Без :hover (телефон) — показываем hover-motion; для видео запускаем воспроизведение. */
+  /** Без :hover (телефон) — подстраховка `play()` (плюс `autoPlay` на `<video>`). */
   useEffect(() => {
     if (reduceMotion) return;
     const hm = effectiveHoverMotionUrl(card.frontHoverGif);
     if (!hm || !isFrontHoverVideoUrl(hm)) return;
-    if (typeof window === "undefined") return;
-    const mq = window.matchMedia("(hover: none), (pointer: coarse)");
-    if (!mq.matches) return;
+    if (!coarsePointerOrHoverNone) return;
     const id = requestAnimationFrame(() => {
       void hoverMotionVideoRef.current?.play()?.catch(() => {});
     });
     return () => cancelAnimationFrame(id);
-  }, [reduceMotion, card.frontHoverGif, card.id]);
+  }, [reduceMotion, card.frontHoverGif, card.id, coarsePointerOrHoverNone]);
 
   useEffect(() => {
     if (process.env.NODE_ENV === "development") {
@@ -486,10 +486,12 @@ export function Card3D({ card }: Props) {
     (card.effect === "vario" || card.effect === "morphing") &&
     Boolean(backSrc);
 
-  const hoverMotionLayerClass = [
-    "pointer-events-none absolute inset-0 z-[5] flex min-h-0 min-w-0 items-center justify-center overflow-hidden rounded-2xl bg-black",
-    "opacity-100 transition-opacity duration-200 motion-reduce:opacity-0 [@media(hover:hover)_and_(pointer:fine)]:opacity-0 [@media(hover:hover)_and_(pointer:fine)]:group-hover/card3d:opacity-100",
-  ].join(" ");
+  const hoverMotionLayerClass = coarsePointerOrHoverNone
+    ? "pointer-events-none absolute inset-0 z-[5] flex min-h-0 min-w-0 items-center justify-center overflow-hidden rounded-2xl bg-black opacity-100 transition-opacity duration-200 motion-reduce:opacity-0"
+    : [
+        "pointer-events-none absolute inset-0 z-[5] flex min-h-0 min-w-0 items-center justify-center overflow-hidden rounded-2xl bg-black",
+        "opacity-100 transition-opacity duration-200 motion-reduce:opacity-0 [@media(hover:hover)_and_(pointer:fine)]:opacity-0 [@media(hover:hover)_and_(pointer:fine)]:group-hover/card3d:opacity-100",
+      ].join(" ");
 
   return (
     <article className="group/card3d mx-auto w-full max-w-[min(100%,380px)]">
@@ -582,7 +584,7 @@ export function Card3D({ card }: Props) {
                           ? `${fixedImg} rounded-2xl ${faceCls}`
                           : `h-full w-full object-cover rounded-2xl ${faceCls}`
                       }${
-                        hoverVideoSrc && !reduceMotion
+                        hoverVideoSrc && !reduceMotion && !coarsePointerOrHoverNone
                           ? " opacity-0 transition-opacity duration-200 [@media(hover:hover)_and_(pointer:fine)]:opacity-100 [@media(hover:hover)_and_(pointer:fine)]:group-hover/card3d:opacity-0"
                           : ""
                       }`}
@@ -614,6 +616,7 @@ export function Card3D({ card }: Props) {
                           : categoryFocusCoverStyle(card.frontImageFocus)
                       }
                       fillFaceFrame={!fixedCatalogFrame}
+                      autoPlay={coarsePointerOrHoverNone}
                     />
                   ) : null}
                 </div>

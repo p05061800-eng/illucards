@@ -5,9 +5,7 @@ import { useRouter } from "next/navigation";
 import {
   useCallback,
   useEffect,
-  useRef,
   type KeyboardEvent as ReactKeyboardEvent,
-  type TouchEvent,
 } from "react";
 import type { StoredCard } from "../../api/cards/route";
 import { ultraOrHeroBgUrl } from "../../lib/cardUltraBg";
@@ -116,8 +114,6 @@ function ArrowControl({
   );
 }
 
-const SWIPE_PX = 56;
-
 /** Стопка карточки; стрелки листают по списку `browseCards` (на товаре — обычно весь каталог). */
 export function CardViewer({
   activeCard,
@@ -129,7 +125,6 @@ export function CardViewer({
   onCardClick,
 }: Props) {
   const router = useRouter();
-  const touchStartX = useRef<number | null>(null);
   const n = browseCards.length;
   const rawIdx = browseCards.findIndex((c) => c.id === activeCard.id);
   const idx = rawIdx >= 0 ? rawIdx : 0;
@@ -190,22 +185,6 @@ export function CardViewer({
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [n, go]);
 
-  const onTouchStart = (e: TouchEvent) => {
-    touchStartX.current = e.touches[0]?.clientX ?? null;
-  };
-
-  const onTouchEnd = (e: TouchEvent) => {
-    const start = touchStartX.current;
-    touchStartX.current = null;
-    if (start == null || n <= 1) return;
-    const endX = e.changedTouches[0]?.clientX;
-    if (endX == null) return;
-    const dx = endX - start;
-    if (Math.abs(dx) < SWIPE_PX) return;
-    if (dx < 0) go(1);
-    else go(-1);
-  };
-
   const front = active?.frontImage?.trim();
   if (!active || !front) return null;
 
@@ -228,17 +207,13 @@ export function CardViewer({
    */
   const centerColumn = (
     <div
-      className={`relative z-0 flex min-h-0 min-w-0 touch-pan-y justify-center overflow-visible px-0.5 ${hideNavigation ? "w-full flex-none" : `flex-1 ${wrapMax}`} ${clickable ? "pointer-events-none" : ""}`}
-      onTouchStart={clickable ? undefined : onTouchStart}
-      onTouchEnd={clickable ? undefined : onTouchEnd}
+      className={`relative z-0 flex min-h-0 min-w-0 touch-pan-y overflow-visible px-0.5 ${hideNavigation ? "w-full flex-none items-start justify-center" : `flex-1 ${wrapMax} justify-center`} ${clickable ? "pointer-events-none" : ""}`}
     >
       <div className="grid w-full min-w-0 min-h-0 place-items-start justify-items-center overflow-visible py-1">
         <div
           role={clickable ? "button" : undefined}
           tabIndex={clickable ? 0 : undefined}
-          className={`relative z-0 flex w-full min-h-0 justify-center overflow-visible ${layout === "product" ? "max-w-full px-2 pb-2 pt-0 sm:px-4 sm:pb-4" : "max-w-full"} ${clickable ? "pointer-events-auto cursor-pointer" : ""}`}
-          onTouchStart={clickable ? onTouchStart : undefined}
-          onTouchEnd={clickable ? onTouchEnd : undefined}
+          className={`relative z-0 flex w-full min-h-0 overflow-visible ${hideNavigation ? "items-start justify-center" : "justify-center"} ${layout === "product" ? "max-w-full px-2 pb-2 pt-0 sm:px-4 sm:pb-4" : "max-w-full"} ${clickable ? "pointer-events-auto cursor-pointer" : ""}`}
           onClick={clickable ? handleCardClick : undefined}
           onKeyDown={clickable ? onCardKeyDown : undefined}
         >

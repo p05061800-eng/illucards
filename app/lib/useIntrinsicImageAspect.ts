@@ -10,7 +10,7 @@ import {
 export { aspectRatioCssFromDimensions } from "@/app/lib/cardAspectRatio";
 
 /**
- * Рамка витрины по ориентации загруженного лица (16/6 или 3/4).
+ * Рамка витрины по ориентации загруженного лица (16/6 или 2:3; TMNT задаётся в `resolveCardArtBoxAspectCss`).
  * Пока грузится — `DEFAULT_CARD_ASPECT_RATIO_CSS`.
  * Если `src` пустой — не грузим (используйте `resolveCardArtBoxAspectCss` с размерами из API).
  */

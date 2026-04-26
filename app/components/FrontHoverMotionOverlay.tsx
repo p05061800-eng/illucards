@@ -9,6 +9,8 @@ type Props = {
   fillFaceFrame?: boolean;
   /** Запуск/пауза снаружи (pointer enter/leave зоны карты). */
   videoRef?: Ref<HTMLVideoElement | null>;
+  /** Тач-устройства: без hover — включаем нативный autoplay (muted + playsInline). */
+  autoPlay?: boolean;
 };
 
 const HOVER_MEDIA_CLASS =
@@ -27,6 +29,7 @@ export function FrontHoverMotionOverlay({
   style,
   fillFaceFrame = false,
   videoRef,
+  autoPlay = false,
 }: Props) {
   const t = url.trim();
   if (!t || !isFrontHoverVideoUrl(t)) return null;
@@ -43,7 +46,8 @@ export function FrontHoverMotionOverlay({
         muted
         playsInline
         loop
-        preload="metadata"
+        preload={autoPlay ? "auto" : "metadata"}
+        autoPlay={autoPlay}
         draggable={false}
       />
     </div>

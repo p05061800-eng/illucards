@@ -1,11 +1,20 @@
-/** Вертикальная рамка витрины (портрет и квадрат: w ≤ h). */
-export const CARD_ART_PORTRAIT_FRAME_ASPECT_CSS = "3 / 4";
+/**
+ * Стандартная коллекционная карта / постер Marvel-стиля (портрет w ≤ h) — фикс 2:3.
+ */
+export const CARD_ART_STANDARD_PORTRAIT_ASPECT_CSS = "2 / 3";
+
+/** @deprecated Используйте `CARD_ART_STANDARD_PORTRAIT_ASPECT_CSS` (раньше было 3/4). */
+export const CARD_ART_PORTRAIT_FRAME_ASPECT_CSS =
+  CARD_ART_STANDARD_PORTRAIT_ASPECT_CSS;
+
+/** Постер TMNT на витрине — как референс 761×1024 (вторая опорная картинка). */
+export const CARD_ART_TMNT_POSTER_ASPECT_CSS = "761 / 1024";
 
 /** Горизонтальный баннер на витрине (w > h). */
 export const CARD_ART_LANDSCAPE_FRAME_ASPECT_CSS = "16 / 6";
 
-/** Пока нет размеров файла — портретная рамка, без «сплющивания» в горизонталь. */
-export const DEFAULT_CARD_ASPECT_RATIO_CSS = CARD_ART_PORTRAIT_FRAME_ASPECT_CSS;
+/** Пока нет размеров файла — рамка 2:3. */
+export const DEFAULT_CARD_ASPECT_RATIO_CSS = CARD_ART_STANDARD_PORTRAIT_ASPECT_CSS;
 
 /** @deprecated Жёсткие пресеты витрины отключены — оставлено для типов в API/JSON. */
 export const CARD_FRAME_LEGACY_ASPECT_CSS = "681 / 1024";
@@ -75,7 +84,7 @@ export function aspectRatioCssFromDimensions(w: number, h: number): string {
   return `${Math.round(w / g)} / ${Math.round(h / g)}`;
 }
 
-/** Рамка витрины по ориентации лица: баннер 16/6, иначе постер 3/4. */
+/** Рамка витрины по ориентации лица: баннер 16/6, иначе постер 2:3. */
 export function bucketCardArtFrameAspectCssFromDimensions(
   w: number,
   h: number,
@@ -85,7 +94,7 @@ export function bucketCardArtFrameAspectCssFromDimensions(
   }
   return w > h
     ? CARD_ART_LANDSCAPE_FRAME_ASPECT_CSS
-    : CARD_ART_PORTRAIT_FRAME_ASPECT_CSS;
+    : CARD_ART_STANDARD_PORTRAIT_ASPECT_CSS;
 }
 
 /**
@@ -97,9 +106,12 @@ export const TMNT_REFERENCE_POSTER_DIMENSIONS = {
   height: 1024,
 } as const;
 
+function isTmntCategory(card: { category?: string }): boolean {
+  return (card.category ?? "").trim().toLowerCase() === "tmnt";
+}
+
 /**
- * Рамка витрины по ориентации лица: `frontImageWidth`/`Height` с API или
- * `aspectFromClientHook` (`useIntrinsicImageAspect`) — баннер 16/6 или постер 3/4.
+ * Рамка витрины: TMNT — фикс 761/1024; иначе по API или хуку — баннер 16/6 или постер 2:3.
  */
 export function resolveCardArtBoxAspectCss(
   card: {
@@ -112,6 +124,9 @@ export function resolveCardArtBoxAspectCss(
   _categoryFrameAspectCss?: string | null,
 ): string {
   void card.cardArtFramePreset;
+  if (isTmntCategory(card)) {
+    return CARD_ART_TMNT_POSTER_ASPECT_CSS;
+  }
   if (
     typeof card.frontImageWidth === "number" &&
     typeof card.frontImageHeight === "number" &&

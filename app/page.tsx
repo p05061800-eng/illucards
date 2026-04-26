@@ -3,8 +3,15 @@ import { HomeCollection } from "./components/HomeCollection";
 import { parseCardsJson } from "./api/cards/route";
 import type { CategoryTile } from "./lib/categoriesJson";
 import { parseCategoriesJson } from "./lib/categoriesJson";
+import {
+  parsePromoSlides,
+  type PromoSlide,
+} from "./lib/promoSlidesJson";
 import fs from "fs";
 import path from "path";
+
+/** Читать `data/*.json` при каждом запросе, а не застывший при билде снимок (акции/каталог). */
+export const dynamic = "force-dynamic";
 
 export default function Home() {
   const filePath = path.join(process.cwd(), "data", "cards.json");
@@ -23,6 +30,15 @@ export default function Home() {
   const initialHeroCategoryName =
     cards[0]?.category?.trim() ? cards[0].category.trim() : null;
 
+  let initialPromoSlides: PromoSlide[] = [];
+  try {
+    const promoPath = path.join(process.cwd(), "data", "promo-slides.json");
+    const promoRaw = fs.readFileSync(promoPath, "utf-8");
+    initialPromoSlides = parsePromoSlides(JSON.parse(promoRaw));
+  } catch {
+    initialPromoSlides = [];
+  }
+
   return (
     <main className="main relative min-h-screen overflow-x-hidden text-white">
       <div className="relative z-10 overflow-visible px-0 pb-16 pt-[10px] sm:px-10 sm:pb-20 sm:pt-4">
@@ -30,6 +46,7 @@ export default function Home() {
           cards={cards}
           initialHeroCategoryName={initialHeroCategoryName}
           initialCategories={categoryTiles}
+          initialPromoSlides={initialPromoSlides}
         />
 
         <section

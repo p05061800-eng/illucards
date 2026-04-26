@@ -44,6 +44,23 @@ export async function imageBufferLogoWebp(buffer: Buffer): Promise<Buffer> {
     .toBuffer();
 }
 
+const PROMO_BANNER_MAX_W = 1920;
+const PROMO_BANNER_MAX_H = 1080;
+
+/** Баннеры акций 16:9 в герое — без обрезки до 2:3, вписать в 1920×1080. */
+export async function imageBufferPromoBannerWebp(
+  buffer: Buffer
+): Promise<Buffer> {
+  return sharp(buffer)
+    .rotate()
+    .resize(PROMO_BANNER_MAX_W, PROMO_BANNER_MAX_H, {
+      fit: "inside",
+      withoutEnlargement: true,
+    })
+    .webp({ quality: 88 })
+    .toBuffer();
+}
+
 /** Проверка пути в public (uploads и вложенные папки, без ..). */
 export function isSafeUploadPublicPath(p: string): boolean {
   const s = p.trim();

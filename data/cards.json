@@ -5197,6 +5197,11 @@
     "categoryOrder": 51,
     "varioSmoothing": 0.18,
     "frontImageWidth": 600,
-    "frontImageHeight": 900
+    "frontImageHeight": 900,
+    "categoryBg": "/uploads/1777216845518-8667f5e3.webp",
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    }
   }
 ]

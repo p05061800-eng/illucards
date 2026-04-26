@@ -1,7 +1,6 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useRef, type TouchEvent } from "react";
 import { CardDescriptionText } from "../CardDescriptionText";
 import type { StoredCard } from "../../api/cards/route";
 import {
@@ -153,20 +152,14 @@ type Props = {
   activeId: string;
   /** Страница категории: листаем карточки без перехода на /card */
   onNavigate?: (nextId: string) => void;
-  /** Горизонтальный свайп (стрелки) */
-  enableSwipe?: boolean;
 };
-
-const SWIPE_PX = 56;
 
 export function CardStack({
   cards,
   activeId,
   onNavigate,
-  enableSwipe = true,
 }: Props) {
   const router = useRouter();
-  const touchStartX = useRef<number | null>(null);
   const n = cards.length;
   const rawIdx = cards.findIndex((c) => c.id === activeId);
   const idx = rawIdx >= 0 ? rawIdx : 0;
@@ -190,23 +183,6 @@ export function CardStack({
     }
   };
 
-  const onTouchStart = (e: TouchEvent) => {
-    touchStartX.current = e.touches[0]?.clientX ?? null;
-  };
-
-  const onTouchEnd = (e: TouchEvent) => {
-    if (!enableSwipe) return;
-    const start = touchStartX.current;
-    touchStartX.current = null;
-    if (start == null || n <= 1) return;
-    const endX = e.changedTouches[0]?.clientX;
-    if (endX == null) return;
-    const dx = endX - start;
-    if (Math.abs(dx) < SWIPE_PX) return;
-    if (dx < 0) go(1);
-    else go(-1);
-  };
-
   const showLeft =
     prevCard && active && prevCard.id !== active.id ? prevCard : null;
   const showRight =
@@ -225,11 +201,7 @@ export function CardStack({
         onClick={() => go(-1)}
       />
 
-      <div
-        className="relative w-full min-w-0 max-w-[min(100%,min(92vw,720px))] touch-pan-y px-0.5"
-        onTouchStart={onTouchStart}
-        onTouchEnd={onTouchEnd}
-      >
+      <div className="relative w-full min-w-0 max-w-[min(100%,min(92vw,720px))] touch-pan-y px-0.5">
         {showLeft ? (
           <DecorCard
             card={showLeft}

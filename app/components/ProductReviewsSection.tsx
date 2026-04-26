@@ -28,6 +28,19 @@ function formatReviewDate(iso: string): string {
   }
 }
 
+function allReviewVideos(r: CardReview): string[] {
+  const parts = [...(r.videos ?? []), ...(r.video ? [r.video] : [])];
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const p of parts) {
+    const u = typeof p === "string" ? p.trim() : "";
+    if (!u || seen.has(u)) continue;
+    seen.add(u);
+    out.push(u);
+  }
+  return out;
+}
+
 function reviewCountWord(n: number): string {
   const m = n % 100;
   if (m >= 11 && m <= 14) return "отзывов";
@@ -58,17 +71,28 @@ function buildUnifiedReviews(
   }));
   const users = [...userReviews]
     .sort((a, b) => b.date.localeCompare(a.date))
-    .map((ur) => ({
-      key: ur.id,
-      r: {
-        author: ur.author,
-        rating: ur.rating,
-        text: ur.text,
-        date: formatReviewDate(ur.date),
-        images: ur.images,
-        video: ur.video ?? undefined,
-      } satisfies CardReview,
-    }));
+    .map((ur) => {
+      const rawVids = [...(ur.videos ?? []), ...(ur.video ? [ur.video] : [])];
+      const seenV = new Set<string>();
+      const vids = rawVids
+        .map((s) => String(s).trim())
+        .filter((s) => {
+          if (!s || seenV.has(s)) return false;
+          seenV.add(s);
+          return true;
+        });
+      return {
+        key: ur.id,
+        r: {
+          author: ur.author,
+          rating: ur.rating,
+          text: ur.text,
+          date: formatReviewDate(ur.date),
+          images: ur.images,
+          ...(vids.length > 0 ? { videos: vids } : {}),
+        } satisfies CardReview,
+      };
+    });
   return [...admin, ...users];
 }
 
@@ -82,10 +106,11 @@ function collectMedia(reviews: UnifiedReview[]): { type: "image" | "video"; url:
       seen.add(u);
       out.push({ type: "image", url: u });
     }
-    const v = r.video?.trim();
-    if (v && !seen.has(v)) {
-      seen.add(v);
-      out.push({ type: "video", url: v });
+    for (const v of allReviewVideos(r)) {
+      if (!seen.has(v)) {
+        seen.add(v);
+        out.push({ type: "video", url: v });
+      }
     }
   }
   return out;
@@ -186,7 +211,7 @@ function ReviewCarouselCard({ r }: { r: CardReview }) {
 
 function ReviewFullItem({ r }: { r: CardReview }) {
   const imgs = r.images ?? [];
-  const vid = r.video?.trim();
+  const vids = allReviewVideos(r);
   return (
     <li className="rounded-2xl border border-white/[0.07] bg-zinc-950/50 p-4 sm:p-5">
       <div className="mb-2 flex flex-wrap items-center gap-2">
@@ -221,14 +246,18 @@ function ReviewFullItem({ r }: { r: CardReview }) {
           ))}
         </div>
       ) : null}
-      {vid ? (
-        <div className="mt-3 max-w-xl">
-          <video
-            src={vid}
-            controls
-            playsInline
-            className="h-auto w-full rounded-xl border border-white/10 bg-black"
-          />
+      {vids.length > 0 ? (
+        <div className="mt-3 space-y-3">
+          {vids.map((vid, i) => (
+            <div key={`${vid}-${i}`} className="max-w-xl">
+              <video
+                src={vid}
+                controls
+                playsInline
+                className="h-auto w-full rounded-xl border border-white/10 bg-black"
+              />
+            </div>
+          ))}
         </div>
       ) : null}
     </li>
@@ -237,6 +266,8 @@ function ReviewFullItem({ r }: { r: CardReview }) {
 
 type Props = {
   cardId: string;
+  /** Категория карточки (TMNT и т.д.) — для загрузки видео в форме отзыва. */
+  cardCategory?: string;
   mergedAvg: number;
   mergedTotalCount: number;
   adminReviews: CardReview[];
@@ -246,6 +277,7 @@ type Props = {
 
 export function ProductReviewsSection({
   cardId,
+  cardCategory = "",
   mergedAvg,
   mergedTotalCount,
   adminReviews,
@@ -418,10 +450,13 @@ export function ProductReviewsSection({
           Оставить отзыв
         </h3>
         <p className="mb-3 text-xs text-zinc-500 sm:text-sm">
-          Оценка, текст и до 5 фото — отзыв появится на странице после отправки.
+          Доступно после покупки этой карточки: оценка и текст; фото и видео
+          можно не прикреплять или добавить несколько файлов — отзыв появится
+          на странице после отправки.
         </p>
         <UserReviewForm
           cardId={cardId}
+          cardCategory={cardCategory}
           embedded
           onSubmitted={onUserReviewsRefresh}
         />

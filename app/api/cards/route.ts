@@ -140,6 +140,8 @@ export type CardReview = {
   images?: string[];
   /** URL видео (`/uploads/...` или https). */
   video?: string;
+  /** Несколько роликов в одном отзыве. */
+  videos?: string[];
 };
 
 export type StoredCard = {

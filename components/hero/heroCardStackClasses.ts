@@ -13,7 +13,7 @@ export const HERO_CARD_STACK_WIDTH_MATCH_CLASS = "hero-stack-max w-full";
 /** Новинки в герое — та же полная ширина колонки. */
 export const HERO_CARD_STACK_WIDTH_NOVELTY_NARROW_CLASS = "hero-stack-max w-full";
 
-/** Рамка — ориентация лица (16/6 или 3/4), см. `CardStackVisual` / `resolveCardArtBoxAspectCss`. */
+/** Рамка каталога: 2:3 / TMNT 761×1024 / баннер 16/6 — см. `resolveCatalogCardArtBoxAspectCss`. */
 export function heroCardStackRootClass(): string {
   return "relative w-full max-w-full overflow-visible rounded-2xl";
 }

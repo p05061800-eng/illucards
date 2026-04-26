@@ -126,6 +126,24 @@ export default function CheckoutPageClient() {
           onClose: (status: BePaidWidgetCloseStatus) => {
             setLoading(false);
             setBanner(statusMessage(status));
+            if (status === "successful" && cartItems.length > 0) {
+              const cardIds = [...new Set(cartItems.map((l) => l.id))];
+              void fetch("/api/purchases", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ cardIds }),
+              });
+              try {
+                const key = "illucards-purchased-cards";
+                const raw = localStorage.getItem(key);
+                const prev = raw ? (JSON.parse(raw) as unknown) : [];
+                const arr = Array.isArray(prev) ? prev.map(String) : [];
+                const merged = [...new Set([...arr, ...cardIds])];
+                localStorage.setItem(key, JSON.stringify(merged));
+              } catch {
+                /* ignore */
+              }
+            }
           },
         });
       } catch (widgetErr) {
@@ -148,7 +166,7 @@ export default function CheckoutPageClient() {
             : "Не удалось открыть оплату. Проверьте соединение.",
       });
     }
-  }, [amountMinor, cartItems.length, method, checkoutEmail]);
+  }, [amountMinor, cartItems, method, checkoutEmail]);
 
   const handleContinue = useCallback(() => {
     if (!checkoutEmail) {

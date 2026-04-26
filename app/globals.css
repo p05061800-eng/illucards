@@ -122,6 +122,14 @@ html.home-one-screen main.home-one-screen-main {
   );
 }
 
+/* Телефон: ровно три карточки в ряд (до `sm` в Tailwind). */
+@media (max-width: 639px) {
+  .collection-card-grid {
+    gap: 0.5rem;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
 @media (min-width: 1280px) {
   .collection-card-grid {
     gap: 1.25rem;
@@ -136,6 +144,14 @@ html.home-one-screen main.home-one-screen-main {
     auto-fill,
     minmax(min(100%, clamp(7rem, 20vw, 10rem)), 1fr)
   );
+}
+
+/* Иначе `.collection-card-grid--viewport-compact` перебивает три колонки с телефона. */
+@media (max-width: 639px) {
+  .collection-card-grid.collection-card-grid--viewport-compact {
+    gap: 0.5rem;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
 }
 
 @media (min-width: 1024px) {
@@ -627,9 +643,17 @@ body::after {
     display: grid;
     grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
     grid-template-rows: auto 1fr;
-    column-gap: 40px;
+    column-gap: clamp(40px, 2.5vw, 56px);
     row-gap: 24px;
     align-items: start;
+    /*
+     * Единая вертикаль: полоса под заголовок «Новинки» + зазор до карточки
+     * = такой же отступ сверху у обычных категорий (без заголовка), чтобы названия
+     * карточек внизу колонки были на одной линии.
+     */
+    --hero-novelties-title-band: clamp(3.05rem, 5.4vw, 4.95rem);
+    --hero-gap-novelties-title-to-card: clamp(1.05rem, 2vw, 1.65rem);
+    --hero-gap-hero-card-to-name: clamp(0.55rem, 1.05vw, 0.85rem);
   }
 
   .hero-wordmark-row {
@@ -666,6 +690,12 @@ body::after {
     align-items: flex-start;
   }
 
+  /* «Новинки»: чуть правее относительно левой колонки */
+  .hero-right-side--novelty {
+    padding-inline-start: clamp(0.5rem, 1.5vw, 1.5rem);
+    box-sizing: border-box;
+  }
+
   .hero-right-side .hero-right-product {
     align-items: flex-start;
   }
@@ -673,6 +703,109 @@ body::after {
   .hero-right-side .hero-right-product > div {
     align-items: flex-start;
     justify-content: flex-start;
+  }
+
+  /*
+   * Обычные категории: та же высота колонки и тот же зазор «карточка → название»,
+   * что у «Новинок»; сверху padding = полоса «Новинки» + зазор до карточки.
+   */
+  .hero-right-side:not(.hero-right-side--novelty) .hero-right-product {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr) auto;
+    row-gap: var(--hero-gap-hero-card-to-name);
+    min-height: clamp(42rem, 72vh, 58rem);
+    max-height: none;
+    width: 100%;
+    box-sizing: border-box;
+    padding-top: calc(
+      var(--hero-novelties-title-band) + var(--hero-gap-novelties-title-to-card)
+    );
+    padding-bottom: clamp(0.35rem, 0.75vw, 0.55rem);
+    justify-items: center;
+    align-content: stretch;
+  }
+
+  .hero-right-side:not(.hero-right-side--novelty) .hero-right-product > div:first-of-type {
+    grid-row: 1;
+    margin-top: 0 !important;
+    min-height: 0;
+    max-height: none;
+    width: 100%;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+  }
+
+  .hero-right-side:not(.hero-right-side--novelty) .hero-right-product .hero-limited-card-footer {
+    grid-row: 2;
+    width: 100%;
+    max-width: min(100%, clamp(240px, 32vw, 400px));
+    margin-inline: auto;
+  }
+
+  .hero-right-side:not(.hero-right-side--novelty) .hero-limited-card-titlebar {
+    min-height: clamp(3.1rem, 4.5vw, 3.65rem);
+    align-items: center;
+  }
+
+  /*
+   * «Новинки»: сетка — заголовок сверху, под ним карточка, внизу название и кнопка.
+   * Без отрицательного margin у слайдера — карточка визуально идёт под слово «Новинки».
+   */
+  .hero-right-side--novelty .hero-right-product {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto minmax(0, 1fr) auto;
+    align-items: stretch;
+    justify-items: stretch;
+    width: 100%;
+    min-height: clamp(42rem, 72vh, 58rem);
+    row-gap: 0;
+  }
+
+  .hero-right-side--novelty .hero-novelty-header {
+    grid-row: 1;
+    position: relative;
+    z-index: 25;
+    box-sizing: border-box;
+    min-height: var(--hero-novelties-title-band);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: var(--hero-gap-novelties-title-to-card);
+  }
+
+  /*
+   * Слайдер прижат к низу средней строки: при смене новинки высота стопки меняется,
+   * а строка «название + Купить первым» остаётся на одной высоте.
+   */
+  .hero-right-side--novelty .hero-novelty-card-shell {
+    grid-row: 2;
+    align-self: end;
+    min-height: 0;
+    width: 100%;
+    position: relative;
+    z-index: 15;
+    margin-top: 0;
+  }
+
+  .hero-right-side--novelty .hero-novelty-meta {
+    grid-row: 3;
+    align-self: end;
+    margin-top: var(--hero-gap-hero-card-to-name);
+    transform: none;
+  }
+
+  .hero-right-side--novelty .hero-novelty-meta-row {
+    min-height: clamp(3.1rem, 4.5vw, 3.65rem);
+    align-items: center;
+  }
+
+  .hero-right-side--novelty .hero-novelty-card-title {
+    min-height: clamp(2.6rem, 3.8vw, 3.15rem);
+    display: flex;
+    align-items: center;
   }
 }
 
@@ -706,6 +839,21 @@ body::after {
   .hero .hero-primary-card-shell {
     max-width: 300px;
     margin-inline: auto;
+  }
+
+  /* Новинки, не TMNT: чуть шире плашка, пропорции рамки без изменений. */
+  .hero .hero-right-side--novelty:not(.hero-right-side--tmnt) .hero-card.hero-novelty-card-wrap {
+    max-width: min(100%, 318px);
+  }
+
+  .hero .hero-right-side:not(.hero-right-side--tmnt) .hero-primary-card-shell {
+    max-width: min(100%, 318px);
+  }
+
+  /* TMNT: крупнее на планшете/мобиле, пропорции рамки по-прежнему 761/1024 в JS. */
+  .hero-right-side--tmnt.hero-right-side--novelty .hero-card.hero-novelty-card-wrap,
+  .hero-right-side--tmnt .hero-primary-card-shell {
+    max-width: min(100%, 380px);
   }
 
   .hero .hero-button.hero-novelty-buy-first {
@@ -799,7 +947,7 @@ body::after {
     display: flex;
     flex-direction: row;
     flex-wrap: nowrap;
-    align-items: center;
+    align-items: flex-start;
     justify-content: center;
     width: 100%;
     min-width: 0;
@@ -817,6 +965,7 @@ body::after {
     transform: none;
     z-index: 2;
     flex-shrink: 0;
+    align-self: center;
     width: 2rem;
     height: 2rem;
     min-width: 2rem;
@@ -1054,7 +1203,7 @@ body::after {
 
 .hero-novelty-card-shell {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: center;
   gap: clamp(0.75rem, 1.5vw, 1.25rem);
   width: 100%;
@@ -1065,11 +1214,21 @@ body::after {
 @media (min-width: 769px) {
   .hero-novelty-card-shell {
     padding-bottom: clamp(4rem, 5vw, 5rem);
+  }
+
+  /* Кроме TMNT и Marvel: витрина постера 2:3 (у Marvel размеры ниже). */
+  .hero-right-side--novelty:not(.hero-right-side--tmnt):not(.hero-right-side--marvel)
+    .hero-novelty-card-shell {
+    min-height: clamp(36rem, 39vw, 44rem);
+  }
+
+  .hero-right-side--tmnt.hero-right-side--novelty .hero-novelty-card-shell {
     min-height: clamp(32rem, 35vw, 40rem);
   }
 
-  .hero-novelty-card-wrap {
-    min-height: clamp(28rem, 30vw, 34rem);
+  .hero-right-side--novelty:not(.hero-right-side--tmnt):not(.hero-right-side--marvel)
+    .hero-novelty-card-wrap {
+    min-height: clamp(32rem, 34vw, 38rem);
   }
 }
 
@@ -1085,6 +1244,10 @@ body::after {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+}
+
+.hero-novelty-card-shell .hero-novelty-side-arrow {
+  align-self: center;
 }
 
 .hero-novelty-meta {
@@ -1155,37 +1318,58 @@ body::after {
   max-height: none;
 }
 
+/* Новинки, не Marvel и не TMNT — тот же визуальный класс размера, что Marvel. */
+.hero-right-side--novelty:not(.hero-right-side--tmnt):not(.hero-right-side--marvel)
+  .hero-novelty-card-wrap {
+  max-width: min(100%, 41rem);
+}
+
 .hero-right-side--marvel .hero-right-product > div {
-  max-width: min(100%, clamp(28rem, 32vw, 34rem)) !important;
+  max-width: min(100%, clamp(40rem, 46vw, 54rem)) !important;
 }
 
 .hero-right-side--marvel .hero-novelty-card-wrap {
-  max-width: min(100%, 36rem);
+  max-width: min(100%, 54rem);
 }
 
 .hero-right-side--tmnt .hero-right-product > div {
-  max-width: min(100%, 36rem) !important;
+  max-width: min(100%, clamp(40rem, 42vw, 50rem)) !important;
 }
 
 .hero-right-side--tmnt .hero-novelty-card-wrap {
-  max-width: min(100%, 38rem);
+  max-width: min(100%, clamp(44rem, 46vw, 54rem));
 }
 
 @media (min-width: 769px) {
   .hero-right-side--marvel .hero-novelty-card-wrap {
-    min-height: clamp(24rem, 24vw, 32rem);
+    min-height: clamp(36rem, 41vw, 48rem);
+  }
+
+  .hero-right-side--marvel.hero-right-side--novelty .hero-novelty-card-shell {
+    min-height: clamp(40rem, 45vw, 52rem);
   }
 
   .hero-right-side--marvel .hero-novelty-card-shell {
     padding-bottom: clamp(3rem, 4vw, 4rem);
   }
 
-  .hero-right-side--tmnt .hero-novelty-card-wrap {
-    min-height: clamp(26rem, 26vw, 34rem);
+  /*
+   * TMNT рамка 761/1024 — уже постера 2:3 при одной ширине колонки.
+   * Ширина × (2283/2048) = (3/2)/(1024/761) даёт ту же высоту лица, что у Marvel.
+   */
+  .hero-right-side--tmnt.hero-right-side--novelty .hero-novelty-card-shell {
+    overflow: visible;
+  }
+
+  .hero-right-side--tmnt.hero-right-side--novelty .hero-card.hero-novelty-card-wrap {
+    max-width: none;
+    width: calc(100% * 2283 / 2048);
+    margin-inline: calc(100% * (2048 - 2283) / (2 * 2048));
+    min-height: clamp(24rem, 24vw, 32rem);
   }
 
   .hero-right-side--tmnt .hero-novelty-card-shell {
-    padding-bottom: clamp(2.75rem, 3.5vw, 3.75rem);
+    padding-bottom: clamp(3rem, 4vw, 4rem);
   }
 }
 

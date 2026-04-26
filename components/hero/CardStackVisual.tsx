@@ -23,6 +23,7 @@ import {
   categoryFocusContainStyle,
   categoryFocusCoverStyle,
 } from "@/app/lib/imageFocus";
+import { useCoarsePointerOrHoverNone } from "@/app/lib/useCoarsePointerOrHoverNone";
 import { useIntrinsicImageAspect } from "@/app/lib/useIntrinsicImageAspect";
 import { AdultContentBlurGate } from "@/app/components/AdultContentBlurGate";
 import { cardRequiresAgeConfirmation } from "@/app/lib/cardRequiresAgeConfirmation";
@@ -96,6 +97,7 @@ export function CardStackVisual({
   const reduceMotionRef = useRef(false);
   /** На главной с тачем: не тянуть 3D-наклон — только vario (меньше лагов) */
   const coarseTouchHeroRef = useRef(false);
+  const coarsePointerOrHoverNone = useCoarsePointerOrHoverNone();
 
   /** Две разные картинки → варио в каталоге и герое (не только при effect===vario в JSON). */
   const hasVario = useMemo(() => {
@@ -546,19 +548,18 @@ export function CardStackVisual({
     };
   }, [hasVario, applyTilt, card.id, dismissTiltHint]);
 
-  /** Телефоны без :hover — оверлей с видео должен быть виден; старт после монтирования. */
+  /** Тач / без hover — подстраховка `play()` после монтирования (вместе с `autoPlay` на `<video>`). */
   useEffect(() => {
     if (typeof window === "undefined") return;
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
     const hm = effectiveHoverMotionUrl(card.frontHoverGif);
     if (!hm) return;
-    const mq = window.matchMedia("(hover: none), (pointer: coarse)");
-    if (!mq.matches) return;
+    if (!coarsePointerOrHoverNone) return;
     const id = requestAnimationFrame(() => {
       void hoverMotionVideoRef.current?.play()?.catch(() => {});
     });
     return () => cancelAnimationFrame(id);
-  }, [card.frontHoverGif, card.id]);
+  }, [card.frontHoverGif, card.id, coarsePointerOrHoverNone]);
 
   const faceCls = cardArtFaceObjectFitClass(card.cardArtFramePreset);
   const fixedShell = cardArtFixedFrameShellClass(fixedCatalogFrame);
@@ -630,10 +631,12 @@ export function CardStackVisual({
     ? categoryFocusCoverStyle(card.frontImageFocus)
     : frontPosStyle;
 
-  const hoverMotionLayerClass = [
-    "pointer-events-none absolute inset-0 z-[4] flex min-h-0 min-w-0 items-center justify-center overflow-hidden rounded-2xl bg-black",
-    "opacity-100 transition-opacity duration-200 motion-reduce:opacity-0 [@media(hover:hover)_and_(pointer:fine)]:opacity-0 [@media(hover:hover)_and_(pointer:fine)]:group-hover/cardstack-hover:opacity-100",
-  ].join(" ");
+  const hoverMotionLayerClass = coarsePointerOrHoverNone
+    ? "pointer-events-none absolute inset-0 z-[4] flex min-h-0 min-w-0 items-center justify-center overflow-hidden rounded-2xl bg-black opacity-100 transition-opacity duration-200 motion-reduce:opacity-0"
+    : [
+        "pointer-events-none absolute inset-0 z-[4] flex min-h-0 min-w-0 items-center justify-center overflow-hidden rounded-2xl bg-black",
+        "opacity-100 transition-opacity duration-200 motion-reduce:opacity-0 [@media(hover:hover)_and_(pointer:fine)]:opacity-0 [@media(hover:hover)_and_(pointer:fine)]:group-hover/cardstack-hover:opacity-100",
+      ].join(" ");
 
   return (
     <div
@@ -864,6 +867,7 @@ export function CardStackVisual({
                               className={hoverMotionLayerClass}
                               style={hoverMotionMediaStyle}
                               fillFaceFrame={catalogOrProductHoverFillsFace}
+                              autoPlay={coarsePointerOrHoverNone}
                             />
                           ) : null}
                         </div>
@@ -913,6 +917,7 @@ export function CardStackVisual({
                             className={hoverMotionLayerClass}
                             style={hoverMotionMediaStyle}
                             fillFaceFrame={catalogOrProductHoverFillsFace}
+                            autoPlay={coarsePointerOrHoverNone}
                           />
                         ) : null}
                       </div>

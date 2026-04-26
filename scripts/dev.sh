@@ -3,16 +3,38 @@
 set -e
 # macOS: при низком ulimit Watchpack падает с EMFILE → маршруты не поднимаются (404).
 ulimit -n 10240 2>/dev/null || ulimit -n 8192 2>/dev/null || ulimit -n 4096 2>/dev/null || true
-PORT="${PORT:-3010}"
+DESIRED="${PORT:-3010}"
 if command -v lsof >/dev/null 2>&1; then
-  for p in 3002 "$PORT"; do
-    PIDS=$(lsof -ti ":$p" 2>/dev/null || true)
+  for p in 3002 "$DESIRED"; do
+    # Только LISTEN (не убиваем клиентов вроде Safari с открытой вкладкой localhost).
+    PIDS=$(lsof -ti ":$p" -sTCP:LISTEN 2>/dev/null || true)
     if [ -n "$PIDS" ]; then
       echo "Освобождаю порт $p (PID: $PIDS)..."
       echo "$PIDS" | xargs kill -9 2>/dev/null || true
     fi
   done
   sleep 0.4
+fi
+# Порт мог остаться занят (другой процесс, права на kill) — берём следующий свободный.
+PORT=""
+if command -v lsof >/dev/null 2>&1; then
+  for j in $(seq 0 25); do
+    cand=$((DESIRED + j))
+    if ! lsof -iTCP:"$cand" -sTCP:LISTEN >/dev/null 2>&1; then
+      PORT=$cand
+      break
+    fi
+  done
+  if [ -z "$PORT" ]; then
+    echo "Не удалось найти свободный порт с $DESIRED по $((DESIRED + 25))." >&2
+    exit 1
+  fi
+else
+  PORT="$DESIRED"
+fi
+if [ "$PORT" != "$DESIRED" ]; then
+  echo "Порт $DESIRED занят — dev на http://localhost:$PORT"
+  echo ""
 fi
 # Next.js 16: lock «другой dev уже запущен»
 rm -f .next/dev/lock 2>/dev/null || true

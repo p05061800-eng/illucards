@@ -457,7 +457,7 @@ export default function HeroSection({
                   >
                   {showNoveltiesHeroChrome ? (
                     <div className="hero-right-product flex w-full max-w-none min-w-0 flex-col items-center gap-0 overflow-visible py-0 md:items-stretch md:gap-0 md:py-0">
-                      <div className="hero-novelties-mobile-stack flex w-full max-w-full flex-col items-stretch gap-3 max-md:w-full max-md:px-0 md:contents md:max-w-none">
+                      <div className="hero-novelties-mobile-stack flex w-full max-w-full flex-col items-stretch gap-10 max-md:w-full max-md:px-0 md:contents md:max-w-none">
                       <div className="hero-title hero-novelty-header w-full shrink-0 text-center">
                         <h2 className="hero-novelties-title hero-novelties-title--static mx-auto block w-full max-w-full origin-center text-balance text-center font-bold uppercase tracking-[0.1em]">
                           Новинки
@@ -539,7 +539,7 @@ export default function HeroSection({
                       </div>
 
                       <div
-                        className={`hero-novelty-meta flex w-full max-w-full shrink-0 flex-col gap-2 px-0 text-center md:gap-3 md:px-3 md:text-left ${
+                        className={`hero-novelty-meta flex w-full max-w-full shrink-0 flex-col gap-2 px-0 text-left max-md:mt-6 md:gap-3 md:px-3 ${
                           isTmntHeroCard
                             ? "md:max-w-[min(100%,50rem)]"
                             : isMarvelHeroCard
@@ -547,8 +547,8 @@ export default function HeroSection({
                               : "md:max-w-[min(100%,42rem)]"
                         }`}
                       >
-                        <div className="hero-novelty-meta-row flex w-full flex-col items-stretch gap-2 md:flex-row md:items-center md:justify-between md:gap-3">
-                          <p className="hero-name hero-novelty-card-title text-base font-semibold text-white md:text-lg lg:text-xl">
+                        <div className="hero-novelty-meta-row w-full">
+                          <p className="hero-name hero-novelty-card-title line-clamp-2 max-w-full text-balance text-base font-semibold text-white md:text-lg lg:text-xl">
                             {stackCard.title}
                           </p>
                           <button
@@ -557,7 +557,7 @@ export default function HeroSection({
                               e.stopPropagation();
                               router.push(`/card/${stackCard.id}`);
                             }}
-                            className="hero-button hero-novelty-buy-first inline-flex min-h-10 w-full min-w-0 items-center justify-center rounded-xl bg-gradient-to-r from-purple-600 via-violet-600 to-fuchsia-600 px-4 py-2 text-xs font-semibold text-white shadow-[0_16px_40px_-12px_rgba(168,85,247,0.55)] transition hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-500/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black md:w-auto md:min-h-[44px] md:min-w-[160px] md:px-6 md:py-3 md:text-sm"
+                            className="hero-button hero-novelty-buy-first inline-flex min-h-10 w-auto min-w-0 max-w-full shrink-0 items-center justify-center rounded-xl bg-gradient-to-r from-purple-600 via-violet-600 to-fuchsia-600 px-4 py-2 text-xs font-semibold text-white shadow-[0_16px_40px_-12px_rgba(168,85,247,0.55)] transition hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-500/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black md:min-h-[44px] md:min-w-[160px] md:px-6 md:py-3 md:text-sm"
                           >
                             Купить первым
                           </button>

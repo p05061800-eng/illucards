@@ -95,7 +95,7 @@ export function CardItem({ card, hideUltraLayer = false }: Props) {
         ref={flyRef}
         href={cardHref}
         prefetch
-        className="relative block w-full min-w-0 shrink-0 cursor-pointer overflow-visible"
+        className="catalog-card-image-link relative block w-full min-w-0 shrink-0 cursor-pointer overflow-visible"
         aria-label={`Открыть карточку: ${card.title}`}
         onClick={(e) => {
           if (adultBlockedNav) {
@@ -146,28 +146,28 @@ export function CardItem({ card, hideUltraLayer = false }: Props) {
 
       <FavoritePopup show={showPopup} onClose={closePopup} />
 
-      <div className="flex min-h-0 flex-1 flex-col justify-between gap-2 rounded-b-2xl border-t border-white/[0.06] bg-zinc-950/70 p-3 pt-2.5">
-        <div className="min-h-0 shrink-0">
+      <div className="card-content catalog-card-content flex min-h-0 min-w-0 flex-1 flex-col gap-2 rounded-b-2xl border-t border-white/[0.06] bg-zinc-950/70 p-3 pt-2.5">
+        <div className="min-h-0 w-full shrink-0">
           <button
             type="button"
             onClick={goToCardPage}
             className="w-full text-left transition hover:text-purple-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-500/50"
           >
-            <h3 className="line-clamp-2 min-h-[2.75rem] text-sm font-semibold leading-snug text-white sm:min-h-[3.125rem] sm:text-base">
+            <h3 className="card-title text-sm font-semibold leading-snug text-white sm:text-base">
               {card.title}
             </h3>
           </button>
         </div>
 
-        <div className="flex shrink-0 flex-col gap-2 border-t border-white/[0.06] pt-2.5">
-          <div className="flex items-center gap-1.5 px-0.5">
+        <div className="card-bottom catalog-card-bottom flex w-full min-w-0 shrink-0 flex-col gap-2 border-t border-white/[0.06] pt-2.5">
+          <div className="catalog-card-rating-row flex min-h-[1.375rem] items-center gap-1.5 px-0.5">
             <CardRatingStars value={merged.avg} compact />
             <span className="text-[11px] font-semibold tabular-nums text-amber-200/90">
               {merged.avg.toFixed(1)}
             </span>
           </div>
 
-          <div className="flex min-w-0 flex-nowrap items-center justify-between gap-1 sm:gap-2">
+          <div className="catalog-card-price-row flex min-h-[2.25rem] min-w-0 flex-nowrap items-center justify-between gap-1 sm:gap-2">
             <div className="min-w-0 flex-1 overflow-hidden pr-0.5 sm:pr-0">
               <CardPriceDualRow
                 card={card}

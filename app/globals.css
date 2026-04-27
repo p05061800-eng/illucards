@@ -160,12 +160,57 @@ html.home-one-screen main.home-one-screen-main {
   }
 }
 
-/* Блок `.card` задаёт фикс. 320px — в сетке ячейка должна сужаться под колонку */
+/*
+ * Блок `.card` вне сетки — `display: block` и фикс. 320px; в коллекции/избранном:
+ * колонка flex, высота ячейки сетки, подпись 2 строки, цена/рейтинг снизу без скачков.
+ */
 .collection-card-grid .card {
+  display: flex;
+  flex-direction: column;
   width: 100%;
   max-width: 100%;
   height: 100%;
   min-height: 0;
+}
+
+.collection-card-grid .catalog-card-image-link {
+  flex-shrink: 0;
+  width: 100%;
+  min-width: 0;
+}
+
+.collection-card-grid .card-content,
+.collection-card-grid .catalog-card-content {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  min-width: 0;
+}
+
+.collection-card-grid .card-title {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  min-height: 44px;
+  word-break: break-word;
+}
+
+.collection-card-grid .card-bottom,
+.collection-card-grid .catalog-card-bottom {
+  margin-top: auto;
+  width: 100%;
+}
+
+/* Мобильная сетка: единый кадр превью 3:4 (перебивает инлайн-аспект спейсера). */
+@media (max-width: 639px) {
+  .collection-card-grid
+    .catalog-card-stack
+    div.relative.block.w-full.max-w-full.min-h-0.min-w-0
+    > div[aria-hidden] {
+    aspect-ratio: 3 / 4 !important;
+  }
 }
 
 /*

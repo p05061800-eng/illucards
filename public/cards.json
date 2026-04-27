@@ -1,23 +1,5231 @@
 [
   {
-    "id": 1,
-    "name": "Хан мутант",
+    "id": "8dfc6441-7473-491c-ae85-4f4acb3e0340",
+    "title": "Огненный Ниндзя",
+    "description": "🔥 Огненный Ниндзя Фут — опасный боец клана Фут, владеющий запретными техниками огня.\r\nОн выполняет приказы Шреддера без колебаний, превращая поле боя в пылающую ловушку.\r\nИспользуя огненные приёмы, он создаёт защитные щиты и атакует врагов на расстоянии, не давая им приблизиться. Быстрый, скрытный и беспощадный, этот ниндзя — настоящая угроза даже для опытных бойцов.\r\n🔥 Клан: Фут\r\n⚔️ Стиль боя: дальний, агрессивный\r\n💀 Опасность: высокая",
     "category": "TMNT",
-    "price": 10,
-    "image": "https://www.illucards.by/images/han.jpg"
+    "subcategory": "",
+    "frontImage": "/uploads/1776036749364-3b61a7e8.webp",
+    "backImage": "/uploads/1776036753048-6767e339.webp",
+    "price": 25,
+    "rarity": "common",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "isNew": false,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": true,
+    "ratingAvg": 5,
+    "reviewCount": 0,
+    "effect": "vario",
+    "categoryBg": "/uploads/1776037001603-384c59f3.webp",
+    "frontImageFocus": {
+      "x": 49.244843749999994,
+      "y": 40.959218750000005
+    },
+    "backImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "priceRub": 750,
+    "categoryOrder": 1,
+    "varioSmoothing": 0.18,
+    "frontImageWidth": 761,
+    "frontImageHeight": 1024
   },
   {
-    "id": 2,
-    "name": "Леонардо",
+    "id": "914e1799-c17b-47f1-8259-1facaee1113b",
+    "title": "Водяной Ниндзя",
+    "description": "🔵 Водяной ниндзя — слуга Шреддера, владеющий стихией воды и коварными техниками.\r\nОн не самый сильный среди шаманов, но его сила — в контроле и изматывающих атаках.\r\nСоздавая волны, потоки и пузыри, он сбивает врагов с ритма, мешает двигаться и постепенно берёт их под контроль. Там, где другие идут напролом, он действует хитро и терпеливо.\r\n🔵 Роль: контроль и ослабление\r\n🌊 Особенность: замедление и давление\r\n⚔️ Стиль боя: дистанционный, изматывающий\r\n💀 Опасность: средняя, но опасен в связке",
     "category": "TMNT",
-    "price": 12,
-    "image": "https://www.illucards.by/images/leo.jpg"
+    "subcategory": "",
+    "frontImage": "/uploads/1776040191659-f7837d74.webp",
+    "backImage": "/uploads/1776040197938-b9065cba.webp",
+    "price": 25,
+    "rarity": "common",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "isNew": false,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": true,
+    "ratingAvg": 5,
+    "reviewCount": 0,
+    "boughtTogetherIds": [
+      "8dfc6441-7473-491c-ae85-4f4acb3e0340",
+      "37e64b8f-adc7-49d2-87ad-9b84c0784946",
+      "98a00970-d19c-4642-805f-32c02d68af5c"
+    ],
+    "recommendedIds": [
+      "eeb1a511-1181-4e0a-9f93-8a5137327863",
+      "b4b25377-9e8a-40af-aa7d-3760807ccfa9"
+    ],
+    "effect": "vario",
+    "categoryBg": "/uploads/1776040171539-0238e0d7.webp",
+    "frontImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "backImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "priceRub": 750,
+    "categoryOrder": 6,
+    "varioSmoothing": 0.18,
+    "frontImageWidth": 761,
+    "frontImageHeight": 1024
   },
   {
-    "id": 3,
-    "name": "Спайдермен",
+    "id": "9a17e901-20c5-41cb-8515-d3e5d702b70d",
+    "title": "Эйприл О`нил из 1897 года",
+    "description": "🟢 Эйприл О’Нил (1987) — бесстрашная репортёрша, всегда оказывающаяся в центре самых опасных событий.\r\nС камерой в руках и пиццей на ходу, она добывает правду там, где другие боятся даже появиться.\r\nЕё смекалка и настойчивость позволяют раскрывать самые тёмные тайны города, а поддержка Черепашек делает её ещё опаснее для врагов.\r\n🟢 Роль: разведка и поддержка\r\n📸 Особенность: раскрытие скрытых угроз\r\n🍕 Стиль: всегда на ходу\r\n💡 Ценность: незаменимый союзник",
+    "category": "TMNT",
+    "subcategory": "",
+    "frontImage": "/uploads/1776040320040-217e4641.webp",
+    "backImage": "/uploads/1776040325434-1d90a290.webp",
+    "price": 30,
+    "rarity": "adult",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "isNew": false,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": true,
+    "ratingAvg": 5,
+    "reviewCount": 0,
+    "effect": "vario",
+    "categoryBg": "/uploads/1776040296850-fb4fd3f7.webp",
+    "frontImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "backImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "priceRub": 800,
+    "categoryOrder": 8,
+    "varioSmoothing": 0.18,
+    "frontImageWidth": 761,
+    "frontImageHeight": 1024
+  },
+  {
+    "id": "b4b25377-9e8a-40af-aa7d-3760807ccfa9",
+    "title": "Кейси Джонс",
+    "description": "🟢 Кейси Джонс — безбашенный уличный мститель и надёжный союзник Черепашек-ниндзя.\r\nОн не следует правилам — он сам их устанавливает, очищая улицы от преступности.\r\nВооружённый спортивным инвентарём, Кейси превращает любой бой в хаос для врагов. Его сила и напор компенсируют всё — он идёт вперёд и не останавливается.\r\n🟢 Роль: штурм и давление\r\n🏒 Оружие: всё, что под рукой\r\n💥 Стиль боя: агрессивный, прямой\r\n💀 Опасность: высокая",
+    "category": "TMNT",
+    "subcategory": "",
+    "frontImage": "/uploads/1776084945897-7467bb81.webp",
+    "backImage": "/uploads/1776165589131-89dbcde3.webp",
+    "price": 25,
+    "rarity": "common",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "isNew": false,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": true,
+    "ratingAvg": 5,
+    "reviewCount": 0,
+    "effect": "morphing",
+    "categoryBg": "/uploads/1776084896897-7c2dfc35.webp",
+    "frontImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "backImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "priceRub": 750,
+    "categoryOrder": 5,
+    "varioSmoothing": 0.18,
+    "frontImageWidth": 761,
+    "frontImageHeight": 1024
+  },
+  {
+    "id": "eeb1a511-1181-4e0a-9f93-8a5137327863",
+    "title": "Последний Ронин/Братская семья",
+    "description": "🐢 Братская семья / Последний Ронин — история силы, единства… и потери.\r\nКогда братья вместе, они — идеальная команда, где каждый усиливает другого и делает отряд непобедимым.\r\nНо если остаётся лишь один… рождается Ронин — воин, потерявший всё, но ставший ещё опаснее. Его стиль меняется: меньше команды — больше ярости, точности и безжалостной силы.\r\nЭто не просто карта — это переход от единства к одиночной мести.\r\n🟢 Форма 1: командный бой, усиление союзников\r\n⚫ Форма 2: одиночный урон, максимальная агрессия\r\n💀 Опасность: критическая в любой форме",
+    "category": "TMNT",
+    "subcategory": "",
+    "frontImage": "/uploads/1776085212654-48550290.webp",
+    "backImage": "/uploads/1776085221827-d1ec40d4.webp",
+    "price": 25,
+    "rarity": "common",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "isNew": false,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": true,
+    "ratingAvg": 5,
+    "reviewCount": 0,
+    "boughtTogetherIds": [
+      "b4b25377-9e8a-40af-aa7d-3760807ccfa9"
+    ],
+    "recommendedIds": [
+      "8dfc6441-7473-491c-ae85-4f4acb3e0340"
+    ],
+    "effect": "vario",
+    "categoryBg": "/uploads/1776085151170-e713168b.webp",
+    "frontImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "backImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "priceRub": 750,
+    "categoryOrder": 2,
+    "frontImageWidth": 761,
+    "frontImageHeight": 1024
+  },
+  {
+    "id": "b1ce562d-71ec-4480-86b0-10ba17d9e26f",
+    "title": "Эйприл О`нил (под защитой четверки)",
+    "description": "🟢 Эйприл О’Нил — смелая журналистка и верный союзник Черепашек-ниндзя.\r\nДаже в редкие моменты отдыха она остаётся под надёжной защитой четвёрки героев.\r\nЭйприл не участвует в боях напрямую, но её ум, наблюдательность и находчивость не раз помогали спасать ситуацию. Она всегда оказывается в центре событий — с камерой в руках и готовностью раскрыть правду.\r\n🟢 Роль: поддержка и разведка\r\n📸 Особенность: сбор информации\r\n🛡 Защита: под охраной Черепашек\r\n💡 Ценность: ключевой союзник",
+    "category": "TMNT",
+    "subcategory": "",
+    "frontImage": "/uploads/1776085549889-4be4e8cb.webp",
+    "backImage": "/uploads/1776085557356-7fe62cac.webp",
+    "price": 40,
+    "rarity": "limited",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "isNew": false,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": false,
+    "ratingAvg": 5,
+    "reviewCount": 0,
+    "boughtTogetherIds": [
+      "9a17e901-20c5-41cb-8515-d3e5d702b70d"
+    ],
+    "recommendedIds": [
+      "8dfc6441-7473-491c-ae85-4f4acb3e0340"
+    ],
+    "effect": "vario",
+    "categoryBg": "/uploads/1776085439980-696d0670.webp",
+    "frontImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "backImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "priceRub": 1000,
+    "categoryOrder": 10,
+    "varioSmoothing": 0.18,
+    "frontImageWidth": 761,
+    "frontImageHeight": 1024
+  },
+  {
+    "id": "375395cf-6b69-44a8-967f-cc36f8901c19",
+    "title": "Карай (под прикрытием)",
+    "description": "🔴 Карай — элитная ниндзя клана Фут, мастер скрытности и смертельной точности.\r\nПод прикрытием она выглядит безобидно, но за этим образом скрывается хладнокровный боец, готовый нанести удар в любой момент.\r\nОна действует быстро, просчитывает каждый шаг и не оставляет врагам ни единого шанса. Карай одинаково опасна как в открытом бою, так и в тени — где её клинок становится последним, что видят противники.\r\n🔴 Клан: Фут\r\n🕶 Особенность: маскировка и внезапные атаки\r\n⚔️ Стиль боя: скрытный, точечный\r\n💀 Опасность: высокая",
+    "category": "TMNT",
+    "subcategory": "",
+    "frontImage": "/uploads/1776085913118-e43844d2.webp",
+    "backImage": "/uploads/1776085917876-39062250.webp",
+    "price": 25,
+    "rarity": "common",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "isNew": false,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": true,
+    "ratingAvg": 5,
+    "reviewCount": 0,
+    "effect": "vario",
+    "categoryBg": "/uploads/1776085893538-cc2f98a5.webp",
+    "frontImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "backImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "priceRub": 750,
+    "categoryOrder": 15,
+    "frontImageWidth": 761,
+    "frontImageHeight": 1024
+  },
+  {
+    "id": "a1616756-44bf-43d4-9a47-e4a51cd2d560",
+    "title": "Чикара Шишо",
+    "description": "🟢 Чикара Шишо — одна из сильнейших участниц Трибунала ниндзя, воплощение дисциплины и абсолютного контроля.\r\nОна не знает пощады и действует строго по кодексу, карая тех, кто нарушает баланс.\r\nЕё техника сочетает невероятную силу, скорость и точность ударов. Чикара не тратит лишних движений — каждый её шаг просчитан, а каждая атака неизбежна.\r\n\r\nДля врагов она — приговор, который невозможно отменить.\r\n\r\n🟢 Фракция: Трибунал ниндзя\r\n⚔️ Стиль боя: точный, контролирующий\r\n💀 Опасность: критическая",
+    "category": "TMNT",
+    "subcategory": "",
+    "frontImage": "/uploads/1776101984000-246336bd.webp",
+    "backImage": "/uploads/1776101992054-0650e8c8.webp",
+    "price": 25,
+    "rarity": "novelty",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "isNew": false,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": true,
+    "ratingAvg": 5,
+    "reviewCount": 0,
+    "boughtTogetherIds": [
+      "eeb1a511-1181-4e0a-9f93-8a5137327863"
+    ],
+    "recommendedIds": [
+      "375395cf-6b69-44a8-967f-cc36f8901c19"
+    ],
+    "effect": "vario",
+    "categoryBg": "/uploads/1776101874638-a5ccb744.webp",
+    "frontImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "backImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "priceRub": 750,
+    "categoryOrder": 29,
+    "varioSmoothing": 0.18,
+    "frontImageWidth": 761,
+    "frontImageHeight": 1024
+  },
+  {
+    "id": "84468717-d406-4718-9980-76e156d552cc",
+    "title": "Микеланджело / Тёмный Микеланджело",
+    "description": "🟢 Микеланджело / Тёмный Микеланджело — две стороны одного воина: свет и тьма.\r\nВ обычной форме он — душа команды, быстрый, сильный и непредсказуемый боец, который сражается с улыбкой.\r\nНо стоит тьме взять верх — и появляется его искажённая версия. Веселье исчезает, уступая место ярости и жестокости. Его атаки становятся агрессивнее, а стиль — беспощадным.\r\nЭто переход от лёгкости и энергии к чистой силе и разрушению.\r\n🟢 Форма 1: баланс, скорость, командный стиль\r\n⚫ Форма 2: агрессия, усиленный урон, давление\r\n💀 Опасность: критическая в тёмной форме",
+    "category": "TMNT",
+    "subcategory": "",
+    "frontImage": "/uploads/1776102179733-ce7a7cb9.webp",
+    "backImage": "/uploads/1776102184238-e8b0a0d6.webp",
+    "price": 25,
+    "rarity": "common",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "isNew": false,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": true,
+    "ratingAvg": 5,
+    "reviewCount": 0,
+    "boughtTogetherIds": [
+      "eeb1a511-1181-4e0a-9f93-8a5137327863"
+    ],
+    "recommendedIds": [
+      "375395cf-6b69-44a8-967f-cc36f8901c19"
+    ],
+    "effect": "morphing",
+    "categoryBg": "/uploads/1776102150436-4fcf3f6b.webp",
+    "frontImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "backImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "priceRub": 750,
+    "categoryOrder": 7,
+    "varioSmoothing": 0.18,
+    "frontImageWidth": 761,
+    "frontImageHeight": 1024
+  },
+  {
+    "id": "dbd1ed2a-7e6f-477b-bb60-3af5ebe81f1e",
+    "title": "Хисоми Шишо",
+    "description": "🟡 Хисоми Шишо / Боевая форма — молчаливый мастер Трибунала ниндзя, чья сила скрыта за абсолютным спокойствием.\r\nОн редко вступает в бой, но когда это происходит — исход уже предрешён.\r\nВ обычной форме Хисоми действует скрытно и точно, избегая лишних движений. Но в боевой форме он раскрывает свою истинную мощь — скорость возрастает, атаки становятся стремительными и неотвратимыми.\r\nОн не говорит — за него говорят его действия.\r\n🟡 Форма 1: скрытность, контроль, выжидание\r\n⚔️ Форма 2: скорость, давление, серия ударов\r\n💀 Опасность: критическая при активации",
+    "category": "TMNT",
+    "subcategory": "",
+    "frontImage": "/uploads/1776102271723-765a2489.webp",
+    "backImage": "/uploads/1776102317215-e6afe6cf.webp",
+    "price": 25,
+    "rarity": "common",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "isNew": false,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": true,
+    "ratingAvg": 5,
+    "reviewCount": 0,
+    "boughtTogetherIds": [
+      "8dfc6441-7473-491c-ae85-4f4acb3e0340"
+    ],
+    "recommendedIds": [
+      "b4b25377-9e8a-40af-aa7d-3760807ccfa9"
+    ],
+    "effect": "vario",
+    "categoryBg": "/uploads/1776902505388-7150edae.webp",
+    "frontImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "backImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "priceRub": 750,
+    "categoryOrder": 16,
+    "varioSmoothing": 0.18,
+    "frontImageWidth": 761,
+    "frontImageHeight": 1024
+  },
+  {
+    "id": "fbd971e8-a368-4ec6-8562-bcb8fd4a3db0",
+    "title": "Камнеглот (ломка плоти)",
+    "description": "🟤 Камнеглот / Живая скала — человек, которого изменила сама земля.\r\nКогда-то он был обычным, но голос глубин сделал его частью камня.\r\nВ первой форме он сдержан и вынослив, выдерживает удары и накапливает силу. Но когда пробуждается истинная сущность — он превращается в живую скалу, не знающую боли и разрушающую всё на своём пути.\r\nОн не ломает камень — он становится им.\r\n🟤 Форма 1: защита, выносливость, накопление силы\r\n🪨 Форма 2: мощь, разрушение, неуязвимость\r\n💀 Опасность: критическая при трансформации",
+    "category": "TMNT",
+    "subcategory": "",
+    "frontImage": "/uploads/1776102516321-52169955.webp",
+    "backImage": "/uploads/1776102521425-2bacd620.webp",
+    "price": 25,
+    "rarity": "common",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "isNew": false,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": true,
+    "ratingAvg": 5,
+    "reviewCount": 0,
+    "boughtTogetherIds": [
+      "b4b25377-9e8a-40af-aa7d-3760807ccfa9",
+      "84468717-d406-4718-9980-76e156d552cc"
+    ],
+    "recommendedIds": [
+      "eeb1a511-1181-4e0a-9f93-8a5137327863",
+      "dbd1ed2a-7e6f-477b-bb60-3af5ebe81f1e"
+    ],
+    "effect": "vario",
+    "categoryBg": "/uploads/1776102500008-25e74e11.webp",
+    "frontImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "backImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "priceRub": 750,
+    "categoryOrder": 18,
+    "frontImageWidth": 761,
+    "frontImageHeight": 1024
+  },
+  {
+    "id": "37e64b8f-adc7-49d2-87ad-9b84c0784946",
+    "title": "Ниндзя ветра",
+    "description": "⚪ Ниндзя ветра — шаман Шреддера, повелевающий воздушными потоками.\r\nЕго невозможно поймать — он всегда на шаг впереди и атакует там, где его не ждут.\r\nСоздавая вихри и торнадо, он сбивает врагов с позиции, нарушает их баланс и не даёт приблизиться. Его сила не в прямом уроне, а в полном контроле боя.\r\n⚪ Роль: контроль и дезориентация\r\n🌪 Особенность: отбрасывание и хаос\r\n⚔️ Стиль боя: дистанционный, мобильный\r\n💀 Опасность: высокая",
+    "category": "TMNT",
+    "subcategory": "",
+    "frontImage": "/uploads/1776102673622-ff22724d.webp",
+    "backImage": "/uploads/1776102678817-03e271da.webp",
+    "price": 25,
+    "rarity": "common",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "isNew": false,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": true,
+    "ratingAvg": 5,
+    "reviewCount": 0,
+    "boughtTogetherIds": [
+      "8dfc6441-7473-491c-ae85-4f4acb3e0340",
+      "914e1799-c17b-47f1-8259-1facaee1113b"
+    ],
+    "recommendedIds": [
+      "914e1799-c17b-47f1-8259-1facaee1113b",
+      "8dfc6441-7473-491c-ae85-4f4acb3e0340"
+    ],
+    "effect": "vario",
+    "categoryBg": "/uploads/1776102645386-f4d4bfff.webp",
+    "frontImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "backImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "priceRub": 750,
+    "categoryOrder": 13,
+    "frontImageWidth": 761,
+    "frontImageHeight": 1024
+  },
+  {
+    "id": "98a00970-d19c-4642-805f-32c02d68af5c",
+    "title": "Стальной ниндзя",
+    "description": "⚙️ Стальной ниндзя  — безжалостный воин Шреддера, управляющий металлом.\r\nЕго тело — броня, а его оружие — сама сталь вокруг.\r\nВ обычной форме он действует точно и хладнокровно, создавая клинки и защищаясь от атак. Но при перегрузке энергия выходит из-под контроля — металл начинает рваться и превращается в разрушительный шторм лезвий.\r\nОн не просто защищается — он превращает защиту в оружие.\r\n⚙️ Форма 1: защита, контроль металла\r\n⚡ Форма 2: разрушение, шквал лезвий\r\n💀 Опасность: критическая при перегрузке",
+    "category": "TMNT",
+    "subcategory": "",
+    "frontImage": "/uploads/1776102753118-426808ba.webp",
+    "backImage": "/uploads/1776102758635-33da8259.webp",
+    "price": 25,
+    "rarity": "common",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "isNew": false,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": true,
+    "ratingAvg": 5,
+    "reviewCount": 0,
+    "boughtTogetherIds": [
+      "8dfc6441-7473-491c-ae85-4f4acb3e0340",
+      "914e1799-c17b-47f1-8259-1facaee1113b"
+    ],
+    "recommendedIds": [
+      "b4b25377-9e8a-40af-aa7d-3760807ccfa9",
+      "375395cf-6b69-44a8-967f-cc36f8901c19"
+    ],
+    "effect": "vario",
+    "categoryBg": "/uploads/1776102746568-fa53cd06.webp",
+    "frontImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "backImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "priceRub": 750,
+    "categoryOrder": 17,
+    "frontImageWidth": 761,
+    "frontImageHeight": 1024
+  },
+  {
+    "id": "7690676d-24b7-4c8f-93d8-402e5651430f",
+    "title": "Черепашки (в броне кибернавта)",
+    "description": "🟣 Черепашки в броне кибернавта — эволюция команды, где технологии усиливают каждое движение.\r\nКогда город погружается в цифровой хаос, они выходят на охоту — быстрее, сильнее и точнее, чем когда-либо.\r\nКибер-броня усиливает их силу, ускоряет реакции и синхронизирует действия до идеального уровня. В бою они действуют как единый механизм, ломая любую защиту и подавляя врага без шанса на ответ.\r\nЭто уже не просто команда — это система уничтожения.\r\n🟣 Роль: ультимативная командная атака\r\n⚡ Особенность: полная синхронизация\r\n🛡 Преимущество: усиление всех характеристик\r\n💀 Опасность: максимальная",
+    "category": "TMNT",
+    "subcategory": "",
+    "frontImage": "/uploads/1776103095110-79e2997c.webp",
+    "backImage": "",
+    "price": 25,
+    "rarity": "common",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "isNew": false,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": true,
+    "ratingAvg": 5,
+    "reviewCount": 0,
+    "boughtTogetherIds": [
+      "8dfc6441-7473-491c-ae85-4f4acb3e0340",
+      "fbd971e8-a368-4ec6-8562-bcb8fd4a3db0"
+    ],
+    "recommendedIds": [
+      "b4b25377-9e8a-40af-aa7d-3760807ccfa9",
+      "9a17e901-20c5-41cb-8515-d3e5d702b70d",
+      "eeb1a511-1181-4e0a-9f93-8a5137327863",
+      "dbd1ed2a-7e6f-477b-bb60-3af5ebe81f1e"
+    ],
+    "effect": "3d-horizontal",
+    "categoryBg": "/uploads/1776103079893-79a295f6.webp",
+    "frontImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "priceRub": 750,
+    "categoryOrder": 12,
+    "frontImageWidth": 761,
+    "frontImageHeight": 1024
+  },
+  {
+    "id": "f1882709-0cba-4ec8-b1b8-61457d7e2c8b",
+    "title": "Леонардо / Тёмный Леонардо",
+    "description": "🔵⚫ Леонардо / Тёмный Леонардо — лидер, стоящий между честью и тьмой.\r\nВ своей истинной форме он — хладнокровный стратег, мастер катан и опора команды, который всегда ставит миссию выше себя.\r\nНо если баланс рушится, его тёмная сторона берёт верх. Честь уступает ярости, а контроль — жестокости. Его удары становятся тяжелее, а решения — беспощадными.\r\nЭто путь лидера, который может либо защитить, либо уничтожить.\r\n🔵 Форма 1: контроль, стратегия, баланс\r\n⚫ Форма 2: агрессия, сила, давление\r\n💀 Опасность: максимальная при потере контроля",
+    "category": "TMNT",
+    "subcategory": "",
+    "frontImage": "/uploads/1776103371215-f5738f76.webp",
+    "backImage": "/uploads/1776103377352-73779e70.webp",
+    "price": 25,
+    "rarity": "common",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "isNew": false,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": true,
+    "ratingAvg": 5,
+    "reviewCount": 0,
+    "boughtTogetherIds": [
+      "eeb1a511-1181-4e0a-9f93-8a5137327863",
+      "a1616756-44bf-43d4-9a47-e4a51cd2d560"
+    ],
+    "recommendedIds": [
+      "b4b25377-9e8a-40af-aa7d-3760807ccfa9",
+      "84468717-d406-4718-9980-76e156d552cc",
+      "9a17e901-20c5-41cb-8515-d3e5d702b70d",
+      "37e64b8f-adc7-49d2-87ad-9b84c0784946"
+    ],
+    "effect": "morphing",
+    "categoryBg": "/uploads/1776103346193-a838bba7.webp",
+    "frontImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "backImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "priceRub": 750,
+    "categoryOrder": 4,
+    "varioSmoothing": 0.18,
+    "frontImageWidth": 761,
+    "frontImageHeight": 1024
+  },
+  {
+    "id": "647a21ab-35bd-44a2-8231-647749bf7321",
+    "title": "Братская сила",
+    "description": "🟢 Братская сила — когда четыре брата действуют как одно целое.\r\nСкорость, сила, мастерство и смекалка сливаются в идеальный баланс, где каждый дополняет другого.\r\nВместе они создают непробиваемую команду: атаки синхронизированы, защита усилена, а давление на врага не оставляет ни единого шанса.\r\nЭто не просто союз — это сила, которую невозможно остановить.\r\n🟢 Роль: командное усиление\r\n🤝 Особенность: синергия всех характеристик\r\n⚡ Эффект: максимальное усиление команды\r\n💀 Опасность: критическая",
+    "category": "TMNT",
+    "subcategory": "",
+    "frontImage": "/uploads/1776103469429-f8576e80.webp",
+    "backImage": "",
+    "price": 25,
+    "rarity": "common",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "isNew": false,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": true,
+    "ratingAvg": 5,
+    "reviewCount": 0,
+    "boughtTogetherIds": [
+      "b4b25377-9e8a-40af-aa7d-3760807ccfa9",
+      "84468717-d406-4718-9980-76e156d552cc",
+      "f1882709-0cba-4ec8-b1b8-61457d7e2c8b"
+    ],
+    "recommendedIds": [
+      "914e1799-c17b-47f1-8259-1facaee1113b",
+      "9a17e901-20c5-41cb-8515-d3e5d702b70d",
+      "375395cf-6b69-44a8-967f-cc36f8901c19"
+    ],
+    "effect": "3d-horizontal",
+    "categoryBg": "/uploads/1776103429834-8fa5f50b.webp",
+    "frontImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "priceRub": 750,
+    "categoryOrder": 3,
+    "frontImageWidth": 761,
+    "frontImageHeight": 1024
+  },
+  {
+    "id": "e80877bb-670b-4f83-9b1d-3beef1fb5cb3",
+    "title": "Карай / Под защитой Шреддера",
+    "description": "🔴 Карай / Под защитой Шреддера — лидер клана Фут, чья сила усиливается присутствием элиты.\r\nХолодная, точная и беспощадная, она контролирует поле боя, пока за её спиной стоят лучшие бойцы Шреддера.\r\nВ обычной форме Карай действует как стратег и убийца, нанося быстрые и точные удары. Но под защитой Шреддера она становится центром силы — её атаки усиливаются, а враги оказываются под постоянным давлением со всех сторон.\r\nЭто не просто боец — это командир, за которым стоит армия.\r\n🔴 Форма 1: скорость, точность, тактика\r\n🛡 Форма 2: поддержка элиты, усиление давления\r\n💀 Опасность: максимальная в окружении союзников",
+    "category": "TMNT",
+    "subcategory": "",
+    "frontImage": "/uploads/1776103858314-4e54cb3a.webp",
+    "backImage": "/uploads/1776103865395-d0f84262.webp",
+    "price": 40,
+    "rarity": "limited",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "isNew": false,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": false,
+    "ratingAvg": 5,
+    "reviewCount": 0,
+    "boughtTogetherIds": [
+      "9a17e901-20c5-41cb-8515-d3e5d702b70d",
+      "b1ce562d-71ec-4480-86b0-10ba17d9e26f"
+    ],
+    "recommendedIds": [
+      "b4b25377-9e8a-40af-aa7d-3760807ccfa9",
+      "eeb1a511-1181-4e0a-9f93-8a5137327863",
+      "98a00970-d19c-4642-805f-32c02d68af5c",
+      "7690676d-24b7-4c8f-93d8-402e5651430f"
+    ],
+    "effect": "vario",
+    "categoryBg": "/uploads/1776103849050-169857a9.webp",
+    "frontImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "backImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryBgFocus": {
+      "x": 26.248437499999987,
+      "y": 50.127265625
+    },
+    "priceRub": 1000,
+    "categoryOrder": 20,
+    "varioSmoothBlend": true,
+    "varioSmoothing": 0.18,
+    "frontImageWidth": 761,
+    "frontImageHeight": 1024
+  },
+  {
+    "id": "3dcd2612-eac5-4457-95b7-419df8fc6625",
+    "title": "Сидни / Дичь",
+    "description": "🟢⚫ Сидни / Дичь — борьба разума и первобытной силы.\r\nОна пыталась сохранить себя, держаться за контроль… но мутаген пробудил в ней нечто древнее.\r\nВ первой форме Сидни ещё управляет собой — действует осторожно, сдерживает силу и ищет баланс. Но шаг за шагом контроль ускользает… и появляется Дичь.\r\nВо второй форме остаётся лишь инстинкт. Быстрый, яростный и неуправляемый хищник, который не думает — он охотится.\r\nЭто не просто трансформация — это потеря себя.\r\n🟢 Форма 1: контроль, сдержанность, баланс\r\n⚫ Форма 2: ярость, скорость, инстинкты\r\n💀 Опасность: максимальная при потере контроля",
+    "category": "TMNT",
+    "subcategory": "",
+    "frontImage": "/uploads/1776104268541-1f38ae42.webp",
+    "backImage": "/uploads/1776104277431-c6e858d8.webp",
+    "price": 25,
+    "rarity": "common",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "isNew": false,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": true,
+    "ratingAvg": 5,
+    "reviewCount": 0,
+    "boughtTogetherIds": [
+      "fbd971e8-a368-4ec6-8562-bcb8fd4a3db0",
+      "8dfc6441-7473-491c-ae85-4f4acb3e0340",
+      "eeb1a511-1181-4e0a-9f93-8a5137327863",
+      "b4b25377-9e8a-40af-aa7d-3760807ccfa9"
+    ],
+    "recommendedIds": [
+      "84468717-d406-4718-9980-76e156d552cc",
+      "37e64b8f-adc7-49d2-87ad-9b84c0784946",
+      "b1ce562d-71ec-4480-86b0-10ba17d9e26f",
+      "375395cf-6b69-44a8-967f-cc36f8901c19"
+    ],
+    "effect": "vario",
+    "categoryBg": "/uploads/1776104225820-990b4846.webp",
+    "frontImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "backImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "priceRub": 750,
+    "categoryOrder": 14,
+    "varioSmoothing": 0.18,
+    "frontImageWidth": 761,
+    "frontImageHeight": 1024
+  },
+  {
+    "id": "ad1095ce-99ae-4e08-90db-4459d11c3bb1",
+    "title": "Тенгу-Шреддер / Перевоплощение",
+    "description": "🔴👹 Тенгу-Шреддер / Перевоплощение — высшая форма власти и древнего зла.\r\nВ своей человеческой форме он — хладнокровный стратег, абсолютный лидер, чья воля подчиняет всё вокруг.\r\nНо когда пробуждается сила Тенгу, он перестаёт быть просто воином. Демоническая энергия захватывает его, превращая в существо, где ярость и разрушение становятся единственным законом.\r\nЭто не усиление — это возрождение древнего ужаса.\r\n🔴 Форма 1: контроль, интеллект, стратегия\r\n👹 Форма 2: демоническая сила, разрушение, подавление\r\n💀 Опасность: абсолютная",
+    "category": "TMNT",
+    "subcategory": "",
+    "frontImage": "/uploads/1776104400772-5258d044.webp",
+    "backImage": "/uploads/1776104435128-db4aa6f9.webp",
+    "price": 25,
+    "rarity": "common",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "isNew": false,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": true,
+    "ratingAvg": 5,
+    "reviewCount": 0,
+    "boughtTogetherIds": [
+      "b4b25377-9e8a-40af-aa7d-3760807ccfa9",
+      "eeb1a511-1181-4e0a-9f93-8a5137327863",
+      "dbd1ed2a-7e6f-477b-bb60-3af5ebe81f1e"
+    ],
+    "recommendedIds": [
+      "fbd971e8-a368-4ec6-8562-bcb8fd4a3db0",
+      "a1616756-44bf-43d4-9a47-e4a51cd2d560",
+      "e80877bb-670b-4f83-9b1d-3beef1fb5cb3",
+      "3dcd2612-eac5-4457-95b7-419df8fc6625"
+    ],
+    "effect": "vario",
+    "categoryBg": "/uploads/1776104462310-6539732d.webp",
+    "frontImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "backImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "priceRub": 750,
+    "categoryOrder": 19,
+    "varioSmoothing": 0.18,
+    "frontImageWidth": 761,
+    "frontImageHeight": 1024
+  },
+  {
+    "id": "5a3a0b46-ef21-46b2-8788-7a2d9c5a8eef",
+    "title": "Кон Шишо / Истинная форма",
+    "description": "🟢⚔️ Кон Шишо / Истинная форма — таинственный мастер Трибунала ниндзя, чья сила скрыта за спокойствием и мудростью.\r\nОн наблюдает, изучает и действует только тогда, когда исход уже предрешён.\r\nВ обычной форме Кон Шишо полагается на опыт, точность и контроль, не тратя лишних движений. Но когда он раскрывает свою истинную форму — сдержанность исчезает, уступая место чистой силе и совершенству техники.\r\nЭто не усиление — это раскрытие его настоящей сущности.\r\n🟢 Форма 1: контроль, стратегия, мастерство\r\n⚔️ Форма 2: скорость, давление, абсолютная техника\r\n💀 Опасность: критическая в истинной форме",
+    "category": "TMNT",
+    "subcategory": "",
+    "frontImage": "/uploads/1776165778069-deb4d1b8.webp",
+    "backImage": "/uploads/1776165782816-44b2b286.webp",
+    "price": 25,
+    "rarity": "novelty",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "isNew": false,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": true,
+    "ratingAvg": 5,
+    "reviewCount": 0,
+    "boughtTogetherIds": [
+      "a1616756-44bf-43d4-9a47-e4a51cd2d560",
+      "b4b25377-9e8a-40af-aa7d-3760807ccfa9",
+      "ad1095ce-99ae-4e08-90db-4459d11c3bb1",
+      "3dcd2612-eac5-4457-95b7-419df8fc6625",
+      "fbd971e8-a368-4ec6-8562-bcb8fd4a3db0"
+    ],
+    "recommendedIds": [
+      "dbd1ed2a-7e6f-477b-bb60-3af5ebe81f1e",
+      "647a21ab-35bd-44a2-8231-647749bf7321",
+      "98a00970-d19c-4642-805f-32c02d68af5c",
+      "9a17e901-20c5-41cb-8515-d3e5d702b70d"
+    ],
+    "effect": "vario",
+    "categoryBg": "/uploads/1776165787622-a1a19859.webp",
+    "frontImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "backImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "priceRub": 750,
+    "categoryOrder": 25,
+    "varioSmoothing": 0.18,
+    "frontImageWidth": 761,
+    "frontImageHeight": 1024
+  },
+  {
+    "id": "e542c009-d696-4ade-ac02-f4bea54406eb",
+    "title": "Донателло / Тёмный Донателло",
+    "description": "🟢🔬 Донателло / Тёмный Донателло — самый умный из братьев, чьи знания стали его главным оружием… и слабостью.\r\nВ своей обычной форме Донателло — стратег и изобретатель. Он просчитывает бой наперёд, использует технологии и побеждает не силой, а интеллектом.\r\nНо когда граница между разумом и мутацией стирается — появляется Тёмный Донателло.\r\nЭто уже не просто боец. Это живая машина, где логика подавляет эмоции, а тело становится оружием.\r\n🟢 Форма 1: интеллект, контроль, технологии\r\n🔴 Форма 2: мутация, агрессия, холодный расчёт\r\n⚠️ Особенность: чем дольше длится бой — тем опаснее становится",
+    "category": "TMNT",
+    "subcategory": "",
+    "frontImage": "/uploads/1776165962955-aef5a2c3.webp",
+    "backImage": "/uploads/1776165973547-4cca0d6a.webp",
+    "price": 25,
+    "rarity": "common",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "isNew": false,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": true,
+    "ratingAvg": 5,
+    "reviewCount": 0,
+    "boughtTogetherIds": [
+      "eeb1a511-1181-4e0a-9f93-8a5137327863",
+      "5a3a0b46-ef21-46b2-8788-7a2d9c5a8eef",
+      "ad1095ce-99ae-4e08-90db-4459d11c3bb1",
+      "dbd1ed2a-7e6f-477b-bb60-3af5ebe81f1e",
+      "84468717-d406-4718-9980-76e156d552cc"
+    ],
+    "recommendedIds": [
+      "9a17e901-20c5-41cb-8515-d3e5d702b70d",
+      "b1ce562d-71ec-4480-86b0-10ba17d9e26f",
+      "98a00970-d19c-4642-805f-32c02d68af5c",
+      "5a3a0b46-ef21-46b2-8788-7a2d9c5a8eef",
+      "ad1095ce-99ae-4e08-90db-4459d11c3bb1",
+      "3dcd2612-eac5-4457-95b7-419df8fc6625"
+    ],
+    "effect": "morphing",
+    "categoryBg": "/uploads/1776166327090-721da8d3.webp",
+    "frontImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "backImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "priceRub": 750,
+    "categoryOrder": 27,
+    "varioSmoothing": 0.18,
+    "frontImageWidth": 761,
+    "frontImageHeight": 1024
+  },
+  {
+    "id": "d819911e-1802-42d3-98a3-ce337f4bb4fb",
+    "title": "Донателло VS Шреддер",
+    "description": "⚔️ Донателло VS Шреддер — битва, где интеллект сталкивается с абсолютной силой.\r\nВ альтернативном будущем Донателло зашёл слишком далеко. Его гений больше не инструмент — это оружие. Холодный расчёт заменил эмоции, а технологии превратили его в идеального бойца.\r\nНо на его пути стоит Шреддер — воплощение дисциплины, силы и разрушения.\r\nЭто не просто бой. Это столкновение двух философий:\r\n🟢 разум против власти\r\n🔴 технология против традиции\r\n🟢 Форма 1: Донателло — анализирует, ищет слабости, контролирует бой\r\n🔴 Форма 2: Кибер-Донателло — переходит в режим уничтожения\r\n⚠️ Особенность карты:\r\n— с каждым ходом усиливает себя\r\n— копирует стиль противника\r\n— финальный удар становится сильнее, если бой затянулся",
+    "category": "TMNT",
+    "subcategory": "",
+    "frontImage": "/uploads/1776166253646-db3811d3.webp",
+    "backImage": "/uploads/1776166259273-98a96b51.webp",
+    "price": 25,
+    "rarity": "common",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "isNew": false,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": true,
+    "ratingAvg": 5,
+    "reviewCount": 0,
+    "boughtTogetherIds": [
+      "eeb1a511-1181-4e0a-9f93-8a5137327863",
+      "fbd971e8-a368-4ec6-8562-bcb8fd4a3db0",
+      "7690676d-24b7-4c8f-93d8-402e5651430f",
+      "e542c009-d696-4ade-ac02-f4bea54406eb"
+    ],
+    "recommendedIds": [
+      "9a17e901-20c5-41cb-8515-d3e5d702b70d",
+      "914e1799-c17b-47f1-8259-1facaee1113b",
+      "a1616756-44bf-43d4-9a47-e4a51cd2d560",
+      "b1ce562d-71ec-4480-86b0-10ba17d9e26f",
+      "e80877bb-670b-4f83-9b1d-3beef1fb5cb3",
+      "375395cf-6b69-44a8-967f-cc36f8901c19",
+      "5a3a0b46-ef21-46b2-8788-7a2d9c5a8eef"
+    ],
+    "effect": "vario",
+    "categoryBg": "/uploads/1776166232264-09fa3ff7.webp",
+    "frontImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "backImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "priceRub": 750,
+    "categoryOrder": 21,
+    "varioSmoothing": 0.18,
+    "frontImageWidth": 761,
+    "frontImageHeight": 1024
+  },
+  {
+    "id": "beda01bd-6759-4a0c-9421-f4a369a0d0bc",
+    "title": "Мечерукий / Ломка плоти",
+    "description": "🩸 Мечерукий / Ломка плоти — тело, которое стало оружием против своей воли. Он больше не выбирает, кого атаковать…\r\nКости выбирают за него.\r\nКогда мутаген начал менять его изнутри, он ещё пытался бороться. Контролировать боль. Сдерживать изменения.\r\nНо кости уже сделали выбор за него.\r\nОни росли. Ломали плоть. Становились клинками.\r\nИ с каждым шагом человек исчезал.\r\n🟢 Форма 1: человек на грани — сдерживает мутацию, дерётся через боль\r\n🔴 Форма 2: зверь — тело полностью подчинено инстинкту убийства\r\n⚠️ Особенность карты:\r\n— получает урон → становится сильнее\r\n— при критическом уровне HP переходит в форму зверя\r\n— атаки игнорируют часть защиты",
+    "category": "TMNT",
+    "subcategory": "",
+    "frontImage": "/uploads/1776181915468-690f3fa1.webp",
+    "backImage": "/uploads/1776181920320-4ffc0ef1.webp",
+    "price": 25,
+    "rarity": "common",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "isNew": false,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": true,
+    "ratingAvg": 5,
+    "reviewCount": 0,
+    "effect": "vario",
+    "categoryBg": "/uploads/1776181880220-2ce5379d.webp",
+    "frontImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "backImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "priceRub": 750,
+    "categoryOrder": 23,
+    "varioSmoothing": 0.18,
+    "frontImageWidth": 761,
+    "frontImageHeight": 1024
+  },
+  {
+    "id": "514e9971-a5f4-4a60-8ddb-034106bb60bd",
+    "title": "Рафаэль / Тёмный Рафаэль",
+    "description": "🔥 Рафаэль / Тёмный Рафаэль — ярость, которая не знает границ.\r\nРафаэль всегда был самым горячим из братьев. Он дерётся первым, думает потом и никогда не отступает.\r\nЕго сила — в гневе. Но именно он и стал его проклятием.\r\nКогда контроль теряется — рождается Тёмный Рафаэль.\r\nЭто уже не боец команды. Это разрушительная сила, которая не различает врагов и преграды.\r\n🟢 Форма 1: агрессивный боец — давит, ломает, идёт напролом\r\n🔴 Форма 2: берсерк — скорость и сила выходят за пределы контроля\r\n⚠️ Особенность карты:\r\n— чем меньше HP, тем выше урон\r\n— серия атак усиливается с каждым ударом\r\n— может войти в «ярость» и атаковать дважды",
+    "category": "TMNT",
+    "subcategory": "",
+    "frontImage": "/uploads/1776182100429-ae7af4b3.webp",
+    "backImage": "/uploads/1776182107000-e48b206e.webp",
+    "price": 25,
+    "rarity": "common",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "isNew": false,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": true,
+    "ratingAvg": 5,
+    "reviewCount": 0,
+    "effect": "morphing",
+    "categoryBg": "/uploads/1776182076999-620bab0c.webp",
+    "frontImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "backImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "priceRub": 750,
+    "categoryOrder": 22,
+    "varioSmoothing": 0.18,
+    "frontImageWidth": 761,
+    "frontImageHeight": 1024
+  },
+  {
+    "id": "5bf8103b-ec1f-44bf-8b56-b205aabc9aa2",
+    "title": "Земляной ниндзя / Живая порода",
+    "description": "🪨 Земляной ниндзя / Живая порода — сама земля стала оружием. Ты не сражаешься с ним…\r\nТы сражаешься с землёй под ногами.\r\nОн не просто боец клана Фут.\r\nОн — их связь с глубинами.\r\nСначала он движется как обычный ниндзя: скрытно, быстро, незаметно.\r\nНо стоит ему коснуться земли… и она отвечает.\r\nКамень трескается. Пыль поднимается.\r\nИ он перестаёт быть человеком.\r\n🟢 Форма 1: скрытный ниндзя — контроль пространства, ловушки, туннели\r\n🔴 Форма 2: каменный колосс — медленный, но почти неуязвимый\r\n⚠️ Особенность карты:\r\n— может «уходить под землю» (избегает урона ход)\r\n— создаёт зоны, замедляющие врагов\r\n— во второй форме получает сильную защиту и массовый урон",
+    "category": "TMNT",
+    "subcategory": "",
+    "frontImage": "/uploads/1776182202837-cf9dca8c.webp",
+    "backImage": "/uploads/1776182206938-15ed066e.webp",
+    "price": 25,
+    "rarity": "common",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "isNew": false,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": true,
+    "ratingAvg": 5,
+    "reviewCount": 0,
+    "effect": "vario",
+    "categoryBg": "/uploads/1776721916592-0eaf89f5.webp",
+    "frontImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "backImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "priceRub": 750,
+    "categoryOrder": 24,
+    "varioSmoothing": 0.18,
+    "frontImageWidth": 761,
+    "frontImageHeight": 1024
+  },
+  {
+    "id": "97fc9390-9b66-491b-81fa-f251bd542819",
+    "title": "Уилл Байерс",
+    "description": "Уилл Байерс — обычный мальчик из Хокинса, чья жизнь изменилась после встречи с Изнанкой.\r\nОн пережил то, что не должен был пережить, и вернулся… но не таким, как прежде.\r\nТеперь он чувствует присутствие тьмы и остаётся связующим звеном между мирами.",
+    "category": "Stranger Things",
+    "subcategory": "",
+    "frontImage": "/uploads/1776656486180-2c1a309d.webp",
+    "backImage": "/uploads/1776656489974-5dc8d98f.webp",
+    "price": 25,
+    "rarity": "common",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "isNew": false,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": true,
+    "ratingAvg": 5,
+    "reviewCount": 0,
+    "effect": "vario",
+    "categoryBg": "/uploads/1776656462392-a9d97882.webp",
+    "frontImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "backImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "priceRub": 750,
+    "categoryOrder": 10,
+    "varioSmoothing": 0.18,
+    "frontImageWidth": 600,
+    "frontImageHeight": 900
+  },
+  {
+    "id": "61ff3ddf-d260-475c-a8e0-c2f33f358c55",
+    "title": "Майк Уилер",
+    "description": "Майк Уилер — лидер своей компании друзей, готовый идти до конца ради тех, кто ему дорог.\r\nОбычный подросток из Хокинса, он первым столкнулся с тайнами Изнанки и не отступил.\r\nЕго решимость и вера в друзей делают его тем, кто ведёт остальных даже в самой тёмной ситуации.",
+    "category": "Stranger Things",
+    "subcategory": "",
+    "frontImage": "/uploads/1776656574415-db17cd39.webp",
+    "backImage": "/uploads/1776656582751-d08a8bf7.webp",
+    "price": 25,
+    "rarity": "common",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "isNew": false,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": true,
+    "ratingAvg": 5,
+    "reviewCount": 0,
+    "effect": "vario",
+    "categoryBg": "/uploads/1776656561486-f53c3b95.webp",
+    "frontImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "backImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "priceRub": 750,
+    "categoryOrder": 2,
+    "varioSmoothing": 0.18,
+    "frontImageWidth": 600,
+    "frontImageHeight": 900
+  },
+  {
+    "id": "d3a74b7f-c434-4882-8a6a-c243e14e6e1a",
+    "title": "Дастин Хендерсон",
+    "description": "Дастин Хендерсон — любознательный и изобретательный парень из Хокинса, чьи знания часто спасают друзей в самых опасных ситуациях.\r\nОн не боится задавать вопросы и искать ответы, даже когда речь идёт о вещах за пределами понимания.\r\nЕго оптимизм, верность и острый ум делают его незаменимой частью команды.",
+    "category": "Stranger Things",
+    "subcategory": "",
+    "frontImage": "/uploads/1776656660392-86bfa93e.webp",
+    "backImage": "/uploads/1776656668573-9f222a37.webp",
+    "price": 25,
+    "rarity": "common",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "isNew": false,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": true,
+    "ratingAvg": 5,
+    "reviewCount": 0,
+    "effect": "vario",
+    "categoryBg": "/uploads/1776656646287-0ebf7c3f.webp",
+    "frontImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "backImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "priceRub": 750,
+    "categoryOrder": 3,
+    "varioSmoothing": 0.18,
+    "frontImageWidth": 600,
+    "frontImageHeight": 900
+  },
+  {
+    "id": "d68638ab-21dc-40cf-97fe-08d1fe52db7d",
+    "title": "Макс Мэйфилд",
+    "description": "Макс Мэйфилд — смелая и упрямая девушка, привыкшая полагаться только на себя.\r\nПереехав в Хокинс, она быстро оказалась втянута в события, выходящие за пределы обычной реальности.\r\nЕё сила воли и внутренняя стойкость позволяют ей противостоять даже тем страхам, что приходят из Изнанки.",
+    "category": "Stranger Things",
+    "subcategory": "",
+    "frontImage": "/uploads/1776656715167-178759b5.webp",
+    "backImage": "/uploads/1776656719404-97e09592.webp",
+    "price": 25,
+    "rarity": "common",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "isNew": false,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": true,
+    "ratingAvg": 5,
+    "reviewCount": 0,
+    "effect": "vario",
+    "categoryBg": "/uploads/1776656700853-dbf645fe.webp",
+    "frontImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "backImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "priceRub": 750,
+    "categoryOrder": 4,
+    "varioSmoothing": 0.18,
+    "frontImageWidth": 600,
+    "frontImageHeight": 900
+  },
+  {
+    "id": "5452a3a6-ea70-4e1b-97ca-d4265290d413",
+    "title": "Демогоргон",
+    "description": "Демогоргон — существо из Изнанки, движимое инстинктами охоты и жаждой крови.\r\nОн появляется из темноты и исчезает так же внезапно, оставляя после себя лишь страх и разрушение.\r\nСвязанный с другим миром, он чувствует свою добычу и не останавливается, пока не настигнет её.",
+    "category": "Stranger Things",
+    "subcategory": "",
+    "frontImage": "/uploads/1776656768961-4a845863.webp",
+    "backImage": "/uploads/1776656772520-69814416.webp",
+    "price": 25,
+    "rarity": "common",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "isNew": false,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": true,
+    "ratingAvg": 5,
+    "reviewCount": 0,
+    "effect": "vario",
+    "categoryBg": "/uploads/1776656743851-5a71385b.webp",
+    "frontImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "backImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "priceRub": 750,
+    "categoryOrder": 5,
+    "varioSmoothing": 0.18,
+    "frontImageWidth": 600,
+    "frontImageHeight": 900
+  },
+  {
+    "id": "dcaef5ee-1f3f-4469-bb1f-ce9693d3d126",
+    "title": "Лукас Синклер",
+    "description": "Лукас Синклер — смелый и принципиальный боец, который всегда готов встать на защиту друзей.\r\nОн не боится говорить правду и идти против страха, даже когда всё вокруг рушится.\r\nВ мире, где тьма подбирается всё ближе, именно его решимость и верность помогают команде держаться и сражаться до конца.",
+    "category": "Stranger Things",
+    "subcategory": "",
+    "frontImage": "/uploads/1776656839593-370eb440.webp",
+    "backImage": "/uploads/1776656845107-486ea07d.webp",
+    "price": 25,
+    "rarity": "common",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "isNew": false,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": true,
+    "ratingAvg": 5,
+    "reviewCount": 0,
+    "effect": "vario",
+    "categoryBg": "/uploads/1776656810738-a5ef1a1a.webp",
+    "frontImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "backImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "priceRub": 750,
+    "categoryOrder": 6,
+    "varioSmoothing": 0.18,
+    "frontImageWidth": 600,
+    "frontImageHeight": 900
+  },
+  {
+    "id": "9832f375-16b9-4551-8cb1-ccb801e89f23",
+    "title": "Эрика Синклер",
+    "description": "Эрика Синклер — острый ум и холодная логика в самом неожиданном облике.\r\nОна не поддаётся страху и всегда просчитывает ситуацию на шаг вперёд, даже когда взрослые теряют контроль.\r\nЗа её дерзостью скрывается настоящий стратег, который способен найти выход там, где другие видят только тупик.\r\nВ мире, где опасность приходит из тьмы, Эрика остаётся тем голосом разума, который превращает хаос в план.",
+    "category": "Stranger Things",
+    "subcategory": "",
+    "frontImage": "/uploads/1776656897827-b844ae3f.webp",
+    "backImage": "/uploads/1776656908032-1f9ad4c7.webp",
+    "price": 25,
+    "rarity": "common",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "isNew": false,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": true,
+    "ratingAvg": 5,
+    "reviewCount": 0,
+    "effect": "vario",
+    "categoryBg": "/uploads/1776656872110-970fe679.webp",
+    "frontImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "backImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "priceRub": 750,
+    "categoryOrder": 7,
+    "varioSmoothing": 0.18,
+    "frontImageWidth": 600,
+    "frontImageHeight": 900
+  },
+  {
+    "id": "d74637f1-90cb-4d7c-9e6f-1032be485235",
+    "title": "Джойс Байерс",
+    "description": "Джойс Байерс — сила, рождённая из любви и отчаяния.\r\nКогда мир отказывается верить, она идёт до конца, следуя за едва заметными знаками и голосами из темноты.\r\nЕё интуиция сильнее страха, а решимость — крепче любой преграды между мирами.\r\nТам, где другие сдаются, Джойс продолжает искать, потому что для неё надежда — не выбор, а единственный путь вперёд.",
+    "category": "Stranger Things",
+    "subcategory": "",
+    "frontImage": "/uploads/1776657016979-ec1e44ae.webp",
+    "backImage": "/uploads/1776657021905-a8d95178.webp",
+    "price": 25,
+    "rarity": "common",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "isNew": false,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": true,
+    "ratingAvg": 5,
+    "reviewCount": 0,
+    "effect": "vario",
+    "categoryBg": "/uploads/1776657001880-91f2a46d.webp",
+    "frontImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "backImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "priceRub": 750,
+    "categoryOrder": 9,
+    "varioSmoothing": 0.18,
+    "frontImageWidth": 600,
+    "frontImageHeight": 900
+  },
+  {
+    "id": "dde0c1a9-a6a0-481e-913f-5c3d9a5d44a8",
+    "title": "Векна",
+    "description": "Векна — воплощение кошмара, рожденного из искажённого разума и абсолютной власти над страхом.\r\nОн не просто охотится — он ломает изнутри, проникая в мысли и превращая самые тёмные воспоминания в оружие.\r\nКаждый его шаг — это разрушение границ между реальностью и Изнанкой, где он чувствует себя хозяином.\r\nТам, где появляется Векна, надежда трескается первой, а страх становится единственным законом.",
+    "category": "Stranger Things",
+    "subcategory": "",
+    "frontImage": "/uploads/1776657060129-c2193ac4.webp",
+    "backImage": "/uploads/1776657064657-12bcb936.webp",
+    "price": 25,
+    "rarity": "common",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "isNew": false,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": true,
+    "ratingAvg": 5,
+    "reviewCount": 0,
+    "effect": "vario",
+    "categoryBg": "/uploads/1776657047160-47d0e0c6.webp",
+    "frontImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "backImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "priceRub": 750,
+    "categoryOrder": 1,
+    "varioSmoothing": 0.18,
+    "frontImageWidth": 600,
+    "frontImageHeight": 900
+  },
+  {
+    "id": "73a912b2-f2ed-4bbe-bf54-2bf32e257638",
+    "title": "Одиннадцать",
+    "description": "Одиннадцать — сила, рождённая в тишине экспериментов и закалённая в борьбе за свободу.\r\nОна управляет невидимым, ломая законы реальности и открывая границы между мирами.\r\nНо за её мощью скрывается нечто большее — желание быть обычной и защищать тех, кого она называет семьёй.\r\nКогда тьма наступает, именно её воля и сила становятся последней преградой между миром людей и Изнанкой.",
+    "category": "Stranger Things",
+    "subcategory": "",
+    "frontImage": "/uploads/1776657119773-95c0480f.webp",
+    "backImage": "/uploads/1776657124464-5b4356e3.webp",
+    "price": 25,
+    "rarity": "common",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "isNew": false,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": true,
+    "ratingAvg": 5,
+    "reviewCount": 0,
+    "effect": "vario",
+    "categoryBg": "/uploads/1776657097514-e5c922c1.webp",
+    "frontImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "backImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "priceRub": 750,
+    "categoryOrder": 11,
+    "varioSmoothing": 0.18,
+    "frontImageWidth": 600,
+    "frontImageHeight": 900
+  },
+  {
+    "id": "32570b25-84a0-44d5-aafa-1c0113488153",
+    "title": "Джим Хоппер",
+    "description": "Джим Хоппер — человек, который идёт против тьмы, даже когда она уже внутри него.\r\nЖёсткий, упрямый и сломанный прошлым, он не верит в чудеса — но всё равно сражается с ними лицом к лицу.\r\nЗа его грубостью скрывается настоящая преданность и готовность пожертвовать всем ради тех, кого он защищает.\r\nВ мире, где правила больше не работают, Хоппер остаётся тем, кто берёт ответственность на себя и доводит дело до конца любой ценой.",
+    "category": "Stranger Things",
+    "subcategory": "",
+    "frontImage": "/uploads/1776657223922-7a83da8f.webp",
+    "backImage": "/uploads/1776657232910-f8fa21f5.webp",
+    "price": 25,
+    "rarity": "common",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "isNew": false,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": true,
+    "ratingAvg": 5,
+    "reviewCount": 0,
+    "effect": "vario",
+    "categoryBg": "/uploads/1776657202354-a1f8f035.webp",
+    "frontImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "backImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "middleImage": "/uploads/1776657228502-49228e9f.webp",
+    "middleImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "priceRub": 750,
+    "categoryOrder": 12,
+    "varioSmoothBlend": true,
+    "varioSmoothing": 0.18,
+    "frontImageWidth": 600,
+    "frontImageHeight": 900
+  },
+  {
+    "id": "0cf3cf18-9758-4301-b220-5474560bae69",
+    "title": "Майнд Флаер",
+    "description": "Майнд Флаер — древний разум, скрытый за пределами человеческого понимания.\r\nОн не просто монстр — он воля Изнанки, управляющая каждым существом, словно единым организмом.\r\nНевидимый, но вездесущий, он проникает в сознание, ломает волю и превращает страх в оружие.\r\nЕго присутствие ощущается раньше, чем его можно увидеть — холодом, шёпотом, ощущением, что ты больше не один.\r\nГде он появляется, реальность начинает трескаться, а граница между мирами исчезает.",
+    "category": "Stranger Things",
+    "subcategory": "",
+    "frontImage": "/uploads/1776657542310-157128bb.webp",
+    "backImage": "/uploads/1776657549511-5e1c8c98.webp",
+    "price": 25,
+    "rarity": "common",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "isNew": false,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": true,
+    "ratingAvg": 5,
+    "reviewCount": 0,
+    "effect": "vario",
+    "categoryBg": "/uploads/1776657520664-d93aa4e8.webp",
+    "frontImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "backImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "priceRub": 750,
+    "categoryOrder": 13,
+    "varioSmoothing": 0.18,
+    "frontImageWidth": 600,
+    "frontImageHeight": 900
+  },
+  {
+    "id": "4930433a-5cb9-410b-9cf4-bc281acf2675",
+    "title": "Джонатан Байерс",
+    "description": "Джонатан Байерс — тихий наблюдатель, который видит больше, чем говорит.\r\nЧерез объектив своей камеры он улавливает то, что другие предпочитают не замечать — страх, тени и надвигающуюся угрозу.\r\nОн не стремится быть героем, но всегда оказывается там, где это необходимо.\r\nЕго сила — в внимательности, стойкости и готовности защищать тех, кого он любит, даже если придётся столкнуться с тем, что скрывается во тьме.\r\nВ мире, где правда пугает, он остаётся тем, кто не отворачивается.",
+    "category": "Stranger Things",
+    "subcategory": "",
+    "frontImage": "/uploads/1776657690283-f077b1fa.webp",
+    "backImage": "/uploads/1776657694857-232f054b.webp",
+    "price": 25,
+    "rarity": "common",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "isNew": false,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": true,
+    "ratingAvg": 5,
+    "reviewCount": 0,
+    "effect": "vario",
+    "categoryBg": "/uploads/1776657672934-7f8eeb9c.webp",
+    "frontImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "backImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "priceRub": 750,
+    "categoryOrder": 14,
+    "varioSmoothing": 0.18,
+    "frontImageWidth": 600,
+    "frontImageHeight": 900
+  },
+  {
+    "id": "537bff69-cf3c-447b-9c0d-d723c270e406",
+    "title": "Билли Харгроув",
+    "description": "Билли Харгроув — вспыльчивый и опасный, он привык скрывать боль за маской силы и дерзости.\r\nЕго агрессия — это щит, за которым прячется одиночество и прошлое, о котором он не говорит.\r\nОн живёт на грани, бросая вызов всем вокруг, будто пытаясь доказать, что его невозможно сломать.\r\nНо когда тьма Изнанки находит его, она усиливает всё, что уже есть внутри — страх, гнев и внутреннюю борьбу.\r\nИ в самый решающий момент становится ясно: даже в самых сломленных людях может оставаться искра, способная изменить всё.",
+    "category": "Stranger Things",
+    "subcategory": "",
+    "frontImage": "/uploads/1776657734744-58b58bb8.webp",
+    "backImage": "/uploads/1776657746125-4648796c.webp",
+    "price": 25,
+    "rarity": "common",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "isNew": false,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": true,
+    "ratingAvg": 5,
+    "reviewCount": 0,
+    "effect": "vario",
+    "categoryBg": "/uploads/1776657716935-12939b13.webp",
+    "frontImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "backImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "priceRub": 750,
+    "categoryOrder": 17,
+    "varioSmoothing": 0.18,
+    "frontImageWidth": 600,
+    "frontImageHeight": 900
+  },
+  {
+    "id": "7e4a8569-e523-4276-8488-87f19208ff75",
+    "title": "Эдди Мансон",
+    "description": "Эдди Мансон — бунтарь, которого легко понять неправильно, но невозможно забыть.\r\nОн живёт по своим правилам, громче всех смеётся и не боится быть собой, даже когда весь мир против него.\r\nЗа образом рокера и аутсайдера скрывается человек с большим сердцем и настоящей преданностью друзьям.\r\nКогда приходит тьма, он не прячется — он встречает её лицом к лицу, превращая страх в силу.\r\nИ в момент, когда другие отступают, именно он делает шаг вперёд и доказывает, что герои выглядят по-разному.",
+    "category": "Stranger Things",
+    "subcategory": "",
+    "frontImage": "/uploads/1776657815905-bb06ff61.webp",
+    "backImage": "/uploads/1776657822087-d28a523c.webp",
+    "price": 25,
+    "rarity": "common",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "isNew": false,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": true,
+    "ratingAvg": 5,
+    "reviewCount": 0,
+    "effect": "vario",
+    "categoryBg": "/uploads/1776657801174-2629fffd.webp",
+    "frontImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "backImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "priceRub": 750,
+    "categoryOrder": 15,
+    "varioSmoothing": 0.18,
+    "frontImageWidth": 600,
+    "frontImageHeight": 900
+  },
+  {
+    "id": "80b66eae-3c1f-4a4f-835d-a7637bcbf5d6",
+    "title": "Стив Харрингтон",
+    "description": "Стив Харрингтон — тот, кто прошёл путь от самоуверенного школьного короля до настоящего защитника.\r\nЗа внешней лёгкостью и харизмой скрывается человек, который всегда берёт ответственность, когда это действительно важно.\r\nОн не идеален и не притворяется таким, но именно это делает его надёжным в самые трудные моменты.\r\nКогда опасность приближается, он не раздумывает — встаёт впереди и принимает удар на себя.\r\nИ пусть его оружие — не только бита, но и верность, именно благодаря ему другие чувствуют себя в безопасности.",
+    "category": "Stranger Things",
+    "subcategory": "",
+    "frontImage": "/uploads/1776657937319-38ede07b.webp",
+    "backImage": "/uploads/1776657944043-f7f501f7.webp",
+    "price": 25,
+    "rarity": "common",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "isNew": false,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": true,
+    "ratingAvg": 5,
+    "reviewCount": 0,
+    "effect": "vario",
+    "categoryBg": "/uploads/1776657907693-203d4d31.webp",
+    "frontImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "backImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "priceRub": 750,
+    "categoryOrder": 18,
+    "varioSmoothing": 0.18,
+    "frontImageWidth": 600,
+    "frontImageHeight": 900
+  },
+  {
+    "id": "cc5e97d5-0dce-4dbc-b74b-31fca672f79b",
+    "title": "Нэнси Уилер",
+    "description": "Нэнси Уилер — ум, который не боится копать глубже, даже когда правда опаснее любых монстров.\r\nОна не обладает сверхсилой, но её главное оружие — настойчивость и холодный разум.\r\nТам, где другие отступают, Нэнси задаёт вопросы и идёт до конца, собирая пазл из самых тёмных тайн.\r\nЕё смелость — не в безрассудстве, а в готовности смотреть страху прямо в лицо.\r\nИ именно благодаря ей хаос начинает обретать смысл, а скрытое становится явным.",
+    "category": "Stranger Things",
+    "subcategory": "",
+    "frontImage": "/uploads/1776657980387-edfe6040.webp",
+    "backImage": "/uploads/1776657989280-c6331e83.webp",
+    "price": 25,
+    "rarity": "common",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "isNew": false,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": true,
+    "ratingAvg": 5,
+    "reviewCount": 0,
+    "effect": "vario",
+    "categoryBg": "/uploads/1776657970862-eb53b43d.webp",
+    "frontImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "backImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "priceRub": 750,
+    "categoryOrder": 19,
+    "varioSmoothing": 0.18,
+    "frontImageWidth": 600,
+    "frontImageHeight": 900
+  },
+  {
+    "id": "1c1aac3e-cdb0-463a-8703-f2aa8683d842",
+    "title": "Робин Бакли",
+    "description": "Робин Бакли — быстрый ум и ещё более быстрый язык, который не оставляет шансов ни врагам, ни друзьям.\r\nОна видит закономерности там, где другие видят хаос, и превращает головоломки в решения.\r\nСарказм — её броня, интеллект — её главное оружие.\r\nРобин может выглядеть несерьёзной, но в нужный момент именно она собирает всё воедино и находит выход.\r\nИ когда становится по-настоящему опасно — она не отступает, а действует.",
+    "category": "Stranger Things",
+    "subcategory": "",
+    "frontImage": "/uploads/1776658056356-c26b3623.webp",
+    "backImage": "/uploads/1776658061424-19e74847.webp",
+    "price": 25,
+    "rarity": "common",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "isNew": false,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": true,
+    "ratingAvg": 5,
+    "reviewCount": 0,
+    "effect": "vario",
+    "categoryBg": "/uploads/1776658041507-8d07c7d2.webp",
+    "frontImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "backImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "priceRub": 750,
+    "categoryOrder": 20,
+    "varioSmoothing": 0.18,
+    "frontImageWidth": 600,
+    "frontImageHeight": 900
+  },
+  {
+    "id": "20ddcc89-6f3f-42d6-bb60-f43adc8baf23",
+    "title": "Алексей (Смирнов)",
+    "description": "Алексей (Смирнов) — гений, спрятанный за простой улыбкой и добрым взглядом.\r\nОн понимает больше, чем говорит, и видит дальше, чем кажется.\r\nВ мире секретов и экспериментов он остаётся человеком — искренним, наивным и по-настоящему светлым.\r\nЕго сила — не в борьбе, а в разуме и вере в лучшее.\r\nИ даже среди тьмы он напоминает: человечность — это то, что нельзя сломать.",
+    "category": "Stranger Things",
+    "subcategory": "",
+    "frontImage": "/uploads/1776658117561-32575182.webp",
+    "backImage": "/uploads/1776658122447-be40cf9f.webp",
+    "price": 25,
+    "rarity": "common",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "isNew": false,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": true,
+    "ratingAvg": 5,
+    "reviewCount": 0,
+    "effect": "vario",
+    "categoryBg": "/uploads/1776658088754-2ed5daf9.webp",
+    "frontImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "backImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "priceRub": 750,
+    "categoryOrder": 21,
+    "varioSmoothing": 0.18,
+    "frontImageWidth": 600,
+    "frontImageHeight": 900
+  },
+  {
+    "id": "33d2fd28-1ca0-4fec-af7c-683d5465d290",
+    "title": "Демогоргон",
+    "description": "Демогоргон — чистый инстинкт, лишённый сомнений и жалости.\r\nОн не думает — он охотится. Не чувствует — лишь преследует.\r\nЕго присутствие ощущается раньше, чем его видят, и страх становится частью добычи.\r\nПлоть для него — цель, кровь — след, а тьма — естественная среда.\r\nИ когда он появляется… бежать уже слишком поздно.",
+    "category": "Stranger Things",
+    "subcategory": "",
+    "frontImage": "/uploads/1776658165102-f2abfdfe.webp",
+    "backImage": "/uploads/1776658169748-d21a41e6.webp",
+    "price": 25,
+    "rarity": "common",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "isNew": false,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": true,
+    "ratingAvg": 5,
+    "reviewCount": 0,
+    "effect": "vario",
+    "categoryBg": "/uploads/1776658151985-80e5df12.webp",
+    "frontImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "backImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "priceRub": 740,
+    "categoryOrder": 22,
+    "varioSmoothing": 0.18,
+    "frontImageWidth": 600,
+    "frontImageHeight": 900
+  },
+  {
+    "id": "4d851aa8-2bdc-4c45-bbe6-ebf49dc457da",
+    "title": "Мюррей Бауман",
+    "description": "Мюррей Бауман — человек, который задаёт неудобные вопросы и слишком редко ошибается.\r\nОн выглядит эксцентричным, говорит странно и верит в заговоры… но за этим скрывается острый ум и наблюдательность.\r\nМюррей видит связи там, где другие даже не ищут, и не боится озвучивать правду, какой бы абсурдной она ни казалась.\r\nЕго сила — в логике, интуиции и умении читать людей насквозь.\r\nИ если он говорит, что что-то не так… скорее всего, он уже знает почему.",
+    "category": "Stranger Things",
+    "subcategory": "",
+    "frontImage": "/uploads/1776658220190-2c8e67c1.webp",
+    "backImage": "/uploads/1776658225342-d05eebdb.webp",
+    "price": 25,
+    "rarity": "common",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "isNew": false,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": true,
+    "ratingAvg": 5,
+    "reviewCount": 0,
+    "effect": "vario",
+    "categoryBg": "/uploads/1776658193493-ae769a5e.webp",
+    "frontImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "backImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "priceRub": 750,
+    "categoryOrder": 23,
+    "varioSmoothing": 0.18,
+    "frontImageWidth": 600,
+    "frontImageHeight": 900
+  },
+  {
+    "id": "254d50da-e22b-4bae-b316-15ea5f31c8f0",
+    "title": "Легендарное трио",
+    "description": "Легендарное трио — когда одна версия героя уже недостаточна.\r\nТри Человека-паука, три стиля, три силы — объединённые в момент, когда реальность начинает трещать по швам.\r\nОни действуют как единое целое: скорость одного усиливает другого, а реакция становится почти мгновенной.\r\nЭто не просто команда — это синхронизированная мощь мультивселенной.\r\nИ если они появляются вместе… значит, угроза уже вышла за пределы одного мира.",
     "category": "Marvel",
-    "price": 15,
-    "image": "https://www.illucards.by/images/spiderman.jpg"
+    "subcategory": "",
+    "frontImage": "/uploads/1776683050626-7638b2bd.webp",
+    "backImage": "",
+    "price": 25,
+    "rarity": "common",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "isNew": false,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": true,
+    "ratingAvg": 5,
+    "reviewCount": 0,
+    "frontHoverGif": "/uploads/videos/dea65a97-2704-4c1c-86c0-034188f0b016.mp4",
+    "effect": "3d-horizontal",
+    "categoryBg": "/uploads/1776683038622-fd281ff6.webp",
+    "frontImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "priceRub": 750,
+    "categoryOrder": 7,
+    "frontImageWidth": 600,
+    "frontImageHeight": 900
+  },
+  {
+    "id": "b2cf83d5-27e6-4203-b076-75013a6712e3",
+    "title": "Наследница Симбиота",
+    "description": "Это не просто наследие… это продолжение хищника.\r\nОн не выбирает слабых — он выбирает тех, кто сможет выдержать его силу.\r\n\r\nСначала — шёпот. Потом — контроль.\r\nИ в какой-то момент ты уже не понимаешь, где заканчиваешься ты… и начинается он.\r\n\r\nЭто не союз — это слияние, где побеждает сильнейший.\r\nИ если ты выдержал… значит, теперь ты опаснее, чем был он сам.",
+    "category": "Marvel",
+    "subcategory": "",
+    "frontImage": "/uploads/1776683396725-0cf0549d.webp",
+    "backImage": "/uploads/1776713296931-4ad047f0.webp",
+    "price": 25,
+    "rarity": "novelty",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "isNew": false,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": true,
+    "ratingAvg": 5,
+    "reviewCount": 0,
+    "effect": "vario",
+    "categoryBg": "/uploads/1776683332038-5e48f7bc.webp",
+    "frontImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "backImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "priceRub": 750,
+    "categoryOrder": 12,
+    "varioSmoothing": 0.18,
+    "frontImageWidth": 600,
+    "frontImageHeight": 900
+  },
+  {
+    "id": "c4f6e627-c075-4b4e-96df-7957fd404e84",
+    "title": "Выстрел Дефстроука",
+    "description": "Выстрел Дефстроука — момент, в котором нет права на ошибку.\r\nОн не стреляет наугад — каждый выстрел просчитан, каждый шаг выверен до идеала.\r\nДля него бой — это не хаос, а холодная математика, где исход известен заранее.\r\nРефлексы, точность и опыт превращают секунду в приговор.\r\nИ когда он нажимает на курок… исход уже решён.",
+    "category": "DC",
+    "subcategory": "",
+    "frontImage": "/uploads/1776709771575-d2786264.webp",
+    "backImage": "",
+    "price": 25,
+    "rarity": "common",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "isNew": false,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": true,
+    "ratingAvg": 5,
+    "reviewCount": 0,
+    "effect": "3d-horizontal",
+    "categoryBg": "/uploads/1776721510194-ba8afbba.webp",
+    "frontImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "priceRub": 750,
+    "categoryOrder": 3,
+    "frontImageWidth": 600,
+    "frontImageHeight": 900
+  },
+  {
+    "id": "d700af8e-420a-464a-97c0-f7d819347f65",
+    "title": "Бэтмен",
+    "description": "Бэтмен — это не просто герой. \r\nЭто страх, который выходит из тьмы, когда его меньше всего ждут. Он не полагается на силу — он создаёт преимущество ещё до начала боя.\r\nКаждое движение врага уже просчитано. Каждая ошибка — уже учтена.\r\nОн не нападает первым…\r\nпотому что ему это не нужно. Он всегда заканчивает.",
+    "category": "DC",
+    "subcategory": "",
+    "frontImage": "/uploads/1776709953899-23fd0f53.webp",
+    "backImage": "/uploads/1776709959818-15e0d62f.webp",
+    "price": 25,
+    "rarity": "common",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "isNew": false,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": true,
+    "ratingAvg": 5,
+    "reviewCount": 0,
+    "effect": "vario",
+    "categoryBg": "/uploads/1776710144755-ff9c920d.webp",
+    "frontImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "backImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "priceRub": 750,
+    "categoryOrder": 1,
+    "varioSmoothing": 0.18,
+    "frontImageWidth": 600,
+    "frontImageHeight": 900
+  },
+  {
+    "id": "f2a96071-3c58-420d-8e47-8e81793d1d6b",
+    "title": "Рэйвен",
+    "description": "Рэйвен — тишина перед катастрофой.\r\nОна не кричит и не сражается напоказ.\r\nЕё сила — в контроле… над тем, что способно разрушить всё. Каждая эмоция — оружие. Каждая мысль — граница между спасением и концом. Снаружи — холод и спокойствие. Внутри — тьма, которая ждёт момента.\r\nОна не выбирает свет или тьму…она удерживает их в равновесии.",
+    "category": "DC",
+    "subcategory": "",
+    "frontImage": "/uploads/1776710072357-2e34d3c4.webp",
+    "backImage": "/uploads/1776710076805-ee3337fe.webp",
+    "price": 30,
+    "rarity": "adult",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "isNew": false,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": true,
+    "ratingAvg": 5,
+    "reviewCount": 0,
+    "effect": "vario",
+    "categoryBg": "/uploads/1776710058425-1edd16a0.webp",
+    "frontImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "backImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "priceRub": 800,
+    "categoryOrder": 2,
+    "varioSmoothing": 0.18,
+    "frontImageWidth": 600,
+    "frontImageHeight": 900
+  },
+  {
+    "id": "ccfee9af-d294-4fc0-85d2-39997bc12c47",
+    "title": "Супермен",
+    "description": "Супермен — это не просто сила. Это символ, который поднимает мир, когда тот готов упасть. Он способен разрушать, но выбирает защищать. Его скорость опережает время, его мощь ломает законы, но его главное оружие — выбор быть человеком. Он не давит — он вдохновляет. И когда всё рушится, именно он остаётся последней надеждой.",
+    "category": "DC",
+    "subcategory": "",
+    "frontImage": "/uploads/1776710403082-0676d94b.webp",
+    "backImage": "/uploads/1776710407016-18d0d4fa.webp",
+    "price": 25,
+    "rarity": "novelty",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "isNew": false,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": true,
+    "ratingAvg": 5,
+    "reviewCount": 0,
+    "effect": "vario",
+    "categoryBg": "/uploads/1776710388829-b504e8e7.webp",
+    "frontImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "backImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "priceRub": 750,
+    "categoryOrder": 5,
+    "varioSmoothing": 0.18,
+    "frontImageWidth": 600,
+    "frontImageHeight": 900,
+    "rarities": [
+      "common",
+      "novelty"
+    ]
+  },
+  {
+    "id": "bb8faf66-a5a2-4705-8ebc-65e2be338dcc",
+    "title": "Абсолютная мощь",
+    "description": "Абсолютная мощь — это не просто сила. Это момент, когда сопротивление теряет смысл. Халк не сдерживается, он ломает границы, стирает дистанции и превращает удар в катастрофу. Здесь нет тактики, нет сомнений — только давление, которое невозможно остановить. Когда он идёт вперёд, мир подстраивается… или рушится.",
+    "category": "Marvel",
+    "subcategory": "",
+    "frontImage": "/uploads/1776710532812-cc29bf0e.webp",
+    "backImage": "",
+    "price": 50,
+    "rarity": "replica",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "isNew": false,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": true,
+    "ratingAvg": 5,
+    "reviewCount": 0,
+    "effect": "3d-horizontal",
+    "categoryBg": "/uploads/1776710544899-620e3c97.webp",
+    "frontImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "priceRub": 1500,
+    "categoryOrder": 412,
+    "frontImageWidth": 600,
+    "frontImageHeight": 900
+  },
+  {
+    "id": "03076a42-b6b1-446b-b4c0-ae5979bd7e1c",
+    "title": "Демогоблин",
+    "description": "Демогоблин — это не просто враг. Это сделка, за которую платят душой. Он не выбирает жертв — он карает, считая себя орудием высшей воли. Огонь в его руках — не сила, а приговор, который уже вынесен. В нём нет сомнений, нет жалости — только фанатичная вера и разрушение. Когда он появляется, это не бой… это расплата.",
+    "category": "Marvel",
+    "subcategory": "",
+    "frontImage": "/uploads/1776710627380-409ffde1.webp",
+    "backImage": "",
+    "price": 50,
+    "rarity": "replica",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "isNew": false,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": true,
+    "ratingAvg": 5,
+    "reviewCount": 0,
+    "effect": "3d-horizontal",
+    "categoryBg": "/uploads/1776710623249-ade6e4d0.webp",
+    "frontImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "priceRub": 1500,
+    "categoryOrder": 500,
+    "frontImageWidth": 600,
+    "frontImageHeight": 900
+  },
+  {
+    "id": "2ff93c97-98f1-47bc-967c-7211714031c8",
+    "title": "Джаггернаут",
+    "description": "Джаггернаут — это не просто сила. Это движение, которое невозможно остановить. Он не ускоряется — он просто начинает идти, и всё вокруг уступает. Стены трескаются, земля дрожит, а расстояние перестаёт иметь значение. Его не сдерживают удары, не останавливают препятствия — он проходит сквозь них. Это не бой против него… это попытка выжить, пока он идёт вперёд.",
+    "category": "Marvel",
+    "subcategory": "",
+    "frontImage": "/uploads/1776710791029-950111e9.webp",
+    "backImage": "",
+    "price": 50,
+    "rarity": "replica",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "isNew": false,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": true,
+    "ratingAvg": 5,
+    "reviewCount": 0,
+    "effect": "3d-horizontal",
+    "categoryBg": "/uploads/1776710805154-b3dd25e1.webp",
+    "frontImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "priceRub": 1500,
+    "categoryOrder": 353,
+    "frontImageWidth": 600,
+    "frontImageHeight": 900
+  },
+  {
+    "id": "85335759-3bf8-481b-b75c-7681f3101a46",
+    "title": "Космические силы",
+    "description": "Космические силы — это не просто мощь. Это уровень, где границы перестают существовать. Когда такие существа объединяются, речь уже не о битве — речь о влиянии на саму реальность. Их энергия меняет пространство, их решения — судьбы миров. Даже те, кто привык править галактиками, начинают сомневаться. Это не команда… это событие, которое меняет баланс вселенной.",
+    "category": "Marvel",
+    "subcategory": "",
+    "frontImage": "/uploads/1776710901806-5a156fa1.webp",
+    "backImage": "",
+    "price": 50,
+    "rarity": "replica",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "isNew": false,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": true,
+    "ratingAvg": 5,
+    "reviewCount": 0,
+    "effect": "3d-horizontal",
+    "categoryBg": "/uploads/1776710878716-e37e7f3c.webp",
+    "frontImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "priceRub": 1500,
+    "categoryOrder": 324,
+    "frontImageWidth": 600,
+    "frontImageHeight": 900
+  },
+  {
+    "id": "ac563c73-edba-4da3-8e49-794e12ce4192",
+    "title": "Чутьё паука",
+    "description": "Чутьё паука — это не просто способность. Это предупреждение, которое приходит раньше угрозы. Он не думает — он уже знает, куда ударят и откуда придёт опасность. Это преимущество, которое нельзя увидеть или просчитать. В нужный момент оно решает всё, превращая секунду в победу. В остальных случаях это просто тишина… но когда срабатывает — ошибаться уже поздно.",
+    "category": "Marvel",
+    "subcategory": "",
+    "frontImage": "/uploads/1776710975867-5936b651.webp",
+    "backImage": "/uploads/1776710984889-b19f99ec.webp",
+    "price": 50,
+    "rarity": "replica",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "isNew": false,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": true,
+    "ratingAvg": 5,
+    "reviewCount": 0,
+    "effect": "vario",
+    "categoryBg": "/uploads/1776710963183-9b64a060.webp",
+    "frontImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "backImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "priceRub": 1500,
+    "categoryOrder": 501,
+    "varioSmoothing": 0.18,
+    "frontImageWidth": 600,
+    "frontImageHeight": 900
+  },
+  {
+    "id": "21ef022a-460c-4e0f-bbae-e6645a4bf0c0",
+    "title": "Скорость паука",
+    "description": "Скорость паука — это не просто движение. Это контроль над пространством. Он не догоняет — он уже там, где нужно. Каждое движение точное, каждое уклонение — на долю секунды раньше удара. В бою скорость превращается в преимущество, которое невозможно перехватить. Ты ещё реагируешь… а он уже завершает.",
+    "category": "Marvel",
+    "subcategory": "",
+    "frontImage": "/uploads/1776711082544-fbd72330.webp",
+    "backImage": "/uploads/1776711091660-8ae12a4e.webp",
+    "price": 50,
+    "rarity": "replica",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "isNew": false,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": true,
+    "ratingAvg": 5,
+    "reviewCount": 0,
+    "effect": "vario",
+    "categoryBg": "/uploads/1776711043381-8143991c.webp",
+    "frontImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "backImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "middleImage": "/uploads/1776711087191-74ffa34d.webp",
+    "middleImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "priceRub": 1500,
+    "categoryOrder": 435,
+    "varioSmoothBlend": true,
+    "varioSmoothing": 0.18,
+    "frontImageWidth": 600,
+    "frontImageHeight": 900
+  },
+  {
+    "id": "15fc4d9f-10dc-43f4-9ea4-bbb9fefa0d58",
+    "title": "Аванпост скруллов",
+    "description": "Аванпост скруллов — это не просто база. Это точка вторжения, где чужая воля переписывает реальность под себя. Здесь нет случайностей — только расчёт, маскировка и холодная стратегия. Враг может выглядеть как союзник… но это уже проигранный момент. Каждый шаг на этой территории усиливает тех, кто умеет скрываться и бить из тени. Ты думаешь, что контролируешь поле боя — но поле уже принадлежит им.",
+    "category": "Marvel",
+    "subcategory": "",
+    "frontImage": "/uploads/1776711582159-1c76136a.webp",
+    "backImage": "",
+    "price": 50,
+    "rarity": "replica",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "isNew": false,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": true,
+    "ratingAvg": 5,
+    "reviewCount": 0,
+    "effect": "3d-horizontal",
+    "categoryBg": "/uploads/1776711575172-0acd1f9c.webp",
+    "frontImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "priceRub": 1500,
+    "categoryOrder": 677,
+    "frontImageWidth": 600,
+    "frontImageHeight": 900
+  },
+  {
+    "id": "bb186191-fcf8-445d-9b0d-e35186136def",
+    "title": "Город будущего",
+    "description": "Город будущего — это не место. Это ускорение, где ошибки стоят дороже, чем жизнь. Здесь время не течёт — оно давит. Технологии усиливают каждого… но слабых стирают быстрее. Ты можешь быть быстрым — но всегда найдётся версия тебя быстрее. Здесь встречаются не просто герои… здесь сталкиваются возможности. И побеждает не тот, кто сильнее — а тот, кто уже стал лучше себя вчера.",
+    "category": "Marvel",
+    "subcategory": "",
+    "frontImage": "/uploads/1776711824267-1bbb5a94.webp",
+    "backImage": "",
+    "price": 50,
+    "rarity": "replica",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "isNew": false,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": true,
+    "ratingAvg": 5,
+    "reviewCount": 0,
+    "effect": "3d-horizontal",
+    "categoryBg": "/uploads/1776711617089-1b39334a.webp",
+    "frontImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "priceRub": 1500,
+    "categoryOrder": 579,
+    "frontImageWidth": 600,
+    "frontImageHeight": 900
+  },
+  {
+    "id": "00f4c015-4ffa-470e-b3e8-1a7fc8a94399",
+    "title": "Капитан Британия",
+    "description": "Капитан Британия — это не просто сила. Это символ, который не ломается под давлением мира. Когда всё рушится, он остаётся — потому что за ним стоит не только мощь, но и вера. Его удары — это не ярость, а ответственность. Его полёт — это не бегство, а контроль над ситуацией. Он не ищет бой… но если ты стал угрозой — он станет границей, которую нельзя пересечь.",
+    "category": "Marvel",
+    "subcategory": "",
+    "frontImage": "/uploads/1776711905258-c42f4d56.webp",
+    "backImage": "",
+    "price": 50,
+    "rarity": "replica",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "isNew": false,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": true,
+    "ratingAvg": 5,
+    "reviewCount": 0,
+    "effect": "3d-horizontal",
+    "categoryBg": "/uploads/1776711896443-27dc54fb.webp",
+    "frontImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "priceRub": 1500,
+    "categoryOrder": 701,
+    "frontImageWidth": 600,
+    "frontImageHeight": 900
+  },
+  {
+    "id": "7381ee71-d2b3-4e30-bd95-e7e7b01a66e3",
+    "title": "Росомаха",
+    "description": "Росомаха — это не просто боец. Это инстинкт, который невозможно остановить. Он не считает удары — он их переживает… и идёт дальше. Боль для него — не слабость, а топливо. Его ярость не хаос — это чистая, выверенная агрессия. Когда другие падают, он встаёт. Когда бой кажется оконченным — он только начинается. Он не самый быстрый и не самый сильный… но он тот, кто остаётся последним.",
+    "category": "Marvel",
+    "subcategory": "",
+    "frontImage": "/uploads/1776711988118-90670ae3.webp",
+    "backImage": "",
+    "price": 50,
+    "rarity": "replica",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "isNew": false,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": true,
+    "ratingAvg": 5,
+    "reviewCount": 0,
+    "effect": "3d-horizontal",
+    "categoryBg": "/uploads/1776711983178-d3876f03.webp",
+    "frontImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "priceRub": 1500,
+    "categoryOrder": 741,
+    "frontImageWidth": 600,
+    "frontImageHeight": 900
+  },
+  {
+    "id": "754c483e-b512-44fc-aa90-345c0bf7c96e",
+    "title": "Тор",
+    "description": "Тор — это не просто сила. Это стихия, которая выбирает момент. Его удар — это гром, который невозможно предугадать. Его молот — не оружие, а приговор. Он не спешит… потому что знает: один точный удар решает всё. Когда небо темнеет — это не буря начинается… это он выходит на поле боя.",
+    "category": "Marvel",
+    "subcategory": "",
+    "frontImage": "/uploads/1776712066578-450f7f4a.webp",
+    "backImage": "",
+    "price": 50,
+    "rarity": "replica",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "isNew": false,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": true,
+    "ratingAvg": 5,
+    "reviewCount": 0,
+    "effect": "3d-horizontal",
+    "categoryBg": "/uploads/1776712025380-0d4cd7b3.webp",
+    "frontImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "priceRub": 1500,
+    "categoryOrder": 731,
+    "frontImageWidth": 600,
+    "frontImageHeight": 900
+  },
+  {
+    "id": "05ac84ed-b4a4-41a7-b929-854d12821bb7",
+    "title": "Халк против Геркулеса",
+    "description": "Халк против Геркулеса — это не просто бой. Это столкновение двух абсолютов, где сила перестаёт быть числом. Здесь нет тактики — только давление, которое ломает всё вокруг. Каждый удар — как удар по самой реальности. Земля трещит не от ярости… а от того, что не выдерживает их мощи. Это не битва за победу — это проверка, кто выдержит дольше. И когда кажется, что предел достигнут… они только начинают.",
+    "category": "Marvel",
+    "subcategory": "",
+    "frontImage": "/uploads/1776712085880-72cc3b9b.webp",
+    "backImage": "",
+    "price": 50,
+    "rarity": "replica",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "isNew": false,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": true,
+    "ratingAvg": 5,
+    "reviewCount": 0,
+    "effect": "3d-horizontal",
+    "categoryBg": "/uploads/1776712080252-3e12631c.webp",
+    "frontImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "priceRub": 1500,
+    "categoryOrder": 792,
+    "frontImageWidth": 600,
+    "frontImageHeight": 900
+  },
+  {
+    "id": "fa0cf7c7-786c-4055-8f17-272db53d8ad6",
+    "title": "Горячая троица",
+    "description": "Горячая троица — это не просто команда. Это искушение, замаскированное под союз. Они не давят силой — они забирают контроль незаметно. Ты думаешь, что выбираешь… но выбор уже сделан за тебя. Их стиль — это скорость, точность и игра на слабостях. Они не идут напролом — они обходят, обвязывают, затягивают. И когда ты понимаешь, что попался… уже слишком поздно.",
+    "category": "Marvel",
+    "subcategory": "",
+    "frontImage": "/uploads/1776712320770-5b5e7cc6.webp",
+    "backImage": "/uploads/1776712472493-61484526.webp",
+    "price": 40,
+    "rarity": "limited",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "isNew": false,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": false,
+    "ratingAvg": 5,
+    "reviewCount": 0,
+    "effect": "vario",
+    "categoryBg": "/uploads/1776712280723-72c4f7fa.webp",
+    "frontImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "backImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "priceRub": 1000,
+    "categoryOrder": 800,
+    "varioSmoothing": 0.18,
+    "frontImageWidth": 600,
+    "frontImageHeight": 900
+  },
+  {
+    "id": "70579ca5-f336-4f0c-b6b0-f8373628cd09",
+    "title": "Новогодние разборки",
+    "description": "Новогодние разборки — это не праздник. Это хаос, завернутый в гирлянды. Пока все отвлекаются на огни — начинается настоящее движение. Здесь нет правил… только шанс, который появляется один раз. Ты можешь пожелать что угодно — но цена всегда выше, чем кажется. В этом раунде выигрывает не сильнейший… а тот, кто рискнул в нужный момент.",
+    "category": "Marvel",
+    "subcategory": "",
+    "frontImage": "/uploads/1776712408834-41662f47.webp",
+    "backImage": "",
+    "price": 40,
+    "rarity": "limited",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "isNew": false,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": false,
+    "ratingAvg": 5,
+    "reviewCount": 0,
+    "effect": "3d-horizontal",
+    "categoryBg": "/uploads/1776712396982-9db72553.webp",
+    "frontImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "priceRub": 1000,
+    "categoryOrder": 2026,
+    "frontImageWidth": 600,
+    "frontImageHeight": 900
+  },
+  {
+    "id": "13eca865-ee61-49bd-8f18-15d7c117b366",
+    "title": "Симбиот",
+    "description": "Симбиот — это не костюм. Это выбор… который делает тебя. Сила растёт — но вместе с ней исчезают границы. Ты быстрее, сильнее, опаснее… но уже не один. Он не просит контроля — он его забирает. И в тот момент, когда ты думаешь, что управляешь им… он уже стал тобой.",
+    "category": "Marvel",
+    "subcategory": "",
+    "frontImage": "/uploads/1776712682453-f156f124.webp",
+    "backImage": "/uploads/1776712688886-67d769c9.webp",
+    "price": 25,
+    "rarity": "common",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "isNew": false,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": true,
+    "ratingAvg": 5,
+    "reviewCount": 0,
+    "effect": "vario",
+    "categoryBg": "/uploads/1776712707492-a02e772a.webp",
+    "frontImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "backImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "priceRub": 750,
+    "categoryOrder": 3,
+    "varioSmoothing": 0.18,
+    "frontImageWidth": 600,
+    "frontImageHeight": 900
+  },
+  {
+    "id": "5e690b15-8b18-480c-bbaf-499c57cffd06",
+    "title": "Битва за справедливость",
+    "description": "Это не просто битва. Это выбор… где чувства сильнее ударов. Он слышит мир иначе — через боль, страх и правду. Она знает его слабости… потому что когда-то была его силой. Каждый их удар — не про победу, а про то, что осталось между ними. Он держится за справедливость. Она — за хаос. И в этом столкновении нет героев… есть только те, кто не смог отпустить.",
+    "category": "Marvel",
+    "subcategory": "",
+    "frontImage": "/uploads/1776712809598-caf60de1.webp",
+    "backImage": "",
+    "price": 25,
+    "rarity": "common",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "isNew": false,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": true,
+    "ratingAvg": 5,
+    "reviewCount": 0,
+    "frontHoverGif": "/uploads/videos/ca443a80-6952-480a-b711-8fd11cdfedcf.mp4",
+    "effect": "3d-horizontal",
+    "categoryBg": "/uploads/1776712734522-ffb7a28c.webp",
+    "frontImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "priceRub": 750,
+    "categoryOrder": 8,
+    "frontImageWidth": 600,
+    "frontImageHeight": 900
+  },
+  {
+    "id": "63d0ef75-d0af-4abf-96ae-50e8f8c14c1c",
+    "title": "Джейк Локли/Стивен Грант/ Марк Спектр",
+    "description": "Он — не один. И никогда не был.\r\nМарк Спектр — это кулак. Стивен Грант — это разум. Джейк Локли — это тень, о которой не говорят.\r\nОни не спорят за контроль… они борются за право быть главным.\r\n\r\nКогда мир ломается — появляется один из них. Когда этого мало — выходят все.\r\nИ тогда это уже не человек… это система.\r\n\r\nОн не предсказуем. Не стабилен. Не остановим.\r\nПотому что ты не сражаешься с одним врагом…\r\nты сражаешься с тремя.",
+    "category": "Marvel",
+    "subcategory": "",
+    "frontImage": "/uploads/1776712923508-6d2fc155.webp",
+    "backImage": "/uploads/1776712940604-80fdb9af.webp",
+    "price": 25,
+    "rarity": "novelty",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "isNew": false,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": true,
+    "ratingAvg": 5,
+    "reviewCount": 0,
+    "rarities": [
+      "common",
+      "novelty"
+    ],
+    "effect": "vario",
+    "categoryBg": "/uploads/1776712901487-671ad847.webp",
+    "frontImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "backImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "middleImage": "/uploads/1776712935082-f29b7a77.webp",
+    "middleImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "priceRub": 750,
+    "categoryOrder": 11,
+    "varioSmoothBlend": true,
+    "varioSmoothing": 0.18,
+    "frontImageWidth": 600,
+    "frontImageHeight": 900
+  },
+  {
+    "id": "684eed9d-ec8e-4345-8433-02399e14cb09",
+    "title": "Планета симбиотов",
+    "description": "Это не просто мир… это голод, ставший реальностью.\r\nЗдесь нет союзов — есть лишь временные связи, пока ты полезен.\r\nКаждый симбиот — это инстинкт, доведённый до предела. Вместе… они становятся чем-то большим.\r\nОни не делят власть — они её поглощают.\r\nОни не ищут врага — они становятся им.\r\nКогда они объединяются — исчезают правила.\r\nИсчезают границы. Исчезает шанс.\r\nЭто не битва, которую можно выиграть…\r\nэто конец, который приходит сам.",
+    "category": "Marvel",
+    "subcategory": "",
+    "frontImage": "/uploads/1776713166512-28655fe5.webp",
+    "backImage": "",
+    "price": 25,
+    "rarity": "common",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "isNew": false,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": true,
+    "ratingAvg": 5,
+    "reviewCount": 0,
+    "frontHoverGif": "/uploads/videos/17d64bd8-145b-44b2-ac2a-7f3d541c857f.mp4",
+    "effect": "3d-horizontal",
+    "categoryBg": "/uploads/1776713059836-40330bcf.webp",
+    "frontImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "priceRub": 750,
+    "categoryOrder": 13,
+    "frontImageWidth": 600,
+    "frontImageHeight": 900
+  },
+  {
+    "id": "be9e10fa-4f21-49ac-92ee-09a8dcd608f2",
+    "title": "Джонни Блейз/Призрачный гонщик",
+    "description": "Он думал, что это сделка… но это был приговор.\r\nДжонни Блейз отдал душу — и получил силу, которую уже нельзя вернуть.\r\n\r\nОгонь не греет. Он сжигает всё… включая того, кто его носит.\r\nВнутри него — не просто демон. Внутри него — наказание.\r\n\r\nКогда приходит ночь, он перестаёт быть человеком.\r\nИ тогда дорога превращается в ад.\r\n\r\nОн не ищет врагов… он находит виновных.\r\nИ если ты в этом списке — пламя уже рядом.",
+    "category": "Marvel",
+    "subcategory": "",
+    "frontImage": "/uploads/1776713421807-ab447223.webp",
+    "backImage": "/uploads/1776713428240-9163380b.webp",
+    "price": 25,
+    "rarity": "novelty",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "isNew": false,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": true,
+    "ratingAvg": 5,
+    "reviewCount": 0,
+    "rarities": [
+      "common",
+      "novelty"
+    ],
+    "effect": "vario",
+    "categoryBg": "/uploads/1776713449064-b664295e.webp",
+    "frontImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "backImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "priceRub": 750,
+    "categoryOrder": 18,
+    "varioSmoothing": 0.18,
+    "frontImageWidth": 600,
+    "frontImageHeight": 900
+  },
+  {
+    "id": "c0e75b42-d7c8-4b0e-aaaa-fa4b1adf9a08",
+    "title": "Дедпул",
+    "description": "Он не герой. И точно не злодей.\r\nОн — хаос, который научился стрелять первым.\r\n\r\nУэйд Уилсон сломан… но именно это делает его опасным.\r\nБоль не останавливает его — она его ускоряет.\r\n\r\nОн смеётся там, где другие ломаются.\r\nГоворит, когда нужно молчать.\r\nИ выживает… когда это уже невозможно.\r\n\r\nТы не просчитаешь его ход.\r\nПотому что даже он сам не знает, что сделает дальше.\r\n\r\nИ в этом его сила.",
+    "category": "Marvel",
+    "subcategory": "",
+    "frontImage": "/uploads/1776713515033-982ed5d6.webp",
+    "backImage": "",
+    "price": 25,
+    "rarity": "common",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "isNew": false,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": true,
+    "ratingAvg": 5,
+    "reviewCount": 0,
+    "frontHoverGif": "/uploads/videos/ba806e02-ef78-4f65-87a8-a35b89e5e786.mp4",
+    "effect": "3d-horizontal",
+    "categoryBg": "/uploads/1776713490762-12399b33.webp",
+    "frontImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "priceRub": 750,
+    "categoryOrder": 19,
+    "frontImageWidth": 600,
+    "frontImageHeight": 900
+  },
+  {
+    "id": "c5488900-2136-41fb-99a7-e900015fae55",
+    "title": "Стэн Ли",
+    "description": "Он не сражается… он создаёт тех, кто побеждает.\r\nСтэн Ли — это разум, из которого родились легенды.\r\n\r\nПока другие ищут силу — он придумывает её.\r\nПока герои дерутся — он пишет их судьбу.\r\n\r\nЕго оружие — воображение.\r\nЕго поле боя — целая вселенная.\r\n\r\nОн не выходит на арену…\r\nпотому что без него её бы просто не было.",
+    "category": "Marvel",
+    "subcategory": "",
+    "frontImage": "/uploads/1776713643867-f61e4bff.webp",
+    "backImage": "",
+    "price": 40,
+    "rarity": "limited",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "isNew": false,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": true,
+    "ratingAvg": 5,
+    "reviewCount": 0,
+    "rarities": [
+      "limited",
+      "novelty"
+    ],
+    "frontHoverGif": "/uploads/videos/9bd42cc2-73d0-4428-b509-2e1c474b2a25.mp4",
+    "effect": "3d-horizontal",
+    "categoryBg": "/uploads/1776713665377-a7452716.webp",
+    "frontImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "priceRub": 1000,
+    "categoryOrder": 20,
+    "frontImageWidth": 600,
+    "frontImageHeight": 900
+  },
+  {
+    "id": "297be939-1c13-41b0-80a7-adba776cf148",
+    "title": "Безумие в изнанке",
+    "description": "Он думал, что безумие — это его предел…\r\nпока не встретил то, что не знает границ.\r\n\r\nКарнаж — это хаос. Но здесь хаос сталкивается с чем-то глубже…\r\nс первобытным страхом, который не контролировать.\r\n\r\nЭто не схватка силы — это столкновение кошмаров.\r\nГде один разрушает ради удовольствия…\r\nа другой — потому что так устроен.\r\n\r\nИ в этом мире нет победителей.\r\nПотому что когда безумие встречает нечто страшнее…\r\nначинается настоящий ад.",
+    "category": "Marvel",
+    "subcategory": "",
+    "frontImage": "/uploads/1776713771947-eeab93b5.webp",
+    "backImage": "",
+    "price": 25,
+    "rarity": "common",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "isNew": false,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": true,
+    "ratingAvg": 5,
+    "reviewCount": 0,
+    "effect": "3d-horizontal",
+    "categoryBg": "/uploads/1776713800643-c0a0e8b8.webp",
+    "frontImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "priceRub": 750,
+    "categoryOrder": 33,
+    "frontImageWidth": 600,
+    "frontImageHeight": 900
+  },
+  {
+    "id": "a4343162-49a8-4f48-841d-18dc6dfc0ef4",
+    "title": "Тони Старк",
+    "description": "Он не родился сильным… он стал им.\r\nТони Старк — это человек, который превратил интеллект в оружие.\r\n\r\nПока другие надеются на силу — он создаёт её с нуля.\r\nКаждый его костюм — это ответ. Каждая версия — шаг вперёд.\r\n\r\nОн может проиграть бой… но никогда — войну разума.\r\nПотому что просчитывает её до начала.\r\n\r\nИ когда всё сводится к одному решению…\r\nон выбирает не победу — он выбирает цену.",
+    "category": "Marvel",
+    "subcategory": "",
+    "frontImage": "/uploads/1776713871950-8dc03043.webp",
+    "backImage": "/uploads/1776713882947-f3845ae7.webp",
+    "price": 25,
+    "rarity": "common",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "isNew": false,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": true,
+    "ratingAvg": 5,
+    "reviewCount": 0,
+    "effect": "vario",
+    "categoryBg": "/uploads/1776713897313-9b5659de.webp",
+    "frontImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "backImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "priceRub": 750,
+    "categoryOrder": 35,
+    "varioSmoothing": 0.18,
+    "frontImageWidth": 600,
+    "frontImageHeight": 900
+  },
+  {
+    "id": "8acdd577-ba2c-4236-8926-47fe25f6f95a",
+    "title": "Ксенофаг",
+    "description": "Он не герой… и не злодей.\r\nОн — ответ на угрозу, которую нельзя остановить иначе.\r\n\r\nКсенофаг не ищет битву — он находит цель.\r\nИ если ты носишь в себе симбиота… ты уже отмечен.\r\n\r\nОн не чувствует страха. Не делает ошибок.\r\nОн идёт до конца, потому что для него нет «потом».\r\n\r\nКаждый шаг — это охота.\r\nКаждый удар — это приговор.\r\n\r\nИ когда он появляется…\r\nзначит, кто-то уже проиграл.",
+    "category": "Marvel",
+    "subcategory": "",
+    "frontImage": "/uploads/1776714197165-171e61f6.webp",
+    "backImage": "",
+    "price": 25,
+    "rarity": "common",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "isNew": false,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": true,
+    "ratingAvg": 5,
+    "reviewCount": 0,
+    "effect": "3d-horizontal",
+    "categoryBg": "/uploads/1776714213928-fe042913.webp",
+    "frontImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "priceRub": 750,
+    "categoryOrder": 36,
+    "frontImageWidth": 600,
+    "frontImageHeight": 900
+  },
+  {
+    "id": "2eb00e19-2bb9-49da-a70b-fc2225d0be1b",
+    "title": "Доктор Дум",
+    "description": "Он не просит власти — он берёт её, потому что достоин. Доктор Дум не верит в случай — он сам создаёт исход. Где другие видят магию, он видит инструмент, где другие строят планы — он уже живёт в их финале. Его разум — оружие, его воля — закон. Он не крадёт победу — он переписывает правила игры. И если он появился — значит, выбора у тебя больше нет.",
+    "category": "Marvel",
+    "subcategory": "",
+    "frontImage": "/uploads/1776718075668-201e0f24.webp",
+    "backImage": "/uploads/1776718081841-0c55c0a1.webp",
+    "price": 25,
+    "rarity": "common",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "isNew": false,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": true,
+    "ratingAvg": 5,
+    "reviewCount": 0,
+    "effect": "vario",
+    "categoryBg": "/uploads/1776718059096-d828a17f.webp",
+    "frontImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "backImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "priceRub": 750,
+    "categoryOrder": 37,
+    "varioSmoothing": 0.18,
+    "frontImageWidth": 600,
+    "frontImageHeight": 900
+  },
+  {
+    "id": "cf13b821-46ed-4f96-b188-2c9fd2158313",
+    "title": "Мистик",
+    "description": "Она не меняет лица — она стирает границы между ними. Мистик не притворяется… она становится. Сегодня союзник, завтра угроза, и ты никогда не узнаешь, в какой момент всё пошло не так. Там, где другие играют роли, она пишет их заново. Её сила — не в форме, а в обмане, который ты принимаешь за правду. И если ты смотришь ей в глаза… возможно, уже слишком поздно.",
+    "category": "Marvel",
+    "subcategory": "",
+    "frontImage": "/uploads/1776718180572-1a572386.webp",
+    "backImage": "/uploads/1776718195039-c3841522.webp",
+    "price": 25,
+    "rarity": "common",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "isNew": false,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": true,
+    "ratingAvg": 5,
+    "reviewCount": 0,
+    "effect": "vario",
+    "categoryBg": "/uploads/1776718159823-74ce35bf.webp",
+    "frontImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "backImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "middleImage": "/uploads/1776718189955-65808560.webp",
+    "middleImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "priceRub": 750,
+    "categoryOrder": 38,
+    "varioSmoothBlend": true,
+    "varioSmoothing": 0.18,
+    "frontImageWidth": 600,
+    "frontImageHeight": 900
+  },
+  {
+    "id": "96bf295c-a473-4ad2-b288-f2dc19657103",
+    "title": "Циклоп",
+    "description": "Он не прицеливается… он смотрит — и этого достаточно. Он не прицеливается… он смотрит — и этого достаточно. Циклоп не выбирает силу, он сдерживает её каждую секунду. За визором — энергия, способная пробить всё, что встанет на пути. Ошибка здесь стоит слишком дорого, поэтому он не ошибается. Это не просто удар — это линия, которая делит поле боя на «до» и «после». И если он снял контроль… значит, кто-то уже исчез.\r\nЦиклоп не выбирает силу, он сдерживает её каждую секунду. За визором — энергия, способная пробить всё, что встанет на пути. Ошибка здесь стоит слишком дорого, поэтому он не ошибается. Это не просто удар — это линия, которая делит поле боя на «до» и «после». И если он снял контроль… значит, кто-то уже исчез.",
+    "category": "Marvel",
+    "subcategory": "",
+    "frontImage": "/uploads/1776718269755-fda6c962.webp",
+    "backImage": "/uploads/1776718277523-b80c7ba4.webp",
+    "price": 25,
+    "rarity": "common",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "isNew": false,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": true,
+    "ratingAvg": 5,
+    "reviewCount": 0,
+    "effect": "vario",
+    "categoryBg": "/uploads/1776718251062-93ebb48e.webp",
+    "frontImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "backImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "priceRub": 750,
+    "categoryOrder": 39,
+    "varioSmoothing": 0.18,
+    "frontImageWidth": 600,
+    "frontImageHeight": 900
+  },
+  {
+    "id": "8713d207-c64a-452b-a3bb-d257c51cead8",
+    "title": "Разум Магнето",
+    "description": "Он не ломает — он подчиняет. Магнето не тянется к силе, он управляет самой основой мира. Металл для него — не защита, а продолжение воли. Ты думаешь, что держишь оружие… пока оно не решает, что больше не твоё. Его разум — это поле, где каждая деталь уже под контролем. И если он выбрал тебя… значит, ты уже часть его игры.",
+    "category": "Marvel",
+    "subcategory": "",
+    "frontImage": "/uploads/1776718334104-8fda8f53.webp",
+    "backImage": "",
+    "price": 25,
+    "rarity": "common",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "isNew": false,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": true,
+    "ratingAvg": 5,
+    "reviewCount": 0,
+    "effect": "3d-horizontal",
+    "categoryBg": "/uploads/1776718342940-26d3bf64.webp",
+    "frontImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "priceRub": 750,
+    "categoryOrder": 40,
+    "frontImageWidth": 600,
+    "frontImageHeight": 900
+  },
+  {
+    "id": "96d86223-3f92-4dd5-a11a-a795eae17b47",
+    "title": "Поздравление от Спайди",
+    "description": "Он спасает город… но иногда спасает и моменты. Человек-паук не ищет признания — ему достаточно одного взгляда, ради которого стоит рискнуть всем. Между падением и полётом он всегда выбирает держать тебя крепче. Его сила — не только в ударах, а в том, что он остаётся, когда другие уходят. И если он рядом… значит, даже в хаосе есть место для чувств.",
+    "category": "Marvel",
+    "subcategory": "",
+    "frontImage": "/uploads/1776718397362-2a42cd62.webp",
+    "backImage": "",
+    "price": 40,
+    "rarity": "limited",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "isNew": false,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": false,
+    "ratingAvg": 5,
+    "reviewCount": 0,
+    "frontHoverGif": "/uploads/videos/b4c710fb-a6d7-450b-b9c0-4851b6e8568e.mp4",
+    "effect": "3d-horizontal",
+    "categoryBg": "/uploads/1776718382013-251bcf30.webp",
+    "frontImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "priceRub": 1000,
+    "categoryOrder": 41,
+    "frontImageWidth": 600,
+    "frontImageHeight": 900
+  },
+  {
+    "id": "440f69c0-5bbb-40d6-adcd-ae2469966687",
+    "title": "Джессика Дрю",
+    "description": "Она не предупреждает — она появляется. Джессика Дрю не играет в открытую, её бой начинается до того, как ты понял, что уже внутри него. Биояд — не просто сила, это контроль, который сжимается в нужный момент. Она не давит — она лишает выбора. Ты думаешь, что держишь ситуацию… пока она не решает иначе. И когда ты оглянешься — её уже нет, а страх остался.",
+    "category": "Marvel",
+    "subcategory": "",
+    "frontImage": "/uploads/1776718573946-539d0b88.webp",
+    "backImage": "/uploads/1776718583428-f1827a45.webp",
+    "price": 35,
+    "rarity": "adult",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "isNew": false,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": true,
+    "ratingAvg": 5,
+    "reviewCount": 0,
+    "effect": "vario",
+    "categoryBg": "/uploads/1776718600471-da32a1c2.webp",
+    "frontImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "backImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "priceRub": 800,
+    "categoryOrder": 42,
+    "varioSmoothing": 0.18,
+    "frontImageWidth": 600,
+    "frontImageHeight": 900
+  },
+  {
+    "id": "9f9376bc-5c49-40d7-b9b0-d06a5fde653d",
+    "title": "Меченый",
+    "description": "Он не целится — он уже попал. Меченый не промахивается, потому что для него нет «мимо». Любая вещь в его руках — это приговор, который уже летит к цели. Ты можешь спрятаться, уклониться, убежать… но это лишь отсрочка. Его точность — это не навык, это правило, которое нельзя нарушить. И если он выбрал тебя — вопрос не «попадёт ли», а «когда».",
+    "category": "Marvel",
+    "subcategory": "",
+    "frontImage": "/uploads/1776718636896-0323adf8.webp",
+    "backImage": "",
+    "price": 25,
+    "rarity": "common",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "isNew": false,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": true,
+    "ratingAvg": 5,
+    "reviewCount": 0,
+    "effect": "3d-horizontal",
+    "categoryBg": "/uploads/1776718645776-a332ae2c.webp",
+    "frontImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "priceRub": 750,
+    "categoryOrder": 43,
+    "frontImageWidth": 600,
+    "frontImageHeight": 900
+  },
+  {
+    "id": "d0667c33-e8d7-4658-9621-726ce6c64691",
+    "title": "Райот",
+    "description": "Он не думает — он рвёт. Райот не знает сомнений, потому что создан для одного: уничтожать. Сила для него — не преимущество, а состояние по умолчанию. Боль его не останавливает, страх не существует, границ просто нет. Это не бой… это лавина, которая идёт вперёд, пока всё не станет тишиной. И если он рядом — значит, конец уже начался.",
+    "category": "Marvel",
+    "subcategory": "",
+    "frontImage": "/uploads/1776718699338-388db2e4.webp",
+    "backImage": "",
+    "price": 25,
+    "rarity": "common",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "isNew": false,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": true,
+    "ratingAvg": 5,
+    "reviewCount": 0,
+    "frontHoverGif": "/uploads/videos/0614a270-6fb1-4480-97b6-6db835ff804f.mp4",
+    "effect": "3d-horizontal",
+    "categoryBg": "/uploads/1776718691039-967ca810.webp",
+    "frontImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "priceRub": 750,
+    "categoryOrder": 44,
+    "frontImageWidth": 600,
+    "frontImageHeight": 900
+  },
+  {
+    "id": "ea987edb-8984-4363-8fb5-e743a760b8fa",
+    "title": "Росомаха",
+    "description": "Он не просит — он берёт. Эти когти не просто оружие, это продолжение его ярости. Каждый удар — как приговор, каждый шаг — как вызов. Росомаха не ищет лёгких путей: он идёт напролом, ломая всё на своём пути. И если когти вышли — бой уже проигран… просто ты ещё об этом не знаешь.",
+    "category": "Marvel",
+    "subcategory": "",
+    "frontImage": "/uploads/1776718740196-d350177d.webp",
+    "backImage": "/uploads/1776718757299-5f55e438.webp",
+    "price": 25,
+    "rarity": "common",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "isNew": false,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": true,
+    "ratingAvg": 5,
+    "reviewCount": 0,
+    "effect": "vario",
+    "categoryBg": "/uploads/1776718726413-dd3404de.webp",
+    "frontImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "backImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "priceRub": 750,
+    "categoryOrder": 45,
+    "varioSmoothing": 0.18,
+    "frontImageWidth": 600,
+    "frontImageHeight": 900
+  },
+  {
+    "id": "6c4a11c3-cd6f-4d80-981e-850c321eaede",
+    "title": "Кэйбл",
+    "description": "Он пришёл не спасать — он пришёл закончить. Кэйбл знает, чем заканчиваются слабость и ошибки: будущим, которого лучше не видеть. Его разум — стратегия, его сила — приговор. В этом мире он не герой и не злодей… он необходимость. И когда он берёт оружие — исход уже просчитан.",
+    "category": "Marvel",
+    "subcategory": "",
+    "frontImage": "/uploads/1776718800814-72720f03.webp",
+    "backImage": "",
+    "price": 25,
+    "rarity": "common",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "isNew": false,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": true,
+    "ratingAvg": 5,
+    "reviewCount": 0,
+    "effect": "3d-horizontal",
+    "categoryBg": "/uploads/1776718787795-dc5ec5e5.webp",
+    "frontImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "priceRub": 750,
+    "categoryOrder": 46,
+    "frontImageWidth": 600,
+    "frontImageHeight": 900
+  },
+  {
+    "id": "2634d5d3-bd75-4264-a07d-561575490d90",
+    "title": "Мэри Джейн",
+    "description": "Её сила — не в ударах, а в том, как она меняет ход игры. Мэри Джейн — это момент тишины перед бурей, точка, где герой вспоминает, за что сражается. Она не выходит на поле боя, но именно она даёт ясность и холодный расчёт. Иногда победа — это не сила… а правильная мысль в нужный момент.",
+    "category": "Marvel",
+    "subcategory": "",
+    "frontImage": "/uploads/1776718867620-d5fd533c.webp",
+    "backImage": "/uploads/1776718886750-b58c1482.webp",
+    "price": 35,
+    "rarity": "adult",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "isNew": false,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": true,
+    "ratingAvg": 5,
+    "reviewCount": 0,
+    "effect": "vario",
+    "categoryBg": "/uploads/1776718828584-76703300.webp",
+    "frontImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "backImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "priceRub": 800,
+    "categoryOrder": 47,
+    "varioSmoothing": 0.18,
+    "frontImageWidth": 600,
+    "frontImageHeight": 900
+  },
+  {
+    "id": "b704aa53-24db-49d9-8d72-793d738b1f04",
+    "title": "Возвращение в адскую кухню",
+    "description": "Когда город снова тонет во тьме, он возвращается туда, где страх чувствует себя как дома. Без громких слов, без лишних движений — только точность, скорость и холодный расчёт. Сорвиголова не ищет света, он становится им в самых тёмных местах. И если ты его не видишь… это не значит, что он не рядом.",
+    "category": "Marvel",
+    "subcategory": "",
+    "frontImage": "/uploads/1776718997503-85407a5e.webp",
+    "backImage": "",
+    "price": 25,
+    "rarity": "common",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "isNew": false,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": true,
+    "ratingAvg": 5,
+    "reviewCount": 0,
+    "frontHoverGif": "/uploads/videos/0ffa7b59-5864-419c-97a5-9d78e49e737d.mp4",
+    "effect": "3d-horizontal",
+    "categoryBg": "/uploads/1776718992556-53464c29.webp",
+    "frontImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "priceRub": 750,
+    "categoryOrder": 48,
+    "frontImageWidth": 600,
+    "frontImageHeight": 900
+  },
+  {
+    "id": "03df3b09-1d34-4989-bba7-79ce288855c0",
+    "title": "Паучье чутье",
+    "description": "Это не просто реакция — это предупреждение, которое приходит раньше удара. Паучье чутьё не даёт времени на сомнения: тело двигается раньше мысли, спасая там, где уже поздно думать. В мире, где опасность повсюду, это не преимущество… это выживание. И если оно сработало — значит, кто-то уже сделал ошибку.",
+    "category": "Marvel",
+    "subcategory": "",
+    "frontImage": "/uploads/1776719293965-9b2c7973.webp",
+    "backImage": "/uploads/1776719299775-eaac3524.webp",
+    "price": 25,
+    "rarity": "common",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "isNew": false,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": true,
+    "ratingAvg": 5,
+    "reviewCount": 0,
+    "effect": "vario",
+    "categoryBg": "/uploads/1776721868996-b1a04ba1.webp",
+    "frontImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "backImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "priceRub": 750,
+    "categoryOrder": 49,
+    "varioSmoothing": 0.18,
+    "frontImageWidth": 600,
+    "frontImageHeight": 900
+  },
+  {
+    "id": "2e42c858-476a-4a6f-8c96-754667e1fff9",
+    "title": "Разорванный Нью-Йорк",
+    "description": "Город треснул — и вместе с ним рухнули правила. Здесь больше нет границ между героем и злодеем, только хаос и шанс выжить. Нью-Йорк стал ареной, где побеждает не справедливость, а тот, кто быстрее адаптируется. И если ты играешь по старым правилам… ты уже проиграл.",
+    "category": "Marvel",
+    "subcategory": "",
+    "frontImage": "/uploads/1776719424009-69b5ee32.webp",
+    "backImage": "",
+    "price": 40,
+    "rarity": "limited",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "isNew": false,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": true,
+    "ratingAvg": 5,
+    "reviewCount": 0,
+    "frontHoverGif": "/uploads/videos/b0131c65-fd6c-4173-b2c7-35f03a2b6749.mp4",
+    "effect": "3d-horizontal",
+    "categoryBg": "/uploads/1776719403575-e3fdc017.webp",
+    "frontImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "priceRub": 1000,
+    "categoryOrder": 50,
+    "frontImageWidth": 600,
+    "frontImageHeight": 900
+  },
+  {
+    "id": "24ad1924-2c80-4e6f-aea7-0dd5ca072e53",
+    "title": "Женщина-неведимка",
+    "description": "Её не видно — но именно она держит линию. Сьюзан Шторм не просто исчезает, она контролирует поле боя, превращая пространство в оружие. Щиты, которые не пробить, атаки, которые приходят из ниоткуда — против неё нет прямого решения. Она — защита, о которую ломаются враги… и удар, который они не успевают заметить.",
+    "category": "Marvel",
+    "subcategory": "",
+    "frontImage": "/uploads/1776720048848-b5346192.webp",
+    "backImage": "/uploads/1776720052213-10e57e20.webp",
+    "price": 35,
+    "rarity": "adult",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "isNew": false,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": true,
+    "ratingAvg": 5,
+    "reviewCount": 0,
+    "effect": "vario",
+    "categoryBg": "/uploads/1776720039548-be66a6ba.webp",
+    "frontImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "backImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "priceRub": 800,
+    "categoryOrder": 22,
+    "varioSmoothing": 0.18,
+    "frontImageWidth": 600,
+    "frontImageHeight": 900
+  },
+  {
+    "id": "ae274ff1-0fb8-4bfb-8192-c0461793a668",
+    "title": "Существо",
+    "description": "Он выглядит как разрушение — но внутри он держит команду. Существо не про скорость и не про хитрость… он про удар, который меняет всё. Каменная кожа, которую не сломать, и сила, способная перевернуть исход боя за секунды. Но главное — его воля: он стоит до конца, даже когда остальные уже падают.",
+    "category": "Marvel",
+    "subcategory": "",
+    "frontImage": "/uploads/1776720095796-a5b332d1.webp",
+    "backImage": "",
+    "price": 25,
+    "rarity": "common",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "isNew": false,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": true,
+    "ratingAvg": 5,
+    "reviewCount": 0,
+    "effect": "3d-horizontal",
+    "categoryBg": "/uploads/1776720084303-07010412.webp",
+    "frontImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "priceRub": 750,
+    "categoryOrder": 23,
+    "frontImageWidth": 600,
+    "frontImageHeight": 900
+  },
+  {
+    "id": "a7019660-0b86-4ecf-bc71-95d9024a7c59",
+    "title": "Мистер Фантастик",
+    "description": "Он не просто сражается — он просчитывает исход ещё до первого удара. Мистер Фантастик — это интеллект, который превращает любую ситуацию в решение. Его тело гибкое, но его главное оружие — разум, способный найти выход там, где его нет. Пока другие дерутся… он уже выиграл.",
+    "category": "Marvel",
+    "subcategory": "",
+    "frontImage": "/uploads/1776720131303-7e033054.webp",
+    "backImage": "",
+    "price": 25,
+    "rarity": "common",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "isNew": false,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": true,
+    "ratingAvg": 5,
+    "reviewCount": 0,
+    "frontHoverGif": "/uploads/videos/49425fef-ed1e-46ab-9a65-b634556255b4.mp4",
+    "effect": "3d-horizontal",
+    "categoryBg": "/uploads/1776720127302-a394c899.webp",
+    "frontImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "priceRub": 750,
+    "categoryOrder": 24,
+    "frontImageWidth": 600,
+    "frontImageHeight": 900
+  },
+  {
+    "id": "86850b29-ff6b-4963-ae81-19da13858462",
+    "title": "Чёрная кошка",
+    "description": "Она не ломает замки — она заставляет их открываться сами. Чёрная кошка — это грация, риск и идеальный расчёт в каждом движении. Там, где другие крадутся, она уже исчезает с добычей. Удача? Нет. Это стиль.",
+    "category": "Marvel",
+    "subcategory": "",
+    "frontImage": "/uploads/1776720447357-79e2cade.webp",
+    "backImage": "/uploads/1776720455109-108cfd72.webp",
+    "price": 35,
+    "rarity": "adult",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "isNew": false,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": true,
+    "ratingAvg": 5,
+    "reviewCount": 0,
+    "effect": "vario",
+    "categoryBg": "/uploads/1776720387261-82669152.webp",
+    "frontImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "backImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "priceRub": 800,
+    "categoryOrder": 26,
+    "varioSmoothing": 0.18,
+    "frontImageWidth": 600,
+    "frontImageHeight": 900
+  },
+  {
+    "id": "9d23de6d-8974-4222-94e0-a3a849d30088",
+    "title": "Гамбит",
+    "description": "Он не играет в карты — он играет судьбой. Гамбит превращает каждое движение в рискованный, но безупречный ход. Там, где другие рассчитывают шансы, он уже выигрывает, оставляя после себя лишь вспышку фиолетовой энергии.",
+    "category": "Marvel",
+    "subcategory": "",
+    "frontImage": "/uploads/1776720518363-8e73f6df.webp",
+    "backImage": "",
+    "price": 25,
+    "rarity": "common",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "isNew": false,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": true,
+    "ratingAvg": 5,
+    "reviewCount": 0,
+    "frontHoverGif": "/uploads/videos/0e2005c5-8e41-4878-b377-77a994d0de02.mp4",
+    "effect": "3d-horizontal",
+    "categoryBg": "/uploads/1776720504014-7c069f1f.webp",
+    "frontImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "priceRub": 750,
+    "categoryOrder": 27,
+    "frontImageWidth": 600,
+    "frontImageHeight": 900
+  },
+  {
+    "id": "112073b3-73ea-4047-a2ed-2a625eb48436",
+    "title": "Атака Росомахи",
+    "description": "Это не атака — это приговор. Росомаха врывается в бой, разрывая всё на своём пути, и никакая броня не выдержит его ярости. Один рывок — и исход уже решён.",
+    "category": "Marvel",
+    "subcategory": "",
+    "frontImage": "/uploads/1776720583669-27baef0e.webp",
+    "backImage": "",
+    "price": 25,
+    "rarity": "common",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "isNew": false,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": true,
+    "ratingAvg": 5,
+    "reviewCount": 0,
+    "effect": "3d-horizontal",
+    "categoryBg": "/uploads/1776720574226-8fd9ff00.webp",
+    "frontImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "priceRub": 750,
+    "categoryOrder": 28,
+    "frontImageWidth": 600,
+    "frontImageHeight": 900
+  },
+  {
+    "id": "bb330f84-357c-4e5b-86e0-dd2c802f3bb8",
+    "title": "Кровавая резня",
+    "description": "Это не кража — это хаос, вырвавшийся на свободу. Карнаж не играет по правилам: он забирает всё, что видит, и оставляет после себя лишь пустоту. Один его ход — и у соперника уже ничего не осталось.",
+    "category": "Marvel",
+    "subcategory": "",
+    "frontImage": "/uploads/1776720632116-15d49ed2.webp",
+    "backImage": "",
+    "price": 25,
+    "rarity": "common",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "isNew": false,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": true,
+    "ratingAvg": 5,
+    "reviewCount": 0,
+    "frontHoverGif": "/uploads/videos/4aeee8e6-95f7-4f5c-9be5-57f9507f36d0.mp4",
+    "effect": "3d-horizontal",
+    "categoryBg": "/uploads/1776720626271-40d28ecf.webp",
+    "frontImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "priceRub": 750,
+    "categoryOrder": 29,
+    "frontImageWidth": 600,
+    "frontImageHeight": 900
+  },
+  {
+    "id": "7c2cc7c7-c419-4cf4-a893-e355630d4b6e",
+    "title": "Росомаха против Дэдпула",
+    "description": "Это не бой — это шоу без правил. Когда сходятся Дэдпул и Росомаха, начинается чистый хаос: шутки вперемешку с лезвиями, регенерация против безумия. И сколько бы это ни длилось — проигравших тут не будет… потому что оба просто не умеют сдаваться.",
+    "category": "Marvel",
+    "subcategory": "",
+    "frontImage": "/uploads/1776720701970-063ce899.webp",
+    "backImage": "",
+    "price": 25,
+    "rarity": "common",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "isNew": false,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": true,
+    "ratingAvg": 5,
+    "reviewCount": 0,
+    "frontHoverGif": "/uploads/videos/085433ab-fb39-4476-907f-bc6b9e39f037.mp4",
+    "effect": "3d-horizontal",
+    "categoryBg": "/uploads/1776720685759-e380feeb.webp",
+    "frontImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "priceRub": 750,
+    "categoryOrder": 4,
+    "frontImageWidth": 600,
+    "frontImageHeight": 900
+  },
+  {
+    "id": "da646727-71ba-4ad4-8459-de2080c501a6",
+    "title": "Тор",
+    "description": "Это не просто герой — это сама буря в человеческом облике. Тор не нуждается в доказательствах: его сила говорит за него, а молнии подчиняются одному лишь взмаху руки. Когда он выходит на поле, бой превращается в стихийное бедствие, где исход предрешён ещё до первого удара.",
+    "category": "Marvel",
+    "subcategory": "",
+    "frontImage": "/uploads/1776720760382-49daa64b.webp",
+    "backImage": "/uploads/1776720765236-579fd982.webp",
+    "price": 25,
+    "rarity": "common",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "isNew": false,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": true,
+    "ratingAvg": 5,
+    "reviewCount": 0,
+    "effect": "vario",
+    "categoryBg": "/uploads/1776720741629-5c132adf.webp",
+    "frontImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "backImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "priceRub": 750,
+    "categoryOrder": 6,
+    "varioSmoothing": 0.18,
+    "frontImageWidth": 600,
+    "frontImageHeight": 900
+  },
+  {
+    "id": "a5d3de14-af56-41af-9387-c4fdc49da49a",
+    "title": "Джонни Шторм",
+    "description": "Он не просто зажигает — он становится пламенем. Джонни Шторм превращает дерзость в огненную силу, вспыхивая ярче любой звезды. Один момент — и перед тобой уже не человек, а живой взрыв, который сжигает всё на своём пути.",
+    "category": "Marvel",
+    "subcategory": "",
+    "frontImage": "/uploads/1776720880167-449f4f06.webp",
+    "backImage": "/uploads/1776720883448-b6d48a80.webp",
+    "price": 25,
+    "rarity": "common",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "isNew": false,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": true,
+    "ratingAvg": 5,
+    "reviewCount": 0,
+    "effect": "vario",
+    "categoryBg": "/uploads/1776720868592-2c57b6a1.webp",
+    "frontImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "backImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "priceRub": 750,
+    "categoryOrder": 21,
+    "varioSmoothing": 0.18,
+    "frontImageWidth": 600,
+    "frontImageHeight": 900
+  },
+  {
+    "id": "5342f84b-1d5b-4a0d-9065-c468e9047ec9",
+    "title": "Налл",
+    "description": "Он не просто тьма — он её источник. Налл стоит за пределами обычной силы, превращая страх в оружие и создавая целые миры под своей волей. Там, где он появляется, даже боги начинают сомневаться в своём бессмертии.",
+    "category": "Marvel",
+    "subcategory": "",
+    "frontImage": "/uploads/1776720910217-1f62d1c7.webp",
+    "backImage": "",
+    "price": 25,
+    "rarity": "common",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "isNew": false,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": true,
+    "ratingAvg": 5,
+    "reviewCount": 0,
+    "frontHoverGif": "/uploads/videos/cd0fd9c4-c024-4e63-a57a-78833910225d.mp4",
+    "effect": "3d-horizontal",
+    "categoryBg": "/uploads/1776720905779-033f90a3.webp",
+    "frontImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "priceRub": 750,
+    "categoryOrder": 14,
+    "frontImageWidth": 600,
+    "frontImageHeight": 900
+  },
+  {
+    "id": "10ee321f-582a-4ce3-8c60-54b49295f93b",
+    "title": "Месть Лунного рыцаря",
+    "description": "Это не просто удар — это возмездие из тени. Лунный рыцарь действует хладнокровно и точно, превращая каждую атаку в акт правосудия. В нужный момент он становится неуловимым оружием, которое решает исход боя одним движением.",
+    "category": "Marvel",
+    "subcategory": "",
+    "frontImage": "/uploads/1776720959587-8917c023.webp",
+    "backImage": "",
+    "price": 25,
+    "rarity": "common",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "isNew": false,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": true,
+    "ratingAvg": 5,
+    "reviewCount": 0,
+    "frontHoverGif": "/uploads/videos/cdf65965-0b2c-4695-a18b-f334d6c05ac4.mp4",
+    "effect": "3d-horizontal",
+    "categoryBg": "/uploads/1776720948696-886d5a93.webp",
+    "frontImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "priceRub": 750,
+    "categoryOrder": 15,
+    "frontImageWidth": 600,
+    "frontImageHeight": 900
+  },
+  {
+    "id": "e068261e-ca58-44ed-87f4-2dd07a021be6",
+    "title": "Блейд против симбиотов",
+    "description": "Он привык охотиться на вампиров… но теперь ставки выше. Блэйд вступает в бой с тем, что не знает страха и не чувствует боли. Его клинки режут не только плоть — они обрывают саму угрозу. Когда он выходит на охоту, правила меняются.",
+    "category": "Marvel",
+    "subcategory": "",
+    "frontImage": "/uploads/1776721062933-6cd96b01.webp",
+    "backImage": "",
+    "price": 25,
+    "rarity": "common",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "isNew": false,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": true,
+    "ratingAvg": 5,
+    "reviewCount": 0,
+    "frontHoverGif": "/uploads/videos/2e9d15c7-8281-4bdc-95f9-c007ac3f7f2e.mp4",
+    "effect": "3d-horizontal",
+    "categoryBg": "/uploads/1776721047681-f881e93e.webp",
+    "frontImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "priceRub": 750,
+    "categoryOrder": 5,
+    "frontImageWidth": 600,
+    "frontImageHeight": 900
+  },
+  {
+    "id": "30da5cd9-158c-4f75-b571-e41b34b8b678",
+    "title": "Алая Ведьма",
+    "description": "Она не сражается — она переписывает правила. Алая Ведьма превращает хаос в инструмент, где любое событие — лишь вариант, который можно изменить. Там, где другие ищут выход, она просто создаёт новую реальность.",
+    "category": "Marvel",
+    "subcategory": "",
+    "frontImage": "/uploads/1776721101536-cde0657b.webp",
+    "backImage": "/uploads/1776721108912-0f7cd44d.webp",
+    "price": 35,
+    "rarity": "adult",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "isNew": false,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": true,
+    "ratingAvg": 5,
+    "reviewCount": 0,
+    "effect": "vario",
+    "categoryBg": "/uploads/1776721085923-e32e7da7.webp",
+    "frontImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "backImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "priceRub": 800,
+    "categoryOrder": 31,
+    "varioSmoothing": 0.18,
+    "frontImageWidth": 600,
+    "frontImageHeight": 900
+  },
+  {
+    "id": "23ce41fc-f9fd-47a6-b1cf-eb92d4153092",
+    "title": "Эдди Брок",
+    "description": "Эдди Брок — человек, в котором живёт нечто большее.\r\nСимбиот даёт ему силу, но каждый бой — это борьба за контроль.\r\nГде заканчивается человек… и начинается Веном?",
+    "category": "Marvel",
+    "subcategory": "",
+    "frontImage": "/uploads/1776721272428-fb97e8de.webp",
+    "backImage": "/uploads/1776721277146-3b2bfcdf.webp",
+    "price": 25,
+    "rarity": "common",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "isNew": false,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": true,
+    "ratingAvg": 5,
+    "reviewCount": 0,
+    "effect": "vario",
+    "categoryBg": "/uploads/1776721257039-fda65fe0.webp",
+    "frontImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "backImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "priceRub": 750,
+    "categoryOrder": 16,
+    "varioSmoothing": 0.18,
+    "frontImageWidth": 600,
+    "frontImageHeight": 900
+  },
+  {
+    "id": "e52e2246-b380-412e-bb2c-5126db498a4d",
+    "title": "Блэйд",
+    "description": "Полукровка. Охотник. Палач.\r\nБлэйд не знает пощады — только цель.\r\nКогда наступает ночь, начинается его охота.",
+    "category": "Marvel",
+    "subcategory": "",
+    "frontImage": "/uploads/1776721326634-05ba5a27.webp",
+    "backImage": "/uploads/1776721332259-caf3288e.webp",
+    "price": 25,
+    "rarity": "common",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "isNew": false,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": true,
+    "ratingAvg": 5,
+    "reviewCount": 0,
+    "effect": "morphing",
+    "categoryBg": "/uploads/1776721311701-8f7af736.webp",
+    "frontImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "backImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "priceRub": 750,
+    "categoryOrder": 34,
+    "varioSmoothing": 0.18,
+    "frontImageWidth": 600,
+    "frontImageHeight": 900
+  },
+  {
+    "id": "15b74941-d316-4463-8326-0c57a503a610",
+    "title": "Пробуждение Ралка",
+    "description": "Пробуждение Ралка — это момент, когда ярость берёт верх.\r\nЕго сила возрастает до разрушительного уровня, сметая всё на пути.\r\nКарточка добавляет 500 очков к баллам силы.",
+    "category": "Marvel",
+    "subcategory": "",
+    "frontImage": "/uploads/1776722762680-e3595b05.webp",
+    "backImage": "/uploads/1776722799983-62f0af54.webp",
+    "price": 25,
+    "rarity": "novelty",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "isNew": false,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": true,
+    "ratingAvg": 5,
+    "reviewCount": 0,
+    "rarities": [
+      "common",
+      "novelty"
+    ],
+    "effect": "vario",
+    "categoryBg": "/uploads/1776722742640-3e70c189.webp",
+    "frontImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "backImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "middleImage": "/uploads/1776722791693-c5691c48.webp",
+    "middleImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "priceRub": 750,
+    "categoryOrder": 2,
+    "varioSmoothBlend": true,
+    "varioSmoothing": 0.18,
+    "frontImageWidth": 600,
+    "frontImageHeight": 900
+  },
+  {
+    "id": "6d42571e-d61c-43cf-a54d-2bbfb539c5cc",
+    "title": "Карнаж",
+    "description": "Карнаж усиливается в бою, чем дольше длится сражение.\r\nКаждая атака делает его опаснее.\r\nВ конце остаётся только один… и это не враг.",
+    "category": "Marvel",
+    "subcategory": "",
+    "frontImage": "/uploads/1776798368704-7f0e7460.webp",
+    "backImage": "",
+    "price": 25,
+    "rarity": "common",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "isNew": false,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": true,
+    "ratingAvg": 5,
+    "reviewCount": 0,
+    "effect": "3d-horizontal",
+    "categoryBg": "/uploads/1776798359258-aa92e109.webp",
+    "frontImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "priceRub": 750,
+    "categoryOrder": 17,
+    "frontImageWidth": 600,
+    "frontImageHeight": 900
+  },
+  {
+    "id": "60d2242d-ffee-47eb-8557-6ec72053221c",
+    "title": "Паучье чутьё",
+    "description": "Паучье чутьё не подводит.\r\nСпайди предугадывает опасность и действует первым.\r\nДаже в безвыходной ситуации он находит путь к победе.",
+    "category": "Marvel",
+    "subcategory": "",
+    "frontImage": "/uploads/1776798431467-0a45422c.webp",
+    "backImage": "",
+    "price": 25,
+    "rarity": "common",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "isNew": false,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": true,
+    "ratingAvg": 5,
+    "reviewCount": 0,
+    "frontHoverGif": "/uploads/videos/6b58e74e-5636-4ee4-9097-0369a8fe2619.mp4",
+    "effect": "3d-horizontal",
+    "categoryBg": "/uploads/1776798422968-922f8ca9.webp",
+    "frontImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "priceRub": 750,
+    "categoryOrder": 25,
+    "frontImageWidth": 600,
+    "frontImageHeight": 900
+  },
+  {
+    "id": "1e0d7605-3e4e-4314-8fed-2da0b95a869a",
+    "title": "Эра будущего",
+    "description": "Будущее принадлежит тем, кто быстрее.\r\nЭти двое действуют как одно целое, опережая любую угрозу.\r\nПротив них нет шансов — исход решён ещё до начала боя.",
+    "category": "Marvel",
+    "subcategory": "",
+    "frontImage": "/uploads/1776798556005-812782aa.webp",
+    "backImage": "",
+    "price": 40,
+    "rarity": "limited",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "isNew": false,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": true,
+    "ratingAvg": 5,
+    "reviewCount": 0,
+    "frontHoverGif": "/uploads/videos/051c6fcd-0051-4076-8a9b-09f33480485c.mp4",
+    "effect": "3d-horizontal",
+    "categoryBg": "/uploads/1776798571704-b2cfd9ab.webp",
+    "frontImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "priceRub": 1000,
+    "categoryOrder": 30,
+    "frontImageWidth": 600,
+    "frontImageHeight": 900
+  },
+  {
+    "id": "41f1f082-13c0-4a49-b48a-2d39aa1816b9",
+    "title": "Иллюзия Мистерио",
+    "description": "Реальность — лишь то, что он позволяет видеть.\r\nМистерио запутывает разум, стирая грань между правдой и иллюзией.\r\nПока враг сомневается — он уже проиграл.",
+    "category": "Marvel",
+    "subcategory": "",
+    "frontImage": "/uploads/1776798667043-0c66dd1d.webp",
+    "backImage": "/uploads/1776798672208-bd22c782.webp",
+    "price": 25,
+    "rarity": "common",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "isNew": false,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": true,
+    "ratingAvg": 5,
+    "reviewCount": 0,
+    "effect": "vario",
+    "categoryBg": "/uploads/1776798655982-9b7b8761.webp",
+    "frontImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "backImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "priceRub": 750,
+    "categoryOrder": 32,
+    "varioSmoothing": 0.18,
+    "frontImageWidth": 600,
+    "frontImageHeight": 900
+  },
+  {
+    "id": "a0b8cf0a-ad35-4171-aa79-8a532bab9d57",
+    "title": "Стэн Ли",
+    "description": "Он создал героев, которые стали легендами.\r\nЕго воображение изменило целые миры и вдохновило поколения.\r\nТам, где есть история — его влияние бессмертно.",
+    "category": "Marvel",
+    "subcategory": "",
+    "frontImage": "/uploads/1776798720817-7edf5036.webp",
+    "backImage": "",
+    "price": 25,
+    "rarity": "common",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "isNew": false,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": true,
+    "ratingAvg": 5,
+    "reviewCount": 0,
+    "frontHoverGif": "/uploads/videos/a8e4fb9f-f02d-463d-bb92-742e93d45e20.mp4",
+    "effect": "3d-horizontal",
+    "categoryBg": "/uploads/1776798709863-746f1f29.webp",
+    "frontImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "priceRub": 750,
+    "categoryOrder": 0,
+    "frontImageWidth": 600,
+    "frontImageHeight": 900
+  },
+  {
+    "id": "b59506d6-f9ae-41ea-83a7-291891142493",
+    "title": "Призрачный гонщик",
+    "description": "Он не герой и не злодей — он приговор.\r\nАдское пламя очищает всё на своём пути.\r\nКарта обнуляет бонусы противника и автоматически выигрывает раунд при атаке.",
+    "category": "Marvel",
+    "subcategory": "",
+    "frontImage": "/uploads/1776798864473-7971f216.webp",
+    "backImage": "",
+    "price": 50,
+    "rarity": "common",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "isNew": false,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": true,
+    "ratingAvg": 5,
+    "reviewCount": 0,
+    "effect": "3d-horizontal",
+    "categoryBg": "/uploads/1776798859570-9d2558cf.webp",
+    "frontImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "priceRub": 1500,
+    "categoryOrder": 78,
+    "frontImageWidth": 600,
+    "frontImageHeight": 900
+  },
+  {
+    "id": "830142af-8cf0-4d8d-b488-cdf8af6bb425",
+    "title": "Зелёный гоблин",
+    "description": "Он смеётся последним — потому что всё уже просчитал.\r\nКаждая бомба — это ловушка, каждый ход — часть плана.\r\nКарта снижает характеристики противника и побеждает в категории интеллекта.",
+    "category": "Marvel",
+    "subcategory": "",
+    "frontImage": "/uploads/1776798998101-8ee27310.webp",
+    "backImage": "",
+    "price": 50,
+    "rarity": "common",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "isNew": false,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": true,
+    "ratingAvg": 5,
+    "reviewCount": 0,
+    "effect": "3d-horizontal",
+    "categoryBg": "/uploads/1776798964325-8eb8508f.webp",
+    "frontImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "priceRub": 1500,
+    "categoryOrder": 500,
+    "frontImageWidth": 600,
+    "frontImageHeight": 900
+  },
+  {
+    "id": "b6e23584-302a-4e7e-be7a-0962a25458fb",
+    "title": "Святая Святых",
+    "description": "Здесь реальность подчиняется воле мага.\r\nКаждое заклинание становится сильнее, чем должно быть.\r\nКарта удваивает очки особых умений.",
+    "category": "Marvel",
+    "subcategory": "",
+    "frontImage": "/uploads/1776799061723-136cc8cc.webp",
+    "backImage": "",
+    "price": 50,
+    "rarity": "common",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "isNew": false,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": true,
+    "ratingAvg": 5,
+    "reviewCount": 0,
+    "effect": "3d-horizontal",
+    "categoryBg": "/uploads/1776799056200-84bf21a1.webp",
+    "frontImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "priceRub": 1500,
+    "categoryOrder": 737,
+    "frontImageWidth": 600,
+    "frontImageHeight": 900
+  },
+  {
+    "id": "b4756487-129d-459f-95fc-a93c766f9fe9",
+    "title": "Леший",
+    "description": "Он не охотится — он ждёт.\r\nТы уже в его болоте, просто ещё этого не понял.\r\nКарта снижает скорость противника и побеждает в категории силы.",
+    "category": "Marvel",
+    "subcategory": "",
+    "frontImage": "/uploads/1776799236845-af2b1e9b.webp",
+    "backImage": "",
+    "price": 50,
+    "rarity": "common",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "isNew": false,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": true,
+    "ratingAvg": 5,
+    "reviewCount": 0,
+    "effect": "3d-horizontal",
+    "categoryBg": "/uploads/1776799228627-59cecb59.webp",
+    "frontImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "priceRub": 1500,
+    "categoryOrder": 112,
+    "frontImageWidth": 600,
+    "frontImageHeight": 900
+  },
+  {
+    "id": "cc846207-55a1-43e1-865c-b3b163984100",
+    "title": "Черепашки навсегда",
+    "description": "Это уже не воспоминание.\r\nЭто финал, к которому всё шло.\r\nЧетыре брата, прошедшие через время, боль и бесконечные сражения.\r\nОни знают, чем всё закончится — потому что уже были здесь раньше.\r\nИ каждый раз исход был одинаков.",
+    "category": "TMNT",
+    "subcategory": "",
+    "frontImage": "/uploads/1776902874657-eb52acee.webp",
+    "backImage": "/uploads/1776902882831-416e1e65.webp",
+    "price": 40,
+    "rarity": "limited",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "isNew": false,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": true,
+    "ratingAvg": 5,
+    "reviewCount": 0,
+    "effect": "vario",
+    "categoryBg": "/uploads/1776902870896-cea2d0b2.webp",
+    "frontImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "backImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "middleImage": "/uploads/1776902879413-3d7f2817.webp",
+    "middleImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "priceRub": 1000,
+    "categoryOrder": 30,
+    "varioSmoothBlend": true,
+    "varioSmoothing": 0.18,
+    "frontImageWidth": 761,
+    "frontImageHeight": 1024
+  },
+  {
+    "id": "adbee5a6-495b-41e9-96f8-9cebb9fea625",
+    "title": "Безумный мутант (насекомообразное)",
+    "description": "Эксперимент, который должен был изменить всё, создал нечто иное. Она сохранила разум, но внутри пробудился хищник. Холодный расчёт заменил страх, а инстинкты стали её оружием. Она не атакует без причины — но если цель выбрана, скрыться или сбежать уже невозможно.",
+    "category": "TMNT",
+    "subcategory": "",
+    "frontImage": "/uploads/1777206544336-ed83d088.webp",
+    "backImage": "/uploads/1777206549597-9f09058e.webp",
+    "price": 40,
+    "rarity": "limited",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "isNew": false,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": true,
+    "ratingAvg": 5,
+    "reviewCount": 0,
+    "rarities": [
+      "novelty",
+      "limited"
+    ],
+    "effect": "vario",
+    "categoryBg": "/uploads/1777206520076-a39feb3d.webp",
+    "frontImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "backImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "priceRub": 1000,
+    "categoryOrder": 10,
+    "varioSmoothing": 0.18,
+    "frontImageWidth": 761,
+    "frontImageHeight": 1024
+  },
+  {
+    "id": "a8e43454-76d8-417d-a724-a61b1c4b66d6",
+    "title": "Безумный мутант (одноглазый)",
+    "description": "Эксперимент изменил его навсегда, но снаружи это почти незаметно. Он всё ещё выглядит человеком, контролирует себя и скрывает правду. Но внутри нарастает сила, которую уже невозможно сдерживать. Каждое движение даётся с трудом… потому что трансформация уже началась.Б",
+    "category": "TMNT",
+    "subcategory": "",
+    "frontImage": "/uploads/1777207127318-b6597e80.webp",
+    "backImage": "/uploads/1777207132921-ce83678b.webp",
+    "price": 40,
+    "rarity": "limited",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "isNew": false,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": true,
+    "ratingAvg": 5,
+    "reviewCount": 0,
+    "rarities": [
+      "novelty",
+      "limited"
+    ],
+    "effect": "vario",
+    "categoryBg": "/uploads/1777207080763-d7a5b10c.webp",
+    "frontImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "backImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "priceRub": 1000,
+    "categoryOrder": 20,
+    "varioSmoothing": 0.18,
+    "frontImageWidth": 761,
+    "frontImageHeight": 1024
+  },
+  {
+    "id": "c69952fc-8c8f-4f9d-aea8-ca265d5b455d",
+    "title": "Джуто Шишо  (Трибунал Ниндзя)",
+    "description": "Мастер оружия Трибунала ниндзя, чьи навыки отточены за пределами обычного понимания. Он ведёт избранных в Кузницу духа, где слабые ломаются, а сильные обретают новую силу. Его движения точны, а решения окончательны. В бою он не допускает ошибок — потому что сам стал воплощением мастерства.",
+    "category": "TMNT",
+    "subcategory": "",
+    "frontImage": "/uploads/1777207369104-fb528784.webp",
+    "backImage": "/uploads/1777207375237-6857cecb.webp",
+    "price": 25,
+    "rarity": "novelty",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "isNew": false,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": true,
+    "ratingAvg": 5,
+    "reviewCount": 0,
+    "effect": "vario",
+    "categoryBg": "/uploads/1777207326158-afa49cdb.webp",
+    "frontImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "backImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "priceRub": 750,
+    "categoryOrder": 28,
+    "varioSmoothing": 0.18,
+    "frontImageWidth": 761,
+    "frontImageHeight": 1024
+  },
+  {
+    "id": "a6448256-459d-4f2c-9159-6e736df8d8b0",
+    "title": "Сплинтер — боевая стойка",
+    "description": "Сплинтер не просто мастер — он воплощение дисциплины и опыта. Его движения точны и экономны, а каждый удар продуман заранее. Он не полагается на силу, а использует разум и технику. В бою он спокоен, потому что уже знает исход ещё до первого движения противника.",
+    "category": "TMNT",
+    "subcategory": "",
+    "frontImage": "/uploads/1777207480349-6ffd499b.webp",
+    "backImage": "",
+    "price": 25,
+    "rarity": "novelty",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "isNew": false,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": true,
+    "ratingAvg": 5,
+    "reviewCount": 0,
+    "effect": "3d-horizontal",
+    "categoryBg": "/uploads/1777207450695-f4f1fa86.webp",
+    "frontImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "priceRub": 750,
+    "categoryOrder": 26,
+    "frontImageWidth": 761,
+    "frontImageHeight": 1024
+  },
+  {
+    "id": "9e90191a-910a-4e46-9ebf-c897b8d7baff",
+    "title": "Возвращение Спайди",
+    "description": "Когда всё идёт не по плану, он возвращается в игру. Быстрее, резче и опаснее. Спайди использует скорость и ловкость, чтобы переломить ход боя в последний момент. Там, где другие сдаются, он делает невозможное — и вырывает победу буквально из рук противника.",
+    "category": "Marvel",
+    "subcategory": "",
+    "frontImage": "/uploads/1777207695877-60cbf7f9.webp",
+    "backImage": "",
+    "price": 40,
+    "rarity": "limited",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "isNew": false,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": true,
+    "ratingAvg": 5,
+    "reviewCount": 0,
+    "rarities": [
+      "limited",
+      "novelty"
+    ],
+    "effect": "3d-horizontal",
+    "categoryBg": "/uploads/1777207665910-ce5dc3a4.webp",
+    "frontImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "priceRub": 1000,
+    "categoryOrder": 1,
+    "frontImageWidth": 600,
+    "frontImageHeight": 900
+  },
+  {
+    "id": "bca5fc63-31f1-4c36-bc3a-7cdb6544861a",
+    "title": "Что, если...",
+    "description": "",
+    "category": "Marvel",
+    "subcategory": "",
+    "frontImage": "/uploads/1777207764407-e9528e20.webp",
+    "backImage": "/uploads/1777207774120-6873d2d7.webp",
+    "price": 40,
+    "rarity": "limited",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "isNew": false,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": true,
+    "ratingAvg": 5,
+    "reviewCount": 0,
+    "rarities": [
+      "novelty",
+      "limited"
+    ],
+    "effect": "vario",
+    "categoryBg": "/uploads/1777207745616-2da1a4bc.webp",
+    "frontImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "backImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "priceRub": 1000,
+    "categoryOrder": 10,
+    "varioSmoothing": 0.18,
+    "frontImageWidth": 600,
+    "frontImageHeight": 900
+  },
+  {
+    "id": "a2a40a99-88ab-49b1-8651-6d7bbc42561d",
+    "title": "Человек-паук Нуар",
+    "description": "Город утонул во тьме, где правда стоит дешевле страха. Он не герой — он приговор для тех, кто прячется в тенях. Человек-паук Нуар действует тихо, быстро и без лишних слов. Его не видят… но чувствуют. И если он вышел на охоту — значит, кто-то уже не доживёт до рассвета.",
+    "category": "Marvel",
+    "subcategory": "",
+    "frontImage": "/uploads/1777207862296-daaeca91.webp",
+    "backImage": "/uploads/1777207865644-0b606467.webp",
+    "price": 25,
+    "rarity": "novelty",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "isNew": false,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": true,
+    "ratingAvg": 5,
+    "reviewCount": 0,
+    "effect": "vario",
+    "categoryBg": "/uploads/1777216845518-8667f5e3.webp",
+    "frontImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "backImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "priceRub": 750,
+    "categoryOrder": 51,
+    "varioSmoothing": 0.18,
+    "frontImageWidth": 600,
+    "frontImageHeight": 900
   }
 ]

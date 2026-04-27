@@ -232,7 +232,7 @@
     "frontImage": "/uploads/1776085549889-4be4e8cb.webp",
     "backImage": "/uploads/1776085557356-7fe62cac.webp",
     "price": 40,
-    "rarity": "adult",
+    "rarity": "limited",
     "stats": {
       "power": 50,
       "speed": 50,
@@ -245,10 +245,6 @@
     "inStock": false,
     "ratingAvg": 5,
     "reviewCount": 0,
-    "rarities": [
-      "adult",
-      "limited"
-    ],
     "boughtTogetherIds": [
       "9a17e901-20c5-41cb-8515-d3e5d702b70d"
     ],
@@ -762,7 +758,7 @@
     "frontImage": "/uploads/1776103858314-4e54cb3a.webp",
     "backImage": "/uploads/1776103865395-d0f84262.webp",
     "price": 40,
-    "rarity": "adult",
+    "rarity": "limited",
     "stats": {
       "power": 50,
       "speed": 50,
@@ -775,10 +771,6 @@
     "inStock": false,
     "ratingAvg": 5,
     "reviewCount": 0,
-    "rarities": [
-      "adult",
-      "limited"
-    ],
     "boughtTogetherIds": [
       "9a17e901-20c5-41cb-8515-d3e5d702b70d",
       "b1ce562d-71ec-4480-86b0-10ba17d9e26f"
@@ -2310,7 +2302,7 @@
     "frontImage": "/uploads/1776710403082-0676d94b.webp",
     "backImage": "/uploads/1776710407016-18d0d4fa.webp",
     "price": 25,
-    "rarity": "common",
+    "rarity": "novelty",
     "stats": {
       "power": 50,
       "speed": 50,
@@ -2341,7 +2333,11 @@
     "categoryOrder": 5,
     "varioSmoothing": 0.18,
     "frontImageWidth": 600,
-    "frontImageHeight": 900
+    "frontImageHeight": 900,
+    "rarities": [
+      "common",
+      "novelty"
+    ]
   },
   {
     "id": "bb8faf66-a5a2-4705-8ebc-65e2be338dcc",
@@ -2812,7 +2808,7 @@
     "frontImage": "/uploads/1776712320770-5b5e7cc6.webp",
     "backImage": "/uploads/1776712472493-61484526.webp",
     "price": 40,
-    "rarity": "adult",
+    "rarity": "limited",
     "stats": {
       "power": 50,
       "speed": 50,
@@ -2825,10 +2821,6 @@
     "inStock": false,
     "ratingAvg": 5,
     "reviewCount": 0,
-    "rarities": [
-      "adult",
-      "limited"
-    ],
     "effect": "vario",
     "categoryBg": "/uploads/1776712280723-72c4f7fa.webp",
     "frontImageFocus": {
@@ -2975,7 +2967,7 @@
     "frontImage": "/uploads/1776712923508-6d2fc155.webp",
     "backImage": "/uploads/1776712940604-80fdb9af.webp",
     "price": 25,
-    "rarity": "common",
+    "rarity": "novelty",
     "stats": {
       "power": 50,
       "speed": 50,
@@ -2988,6 +2980,10 @@
     "inStock": true,
     "ratingAvg": 5,
     "reviewCount": 0,
+    "rarities": [
+      "common",
+      "novelty"
+    ],
     "effect": "vario",
     "categoryBg": "/uploads/1776712901487-671ad847.webp",
     "frontImageFocus": {
@@ -3061,7 +3057,7 @@
     "frontImage": "/uploads/1776713421807-ab447223.webp",
     "backImage": "/uploads/1776713428240-9163380b.webp",
     "price": 25,
-    "rarity": "common",
+    "rarity": "novelty",
     "stats": {
       "power": 50,
       "speed": 50,
@@ -3074,6 +3070,10 @@
     "inStock": true,
     "ratingAvg": 5,
     "reviewCount": 0,
+    "rarities": [
+      "common",
+      "novelty"
+    ],
     "effect": "vario",
     "categoryBg": "/uploads/1776713449064-b664295e.webp",
     "frontImageFocus": {
@@ -3140,8 +3140,8 @@
     "subcategory": "",
     "frontImage": "/uploads/1776713643867-f61e4bff.webp",
     "backImage": "",
-    "price": 25,
-    "rarity": "common",
+    "price": 40,
+    "rarity": "limited",
     "stats": {
       "power": 50,
       "speed": 50,
@@ -3154,6 +3154,10 @@
     "inStock": true,
     "ratingAvg": 5,
     "reviewCount": 0,
+    "rarities": [
+      "limited",
+      "novelty"
+    ],
     "frontHoverGif": "/uploads/videos/9bd42cc2-73d0-4428-b509-2e1c474b2a25.mp4",
     "effect": "3d-horizontal",
     "categoryBg": "/uploads/1776713665377-a7452716.webp",
@@ -3165,7 +3169,7 @@
       "x": 50,
       "y": 50
     },
-    "priceRub": 750,
+    "priceRub": 1000,
     "categoryOrder": 20,
     "frontImageWidth": 600,
     "frontImageHeight": 900
@@ -4492,7 +4496,7 @@
     "frontImage": "/uploads/1776722762680-e3595b05.webp",
     "backImage": "/uploads/1776722799983-62f0af54.webp",
     "price": 25,
-    "rarity": "common",
+    "rarity": "novelty",
     "stats": {
       "power": 50,
       "speed": 50,
@@ -4505,6 +4509,10 @@
     "inStock": true,
     "ratingAvg": 5,
     "reviewCount": 0,
+    "rarities": [
+      "common",
+      "novelty"
+    ],
     "effect": "vario",
     "categoryBg": "/uploads/1776722742640-3e70c189.webp",
     "frontImageFocus": {
@@ -4614,8 +4622,8 @@
     "subcategory": "",
     "frontImage": "/uploads/1776798556005-812782aa.webp",
     "backImage": "",
-    "price": 25,
-    "rarity": "common",
+    "price": 40,
+    "rarity": "limited",
     "stats": {
       "power": 50,
       "speed": 50,
@@ -4639,7 +4647,7 @@
       "x": 50,
       "y": 50
     },
-    "priceRub": 750,
+    "priceRub": 1000,
     "categoryOrder": 30,
     "frontImageWidth": 600,
     "frontImageHeight": 900
@@ -4732,7 +4740,7 @@
     "subcategory": "",
     "frontImage": "/uploads/1776798864473-7971f216.webp",
     "backImage": "",
-    "price": 25,
+    "price": 50,
     "rarity": "common",
     "stats": {
       "power": 50,
@@ -4756,7 +4764,7 @@
       "x": 50,
       "y": 50
     },
-    "priceRub": 750,
+    "priceRub": 1500,
     "categoryOrder": 78,
     "frontImageWidth": 600,
     "frontImageHeight": 900
@@ -4769,7 +4777,7 @@
     "subcategory": "",
     "frontImage": "/uploads/1776798998101-8ee27310.webp",
     "backImage": "",
-    "price": 25,
+    "price": 50,
     "rarity": "common",
     "stats": {
       "power": 50,
@@ -4793,8 +4801,8 @@
       "x": 50,
       "y": 50
     },
-    "priceRub": 750,
-    "categoryOrder": 5,
+    "priceRub": 1500,
+    "categoryOrder": 500,
     "frontImageWidth": 600,
     "frontImageHeight": 900
   },
@@ -4928,8 +4936,8 @@
     "subcategory": "",
     "frontImage": "/uploads/1777206544336-ed83d088.webp",
     "backImage": "/uploads/1777206549597-9f09058e.webp",
-    "price": 25,
-    "rarity": "novelty",
+    "price": 40,
+    "rarity": "limited",
     "stats": {
       "power": 50,
       "speed": 50,
@@ -4942,6 +4950,10 @@
     "inStock": true,
     "ratingAvg": 5,
     "reviewCount": 0,
+    "rarities": [
+      "novelty",
+      "limited"
+    ],
     "effect": "vario",
     "categoryBg": "/uploads/1777206520076-a39feb3d.webp",
     "frontImageFocus": {
@@ -4956,7 +4968,7 @@
       "x": 50,
       "y": 50
     },
-    "priceRub": 750,
+    "priceRub": 1000,
     "categoryOrder": 10,
     "varioSmoothing": 0.18,
     "frontImageWidth": 761,
@@ -4970,8 +4982,8 @@
     "subcategory": "",
     "frontImage": "/uploads/1777207127318-b6597e80.webp",
     "backImage": "/uploads/1777207132921-ce83678b.webp",
-    "price": 25,
-    "rarity": "novelty",
+    "price": 40,
+    "rarity": "limited",
     "stats": {
       "power": 50,
       "speed": 50,
@@ -4984,6 +4996,10 @@
     "inStock": true,
     "ratingAvg": 5,
     "reviewCount": 0,
+    "rarities": [
+      "novelty",
+      "limited"
+    ],
     "effect": "vario",
     "categoryBg": "/uploads/1777207080763-d7a5b10c.webp",
     "frontImageFocus": {
@@ -4998,7 +5014,7 @@
       "x": 50,
       "y": 50
     },
-    "priceRub": 750,
+    "priceRub": 1000,
     "categoryOrder": 20,
     "varioSmoothing": 0.18,
     "frontImageWidth": 761,
@@ -5105,6 +5121,10 @@
     "inStock": true,
     "ratingAvg": 5,
     "reviewCount": 0,
+    "rarities": [
+      "limited",
+      "novelty"
+    ],
     "effect": "3d-horizontal",
     "categoryBg": "/uploads/1777207665910-ce5dc3a4.webp",
     "frontImageFocus": {
@@ -5128,8 +5148,8 @@
     "subcategory": "",
     "frontImage": "/uploads/1777207764407-e9528e20.webp",
     "backImage": "/uploads/1777207774120-6873d2d7.webp",
-    "price": 25,
-    "rarity": "novelty",
+    "price": 40,
+    "rarity": "limited",
     "stats": {
       "power": 50,
       "speed": 50,
@@ -5142,6 +5162,10 @@
     "inStock": true,
     "ratingAvg": 5,
     "reviewCount": 0,
+    "rarities": [
+      "novelty",
+      "limited"
+    ],
     "effect": "vario",
     "categoryBg": "/uploads/1777207745616-2da1a4bc.webp",
     "frontImageFocus": {
@@ -5156,7 +5180,7 @@
       "x": 50,
       "y": 50
     },
-    "priceRub": 750,
+    "priceRub": 1000,
     "categoryOrder": 10,
     "varioSmoothing": 0.18,
     "frontImageWidth": 600,
@@ -5185,6 +5209,7 @@
     "ratingAvg": 5,
     "reviewCount": 0,
     "effect": "vario",
+    "categoryBg": "/uploads/1777216845518-8667f5e3.webp",
     "frontImageFocus": {
       "x": 50,
       "y": 50
@@ -5193,15 +5218,14 @@
       "x": 50,
       "y": 50
     },
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    },
     "priceRub": 750,
     "categoryOrder": 51,
     "varioSmoothing": 0.18,
     "frontImageWidth": 600,
-    "frontImageHeight": 900,
-    "categoryBg": "/uploads/1777216845518-8667f5e3.webp",
-    "categoryBgFocus": {
-      "x": 50,
-      "y": 50
-    }
+    "frontImageHeight": 900
   }
 ]

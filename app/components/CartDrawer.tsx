@@ -18,12 +18,20 @@ import { useCurrency } from "../context/CurrencyContext";
 import { useCategoryTiles } from "../context/CategoryFramesContext";
 import { getCardArtIntrinsicSize } from "../lib/cardArtIntrinsicSize";
 import { formatCardPrice } from "../lib/formatPrice";
+import { TelegramCheckoutButton } from "@/components/checkout/TelegramCheckoutButton";
+import { DeliveryCountryField } from "./DeliveryCountryField";
 
 export function CartDrawer() {
   const {
     cartItems,
     totalPriceByn,
     totalPriceRub,
+    deliveryCountry,
+    setDeliveryCountry,
+    deliveryPriceByn,
+    deliveryPriceRub,
+    orderTotalByn,
+    orderTotalRub,
     hydrated,
     cartOpen,
     closeCart,
@@ -34,6 +42,7 @@ export function CartDrawer() {
   const categoryTiles = useCategoryTiles();
   const [mounted, setMounted] = useState(false);
   const titleId = useId();
+  const deliveryFieldId = useId();
   const asideRef = useRef<HTMLDivElement>(null);
   const [swipePx, setSwipePx] = useState(0);
   const [swipeDragging, setSwipeDragging] = useState(false);
@@ -380,23 +389,54 @@ export function CartDrawer() {
               </ul>
 
               <div className="shrink-0 border-t border-white/[0.06] bg-black/20 px-4 py-4 backdrop-blur-md sm:px-6">
-                <div className="mb-4 flex items-baseline justify-between gap-3">
-                  <span className="text-sm text-zinc-500">Итого</span>
-                  <span className="bg-gradient-to-r from-purple-200 to-violet-200 bg-clip-text text-lg font-semibold tabular-nums text-transparent">
-                    {formatCardPrice(
-                      totalPriceByn,
-                      currency,
-                      currency === "RUB" ? totalPriceRub : undefined
-                    )}
-                  </span>
+                <DeliveryCountryField
+                  id={deliveryFieldId}
+                  value={deliveryCountry}
+                  onChange={setDeliveryCountry}
+                  className="mb-4"
+                />
+                <div className="mb-4 space-y-2 text-sm">
+                  <div className="flex items-baseline justify-between gap-3">
+                    <span className="text-zinc-500">Товары</span>
+                    <span className="tabular-nums text-zinc-200">
+                      {formatCardPrice(
+                        totalPriceByn,
+                        currency,
+                        currency === "RUB" ? totalPriceRub : undefined
+                      )}
+                    </span>
+                  </div>
+                  <div className="flex items-baseline justify-between gap-3">
+                    <span className="text-zinc-500">Доставка</span>
+                    <span className="tabular-nums text-zinc-200">
+                      {deliveryCountry
+                        ? formatCardPrice(
+                            deliveryPriceByn,
+                            currency,
+                            currency === "RUB"
+                              ? deliveryPriceRub
+                              : undefined
+                          )
+                        : "—"}
+                    </span>
+                  </div>
+                  <div className="flex items-baseline justify-between gap-3 border-t border-white/[0.08] pt-2">
+                    <span className="font-medium text-zinc-400">Итого</span>
+                    <span className="bg-gradient-to-r from-purple-200 to-violet-200 bg-clip-text text-lg font-semibold tabular-nums text-transparent">
+                      {deliveryCountry
+                        ? formatCardPrice(
+                            orderTotalByn,
+                            currency,
+                            currency === "RUB" ? orderTotalRub : undefined
+                          )
+                        : "—"}
+                    </span>
+                  </div>
                 </div>
-                <Link
-                  href="/checkout"
-                  onClick={closeCart}
-                  className="flex w-full items-center justify-center rounded-full bg-gradient-to-r from-purple-600 via-violet-600 to-fuchsia-600 py-3.5 text-sm font-semibold text-white shadow-[0_0_36px_rgba(168,85,247,0.45)] ring-1 ring-purple-400/40 transition hover:from-purple-500 hover:via-violet-500 hover:to-fuchsia-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-400/80"
-                >
-                  Оформить заказ
-                </Link>
+                <TelegramCheckoutButton
+                  onBeforeNavigate={closeCart}
+                  className="rounded-full py-4 text-[15px] shadow-[0_0_36px_rgba(124,58,237,0.5)]"
+                />
               </div>
             </>
           )}

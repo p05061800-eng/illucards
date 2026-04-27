@@ -12,7 +12,8 @@
     "lint": "eslint",
     "backfill:card-dims": "node scripts/backfill-card-front-dimensions.mjs",
     "vercel:link": "npx vercel@latest link",
-    "vercel:deploy": "npx vercel@latest deploy --prod"
+    "vercel:deploy": "npx vercel@latest deploy --prod",
+    "deploy": "git add . && git commit -m \"deploy\" && git push"
   },
   "dependencies": {
     "framer-motion": "^12.38.0",

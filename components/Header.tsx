@@ -99,7 +99,7 @@ export default function Header() {
         <div className="flex w-full min-w-0 flex-row items-center justify-between gap-2 md:w-auto md:flex-none md:flex-col md:items-start md:justify-start md:gap-0">
           <Link
             href="/"
-            className="site-wordmark shrink-0 text-xl font-bold tracking-tight"
+            className="site-wordmark shrink-0 text-xl font-normal tracking-[0.05em]"
           >
             IlluCards
           </Link>

@@ -39,6 +39,10 @@ type AuthContextValue = {
   loginWithTelegram: (
     profile: TelegramVerifiedProfile
   ) => { ok: true } | { ok: false; error: string };
+  /** После проверки кода на сервере: создаёт или поднимает локального пользователя по telegram id */
+  establishSessionFromTelegramUserId: (
+    telegramUserId: number
+  ) => { ok: true } | { ok: false; error: string };
   login: (email: string, password: string) => { ok: true } | { ok: false; error: string };
   logout: () => void;
 };
@@ -170,6 +174,38 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     []
   );
 
+  const establishSessionFromTelegramUserId = useCallback(
+    (telegramUserId: number): { ok: true } | { ok: false; error: string } => {
+      if (!Number.isFinite(telegramUserId) || telegramUserId <= 0) {
+        return { ok: false, error: "Некорректный идентификатор пользователя." };
+      }
+      const users = readUsers();
+      let found = users.find((u) => u.telegramId === telegramUserId);
+      if (!found) {
+        const email = telegramSyntheticEmail(telegramUserId);
+        const newUser: StoredUser = {
+          id: crypto.randomUUID(),
+          email,
+          password: crypto.randomUUID(),
+          bonusPoints: 0,
+          telegramId: telegramUserId,
+          telegramUsername: null,
+          firstName: "Пользователь",
+        };
+        users.push(newUser);
+        writeUsers(users);
+        found = newUser;
+      }
+      const { password: _, ...session } = found;
+      setUser(session);
+      writeSession(session);
+      localStorage.removeItem(STORAGE_GUEST_EMAIL);
+      setGuestEmailState(null);
+      return { ok: true };
+    },
+    []
+  );
+
   const loginWithTelegram = useCallback(
     (profile: TelegramVerifiedProfile): { ok: true } | { ok: false; error: string } => {
       const users = readUsers();
@@ -226,6 +262,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const logout = useCallback(() => {
     setUser(null);
     writeSession(null);
+    try {
+      localStorage.removeItem("user_id");
+    } catch {
+      /* ignore */
+    }
   }, []);
 
   const value = useMemo(
@@ -237,6 +278,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       register,
       registerWithTelegram,
       loginWithTelegram,
+      establishSessionFromTelegramUserId,
       login,
       logout,
     }),
@@ -248,6 +290,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       register,
       registerWithTelegram,
       loginWithTelegram,
+      establishSessionFromTelegramUserId,
       login,
       logout,
     ]

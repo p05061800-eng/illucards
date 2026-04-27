@@ -3,8 +3,8 @@ import { Suspense } from "react";
 import CheckoutPageClient from "./CheckoutPageClient";
 
 export const metadata: Metadata = {
-  title: "Оплата — IlluCards",
-  description: "Безопасная оплата заказа",
+  title: "Заказ в Telegram — IlluCards",
+  description: "Оформление заказа через Telegram",
 };
 
 export default function CheckoutPage() {

@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Bebas_Neue, Geist_Mono, Inter } from "next/font/google";
 import { SiteFooter } from "@/components/SiteFooter";
 import Header from "@/components/Header";
 import { RefreshToHome } from "@/components/RefreshToHome";
@@ -16,9 +16,18 @@ export const viewport: Viewport = {
   viewportFit: "cover",
 };
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const inter = Inter({
+  subsets: ["latin", "cyrillic"],
+  variable: "--font-inter",
+  display: "swap",
+});
+
+/** Заголовки (латиница — сам шрифт; кириллица автоматически через Inter в стеке). */
+const bebasNeue = Bebas_Neue({
+  weight: "400",
   subsets: ["latin"],
+  variable: "--font-bebas",
+  display: "swap",
 });
 
 const geistMono = Geist_Mono({
@@ -37,10 +46,16 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const telegramOrderBot =
+    process.env.NEXT_PUBLIC_TELEGRAM_ORDER_BOT_USERNAME ||
+    process.env.NEXT_PUBLIC_TELEGRAM_BOT_USERNAME ||
+    "";
+
   return (
     <html
       lang="ru"
-      className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+      className={`${inter.variable} ${bebasNeue.variable} ${geistMono.variable} antialiased`}
+      data-telegram-order-bot={telegramOrderBot}
     >
       <body className="flex flex-col overflow-x-hidden bg-[var(--background)] text-zinc-100 antialiased [color-scheme:dark]">
         <Providers>

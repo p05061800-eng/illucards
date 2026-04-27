@@ -1,0 +1,23 @@
+[
+  {
+    "id": 1,
+    "name": "Хан мутант",
+    "category": "TMNT",
+    "price": 10,
+    "image": "https://www.illucards.by/images/han.jpg"
+  },
+  {
+    "id": 2,
+    "name": "Леонардо",
+    "category": "TMNT",
+    "price": 12,
+    "image": "https://www.illucards.by/images/leo.jpg"
+  },
+  {
+    "id": 3,
+    "name": "Спайдермен",
+    "category": "Marvel",
+    "price": 15,
+    "image": "https://www.illucards.by/images/spiderman.jpg"
+  }
+]

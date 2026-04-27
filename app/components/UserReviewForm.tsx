@@ -199,10 +199,10 @@ export function UserReviewForm({
         </p>
         <div className="mt-4 flex flex-wrap gap-3">
           <Link
-            href="/checkout"
+            href="/cart"
             className="inline-flex rounded-lg border border-violet-500/45 bg-violet-950/50 px-4 py-2 text-sm font-semibold text-violet-100 transition hover:bg-violet-900/60"
           >
-            Перейти к оплате
+            В корзину
           </Link>
           <Link
             href="/#collection"

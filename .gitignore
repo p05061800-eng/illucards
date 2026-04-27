@@ -40,5 +40,8 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
+# заказы с сайта (JSON в data/orders)
+/data/orders/*.json
+
 # ESLint cache (workspace)
 .cache/

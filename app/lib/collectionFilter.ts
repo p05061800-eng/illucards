@@ -23,7 +23,7 @@ export const EMPTY_TYPE_FILTER: TypeFilterState = {
   novelties: false,
 };
 
-function anyTypeFilterOn(f: TypeFilterState): boolean {
+export function anyTypeFilterOn(f: TypeFilterState): boolean {
   return (
     f.adult ||
     f.limited ||

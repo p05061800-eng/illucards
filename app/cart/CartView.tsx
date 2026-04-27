@@ -2,23 +2,33 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { useId } from "react";
 import { useCart } from "../context/CartContext";
 import { useCurrency } from "../context/CurrencyContext";
 import { useCategoryTiles } from "../context/CategoryFramesContext";
 import { getCardArtIntrinsicSize } from "../lib/cardArtIntrinsicSize";
 import { formatCardPrice } from "../lib/formatPrice";
+import { TelegramCheckoutButton } from "@/components/checkout/TelegramCheckoutButton";
+import { DeliveryCountryField } from "../components/DeliveryCountryField";
 
 export default function CartView() {
   const {
     cartItems,
     totalPriceByn,
     totalPriceRub,
+    deliveryCountry,
+    setDeliveryCountry,
+    deliveryPriceByn,
+    deliveryPriceRub,
+    orderTotalByn,
+    orderTotalRub,
     removeFromCart,
     setQuantity,
     hydrated,
   } = useCart();
   const { currency } = useCurrency();
   const categoryTiles = useCategoryTiles();
+  const deliveryFieldId = useId();
 
   return (
     <>
@@ -141,23 +151,56 @@ export default function CartView() {
               ))}
             </ul>
 
-            <div className="mt-8 flex flex-col gap-4 border-t border-white/10 pt-8 sm:flex-row sm:items-center sm:justify-between">
-              <p className="text-base leading-snug text-zinc-300 sm:text-lg">
-                Итого:{" "}
-                <span className="bg-gradient-to-r from-purple-200 to-violet-200 bg-clip-text text-lg font-semibold text-transparent sm:text-xl">
-                  {formatCardPrice(
-                    totalPriceByn,
-                    currency,
-                    currency === "RUB" ? totalPriceRub : undefined
-                  )}
-                </span>
-              </p>
-              <Link
-                href="/checkout"
-                className="inline-flex w-full items-center justify-center rounded-full bg-gradient-to-r from-purple-600 via-violet-600 to-fuchsia-600 py-3.5 text-sm font-semibold text-white shadow-[0_0_36px_rgba(168,85,247,0.45)] ring-1 ring-purple-400/40 transition hover:from-purple-500 hover:via-violet-500 hover:to-fuchsia-500 sm:w-auto sm:min-w-[220px] sm:px-10"
-              >
-                Перейти к оплате
-              </Link>
+            <div className="mt-8 flex flex-col gap-6 border-t border-white/10 pt-8">
+              <DeliveryCountryField
+                id={deliveryFieldId}
+                value={deliveryCountry}
+                onChange={setDeliveryCountry}
+                className="max-w-md"
+              />
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+                <div className="space-y-2 text-sm sm:text-base">
+                  <div className="flex items-baseline justify-between gap-6 sm:justify-start sm:gap-10">
+                    <span className="text-zinc-500">Товары</span>
+                    <span className="tabular-nums text-zinc-200">
+                      {formatCardPrice(
+                        totalPriceByn,
+                        currency,
+                        currency === "RUB" ? totalPriceRub : undefined
+                      )}
+                    </span>
+                  </div>
+                  <div className="flex items-baseline justify-between gap-6 sm:justify-start sm:gap-10">
+                    <span className="text-zinc-500">Доставка</span>
+                    <span className="tabular-nums text-zinc-200">
+                      {deliveryCountry
+                        ? formatCardPrice(
+                            deliveryPriceByn,
+                            currency,
+                            currency === "RUB"
+                              ? deliveryPriceRub
+                              : undefined
+                          )
+                        : "—"}
+                    </span>
+                  </div>
+                  <div className="flex items-baseline justify-between gap-6 border-t border-white/10 pt-2 sm:justify-start sm:gap-10">
+                    <span className="font-medium text-zinc-400">Итого</span>
+                    <span className="bg-gradient-to-r from-purple-200 to-violet-200 bg-clip-text text-lg font-semibold tabular-nums text-transparent sm:text-xl">
+                      {deliveryCountry
+                        ? formatCardPrice(
+                            orderTotalByn,
+                            currency,
+                            currency === "RUB" ? orderTotalRub : undefined
+                          )
+                        : "—"}
+                    </span>
+                  </div>
+                </div>
+                <div className="flex w-full flex-col gap-3 sm:w-auto sm:min-w-[280px]">
+                  <TelegramCheckoutButton className="rounded-full py-4 text-[15px]" />
+                </div>
+              </div>
             </div>
           </div>
         )}

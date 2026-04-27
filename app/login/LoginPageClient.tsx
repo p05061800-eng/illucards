@@ -15,12 +15,15 @@ export default function LoginPageClient() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const next = searchParams.get("next") || "/account";
-  const { login, loginWithTelegram, hydrated } = useAuth();
+  const { login, loginWithTelegram, establishSessionFromTelegramUserId, hydrated } =
+    useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [telegramCode, setTelegramCode] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [privacyOk, setPrivacyOk] = useState(false);
   const [tgBusy, setTgBusy] = useState(false);
+  const [codeBusy, setCodeBusy] = useState(false);
 
   const botUsername = getTelegramBotUsername();
 
@@ -67,6 +70,66 @@ export default function LoginPageClient() {
       }
     },
     [privacyOk, loginWithTelegram, router, next]
+  );
+
+  const handleTelegramCodeLogin = useCallback(
+    async (e: React.FormEvent) => {
+      e.preventDefault();
+      setError(null);
+      if (!privacyOk) {
+        setError("Нужно согласие с политикой конфиденциальности.");
+        return;
+      }
+      const code = telegramCode.trim();
+      if (!code) {
+        setError("Введите код из Telegram.");
+        return;
+      }
+      setCodeBusy(true);
+      try {
+        const res = await fetch("/api/auth/telegram", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ code }),
+        });
+        const data = (await res.json()) as {
+          ok?: boolean;
+          error?: string;
+          user_id?: number;
+        };
+        if (!res.ok || !data.ok || typeof data.user_id !== "number") {
+          if (res.status === 401) {
+            setError("Неверный или устаревший код");
+          } else {
+            setError(data.error ?? "Неверный или устаревший код");
+          }
+          return;
+        }
+        try {
+          localStorage.setItem("user_id", String(data.user_id));
+        } catch {
+          /* ignore */
+        }
+        const r = establishSessionFromTelegramUserId(data.user_id);
+        if (r.ok) {
+          router.push(next.startsWith("/") ? next : "/account");
+          router.refresh();
+        } else {
+          setError(r.error);
+        }
+      } catch {
+        setError("Ошибка сети. Попробуйте ещё раз.");
+      } finally {
+        setCodeBusy(false);
+      }
+    },
+    [
+      telegramCode,
+      privacyOk,
+      establishSessionFromTelegramUserId,
+      router,
+      next,
+    ]
   );
 
   const handleSubmit = useCallback(
@@ -117,6 +180,37 @@ export default function LoginPageClient() {
           onChange={setPrivacyOk}
           required
         />
+
+        <form onSubmit={handleTelegramCodeLogin} className="space-y-3">
+          <label htmlFor="telegram-auth-code" className="sr-only">
+            Код из Telegram
+          </label>
+          <input
+            id="telegram-auth-code"
+            name="telegram-auth-code"
+            type="text"
+            autoComplete="one-time-code"
+            placeholder="Введите код из Telegram"
+            value={telegramCode}
+            onChange={(e) => setTelegramCode(e.target.value)}
+            className="w-full rounded-xl border border-white/15 bg-black/40 px-4 py-3 text-sm text-white placeholder:text-zinc-600 focus:border-[#5D6BF3]/60 focus:outline-none focus:ring-2 focus:ring-[#5D6BF3]/25"
+          />
+          <button
+            type="submit"
+            disabled={codeBusy}
+            className="w-full rounded-xl bg-gradient-to-r from-violet-600 to-fuchsia-600 py-3.5 text-sm font-semibold text-white transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {codeBusy ? "Проверяем…" : "Войти"}
+          </button>
+        </form>
+
+        <div className="relative py-2 text-center text-xs text-zinc-600">
+          <span className="relative z-10 bg-zinc-950/60 px-2">
+            или виджет Telegram
+          </span>
+          <span className="absolute left-0 right-0 top-1/2 z-0 h-px bg-white/10" aria-hidden />
+        </div>
+
         <div>
           <p className="mb-3 text-center text-xs font-medium uppercase tracking-wide text-zinc-500">
             Через Telegram

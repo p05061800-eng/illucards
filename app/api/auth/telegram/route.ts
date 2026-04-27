@@ -1,6 +1,10 @@
 import crypto from "node:crypto";
 import { NextResponse } from "next/server";
 import type { TelegramVerifiedProfile } from "@/app/lib/telegramAuth";
+import {
+  isTelegramCodeAuthConfigured,
+  resolveTelegramAuthCodeToUserId,
+} from "@/app/lib/telegramAuthCode";
 
 const MAX_AUTH_AGE_SEC = 86400;
 
@@ -49,12 +53,6 @@ function verifyTelegramLogin(
 
 export async function POST(req: Request) {
   const token = process.env.TELEGRAM_BOT_TOKEN?.trim();
-  if (!token) {
-    return NextResponse.json(
-      { ok: false, error: "Сервер: не задан TELEGRAM_BOT_TOKEN." },
-      { status: 503 }
-    );
-  }
 
   let body: unknown;
   try {
@@ -68,6 +66,45 @@ export async function POST(req: Request) {
   }
 
   const data = body as Record<string, unknown>;
+
+  const hasWidget =
+    typeof data.id === "number" &&
+    typeof data.hash === "string" &&
+    data.hash.length > 0;
+
+  const codeRaw = data.code;
+  const trimmedCode =
+    typeof codeRaw === "string" ? codeRaw.trim() : "";
+  const hasCodeOnly = trimmedCode.length > 0 && !hasWidget;
+
+  if (hasCodeOnly) {
+    if (!isTelegramCodeAuthConfigured()) {
+      return NextResponse.json(
+        {
+          ok: false,
+          error:
+            "Сервер: не настроен вход по коду (TELEGRAM_AUTH_CODE_MAP или TELEGRAM_AUTH_CODE_VERIFY_URL).",
+        },
+        { status: 503 }
+      );
+    }
+    const uid = await resolveTelegramAuthCodeToUserId(trimmedCode, token);
+    if (uid === null) {
+      return NextResponse.json(
+        { ok: false, error: "Неверный или устаревший код" },
+        { status: 401 }
+      );
+    }
+    return NextResponse.json({ ok: true, user_id: uid });
+  }
+
+  if (!token) {
+    return NextResponse.json(
+      { ok: false, error: "Сервер: не задан TELEGRAM_BOT_TOKEN." },
+      { status: 503 }
+    );
+  }
+
   const id = data.id;
   if (typeof id !== "number" || !Number.isFinite(id) || id <= 0) {
     return NextResponse.json({ ok: false, error: "Нет корректного id Telegram." }, { status: 400 });

@@ -16,6 +16,8 @@ import {
 } from "react";
 import type { CardRarity, StoredCard } from "../api/cards/route";
 import { cardTreatsAsAdultPricing } from "../lib/cardRarityTags";
+import { deliveryCharge } from "../lib/delivery";
+import type { DeliveryCountry } from "../lib/delivery";
 import {
   ADULT_FIXED_PRICE_BYN,
   ADULT_FIXED_PRICE_RUB,
@@ -42,6 +44,20 @@ export type CartLine = {
 /** Ключ записи корзины в `localStorage` */
 export const CART_STORAGE_KEY = "illucards-cart";
 const STORAGE_KEY = CART_STORAGE_KEY;
+const DELIVERY_STORAGE_KEY = "illucards-delivery-country";
+
+function loadDeliveryCountry(): DeliveryCountry | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = localStorage.getItem(DELIVERY_STORAGE_KEY);
+    if (raw === "BY" || raw === "RU" || raw === "UA" || raw === "OTHER") {
+      return raw;
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
 
 /** В строке корзины: `adult`, если у карточки есть метка 18+ — для размытия миниатюры. */
 function cartLineRarityForStorage(card: StoredCard): CardRarity {
@@ -143,6 +159,17 @@ type CartContextValue = {
   totalPriceByn: number;
   /** Сумма в руб. РФ (по ценам на витрине). */
   totalPriceRub: number;
+  /** Выбранная страна доставки (null — не выбрана). */
+  deliveryCountry: DeliveryCountry | null;
+  setDeliveryCountry: (country: DeliveryCountry | null) => void;
+  /** Доставка в BYN (0, если страна не выбрана). */
+  deliveryPriceByn: number;
+  /** Доставка в RUB (0, если страна не выбрана). */
+  deliveryPriceRub: number;
+  /** Товары + доставка, BYN. */
+  orderTotalByn: number;
+  /** Товары + доставка, RUB. */
+  orderTotalRub: number;
   cartOpen: boolean;
   openCart: () => void;
   closeCart: () => void;
@@ -159,6 +186,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const [cartItems, setCartItems] = useState<CartLine[]>([]);
   const [hydrated, setHydrated] = useState(false);
   const [cartOpen, setCartOpen] = useState(false);
+  const [deliveryCountry, setDeliveryCountryState] =
+    useState<DeliveryCountry | null>(null);
 
   const openCart = useCallback(() => setCartOpen(true), []);
   const closeCart = useCallback(() => setCartOpen(false), []);
@@ -166,7 +195,25 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     setCartItems(loadFromStorage());
+    setDeliveryCountryState(loadDeliveryCountry());
     setHydrated(true);
+  }, []);
+
+  useEffect(() => {
+    if (!hydrated) return;
+    try {
+      if (deliveryCountry) {
+        localStorage.setItem(DELIVERY_STORAGE_KEY, deliveryCountry);
+      } else {
+        localStorage.removeItem(DELIVERY_STORAGE_KEY);
+      }
+    } catch {
+      /* ignore */
+    }
+  }, [deliveryCountry, hydrated]);
+
+  const setDeliveryCountry = useCallback((country: DeliveryCountry | null) => {
+    setDeliveryCountryState(country);
   }, []);
 
   useEffect(() => {
@@ -246,6 +293,27 @@ export function CartProvider({ children }: { children: ReactNode }) {
     [cartItems]
   );
 
+  const deliveryPriceByn = useMemo(() => {
+    if (!deliveryCountry) return 0;
+    return deliveryCharge(deliveryCountry).amountByn;
+  }, [deliveryCountry]);
+
+  const deliveryPriceRub = useMemo(() => {
+    if (!deliveryCountry) return 0;
+    return deliveryCharge(deliveryCountry).amountRub;
+  }, [deliveryCountry]);
+
+  const orderTotalByn = useMemo(
+    () =>
+      Math.round((totalPriceByn + deliveryPriceByn) * 100) / 100,
+    [totalPriceByn, deliveryPriceByn]
+  );
+
+  const orderTotalRub = useMemo(
+    () => totalPriceRub + deliveryPriceRub,
+    [totalPriceRub, deliveryPriceRub]
+  );
+
   const value = useMemo(
     () => ({
       cartItems,
@@ -253,6 +321,12 @@ export function CartProvider({ children }: { children: ReactNode }) {
       itemCount,
       totalPriceByn,
       totalPriceRub,
+      deliveryCountry,
+      setDeliveryCountry,
+      deliveryPriceByn,
+      deliveryPriceRub,
+      orderTotalByn,
+      orderTotalRub,
       cartOpen,
       openCart,
       closeCart,
@@ -268,6 +342,12 @@ export function CartProvider({ children }: { children: ReactNode }) {
       itemCount,
       totalPriceByn,
       totalPriceRub,
+      deliveryCountry,
+      setDeliveryCountry,
+      deliveryPriceByn,
+      deliveryPriceRub,
+      orderTotalByn,
+      orderTotalRub,
       cartOpen,
       openCart,
       closeCart,

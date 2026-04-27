@@ -57,8 +57,16 @@ export default function AccountPageClient() {
 
       <div className="mt-10 space-y-4 rounded-2xl border border-white/[0.08] bg-zinc-950/60 p-6 shadow-[0_20px_60px_rgba(0,0,0,0.45)]">
         <div className="flex justify-between gap-4 border-b border-white/[0.06] pb-4">
-          <span className="text-sm text-zinc-500">Email</span>
-          <span className="text-sm font-medium text-white">{user.email}</span>
+          <span className="text-sm text-zinc-500">
+            {user.telegramId ? "Telegram" : "Email"}
+          </span>
+          <span className="max-w-[60%] text-right text-sm font-medium text-white">
+            {user.telegramId
+              ? user.telegramUsername
+                ? `@${user.telegramUsername}`
+                : user.firstName || user.email
+              : user.email}
+          </span>
         </div>
         <div className="flex justify-between gap-4 border-b border-white/[0.06] pb-4">
           <span className="text-sm text-zinc-500">Бонусы</span>
@@ -67,7 +75,7 @@ export default function AccountPageClient() {
           </span>
         </div>
         <p className="text-xs leading-relaxed text-zinc-600">
-          После оплаты в тестовом режиме баллы можно начислять вручную в будущих версиях.
+          Бонусы и профиль хранятся локально в браузере (демо).
         </p>
       </div>
 

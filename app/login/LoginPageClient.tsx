@@ -4,17 +4,70 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useState } from "react";
 import { PrivacyConsentCheckbox } from "@/app/components/PrivacyConsentCheckbox";
+import { TelegramLoginWidget } from "@/app/components/TelegramLoginWidget";
 import { useAuth } from "@/app/context/AuthContext";
+import {
+  getTelegramBotUsername,
+  type TelegramWidgetAuthPayload,
+} from "@/app/lib/telegramAuth";
 
 export default function LoginPageClient() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const next = searchParams.get("next") || "/account";
-  const { login, hydrated } = useAuth();
+  const { login, loginWithTelegram, hydrated } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [privacyOk, setPrivacyOk] = useState(false);
+  const [tgBusy, setTgBusy] = useState(false);
+
+  const botUsername = getTelegramBotUsername();
+
+  const handleTelegramAuth = useCallback(
+    async (payload: TelegramWidgetAuthPayload) => {
+      setError(null);
+      if (!privacyOk) {
+        setError("Нужно согласие с политикой конфиденциальности.");
+        return;
+      }
+      setTgBusy(true);
+      try {
+        const res = await fetch("/api/auth/telegram", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+        const data = (await res.json()) as {
+          ok?: boolean;
+          error?: string;
+          profile?: {
+            telegramId: number;
+            firstName: string;
+            lastName: string | null;
+            username: string | null;
+            photoUrl: string | null;
+          };
+        };
+        if (!res.ok || !data.ok || !data.profile) {
+          setError(data.error ?? "Не удалось подтвердить Telegram.");
+          return;
+        }
+        const r = loginWithTelegram(data.profile);
+        if (r.ok) {
+          router.push(next.startsWith("/") ? next : "/account");
+          router.refresh();
+        } else {
+          setError(r.error);
+        }
+      } catch {
+        setError("Ошибка сети. Попробуйте ещё раз.");
+      } finally {
+        setTgBusy(false);
+      }
+    },
+    [privacyOk, loginWithTelegram, router, next]
+  );
 
   const handleSubmit = useCallback(
     (e: React.FormEvent) => {
@@ -49,60 +102,75 @@ export default function LoginPageClient() {
         Вход
       </h1>
       <p className="mt-2 text-center text-sm text-zinc-500">
-        Личный кабинет IlluCards (демо, данные в браузере)
+        Личный кабинет IlluCards (данные в этом браузере)
       </p>
 
-      <form
-        onSubmit={handleSubmit}
-        className="mt-10 space-y-4 rounded-2xl border border-white/[0.08] bg-zinc-950/60 p-6 shadow-[0_20px_60px_rgba(0,0,0,0.45)]"
-      >
+      <div className="mt-10 space-y-4 rounded-2xl border border-white/[0.08] bg-zinc-950/60 p-6 shadow-[0_20px_60px_rgba(0,0,0,0.45)]">
         {error ? (
           <p className="rounded-xl border border-red-500/30 bg-red-950/30 px-3 py-2 text-sm text-red-200">
             {error}
           </p>
         ) : null}
-        <div>
-          <label htmlFor="login-email" className="mb-1.5 block text-xs text-zinc-500">
-            Email
-          </label>
-          <input
-            id="login-email"
-            type="email"
-            autoComplete="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-            className="w-full rounded-xl border border-white/15 bg-black/40 px-4 py-3 text-sm text-white focus:border-[#5D6BF3]/60 focus:outline-none focus:ring-2 focus:ring-[#5D6BF3]/25"
-          />
-        </div>
-        <div>
-          <label htmlFor="login-pass" className="mb-1.5 block text-xs text-zinc-500">
-            Пароль
-          </label>
-          <input
-            id="login-pass"
-            type="password"
-            autoComplete="current-password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-            minLength={4}
-            className="w-full rounded-xl border border-white/15 bg-black/40 px-4 py-3 text-sm text-white focus:border-[#5D6BF3]/60 focus:outline-none focus:ring-2 focus:ring-[#5D6BF3]/25"
-          />
-        </div>
         <PrivacyConsentCheckbox
           id="login-privacy"
           checked={privacyOk}
           onChange={setPrivacyOk}
           required
         />
-        <button
-          type="submit"
-          className="w-full rounded-xl bg-[#5D6BF3] py-3.5 text-sm font-semibold text-white transition hover:brightness-110"
-        >
-          Войти
-        </button>
-      </form>
+        <div>
+          <p className="mb-3 text-center text-xs font-medium uppercase tracking-wide text-zinc-500">
+            Через Telegram
+          </p>
+          {tgBusy ? (
+            <p className="text-center text-sm text-zinc-400">Проверяем…</p>
+          ) : (
+            <TelegramLoginWidget botUsername={botUsername} onAuth={handleTelegramAuth} />
+          )}
+        </div>
+
+        <div className="relative py-2 text-center text-xs text-zinc-600">
+          <span className="relative z-10 bg-zinc-950/60 px-2">или email, если аккаунт создан раньше</span>
+          <span className="absolute left-0 right-0 top-1/2 z-0 h-px bg-white/10" aria-hidden />
+        </div>
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label htmlFor="login-email" className="mb-1.5 block text-xs text-zinc-500">
+              Email
+            </label>
+            <input
+              id="login-email"
+              type="email"
+              autoComplete="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+              className="w-full rounded-xl border border-white/15 bg-black/40 px-4 py-3 text-sm text-white focus:border-[#5D6BF3]/60 focus:outline-none focus:ring-2 focus:ring-[#5D6BF3]/25"
+            />
+          </div>
+          <div>
+            <label htmlFor="login-pass" className="mb-1.5 block text-xs text-zinc-500">
+              Пароль
+            </label>
+            <input
+              id="login-pass"
+              type="password"
+              autoComplete="current-password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              minLength={4}
+              className="w-full rounded-xl border border-white/15 bg-black/40 px-4 py-3 text-sm text-white focus:border-[#5D6BF3]/60 focus:outline-none focus:ring-2 focus:ring-[#5D6BF3]/25"
+            />
+          </div>
+          <button
+            type="submit"
+            className="w-full rounded-xl bg-[#5D6BF3] py-3.5 text-sm font-semibold text-white transition hover:brightness-110"
+          >
+            Войти по email
+          </button>
+        </form>
+      </div>
 
       <p className="mt-6 text-center text-sm text-zinc-500">
         Нет аккаунта?{" "}
@@ -110,7 +178,7 @@ export default function LoginPageClient() {
           href={next !== "/account" ? `/register?next=${encodeURIComponent(next)}` : "/register"}
           className="text-[#5D6BF3] hover:underline"
         >
-          Регистрация
+          Регистрация через Telegram
         </Link>
       </p>
     </div>

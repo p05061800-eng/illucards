@@ -8,77 +8,24 @@ import { useAuth, useCheckoutEmail } from "@/app/context/AuthContext";
 import { useCart } from "@/app/context/CartContext";
 import { useCurrency } from "@/app/context/CurrencyContext";
 import { formatCardPrice } from "@/app/lib/formatPrice";
-import {
-  loadBeGatewayScript,
-  pay,
-} from "@/lib/bepaidCheckout";
-import type { BePaidWidgetCloseStatus } from "@/types/begateway";
-
-type PaymentMethod = "card" | "apple" | "erip";
-
-function statusMessage(status: BePaidWidgetCloseStatus): {
-  kind: "success" | "error" | "info";
-  text: string;
-} {
-  switch (status) {
-    case "successful":
-      return {
-        kind: "success",
-        text: "Оплата прошла успешно. Спасибо за заказ!",
-      };
-    case "failed":
-      return {
-        kind: "error",
-        text: "Платёж отклонён. Попробуйте другую карту или способ оплаты.",
-      };
-    case "pending":
-      return {
-        kind: "info",
-        text: "Платёж обрабатывается. Статус придёт на почту.",
-      };
-    case "redirected":
-      return {
-        kind: "info",
-        text: "Переход к способу оплаты. Завершите оплату во внешнем окне.",
-      };
-    case "error":
-      return {
-        kind: "error",
-        text: "Ошибка виджета или сети. Попробуйте ещё раз позже.",
-      };
-    case null:
-      return {
-        kind: "info",
-        text: "Окно оплаты закрыто.",
-      };
-    default:
-      return { kind: "info", text: "Неизвестный статус." };
-  }
-}
 
 export default function CheckoutPageClient() {
-  const { cartItems, totalPriceByn, totalPriceRub, hydrated } = useCart();
+  const { cartItems, totalPriceByn, totalPriceRub, hydrated, clearCart } = useCart();
   const { currency } = useCurrency();
   const { user, setGuestEmail } = useAuth();
   const checkoutEmail = useCheckoutEmail();
 
-  const [method, setMethod] = useState<PaymentMethod>("card");
   const [loading, setLoading] = useState(false);
   const [banner, setBanner] = useState<{
     kind: "success" | "error" | "info";
     text: string;
   } | null>(null);
 
-  const [checkoutStep, setCheckoutStep] = useState<"contact" | "payment">(
+  const [checkoutStep, setCheckoutStep] = useState<"contact" | "confirm">(
     "contact"
   );
   const [emailModalOpen, setEmailModalOpen] = useState(false);
   const [promo, setPromo] = useState("");
-
-  const amountMinor = useMemo(() => {
-    const n = Number.isFinite(totalPriceByn) ? totalPriceByn : 0;
-    return Math.max(1, Math.round(n * 100));
-  }, [totalPriceByn]);
 
   const vatByn = useMemo(() => {
     const n = Number.isFinite(totalPriceByn) ? totalPriceByn : 0;
@@ -90,7 +37,26 @@ export default function CheckoutPageClient() {
     return Math.round(n * 0.2 * 100) / 100;
   }, [totalPriceRub]);
 
-  const handlePay = useCallback(async () => {
+  const recordPurchase = useCallback(() => {
+    const cardIds = [...new Set(cartItems.map((l) => l.id))];
+    void fetch("/api/purchases", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ cardIds }),
+    });
+    try {
+      const key = "illucards-purchased-cards";
+      const raw = localStorage.getItem(key);
+      const prev = raw ? (JSON.parse(raw) as unknown) : [];
+      const arr = Array.isArray(prev) ? prev.map(String) : [];
+      const merged = [...new Set([...arr, ...cardIds])];
+      localStorage.setItem(key, JSON.stringify(merged));
+    } catch {
+      /* ignore */
+    }
+  }, [cartItems]);
+
+  const handleConfirmOrder = useCallback(() => {
     setBanner(null);
     if (cartItems.length === 0) {
       setBanner({
@@ -106,76 +72,26 @@ export default function CheckoutPageClient() {
 
     setLoading(true);
     try {
-      await loadBeGatewayScript();
-      const trackingId = `illu-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
-      const methodLabel =
-        method === "card"
-          ? "карта"
-          : method === "apple"
-            ? "Apple/Google Pay"
-            : "ЕРИП";
-      const description = `IlluCards — заказ (${methodLabel})`;
-
-      try {
-        pay({
-          amountMinor,
-          currency: "BYN",
-          description,
-          trackingId,
-          test: true,
-          onClose: (status: BePaidWidgetCloseStatus) => {
-            setLoading(false);
-            setBanner(statusMessage(status));
-            if (status === "successful" && cartItems.length > 0) {
-              const cardIds = [...new Set(cartItems.map((l) => l.id))];
-              void fetch("/api/purchases", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ cardIds }),
-              });
-              try {
-                const key = "illucards-purchased-cards";
-                const raw = localStorage.getItem(key);
-                const prev = raw ? (JSON.parse(raw) as unknown) : [];
-                const arr = Array.isArray(prev) ? prev.map(String) : [];
-                const merged = [...new Set([...arr, ...cardIds])];
-                localStorage.setItem(key, JSON.stringify(merged));
-              } catch {
-                /* ignore */
-              }
-            }
-          },
-        });
-      } catch (widgetErr) {
-        setLoading(false);
-        setBanner({
-          kind: "error",
-          text:
-            widgetErr instanceof Error
-              ? widgetErr.message
-              : "Не удалось открыть виджет оплаты.",
-        });
-      }
-    } catch (e) {
-      setLoading(false);
+      recordPurchase();
+      clearCart();
       setBanner({
-        kind: "error",
+        kind: "success",
         text:
-          e instanceof Error
-            ? e.message
-            : "Не удалось открыть оплату. Проверьте соединение.",
+          "Заказ принят. Онлайн-оплата на сайте не используется — с вами свяжутся для уточнения доставки и оплаты.",
       });
+    } finally {
+      setLoading(false);
     }
-  }, [amountMinor, cartItems, method, checkoutEmail]);
+  }, [cartItems.length, checkoutEmail, clearCart, recordPurchase]);
 
   const handleContinue = useCallback(() => {
     if (!checkoutEmail) {
       setEmailModalOpen(true);
       return;
     }
-    setCheckoutStep("payment");
+    setCheckoutStep("confirm");
     requestAnimationFrame(() => {
-      document.getElementById("checkout-payment")?.scrollIntoView({
+      document.getElementById("checkout-confirm")?.scrollIntoView({
         behavior: "smooth",
         block: "start",
       });
@@ -186,9 +102,9 @@ export default function CheckoutPageClient() {
     (email: string) => {
       setGuestEmail(email);
       setEmailModalOpen(false);
-      setCheckoutStep("payment");
+      setCheckoutStep("confirm");
       requestAnimationFrame(() => {
-        document.getElementById("checkout-payment")?.scrollIntoView({
+        document.getElementById("checkout-confirm")?.scrollIntoView({
           behavior: "smooth",
           block: "start",
         });
@@ -229,7 +145,7 @@ export default function CheckoutPageClient() {
         оформление заказа
       </h1>
       <p className="mb-10 text-center text-sm text-zinc-500">
-        Бонусы, email и оплата через bePaid
+        Контактный email и подтверждение заказа без онлайн-оплаты на сайте
       </p>
 
       {banner ? (
@@ -249,13 +165,12 @@ export default function CheckoutPageClient() {
 
       <div className="grid gap-8 lg:grid-cols-[1fr_min(380px,100%)] lg:items-start">
         <div className="space-y-6">
-          {/* Бонусы и скидки */}
           <section className="overflow-hidden rounded-2xl bg-[#5D6BF3] p-6 text-white shadow-[0_16px_48px_rgba(93,107,243,0.35)] sm:p-8">
             <h2 className="text-lg font-semibold sm:text-xl">
               Накапливайте бонусы и получайте скидки с первой покупки
             </h2>
             <p className="mt-2 max-w-xl text-sm text-white/85">
-              Зарегистрируйтесь в личном кабинете — мы начислим бонусные баллы
+              Зарегистрируйтесь через Telegram в личном кабинете — мы начислим бонусные баллы
               за покупки (демо).
             </p>
             <div className="mt-6 flex flex-wrap gap-3">
@@ -274,7 +189,6 @@ export default function CheckoutPageClient() {
             </div>
           </section>
 
-          {/* Промокод */}
           <section className="rounded-2xl border border-white/[0.08] bg-zinc-900/50 p-5 sm:p-6">
             <h2 className="text-sm font-medium text-white">{`Использовать промокод`}</h2>
             <div className="mt-4 flex gap-2">
@@ -303,76 +217,27 @@ export default function CheckoutPageClient() {
             </p>
           </section>
 
-          {/* Оплата — после шага «Продолжить» */}
-          {checkoutStep === "payment" ? (
+          {checkoutStep === "confirm" ? (
             <section
-              id="checkout-payment"
+              id="checkout-confirm"
               className="rounded-2xl border border-white/[0.07] bg-gradient-to-b from-zinc-900/80 to-zinc-950/90 p-6 shadow-[0_20px_60px_rgba(0,0,0,0.45)] sm:p-8"
             >
               <h2 className="text-lg font-semibold tracking-tight text-white">
-                Оплата
+                Подтверждение заказа
               </h2>
-              <p className="mt-1 text-sm text-zinc-500">
-                Выберите способ — виджет откроется на этой странице
+              <p className="mt-2 text-sm leading-relaxed text-zinc-400">
+                Нажмите кнопку ниже, чтобы зафиксировать заказ в демо-режиме: позиции сохранятся как
+                «купленные» в этом браузере. Способ оплаты и доставку согласуйте отдельно (например, в
+                Telegram или по телефону).
               </p>
-
-              <fieldset className="mt-8 space-y-3">
-                <legend className="sr-only">Способ оплаты</legend>
-
-                {(
-                  [
-                    {
-                      id: "card" as const,
-                      title: "Банковская карта",
-                      hint: "Visa, Mastercard, МИР",
-                    },
-                    {
-                      id: "apple" as const,
-                      title: "Apple Pay / Google Pay",
-                      hint: "Где доступно в виджете",
-                    },
-                    {
-                      id: "erip" as const,
-                      title: "ЕРИП и другие",
-                      hint: "Счёт или альтернативные методы в виджете",
-                    },
-                  ] as const
-                ).map((opt) => (
-                  <label
-                    key={opt.id}
-                    className={`flex cursor-pointer items-start gap-4 rounded-2xl border p-4 transition ${
-                      method === opt.id
-                        ? "border-[#5D6BF3]/50 bg-[#5D6BF3]/10 shadow-[0_0_0_1px_rgba(93,107,243,0.25)]"
-                        : "border-white/[0.06] bg-black/20 hover:border-white/12"
-                    }`}
-                  >
-                    <input
-                      type="radio"
-                      name="pay-method"
-                      value={opt.id}
-                      checked={method === opt.id}
-                      onChange={() => setMethod(opt.id)}
-                      className="mt-1 h-4 w-4 shrink-0 border-zinc-600 bg-zinc-900 text-[#5D6BF3] focus:ring-[#5D6BF3]/40"
-                    />
-                    <span>
-                      <span className="block font-medium text-zinc-100">
-                        {opt.title}
-                      </span>
-                      <span className="mt-0.5 block text-xs text-zinc-500">
-                        {opt.hint}
-                      </span>
-                    </span>
-                  </label>
-                ))}
-              </fieldset>
 
               <button
                 type="button"
-                onClick={() => void handlePay()}
+                onClick={handleConfirmOrder}
                 disabled={loading || !checkoutEmail}
-                className="mt-10 flex w-full items-center justify-center gap-2 rounded-2xl bg-[#5D6BF3] py-4 text-sm font-semibold text-white shadow-[0_12px_40px_rgba(93,107,243,0.35)] transition hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-50"
+                className="mt-8 flex w-full items-center justify-center gap-2 rounded-2xl bg-[#5D6BF3] py-4 text-sm font-semibold text-white shadow-[0_12px_40px_rgba(93,107,243,0.35)] transition hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-50"
               >
-                {loading ? "Открываем оплату…" : "Оплатить"}
+                {loading ? "Сохраняем…" : "Подтвердить заказ"}
                 {!loading ? (
                   <span className="flex h-7 w-7 items-center justify-center rounded-full bg-white/20">
                     →
@@ -382,8 +247,7 @@ export default function CheckoutPageClient() {
             </section>
           ) : (
             <p className="rounded-2xl border border-dashed border-white/10 bg-zinc-950/40 px-4 py-6 text-center text-sm text-zinc-500">
-              Укажите email справа и нажмите «Продолжить», чтобы перейти к
-              оплате.
+              Укажите email справа и нажмите «Продолжить», чтобы перейти к подтверждению заказа.
             </p>
           )}
         </div>
@@ -431,7 +295,7 @@ export default function CheckoutPageClient() {
                 </span>
               </div>
               <div className="mt-4 flex items-end justify-between">
-                <span className="text-sm text-zinc-500">Итого к оплате</span>
+                <span className="text-sm text-zinc-500">Итого</span>
                 <span className="text-xl font-semibold tabular-nums tracking-tight text-white">
                   {formatCardPrice(
                     totalPriceByn,
@@ -464,11 +328,8 @@ export default function CheckoutPageClient() {
           </div>
 
           <div className="mt-4 rounded-2xl border border-white/[0.06] bg-black/20 p-4 text-xs leading-relaxed text-zinc-600">
-            Тестовый режим bePaid. Для боя задайте{" "}
-            <code className="rounded bg-black/40 px-1 text-zinc-400">
-              NEXT_PUBLIC_BEPAID_PUBLIC_KEY
-            </code>{" "}
-            в .env
+            Онлайн-эквайринг на этой странице не подключается. Для оплаты картой или другим способом
+            используйте согласованный с вами канал после оформления заказа.
           </div>
         </aside>
       </div>

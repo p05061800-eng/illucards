@@ -45,6 +45,12 @@ export async function POST(request: NextRequest) {
   const total =
     typeof o.total === "number" ? o.total : Number(o.total);
   const userId = parseOptionalTelegramUserId(o.user_id);
+  if (userId == null) {
+    return NextResponse.json(
+      { error: "Сначала войдите через Telegram" },
+      { status: 401 },
+    );
+  }
   const username = parseOptionalUsername(o.username);
 
   const result = await persistOrder({

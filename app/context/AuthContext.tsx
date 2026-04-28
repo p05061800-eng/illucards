@@ -9,7 +9,6 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import type { TelegramVerifiedProfile } from "@/app/lib/telegramAuth";
 import {
   clearTelegramUserIdentity,
   persistTelegramUserIdentity,
@@ -20,6 +19,7 @@ import {
 const STORAGE_USERS = "illucards_users";
 const STORAGE_SESSION = "illucards_session";
 const STORAGE_GUEST_EMAIL = "illucards_guest_email";
+const STORAGE_TG_FLAG = "illucards_tg_logged_in";
 
 export type AuthUser = {
   id: string;
@@ -39,19 +39,11 @@ type AuthContextValue = {
   hydrated: boolean;
   guestEmail: string | null;
   setGuestEmail: (email: string) => void;
-  register: (email: string, password: string) => { ok: true } | { ok: false; error: string };
-  registerWithTelegram: (
-    profile: TelegramVerifiedProfile
-  ) => { ok: true } | { ok: false; error: string };
-  loginWithTelegram: (
-    profile: TelegramVerifiedProfile
-  ) => { ok: true } | { ok: false; error: string };
-  /** После проверки кода на сервере: создаёт или поднимает локального пользователя по telegram id */
+  /** Создаёт или поднимает локального пользователя по Telegram id (в т.ч. из `?user=`). */
   establishSessionFromTelegramUserId: (
     telegramUserId: number,
     options?: { telegramUsername?: string | null }
   ) => { ok: true } | { ok: false; error: string };
-  login: (email: string, password: string) => { ok: true } | { ok: false; error: string };
   logout: () => void;
   /** Telegram user id (как `telegram_user_id` в storage), основной id для сайта и бота */
   primaryTelegramUserId: number | null;
@@ -91,12 +83,27 @@ function writeSession(user: AuthUser | null) {
     localStorage.setItem(STORAGE_SESSION, JSON.stringify(user));
     if (user.telegramId != null && Number.isFinite(user.telegramId) && user.telegramId > 0) {
       persistTelegramUserIdentity(user.telegramId, user.telegramUsername);
+      try {
+        localStorage.setItem(STORAGE_TG_FLAG, "1");
+      } catch {
+        /* ignore */
+      }
     } else {
       clearTelegramUserIdentity();
+      try {
+        localStorage.removeItem(STORAGE_TG_FLAG);
+      } catch {
+        /* ignore */
+      }
     }
   } else {
     localStorage.removeItem(STORAGE_SESSION);
     clearTelegramUserIdentity();
+    try {
+      localStorage.removeItem(STORAGE_TG_FLAG);
+    } catch {
+      /* ignore */
+    }
   }
 }
 
@@ -136,68 +143,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setGuestEmailState(t);
     }
   }, []);
-
-  const register = useCallback(
-    (email: string, password: string): { ok: true } | { ok: false; error: string } => {
-      const e = email.trim().toLowerCase();
-      if (!e || !password || password.length < 4) {
-        return { ok: false, error: "Укажите email и пароль не короче 4 символов." };
-      }
-      if (e.endsWith("@illucards.local")) {
-        return { ok: false, error: "Регистрация только через Telegram." };
-      }
-      const users = readUsers();
-      if (users.some((u) => u.email.toLowerCase() === e)) {
-        return { ok: false, error: "Этот email уже зарегистрирован." };
-      }
-      const newUser: StoredUser = {
-        id: crypto.randomUUID(),
-        email: e,
-        password,
-        bonusPoints: 0,
-      };
-      users.push(newUser);
-      writeUsers(users);
-      const { password: _, ...session } = newUser;
-      setUser(session);
-      writeSession(session);
-      localStorage.removeItem(STORAGE_GUEST_EMAIL);
-      setGuestEmailState(null);
-      return { ok: true };
-    },
-    []
-  );
-
-  const registerWithTelegram = useCallback(
-    (profile: TelegramVerifiedProfile): { ok: true } | { ok: false; error: string } => {
-      const users = readUsers();
-      if (users.some((u) => u.telegramId === profile.telegramId)) {
-        return {
-          ok: false,
-          error: "Этот Telegram уже зарегистрирован. Войдите через Telegram.",
-        };
-      }
-      const email = telegramSyntheticEmail(profile.telegramId);
-      const newUser: StoredUser = {
-        id: crypto.randomUUID(),
-        email,
-        password: crypto.randomUUID(),
-        bonusPoints: 0,
-        telegramId: profile.telegramId,
-        telegramUsername: profile.username,
-        firstName: profile.firstName,
-      };
-      users.push(newUser);
-      writeUsers(users);
-      const { password: _, ...session } = newUser;
-      setUser(session);
-      writeSession(session);
-      localStorage.removeItem(STORAGE_GUEST_EMAIL);
-      setGuestEmailState(null);
-      return { ok: true };
-    },
-    []
-  );
 
   const establishSessionFromTelegramUserId = useCallback(
     (
@@ -254,64 +199,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     [],
   );
 
-  const loginWithTelegram = useCallback(
-    (profile: TelegramVerifiedProfile): { ok: true } | { ok: false; error: string } => {
-      const users = readUsers();
-      const found = users.find((u) => u.telegramId === profile.telegramId);
-      if (!found) {
-        return { ok: false, error: "Аккаунт не найден. Сначала зарегистрируйтесь через Telegram." };
-      }
-      const updated: StoredUser = {
-        ...found,
-        firstName: profile.firstName,
-        telegramUsername: profile.username ?? found.telegramUsername ?? null,
-      };
-      const idx = users.findIndex((u) => u.id === found.id);
-      if (idx >= 0) {
-        users[idx] = updated;
-        writeUsers(users);
-      }
-      const { password: _, ...session } = updated;
-      setUser(session);
-      writeSession(session);
-      localStorage.removeItem(STORAGE_GUEST_EMAIL);
-      setGuestEmailState(null);
-      return { ok: true };
-    },
-    []
-  );
-
-  const login = useCallback(
-    (email: string, password: string): { ok: true } | { ok: false; error: string } => {
-      const e = email.trim().toLowerCase();
-      const users = readUsers();
-      const found = users.find(
-        (u) => u.email.toLowerCase() === e && u.password === password
-      );
-      if (!found) {
-        return { ok: false, error: "Неверный email или пароль." };
-      }
-      if (e.endsWith("@illucards.local") && found.telegramId) {
-        return {
-          ok: false,
-          error: "Войдите через кнопку Telegram.",
-        };
-      }
-      const { password: _, ...session } = found;
-      setUser(session);
-      writeSession(session);
-      localStorage.removeItem(STORAGE_GUEST_EMAIL);
-      setGuestEmailState(null);
-      return { ok: true };
-    },
-    []
-  );
-
   const logout = useCallback(() => {
     setUser(null);
     writeSession(null);
     try {
       localStorage.removeItem("user_id");
+      localStorage.removeItem(STORAGE_TG_FLAG);
     } catch {
       /* ignore */
     }
@@ -330,11 +223,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       hydrated,
       guestEmail,
       setGuestEmail,
-      register,
-      registerWithTelegram,
-      loginWithTelegram,
       establishSessionFromTelegramUserId,
-      login,
       logout,
       primaryTelegramUserId,
     }),
@@ -343,11 +232,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       hydrated,
       guestEmail,
       setGuestEmail,
-      register,
-      registerWithTelegram,
-      loginWithTelegram,
       establishSessionFromTelegramUserId,
-      login,
       logout,
       primaryTelegramUserId,
     ]

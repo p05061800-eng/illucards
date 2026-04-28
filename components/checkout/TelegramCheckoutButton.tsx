@@ -1,6 +1,9 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import Link from "next/link";
+import { MessageCircle } from "lucide-react";
+import { usePathname } from "next/navigation";
+import { useCallback, useMemo, useState } from "react";
 import { useAuth } from "@/app/context/AuthContext";
 import { useCart } from "@/app/context/CartContext";
 import { TELEGRAM_ORDER_BOT_DEFAULT } from "@/app/lib/telegramOrderCheckout";
@@ -30,6 +33,12 @@ export function TelegramCheckoutButton({
   className = "",
   onBeforeNavigate,
 }: Props) {
+  const pathname = usePathname();
+  const loginHref = useMemo(
+    () => `/login?next=${encodeURIComponent(pathname || "/")}`,
+    [pathname],
+  );
+
   const { cartItems, hydrated, deliveryCountry, orderTotalByn } = useCart();
   const { primaryTelegramUserId, user } = useAuth();
   const [submitting, setSubmitting] = useState(false);
@@ -37,6 +46,9 @@ export function TelegramCheckoutButton({
 
   const onClick = useCallback(async () => {
     if (!hydrated || cartItems.length === 0 || !deliveryCountry || submitting) {
+      return;
+    }
+    if (primaryTelegramUserId == null) {
       return;
     }
 
@@ -56,10 +68,8 @@ export function TelegramCheckoutButton({
         items,
         total: orderTotalByn,
         delivery: deliveryCountry,
+        user_id: primaryTelegramUserId,
       };
-      if (primaryTelegramUserId != null) {
-        orderPayload.user_id = primaryTelegramUserId;
-      }
       if (user?.telegramUsername) {
         orderPayload.username = user.telegramUsername;
       }
@@ -95,7 +105,9 @@ export function TelegramCheckoutButton({
       const bot = resolveBotUsername();
       const startParam = `order_${orderId}`;
       onBeforeNavigate?.();
-      window.location.href = `https://t.me/${encodeURIComponent(bot)}?start=${encodeURIComponent(startParam)}`;
+      window.location.assign(
+        `https://t.me/${encodeURIComponent(bot)}?start=${encodeURIComponent(startParam)}`,
+      );
     } catch {
       setError("Сеть недоступна. Попробуйте ещё раз.");
       setSubmitting(false);
@@ -111,8 +123,33 @@ export function TelegramCheckoutButton({
     user?.telegramUsername,
   ]);
 
+  if (!hydrated) {
+    return (
+      <div className="w-full">
+        <p className="text-center text-sm text-zinc-500">Загрузка…</p>
+      </div>
+    );
+  }
+
+  if (primaryTelegramUserId == null) {
+    return (
+      <div className="w-full space-y-3">
+        <p className="text-center text-sm text-zinc-400">
+          Чтобы оформить заказ, сначала войдите
+        </p>
+        <Link
+          href={loginHref}
+          className="inline-flex min-h-14 w-full items-center justify-center gap-2 rounded-2xl bg-[#229ED9] px-4 text-sm font-semibold text-white shadow-md transition hover:brightness-105 focus-visible:outline focus-visible:ring-2 focus-visible:ring-sky-400/80 active:scale-[0.99] sm:min-h-[3.5rem] sm:text-base"
+        >
+          <MessageCircle className="h-5 w-5 shrink-0 sm:h-6 sm:w-6" strokeWidth={2} aria-hidden />
+          Войти через Telegram
+        </Link>
+      </div>
+    );
+  }
+
   const disabled =
-    !hydrated || cartItems.length === 0 || !deliveryCountry || submitting;
+    cartItems.length === 0 || !deliveryCountry || submitting;
 
   return (
     <div className="w-full">
@@ -136,7 +173,7 @@ export function TelegramCheckoutButton({
           <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-.99-.65-.35-1.01.22-1.59.15-.15 2.71-2.48 2.76-2.69a.2.2 0 00-.05-.18c-.06-.05-.14-.03-.21-.02-.09.02-1.49.95-4.22 2.79-.4.27-.76.41-1.08.4-.36-.01-1.04-.2-1.55-.37-.63-.2-1.12-.31-1.08-.66.02-.18.27-.36.74-.55 2.92-1.27 4.86-2.11 5.83-2.51 2.78-1.14 3.35-1.34 3.73-1.34.08 0 .27.02.39.12.1.08.13.19.14.27-.01.06.01.24 0 .38z" />
         </svg>
         <span className="min-w-0 text-balance text-center leading-snug">
-          {submitting ? "Отправка заказа…" : "Оформить заказ в Telegram"}
+          {submitting ? "Сохраняем заказ…" : "Оформить заказ"}
         </span>
       </button>
       {error ? (

@@ -218,6 +218,8 @@ def _format_order_admin(
 PRODUCTS_API = "https://www.illucards.by/api/products"
 # База сайта для GET /api/order/{id} (тот же хост, что и витрина)
 DEFAULT_SITE_ORIGIN = os.getenv("ILLUCARDS_SITE_ORIGIN", "https://www.illucards.by").rstrip("/")
+# Ссылка «вход на сайт» (?user=<telegram id>) — по умолчанию без www
+SITE_LOGIN_ORIGIN = os.getenv("ILLUCARDS_SITE_LOGIN_ORIGIN", "https://illucards.by").rstrip("/")
 CARDS_PATH = Path(__file__).resolve().parent / "cards.json"
 
 DELIVERY_LABELS: dict[str, str] = {
@@ -357,6 +359,28 @@ def _main_keyboard() -> ReplyKeyboardMarkup:
     )
 
 
+def _site_open_markup(telegram_user_id: int) -> InlineKeyboardMarkup:
+    """Кнопка со ссылкой на сайт с авторизацией по Telegram id."""
+    uid = int(telegram_user_id)
+    url = f"{SITE_LOGIN_ORIGIN}/?user={uid}"
+    return InlineKeyboardMarkup([[InlineKeyboardButton("Открыть сайт", url=url)]])
+
+
+async def _reply_text_with_main_menu_and_site(
+    message,
+    text: str,
+    *,
+    telegram_user,
+) -> None:
+    """Reply-клавиатура меню + отдельное сообщение с URL-кнопкой на сайт."""
+    await message.reply_text(text, reply_markup=_main_keyboard())
+    if telegram_user is not None and getattr(telegram_user, "id", None) is not None:
+        await message.reply_text(
+            "Вход на сайте:",
+            reply_markup=_site_open_markup(int(telegram_user.id)),
+        )
+
+
 def _product_inline_kb() -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(
         [
@@ -471,10 +495,19 @@ def _format_order_text(order: dict[str, Any]) -> str:
     return "\n".join(lines)
 
 
-def _order_confirm_keyboard(order_id: str) -> InlineKeyboardMarkup:
+def _order_confirm_keyboard(order_id: str, telegram_user_id: int) -> InlineKeyboardMarkup:
     # callback_data ≤ 64 байт: orderok: + uuid
+    uid = int(telegram_user_id)
     return InlineKeyboardMarkup(
-        [[InlineKeyboardButton("✅ Подтвердить заказ", callback_data=f"orderok:{order_id}")]]
+        [
+            [InlineKeyboardButton("✅ Подтвердить заказ", callback_data=f"orderok:{order_id}")],
+            [
+                InlineKeyboardButton(
+                    "Открыть сайт",
+                    url=f"{SITE_LOGIN_ORIGIN}/?user={uid}",
+                )
+            ],
+        ]
     )
 
 
@@ -502,27 +535,30 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     if oid:
         order = await fetch_site_order(oid)
         if not order:
-            await update.message.reply_text(
+            await _reply_text_with_main_menu_and_site(
+                update.message,
                 "❌ Заказ не найден или сервис недоступен. Попробуйте позже.",
-                reply_markup=_main_keyboard(),
+                telegram_user=user,
             )
             return
         if not user or not _order_belongs_to_telegram_user(order, user.id):
-            await update.message.reply_text(
+            await _reply_text_with_main_menu_and_site(
+                update.message,
                 "❌ Это не ваш заказ",
-                reply_markup=_main_keyboard(),
+                telegram_user=user,
             )
             return
         text = _format_order_text(order)
         await update.message.reply_text(
             text,
-            reply_markup=_order_confirm_keyboard(oid),
+            reply_markup=_order_confirm_keyboard(oid, user.id),
         )
         return
 
-    await update.message.reply_text(
+    await _reply_text_with_main_menu_and_site(
+        update.message,
         "IlluCards",
-        reply_markup=_main_keyboard(),
+        telegram_user=user,
     )
 
 

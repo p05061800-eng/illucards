@@ -3,8 +3,8 @@ import { Suspense } from "react";
 import RegisterPageClient from "./RegisterPageClient";
 
 export const metadata: Metadata = {
-  title: "Регистрация — IlluCards",
-  description: "Создать аккаунт IlluCards",
+  title: "Вход — IlluCards",
+  description: "Перенаправление на вход через Telegram",
 };
 
 export default function RegisterPage() {

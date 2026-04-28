@@ -22,8 +22,8 @@ export default function CheckoutPageClient() {
         Заказ
       </h1>
       <p className="mb-8 text-center text-sm leading-relaxed text-zinc-400">
-        Нажмите кнопку — заказ сохранится на сайте, затем откроется Telegram-бот
-        с номером заказа.
+        Войдите через Telegram, если ещё не вошли. После нажатия «Оформить заказ»
+        откроется бот с текстом заказа — без копирования и лишних окон.
       </p>
       <DeliveryCountryField
         id={deliveryFieldId}

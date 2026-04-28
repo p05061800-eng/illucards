@@ -1,7 +1,9 @@
 "use client";
 
 import type { ReactNode } from "react";
+import { Suspense } from "react";
 import { CartDrawer } from "./components/CartDrawer";
+import { TelegramUserQueryAuth } from "./components/TelegramUserQueryAuth";
 import { AuthProvider } from "./context/AuthContext";
 import { CartProvider } from "./context/CartContext";
 import { CardRatingsProvider } from "./context/CardRatingsContext";
@@ -14,6 +16,9 @@ import { CategoryFramesProvider } from "./context/CategoryFramesContext";
 export function Providers({ children }: { children: ReactNode }) {
   return (
     <AuthProvider>
+      <Suspense fallback={null}>
+        <TelegramUserQueryAuth />
+      </Suspense>
       <CurrencyProvider>
         <FavoritesProvider>
           <CategoryFramesProvider>

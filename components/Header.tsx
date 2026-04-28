@@ -29,7 +29,10 @@ export default function Header() {
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
   const { favorites, hydrated: favoritesHydrated } = useFavorites();
-  const { user: authUser, hydrated: authHydrated } = useAuth();
+  const { hydrated: authHydrated, primaryTelegramUserId } = useAuth();
+  const isTgLoggedIn = Boolean(
+    authHydrated && primaryTelegramUserId != null,
+  );
   const { itemCount, hydrated, cartOpen, openCart } = useCart();
   const count = hydrated ? itemCount : 0;
   const { currency, setCurrency } = useCurrency();
@@ -259,21 +262,32 @@ export default function Header() {
           </Link>
 
           <Link
-            href={authHydrated && authUser ? "/account" : "/login"}
-            className="relative inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-white/15 bg-white/[0.06] text-zinc-200 transition hover:border-white/25 hover:bg-white/10"
+            href={isTgLoggedIn ? "/account" : "/login"}
+            className="inline-flex min-h-10 max-w-[min(11rem,32vw)] shrink-0 items-center gap-1.5 rounded-xl border border-white/15 bg-white/[0.06] px-2 py-1.5 text-left transition hover:border-white/25 hover:bg-white/10 sm:max-w-[14rem] sm:gap-2 sm:px-2.5"
             aria-label={
-              authHydrated && authUser
-                ? "Личный кабинет"
-                : "Войти"
+              isTgLoggedIn
+                ? "Вы вошли — личный кабинет"
+                : "Войти через Telegram"
             }
-            title={authHydrated && authUser ? "Кабинет" : "Войти"}
+            title={isTgLoggedIn ? "Личный кабинет" : "Войти через Telegram"}
           >
-            <User className="h-[18px] w-[18px]" aria-hidden />
-            {authHydrated && !authUser ? (
-              <span className="absolute -bottom-0.5 -right-1 rounded bg-amber-600 px-1 py-px text-[8px] font-bold uppercase leading-none text-white ring-1 ring-black">
-                Войти
-              </span>
-            ) : null}
+            <User
+              className="h-[18px] w-[18px] shrink-0 text-zinc-200"
+              aria-hidden
+            />
+            <span className="min-w-0 flex-1 text-[10px] font-medium leading-tight sm:text-xs">
+              {isTgLoggedIn ? (
+                <span className="block sm:inline">
+                  <span className="text-emerald-400/95">Вы вошли</span>
+                  <span className="text-zinc-500 sm:mx-1">·</span>
+                  <span className="text-zinc-200">Кабинет</span>
+                </span>
+              ) : (
+                <span className="line-clamp-2 text-zinc-200 sm:line-clamp-1">
+                  Войти через Telegram
+                </span>
+              )}
+            </span>
           </Link>
 
           <button
@@ -335,11 +349,20 @@ export default function Header() {
                 Избранное
               </Link>
               <Link
-                href={authHydrated && authUser ? "/account" : "/login"}
+                href={isTgLoggedIn ? "/account" : "/login"}
                 className="rounded-xl px-3 py-3 text-sm font-medium text-zinc-200 transition hover:bg-white/[0.06]"
                 onClick={() => setMobileNavOpen(false)}
               >
-                {authHydrated && authUser ? "Личный кабинет" : "Войти"}
+                {isTgLoggedIn ? (
+                  <span className="flex flex-col gap-0.5">
+                    <span className="text-xs font-semibold text-emerald-400/95">
+                      Вы вошли
+                    </span>
+                    <span>Личный кабинет</span>
+                  </span>
+                ) : (
+                  "Войти через Telegram"
+                )}
               </Link>
             </div>
 

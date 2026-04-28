@@ -4,7 +4,7 @@ import LoginPageClient from "./LoginPageClient";
 
 export const metadata: Metadata = {
   title: "Вход — IlluCards",
-  description: "Вход в личный кабинет IlluCards",
+  description: "Вход через Telegram",
 };
 
 export default function LoginPage() {

@@ -13,7 +13,7 @@
     "backfill:card-dims": "node scripts/backfill-card-front-dimensions.mjs",
     "vercel:link": "npx vercel@latest link",
     "vercel:deploy": "npx vercel@latest deploy --prod",
-    "deploy": "git add . && git commit -m \"deploy\" && git push"
+    "deploy": "git add . && (git diff --cached --quiet && echo \"No changes to deploy\" || (git commit -m \"deploy\" && git push))"
   },
   "dependencies": {
     "framer-motion": "^12.38.0",

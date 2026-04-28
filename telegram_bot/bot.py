@@ -34,6 +34,7 @@ logger = logging.getLogger(__name__)
 REPO_ROOT = Path(__file__).resolve().parent.parent
 TELEGRAM_USERS_PATH = REPO_ROOT / "data" / "telegram-bot-users.json"
 BOT_ORDERS_PATH = REPO_ROOT / "data" / "bot-orders.json"
+KNOWN_START_IDS_PATH = REPO_ROOT / "data" / "bot-known-start-user-ids.json"
 # Подтверждённые в боте заказы: order_id → { user_id, items, total, status }
 BOT_ORDERS: dict[str, dict[str, Any]] = {}
 
@@ -90,6 +91,58 @@ def _persist_bot_orders() -> None:
             json.dump(BOT_ORDERS, f, ensure_ascii=False, indent=2)
     except OSError as e:
         logger.warning("bot-orders write: %s", e)
+
+
+def _load_known_start_user_ids() -> set[int]:
+    if not KNOWN_START_IDS_PATH.exists():
+        return set()
+    try:
+        with open(KNOWN_START_IDS_PATH, "r", encoding="utf-8") as f:
+            raw = json.load(f)
+        if not isinstance(raw, list):
+            return set()
+        out: set[int] = set()
+        for x in raw:
+            try:
+                out.add(int(x))
+            except (TypeError, ValueError):
+                continue
+        return out
+    except (OSError, json.JSONDecodeError, ValueError) as e:
+        logger.warning("bot-known-start-user-ids read: %s", e)
+        return set()
+
+
+def _persist_known_start_user_ids(ids: set[int]) -> None:
+    try:
+        KNOWN_START_IDS_PATH.parent.mkdir(parents=True, exist_ok=True)
+        with open(KNOWN_START_IDS_PATH, "w", encoding="utf-8") as f:
+            json.dump(sorted(ids), f, ensure_ascii=False, indent=2)
+    except OSError as e:
+        logger.warning("bot-known-start-user-ids write: %s", e)
+
+
+def _record_first_start_and_is_new(telegram_user_id: int) -> bool:
+    """True — первый зафиксированный /start для этого id (показать «спасибо за авторизацию»)."""
+    uid = int(telegram_user_id)
+    known = _load_known_start_user_ids()
+    if uid in known:
+        return False
+    known.add(uid)
+    _persist_known_start_user_ids(known)
+    return True
+
+
+def _default_start_welcome_text(is_first: bool) -> str:
+    base = (
+        "Полная коллекция, цены и оформление заказа — на сайте IlluCards. "
+        "Нажмите «Открыть сайт» — вход на сайте привяжется к этому Telegram.\n\n"
+        "Если вы уже оформили заказ на сайте, он уже продублирован здесь: "
+        "перейдите по ссылке из оформления — останется только подтвердить заказ в этом чате."
+    )
+    if is_first:
+        return "Привет! Спасибо за авторизацию.\n\n" + base
+    return "С возвращением!\n\n" + base
 
 
 # Статусы: из bot-orders и (при появлении) с сайта
@@ -372,11 +425,11 @@ async def _reply_text_with_main_menu_and_site(
     *,
     telegram_user,
 ) -> None:
-    """Reply-клавиатура меню + отдельное сообщение с URL-кнопкой на сайт."""
+    """Текст ошибки + меню + кнопка «Открыть сайт»."""
     await message.reply_text(text, reply_markup=_main_keyboard())
     if telegram_user is not None and getattr(telegram_user, "id", None) is not None:
         await message.reply_text(
-            "Вход на сайте:",
+            "Сайт IlluCards",
             reply_markup=_site_open_markup(int(telegram_user.id)),
         )
 
@@ -500,7 +553,7 @@ def _order_confirm_keyboard(order_id: str, telegram_user_id: int) -> InlineKeybo
     uid = int(telegram_user_id)
     return InlineKeyboardMarkup(
         [
-            [InlineKeyboardButton("✅ Подтвердить заказ", callback_data=f"orderok:{order_id}")],
+            [InlineKeyboardButton("Подтвердить заказ", callback_data=f"orderok:{order_id}")],
             [
                 InlineKeyboardButton(
                     "Открыть сайт",
@@ -537,28 +590,41 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         if not order:
             await _reply_text_with_main_menu_and_site(
                 update.message,
-                "❌ Заказ не найден или сервис недоступен. Попробуйте позже.",
+                "Заказ не найден или сервис недоступен. Попробуйте позже.",
                 telegram_user=user,
             )
             return
         if not user or not _order_belongs_to_telegram_user(order, user.id):
             await _reply_text_with_main_menu_and_site(
                 update.message,
-                "❌ Это не ваш заказ",
+                "Это не ваш заказ.",
                 telegram_user=user,
             )
             return
-        text = _format_order_text(order)
+        intro = (
+            "Заказ с сайта уже продублирован сюда. Проверьте состав и сумму — "
+            "осталось только подтвердить заказ кнопкой ниже.\n\n"
+        )
+        text = intro + _format_order_text(order)
         await update.message.reply_text(
             text,
             reply_markup=_order_confirm_keyboard(oid, user.id),
         )
         return
 
-    await _reply_text_with_main_menu_and_site(
-        update.message,
-        "IlluCards",
-        telegram_user=user,
+    if not user or getattr(user, "id", None) is None:
+        await update.message.reply_text("Не удалось определить пользователя.")
+        return
+
+    is_new_here = _record_first_start_and_is_new(int(user.id))
+    welcome = _default_start_welcome_text(is_new_here)
+    await update.message.reply_text(
+        welcome,
+        reply_markup=_site_open_markup(int(user.id)),
+    )
+    await update.message.reply_text(
+        "Каталог и корзина — кнопками ниже.",
+        reply_markup=_main_keyboard(),
     )
 
 
@@ -764,7 +830,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
             await q.edit_message_reply_markup(reply_markup=None)
         except Exception:
             pass
-        await q.message.reply_text("✅ Заказ подтверждён. Спасибо!")
+        await q.message.reply_text("Заказ подтверждён. Спасибо!")
         return
 
     await q.answer()

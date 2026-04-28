@@ -1,12 +1,11 @@
 "use client";
 
-import Link from "next/link";
 import { MessageCircle } from "lucide-react";
-import { usePathname } from "next/navigation";
 import { useCallback, useMemo, useState } from "react";
 import { useAuth } from "@/app/context/AuthContext";
 import { useCart } from "@/app/context/CartContext";
 import { TELEGRAM_ORDER_BOT_DEFAULT } from "@/app/lib/telegramOrderCheckout";
+import { telegramWebLoginDeepLink } from "@/app/lib/telegramWebLoginUrl";
 
 type Props = {
   className?: string;
@@ -33,11 +32,7 @@ export function TelegramCheckoutButton({
   className = "",
   onBeforeNavigate,
 }: Props) {
-  const pathname = usePathname();
-  const loginHref = useMemo(
-    () => `/login?next=${encodeURIComponent(pathname || "/")}`,
-    [pathname],
-  );
+  const botLoginHref = useMemo(() => telegramWebLoginDeepLink(), []);
 
   const { cartItems, hydrated, deliveryCountry, orderTotalByn } = useCart();
   const { primaryTelegramUserId, user } = useAuth();
@@ -120,7 +115,7 @@ export function TelegramCheckoutButton({
     orderTotalByn,
     primaryTelegramUserId,
     submitting,
-    user?.telegramUsername,
+    user,
   ]);
 
   if (!hydrated) {
@@ -133,17 +128,16 @@ export function TelegramCheckoutButton({
 
   if (primaryTelegramUserId == null) {
     return (
-      <div className="w-full space-y-3">
-        <p className="text-center text-sm text-zinc-400">
-          Чтобы оформить заказ, сначала войдите
-        </p>
-        <Link
-          href={loginHref}
+      <div className="w-full">
+        <a
+          href={botLoginHref}
+          target="_blank"
+          rel="noopener noreferrer"
           className="inline-flex min-h-14 w-full items-center justify-center gap-2 rounded-2xl bg-[#229ED9] px-4 text-sm font-semibold text-white shadow-md transition hover:brightness-105 focus-visible:outline focus-visible:ring-2 focus-visible:ring-sky-400/80 active:scale-[0.99] sm:min-h-[3.5rem] sm:text-base"
         >
           <MessageCircle className="h-5 w-5 shrink-0 sm:h-6 sm:w-6" strokeWidth={2} aria-hidden />
           Войти через Telegram
-        </Link>
+        </a>
       </div>
     );
   }

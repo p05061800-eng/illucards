@@ -16,7 +16,7 @@ import {
 } from "@/app/lib/telegramWidgetSessionCookie";
 
 function loginRedirect(request: NextRequest, tg: "widget" | "err"): NextResponse {
-  const u = new URL("/login", request.url);
+  const u = new URL("/", request.url);
   u.searchParams.set("tg", tg);
   return NextResponse.redirect(u);
 }

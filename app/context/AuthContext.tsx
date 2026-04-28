@@ -39,7 +39,7 @@ type AuthContextValue = {
   hydrated: boolean;
   guestEmail: string | null;
   setGuestEmail: (email: string) => void;
-  /** Создаёт или поднимает локального пользователя по Telegram id (в т.ч. из `?user=`). */
+  /** Создаёт или поднимает локального пользователя по Telegram id (в т.ч. из `?user_id=`). */
   establishSessionFromTelegramUserId: (
     telegramUserId: number,
     options?: { telegramUsername?: string | null }

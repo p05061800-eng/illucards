@@ -4,6 +4,8 @@
  */
 
 export const LS_TELEGRAM_USER_ID = "telegram_user_id";
+/** Дублирует id для простых проверок авторизации (`localStorage.getItem('tg_user_id')`). */
+export const LS_TG_USER_ID = "tg_user_id";
 /** JSON: { user_id: number, username: string } */
 export const LS_TELEGRAM_USER = "illucards_telegram_user";
 
@@ -36,6 +38,7 @@ export function persistTelegramUserIdentity(
   const uname = typeof username === "string" ? username.replace(/^@/, "").trim() : "";
   try {
     localStorage.setItem(LS_TELEGRAM_USER_ID, String(telegramId));
+    localStorage.setItem(LS_TG_USER_ID, String(telegramId));
     localStorage.setItem(
       LS_TELEGRAM_USER,
       JSON.stringify({
@@ -53,6 +56,7 @@ export function clearTelegramUserIdentity(): void {
   if (!canUseDom()) return;
   try {
     localStorage.removeItem(LS_TELEGRAM_USER_ID);
+    localStorage.removeItem(LS_TG_USER_ID);
     localStorage.removeItem(LS_TELEGRAM_USER);
   } catch {
     /* ignore */
@@ -64,7 +68,9 @@ export function clearTelegramUserIdentity(): void {
 export function readTelegramPrimaryUserId(): number | null {
   if (!canUseDom()) return null;
   try {
-    const raw = localStorage.getItem(LS_TELEGRAM_USER_ID);
+    const raw =
+      localStorage.getItem(LS_TELEGRAM_USER_ID) ||
+      localStorage.getItem(LS_TG_USER_ID);
     if (!raw) return null;
     const n = Number(raw);
     if (!Number.isFinite(n) || n <= 0) return null;

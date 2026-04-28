@@ -21,6 +21,29 @@ function applyApiCors(request: NextRequest, response: NextResponse) {
 }
 
 export function middleware(request: NextRequest) {
+  const { pathname } = request.nextUrl;
+
+  if (pathname === "/login") {
+    const dest = request.nextUrl.clone();
+    dest.pathname = "/";
+    dest.search = "";
+    const userId =
+      request.nextUrl.searchParams.get("user_id") ||
+      request.nextUrl.searchParams.get("user");
+    const username = request.nextUrl.searchParams.get("username");
+    if (userId != null && userId !== "") {
+      dest.searchParams.set("user_id", userId);
+    }
+    if (username != null && username !== "") {
+      dest.searchParams.set("username", username);
+    }
+    return NextResponse.redirect(dest);
+  }
+
+  if (!pathname.startsWith("/api/")) {
+    return NextResponse.next();
+  }
+
   if (request.method === "OPTIONS") {
     return applyApiCors(request, new NextResponse(null, { status: 204 }));
   }
@@ -28,5 +51,5 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: "/api/:path*",
+  matcher: ["/api/:path*", "/login"],
 };

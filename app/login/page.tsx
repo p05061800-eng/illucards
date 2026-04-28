@@ -1,22 +1,6 @@
-import type { Metadata } from "next";
-import { Suspense } from "react";
-import LoginPageClient from "./LoginPageClient";
+import { redirect } from "next/navigation";
 
-export const metadata: Metadata = {
-  title: "Вход — IlluCards",
-  description: "Вход через Telegram",
-};
-
+/** Маршрут сохранён для совместимости; редирект дублируется в `middleware.ts`. */
 export default function LoginPage() {
-  return (
-    <Suspense
-      fallback={
-        <div className="mx-auto max-w-md px-4 py-20 text-center text-sm text-zinc-500">
-          Загрузка…
-        </div>
-      }
-    >
-      <LoginPageClient />
-    </Suspense>
-  );
+  redirect("/");
 }

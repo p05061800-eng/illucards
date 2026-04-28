@@ -218,7 +218,7 @@ def _format_order_admin(
 PRODUCTS_API = "https://www.illucards.by/api/products"
 # База сайта для GET /api/order/{id} (тот же хост, что и витрина)
 DEFAULT_SITE_ORIGIN = os.getenv("ILLUCARDS_SITE_ORIGIN", "https://www.illucards.by").rstrip("/")
-# Ссылка «вход на сайт» (?user=<telegram id>) — по умолчанию без www
+# Ссылка «вход на сайт» (?user_id=<telegram id>) — по умолчанию без www
 SITE_LOGIN_ORIGIN = os.getenv("ILLUCARDS_SITE_LOGIN_ORIGIN", "https://illucards.by").rstrip("/")
 CARDS_PATH = Path(__file__).resolve().parent / "cards.json"
 
@@ -362,7 +362,7 @@ def _main_keyboard() -> ReplyKeyboardMarkup:
 def _site_open_markup(telegram_user_id: int) -> InlineKeyboardMarkup:
     """Кнопка со ссылкой на сайт с авторизацией по Telegram id."""
     uid = int(telegram_user_id)
-    url = f"{SITE_LOGIN_ORIGIN}/?user={uid}"
+    url = f"{SITE_LOGIN_ORIGIN}/?user_id={uid}"
     return InlineKeyboardMarkup([[InlineKeyboardButton("Открыть сайт", url=url)]])
 
 
@@ -504,7 +504,7 @@ def _order_confirm_keyboard(order_id: str, telegram_user_id: int) -> InlineKeybo
             [
                 InlineKeyboardButton(
                     "Открыть сайт",
-                    url=f"{SITE_LOGIN_ORIGIN}/?user={uid}",
+                    url=f"{SITE_LOGIN_ORIGIN}/?user_id={uid}",
                 )
             ],
         ]

@@ -21,10 +21,6 @@ export default function CheckoutPageClient() {
       <h1 className="mb-3 text-center text-2xl font-semibold tracking-tight text-white sm:text-3xl">
         Заказ
       </h1>
-      <p className="mb-8 text-center text-sm leading-relaxed text-zinc-400">
-        Войдите через Telegram, если ещё не вошли. После нажатия «Оформить заказ»
-        откроется бот с текстом заказа — без копирования и лишних окон.
-      </p>
       <DeliveryCountryField
         id={deliveryFieldId}
         value={deliveryCountry}

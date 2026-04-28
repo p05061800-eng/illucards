@@ -54,7 +54,9 @@ export function TelegramUserQueryAuth() {
     params.delete("user");
     params.delete("username");
     const q = params.toString();
-    router.replace(q ? `${pathname}?${q}` : pathname, { scroll: false });
+    const sanitizedPath = q ? `${pathname}?${q}` : pathname;
+    const shouldOpenAccount = !pathname.startsWith("/account");
+    router.replace(shouldOpenAccount ? "/account" : sanitizedPath, { scroll: false });
   }, [
     searchParams,
     pathname,

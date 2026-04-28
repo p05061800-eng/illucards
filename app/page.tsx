@@ -1,6 +1,6 @@
 import HeroSection from "@/components/hero/HeroSection";
 import { HomeCollection } from "./components/HomeCollection";
-import { parseCardsJson } from "./api/cards/route";
+import { parseCardsJson } from "./lib/cardsJson";
 import type { CategoryTile } from "./lib/categoriesJson";
 import { parseCategoriesJson } from "./lib/categoriesJson";
 import {

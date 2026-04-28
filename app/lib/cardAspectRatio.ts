@@ -36,6 +36,7 @@ export type CardArtFramePreset =
 export function isFixedCardArtFramePreset(
   _p: CardArtFramePreset | undefined,
 ): boolean {
+  void _p;
   return false;
 }
 
@@ -124,6 +125,7 @@ export function resolveCardArtBoxAspectCss(
   _categoryFrameAspectCss?: string | null,
 ): string {
   void card.cardArtFramePreset;
+  void _categoryFrameAspectCss;
   if (isTmntCategory(card)) {
     return CARD_ART_TMNT_POSTER_ASPECT_CSS;
   }

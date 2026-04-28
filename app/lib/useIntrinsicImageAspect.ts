@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 import {
   DEFAULT_CARD_ASPECT_RATIO_CSS,
-  aspectRatioCssFromDimensions,
   bucketCardArtFrameAspectCssFromDimensions,
 } from "@/app/lib/cardAspectRatio";
 

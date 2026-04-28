@@ -205,5 +205,9 @@ export async function listOrdersForUser(
     });
   }
   rows.sort((a, b) => b.mtime - a.mtime);
-  return rows.map(({ mtime: _m, ...rest }) => rest);
+  return rows.map((row) => ({
+    id: row.id,
+    total: row.total,
+    status: row.status,
+  }));
 }

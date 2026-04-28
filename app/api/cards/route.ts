@@ -1,7 +1,8 @@
 import { randomUUID } from "crypto";
 import { promises as fs } from "fs";
+import { parseCardsJson } from "@/app/lib/cardsJson";
 import type { ImageFocus } from "@/app/lib/imageFocus";
-import { parseImageFocus, parseImageFocusJson } from "@/app/lib/imageFocus";
+import { parseImageFocusJson } from "@/app/lib/imageFocus";
 import { NextRequest, NextResponse } from "next/server";
 import path from "path";
 import { maxCategoryOrderInCategory } from "@/app/lib/adminCategoryOrder";
@@ -37,7 +38,7 @@ async function ensureStorage() {
 /** Vario / Morphing (две картинки) или 3D (лицевая + наклон без смены сторон). */
 export type CardEffectKind = "vario" | "morphing" | "3d-horizontal";
 
-export function normalizeCardEffect(raw: unknown): CardEffectKind {
+function normalizeCardEffect(raw: unknown): CardEffectKind {
   const s = typeof raw === "string" ? raw.trim().toLowerCase() : "";
   if (s === "vario") return "vario";
   if (s === "morphing") return "morphing";
@@ -96,13 +97,6 @@ export type CardStats = {
   magic: number;
 };
 
-const DEFAULT_STATS: CardStats = {
-  power: 50,
-  speed: 50,
-  intelligence: 50,
-  magic: 50,
-};
-
 function clampStat(n: number): number {
   if (!Number.isFinite(n)) return 50;
   return Math.max(0, Math.min(100, Math.round(n)));
@@ -116,19 +110,6 @@ function parseCardFlag(raw: unknown): boolean {
     return s === "true" || s === "1" || s === "yes" || s === "on";
   }
   return false;
-}
-
-function parseStats(raw: unknown): CardStats {
-  if (raw && typeof raw === "object" && !Array.isArray(raw)) {
-    const o = raw as Record<string, unknown>;
-    return {
-      power: clampStat(Number(o.power)),
-      speed: clampStat(Number(o.speed)),
-      intelligence: clampStat(Number(o.intelligence)),
-      magic: clampStat(Number(o.magic)),
-    };
-  }
-  return { ...DEFAULT_STATS };
 }
 
 export type CardReview = {
@@ -259,18 +240,6 @@ function parseRatingAvg(raw: unknown): number {
   return 5;
 }
 
-function parsePositiveDimension(raw: unknown): number | undefined {
-  if (typeof raw === "number" && Number.isFinite(raw)) {
-    const n = Math.round(raw);
-    if (n > 0 && n <= 65535) return n;
-  }
-  if (typeof raw === "string" && raw.trim()) {
-    const n = parseInt(raw.trim(), 10);
-    if (Number.isFinite(n) && n > 0 && n <= 65535) return n;
-  }
-  return undefined;
-}
-
 function parseCategoryOrder(raw: unknown): number | undefined {
   if (raw === undefined || raw === null || raw === "") return undefined;
   const n =
@@ -334,181 +303,12 @@ function parseReviews(raw: unknown): CardReview[] | undefined {
   return out.length > 0 ? out : undefined;
 }
 
-function parseIdList(raw: unknown): string[] | undefined {
-  if (!Array.isArray(raw)) return undefined;
-  const ids = raw
-    .map((x) => String(x).trim())
-    .filter((s) => s.length > 0);
-  return ids.length > 0 ? ids : undefined;
-}
-
 function parseIdListFromComma(raw: string): string[] {
   return raw
     .split(/[,;\s]+/)
     .map((s) => s.trim())
     .filter(Boolean);
 }
-
-function normalizeCard(raw: Record<string, unknown>): StoredCard {
-  const legacy =
-    typeof raw.image === "string" && raw.image.length > 0 ? raw.image : "";
-  const front =
-    typeof raw.frontImage === "string" && raw.frontImage.length > 0
-      ? raw.frontImage
-      : legacy;
-  const rawBackFull =
-    typeof raw.backImage === "string" && raw.backImage.length > 0
-      ? raw.backImage.trim()
-      : "";
-
-  const effectRaw =
-    typeof raw.effect === "string" ? raw.effect.trim() : "";
-  const effectFromJson = effectRaw ? normalizeCardEffect(effectRaw) : null;
-  const effect: CardEffectKind =
-    effectFromJson ??
-    (rawBackFull && rawBackFull !== front ? "vario" : "3d-horizontal");
-
-  let back = "";
-  if (effect === "vario" || effect === "morphing") {
-    back = rawBackFull || front;
-  }
-
-  const reviewsParsed = parseReviews(raw.reviews);
-  const reviewCountRaw = parseReviewCount(raw.reviewCount);
-  const countFromReviews = reviewsParsed?.length ?? 0;
-  const tagsMulti = normalizeRarityArrayFromJson(raw.rarities);
-  const singular = parseCardRarity(raw.rarity);
-  const rarityTags =
-    tagsMulti && tagsMulti.length > 0 ? tagsMulti : [singular];
-  const rarityValue = canonicalRarityFromTags(rarityTags);
-  const card: StoredCard = {
-    id: String(raw.id ?? ""),
-    title: String(raw.title ?? ""),
-    description: String(raw.description ?? ""),
-    category:
-      typeof raw.category === "string" ? raw.category : "",
-    subcategory: "",
-    frontImage: front,
-    backImage: back,
-    price: parsePrice(raw.price),
-    rarity: rarityValue,
-    stats: parseStats(raw.stats),
-    isNew: parseCardFlag(raw.isNew),
-    isPopular: parseCardFlag(raw.isPopular),
-    isSale: parseCardFlag(raw.isSale),
-    inStock:
-      raw.inStock === undefined ? true : parseCardFlag(raw.inStock),
-    ratingAvg: parseRatingAvg(raw.ratingAvg),
-    reviewCount:
-      reviewCountRaw > 0
-        ? reviewCountRaw
-        : countFromReviews > 0
-          ? countFromReviews
-          : 0,
-  };
-  if (rarityTags.length > 1) {
-    card.rarities = rarityTags;
-  }
-  if (reviewsParsed) {
-    card.reviews = reviewsParsed;
-  }
-  const pv =
-    typeof raw.productVideo === "string" ? raw.productVideo.trim() : "";
-  if (pv && isSafeVideoUrl(pv)) {
-    card.productVideo = pv;
-  }
-  const hg =
-    typeof raw.frontHoverGif === "string" ? raw.frontHoverGif.trim() : "";
-  if (hg && isSafeFrontHoverMotionPath(hg)) {
-    card.frontHoverGif = hg;
-  }
-  const bt = parseIdList(raw.boughtTogetherIds);
-  if (bt) {
-    card.boughtTogetherIds = bt;
-  }
-  const rec = parseIdList(raw.recommendedIds);
-  if (rec) {
-    card.recommendedIds = rec;
-  }
-  card.effect = effect;
-  const bgRaw = typeof raw.bg === "string" ? raw.bg.trim() : "";
-  if (bgRaw) {
-    card.bg = bgRaw;
-  }
-  const categoryBgRaw =
-    typeof raw.categoryBg === "string" ? raw.categoryBg.trim() : "";
-  const legacyBgImage =
-    typeof raw.bgImage === "string" ? raw.bgImage.trim() : "";
-  if (categoryBgRaw) {
-    card.categoryBg = categoryBgRaw;
-  } else if (legacyBgImage) {
-    card.categoryBg = legacyBgImage;
-  }
-  const heroBgRaw = typeof raw.heroBg === "string" ? raw.heroBg.trim() : "";
-  if (heroBgRaw) {
-    card.heroBg = heroBgRaw;
-  }
-  const ultraBgRaw = typeof raw.ultraBg === "string" ? raw.ultraBg.trim() : "";
-  if (ultraBgRaw) {
-    card.ultraBg = ultraBgRaw;
-  }
-  const ff = parseImageFocus(raw.frontImageFocus);
-  if (ff) {
-    card.frontImageFocus = ff;
-  }
-  const bf = parseImageFocus(raw.backImageFocus);
-  if (bf) {
-    card.backImageFocus = bf;
-  }
-  const midImg =
-    typeof raw.middleImage === "string" ? raw.middleImage.trim() : "";
-  if (midImg) {
-    card.middleImage = midImg;
-  }
-  const mf = parseImageFocus(raw.middleImageFocus);
-  if (mf && card.middleImage?.trim()) {
-    card.middleImageFocus = mf;
-  }
-  const cf = parseImageFocus(raw.categoryBgFocus);
-  if (cf) {
-    card.categoryBgFocus = cf;
-  }
-  const vf = parseImageFocus(raw.productVideoFocus);
-  if (vf && card.productVideo?.trim()) {
-    card.productVideoFocus = vf;
-  }
-  const prub = parseOptionalPriceRub(raw.priceRub);
-  if (prub !== undefined) {
-    card.priceRub = prub;
-  }
-  const co = parseCategoryOrder(raw.categoryOrder);
-  if (co !== undefined) {
-    card.categoryOrder = co;
-  }
-  if (parseCardFlag(raw.varioSmoothBlend) && effect !== "morphing") {
-    card.varioSmoothBlend = true;
-  }
-  const vs = parseVarioSmoothing(raw.varioSmoothing);
-  if (vs !== undefined) {
-    card.varioSmoothing = vs;
-  }
-  const fiw = parsePositiveDimension(raw.frontImageWidth);
-  const fih = parsePositiveDimension(raw.frontImageHeight);
-  if (fiw && fih) {
-    card.frontImageWidth = fiw;
-    card.frontImageHeight = fih;
-  }
-  if (card.category?.trim() === "TMNT") {
-    card.frontImageWidth = TMNT_REFERENCE_POSTER_DIMENSIONS.width;
-    card.frontImageHeight = TMNT_REFERENCE_POSTER_DIMENSIONS.height;
-  }
-  const framePreset = parseCardArtFramePreset(raw.cardArtFramePreset);
-  if (isFixedCardArtFramePreset(framePreset)) {
-    card.cardArtFramePreset = framePreset;
-  }
-  return card;
-}
-
 
 type CardImageSavePipeline = "card34" | "tmntPoster";
 
@@ -542,19 +342,6 @@ async function resolveUploadedImage(
     return saveImageFile(file, pipeline);
   }
   return null;
-}
-
-/** Разбор JSON из файла — учитывает старые карточки с полем `image`. */
-export function parseCardsJson(json: string): StoredCard[] {
-  try {
-    const parsed = JSON.parse(json) as unknown;
-    if (!Array.isArray(parsed)) return [];
-    return parsed.map((item) =>
-      normalizeCard(item as Record<string, unknown>)
-    );
-  } catch {
-    return [];
-  }
 }
 
 async function readCards(): Promise<StoredCard[]> {

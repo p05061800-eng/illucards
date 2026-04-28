@@ -214,7 +214,7 @@ export function HomeCollection({
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [filtersOpen]);
+  }, [filtersOpen, setFiltersOpen]);
 
   useEffect(() => {
     if (pathname !== "/") return;

@@ -3,7 +3,7 @@ import fs from "fs";
 import Link from "next/link";
 import path from "path";
 import type { StoredCard } from "../api/cards/route";
-import { parseCardsJson } from "../api/cards/route";
+import { parseCardsJson } from "../lib/cardsJson";
 import { AdminTabs } from "./AdminTabs";
 
 export const metadata: Metadata = {

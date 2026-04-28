@@ -2,7 +2,8 @@ import type { Metadata } from "next";
 import fs from "fs";
 import path from "path";
 import { notFound } from "next/navigation";
-import { parseCardsJson, type StoredCard } from "../../api/cards/route";
+import type { StoredCard } from "../../api/cards/route";
+import { parseCardsJson } from "../../lib/cardsJson";
 import CardProductContent from "./CardProductContent";
 
 function loadCards(): StoredCard[] {

@@ -2,10 +2,8 @@ import { promises as fs } from "fs";
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 import path from "path";
-import {
-  parseCardsJson,
-  type StoredCard,
-} from "@/app/api/cards/route";
+import type { StoredCard } from "@/app/api/cards/route";
+import { parseCardsJson } from "@/app/lib/cardsJson";
 
 const DATA_PATH = path.join(process.cwd(), "data", "cards.json");
 

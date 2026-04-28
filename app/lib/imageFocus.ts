@@ -136,6 +136,7 @@ export function cardArtFaceFitStyle(
 export function cardArtFaceObjectFitClass(
   _preset: CardArtFramePreset | undefined,
 ): string {
+  void _preset;
   return "";
 }
 

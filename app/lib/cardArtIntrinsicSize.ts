@@ -22,6 +22,8 @@ export function getCardArtIntrinsicSize(
   width: number;
   height: number;
 } {
+  void _category;
+  void _tiles;
   return {
     width: CARD_ART_INTRINSIC_DEFAULT_WIDTH,
     height: CARD_ART_INTRINSIC_DEFAULT_HEIGHT,

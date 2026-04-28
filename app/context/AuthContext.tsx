@@ -190,7 +190,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
         found = updated;
       }
-      const { password: _, ...session } = found;
+      const { password, ...session } = found;
+      void password;
       setUser(session);
       writeSession(session);
       localStorage.removeItem(STORAGE_GUEST_EMAIL);

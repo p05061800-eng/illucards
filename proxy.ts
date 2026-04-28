@@ -11,16 +11,16 @@ function applyApiCors(request: NextRequest, response: NextResponse) {
   }
   response.headers.set(
     "Access-Control-Allow-Methods",
-    "GET, POST, PUT, PATCH, DELETE, OPTIONS"
+    "GET, POST, PUT, PATCH, DELETE, OPTIONS",
   );
   response.headers.set(
     "Access-Control-Allow-Headers",
-    "Content-Type, Authorization, X-Requested-With"
+    "Content-Type, Authorization, X-Requested-With",
   );
   return response;
 }
 
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   if (pathname === "/login") {

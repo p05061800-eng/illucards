@@ -20,7 +20,6 @@ import { SocialLinksBar } from "@/app/components/SocialLinksBar";
 import type { MenuJsonSection } from "@/app/lib/menuJson";
 import { categoryFocusToStyle } from "@/app/lib/imageFocus";
 import { apiUrl } from "@/app/lib/apiUrl";
-import { telegramWebLoginDeepLink } from "@/app/lib/telegramWebLoginUrl";
 
 export default function Header() {
   const pathname = usePathname();
@@ -266,7 +265,7 @@ export default function Header() {
             <Link
               href="/account"
               className="inline-flex min-h-10 max-w-[min(11rem,32vw)] shrink-0 items-center gap-1.5 rounded-xl border border-white/15 bg-white/[0.06] px-2 py-1.5 text-left transition hover:border-white/25 hover:bg-white/10 sm:max-w-[14rem] sm:gap-2 sm:px-2.5"
-              aria-label="Вы вошли — личный кабинет"
+              aria-label="Личный кабинет — вы вошли"
               title="Личный кабинет"
             >
               <User
@@ -274,32 +273,34 @@ export default function Header() {
                 aria-hidden
               />
               <span className="min-w-0 flex-1 text-[10px] font-medium leading-tight sm:text-xs">
-                <span className="block sm:inline">
-                  <span className="text-emerald-400/95">Вы вошли</span>
-                  <span className="text-zinc-500 sm:mx-1">·</span>
-                  <span className="text-zinc-200">Кабинет</span>
+                <span className="block truncate text-zinc-200">
+                  Личный кабинет
+                </span>
+                <span className="block truncate text-emerald-400/95">
+                  Вы вошли
                 </span>
               </span>
             </Link>
           ) : (
-            <a
-              href={telegramWebLoginDeepLink()}
-              target="_blank"
-              rel="noopener noreferrer"
+            <Link
+              href="/account"
               className="inline-flex min-h-10 max-w-[min(11rem,32vw)] shrink-0 items-center gap-1.5 rounded-xl border border-white/15 bg-white/[0.06] px-2 py-1.5 text-left transition hover:border-white/25 hover:bg-white/10 sm:max-w-[14rem] sm:gap-2 sm:px-2.5"
-              aria-label="Войти через Telegram"
-              title="Войти через Telegram"
+              aria-label="Личный кабинет"
+              title="Личный кабинет"
             >
               <User
                 className="h-[18px] w-[18px] shrink-0 text-zinc-200"
                 aria-hidden
               />
               <span className="min-w-0 flex-1 text-[10px] font-medium leading-tight sm:text-xs">
-                <span className="line-clamp-2 text-zinc-200 sm:line-clamp-1">
+                <span className="block truncate text-zinc-200">
+                  Личный кабинет
+                </span>
+                <span className="block truncate text-zinc-500">
                   Войти через Telegram
                 </span>
               </span>
-            </a>
+            </Link>
           )}
 
           <button
@@ -367,22 +368,25 @@ export default function Header() {
                   onClick={() => setMobileNavOpen(false)}
                 >
                   <span className="flex flex-col gap-0.5">
+                    <span>Личный кабинет</span>
                     <span className="text-xs font-semibold text-emerald-400/95">
                       Вы вошли
                     </span>
-                    <span>Личный кабинет</span>
                   </span>
                 </Link>
               ) : (
-                <a
-                  href={telegramWebLoginDeepLink()}
-                  target="_blank"
-                  rel="noopener noreferrer"
+                <Link
+                  href="/account"
                   className="block rounded-xl px-3 py-3 text-sm font-medium text-zinc-200 transition hover:bg-white/[0.06]"
                   onClick={() => setMobileNavOpen(false)}
                 >
-                  Войти через Telegram
-                </a>
+                  <span className="flex flex-col gap-0.5">
+                    <span>Личный кабинет</span>
+                    <span className="text-xs font-semibold text-zinc-500">
+                      Войти через Telegram
+                    </span>
+                  </span>
+                </Link>
               )}
             </div>
 

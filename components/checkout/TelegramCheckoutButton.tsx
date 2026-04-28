@@ -83,12 +83,6 @@ export function TelegramCheckoutButton({
         typeof (data as { order_id: unknown }).order_id === "string"
           ? (data as { order_id: string }).order_id.trim()
           : "";
-      const telegramSent =
-        data &&
-        typeof data === "object" &&
-        "telegram_sent" in data &&
-        (data as { telegram_sent: unknown }).telegram_sent === true;
-
       if (!res.ok || !orderId) {
         const msg =
           data &&
@@ -106,9 +100,7 @@ export function TelegramCheckoutButton({
       const startParam = `order_${orderId}`;
       onBeforeNavigate?.();
       window.location.assign(
-        telegramSent
-          ? `https://t.me/${encodeURIComponent(bot)}`
-          : `https://t.me/${encodeURIComponent(bot)}?start=${encodeURIComponent(startParam)}`,
+        `https://t.me/${encodeURIComponent(bot)}?start=${encodeURIComponent(startParam)}`,
       );
     } catch {
       setError("Сеть недоступна. Попробуйте ещё раз.");

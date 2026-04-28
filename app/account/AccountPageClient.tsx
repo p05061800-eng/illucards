@@ -16,6 +16,7 @@ import {
   readTelegramPrimaryUserId,
   readTelegramUserLink,
 } from "@/app/lib/telegramUserIdentity";
+import { telegramWebLoginDeepLink } from "@/app/lib/telegramWebLoginUrl";
 
 type LsGate = "pending" | "ok" | "no_telegram";
 
@@ -39,19 +40,19 @@ export default function AccountPageClient() {
   useEffect(() => {
     const id = readTelegramPrimaryUserId();
     if (id == null) {
-      router.replace("/");
       setLsGate("no_telegram");
       return;
     }
     setLsGate("ok");
-  }, [router]);
+  }, []);
 
   const loadOrders = useCallback(async () => {
     setOrdersError(null);
     try {
       const res = await fetch("/api/orders/mine", { credentials: "include" });
       if (res.status === 401) {
-        router.replace("/");
+        setLsGate("no_telegram");
+        setOrders([]);
         return;
       }
       if (!res.ok) {
@@ -65,7 +66,7 @@ export default function AccountPageClient() {
       setOrdersError("Ошибка сети");
       setOrders([]);
     }
-  }, [router]);
+  }, []);
 
   useEffect(() => {
     if (lsGate !== "ok" || !hydrated) return;
@@ -74,7 +75,9 @@ export default function AccountPageClient() {
 
   const handleLogout = useCallback(() => {
     logout();
-    router.push("/");
+    setOrders([]);
+    setLsGate("no_telegram");
+    router.push("/account");
     router.refresh();
   }, [logout, router]);
 
@@ -88,8 +91,55 @@ export default function AccountPageClient() {
 
   if (lsGate === "no_telegram") {
     return (
-      <div className="mx-auto max-w-lg px-4 py-20 text-center text-sm text-zinc-500">
-        Переход на главную…
+      <div
+        className="mx-auto w-full max-w-2xl px-4 pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-4 sm:px-5 sm:pt-6 md:max-w-3xl md:px-6"
+        data-account-marketplace
+      >
+        <h1 className="text-2xl font-bold tracking-tight text-white sm:text-[1.75rem]">
+          Личный кабинет
+        </h1>
+        <p className="mt-1 text-sm text-zinc-500">
+          Здесь будут профиль, заказы и статусы после входа через Telegram
+        </p>
+
+        <div className="mt-6 rounded-2xl bg-zinc-50 p-5 text-center text-zinc-900 shadow-[0_2px_12px_rgba(0,0,0,0.12)] ring-1 ring-zinc-200/90 sm:rounded-3xl sm:p-6">
+          <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-zinc-100 text-zinc-500 ring-1 ring-zinc-200">
+            <Package className="h-6 w-6" strokeWidth={1.5} aria-hidden />
+          </div>
+          <h2 className="text-lg font-bold tracking-tight text-zinc-950">
+            Войдите, чтобы увидеть заказы
+          </h2>
+          <p className="mx-auto mt-2 max-w-md text-sm leading-relaxed text-zinc-600">
+            После авторизации через Telegram в кабинете появятся ваши заказы и
+            текущие статусы доставки.
+          </p>
+          <a
+            href={telegramWebLoginDeepLink()}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mt-5 inline-flex min-h-11 items-center justify-center rounded-xl bg-[#5D6BF3] px-6 text-sm font-semibold text-white shadow-md transition hover:brightness-110"
+          >
+            Войти через Telegram
+          </a>
+        </div>
+
+        <section className="mt-8" aria-labelledby="account-orders-heading">
+          <h2
+            id="account-orders-heading"
+            className="text-lg font-semibold tracking-tight text-white sm:text-xl"
+          >
+            Заказы
+          </h2>
+          <div className="mt-3 rounded-2xl border border-dashed border-zinc-700/80 bg-zinc-900/40 px-5 py-10 text-center sm:px-6 sm:py-12">
+            <p className="text-sm font-medium text-zinc-200">
+              Заказы появятся после входа
+            </p>
+            <p className="mt-1.5 text-xs leading-relaxed text-zinc-500 sm:text-sm">
+              Кабинет всегда доступен, а данные заказов привязываются к вашему
+              Telegram ID.
+            </p>
+          </div>
+        </section>
       </div>
     );
   }

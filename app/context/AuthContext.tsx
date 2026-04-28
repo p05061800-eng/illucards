@@ -173,16 +173,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         users.push(newUser);
         writeUsers(users);
         found = newUser;
-      } else if (tgName) {
+      } else if (found && tgName) {
+        const existing = found;
         const updated: StoredUser = {
-          ...found,
+          ...existing,
           telegramUsername: tgName,
           firstName:
-            found.firstName && found.firstName !== "Пользователь"
-              ? found.firstName
+            existing.firstName && existing.firstName !== "Пользователь"
+              ? existing.firstName
               : `@${tgName}`,
         };
-        const idx = users.findIndex((u) => u.id === found.id);
+        const idx = users.findIndex((u) => u.id === existing.id);
         if (idx >= 0) {
           users[idx] = updated;
           writeUsers(users);

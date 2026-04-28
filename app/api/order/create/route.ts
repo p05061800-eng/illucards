@@ -7,6 +7,7 @@ import {
   parseOptionalUsername,
   persistOrder,
 } from "@/app/lib/orderCreateShared";
+import { recordAndNotifyTelegramOrder } from "@/app/lib/telegramOrderNotify";
 
 /**
  * Создание заказа.
@@ -65,5 +66,17 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: result.error }, { status: result.status });
   }
 
-  return NextResponse.json({ order_id: result.orderId });
+  const telegram = await recordAndNotifyTelegramOrder({
+    orderId: result.orderId,
+    userId,
+    items,
+    total,
+    delivery,
+  });
+
+  return NextResponse.json({
+    order_id: result.orderId,
+    telegram_recorded: telegram.recorded,
+    telegram_sent: telegram.sent,
+  });
 }

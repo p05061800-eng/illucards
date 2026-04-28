@@ -226,6 +226,29 @@ def _order_items_list(order: dict[str, Any]) -> list[dict[str, Any]]:
     return out
 
 
+def _record_site_order_in_bot(
+    order_id: str,
+    order: dict[str, Any],
+    telegram_user_id: int,
+) -> dict[str, Any]:
+    """Сохраняет заказ с сайта в локальном журнале бота сразу после deep link."""
+    existing = BOT_ORDERS.get(order_id)
+    previous_status = ""
+    if isinstance(existing, dict):
+        previous_status = str(existing.get("status") or "").strip().lower()
+
+    rec = {
+        "user_id": int(telegram_user_id),
+        "items": _order_items_list(order),
+        "total": _order_total_byn(order),
+        "delivery": order.get("delivery"),
+        "status": previous_status or str(order.get("status") or "new").strip().lower() or "new",
+    }
+    BOT_ORDERS[order_id] = rec
+    _persist_bot_orders()
+    return rec
+
+
 def _format_order_admin(
     order_id: str,
     order: dict[str, Any],
@@ -564,6 +587,20 @@ def _order_confirm_keyboard(order_id: str, telegram_user_id: int) -> InlineKeybo
     )
 
 
+def _order_saved_keyboard(telegram_user_id: int) -> InlineKeyboardMarkup:
+    uid = int(telegram_user_id)
+    return InlineKeyboardMarkup(
+        [
+            [
+                InlineKeyboardButton(
+                    "Открыть сайт",
+                    url=f"{SITE_LOGIN_ORIGIN}/?user_id={uid}",
+                )
+            ],
+        ]
+    )
+
+
 def _order_belongs_to_telegram_user(order: dict[str, Any], telegram_user_id: int) -> bool:
     """Заказ с user_id с сайта должен совпадать с id пользователя в Telegram."""
     raw = order.get("user_id")
@@ -601,14 +638,14 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
                 telegram_user=user,
             )
             return
+        _record_site_order_in_bot(oid, order, user.id)
         intro = (
-            "Заказ с сайта уже продублирован сюда. Проверьте состав и сумму — "
-            "осталось только подтвердить заказ кнопкой ниже.\n\n"
+            "Заказ с сайта уже записан в боте. Проверьте состав и сумму:\n\n"
         )
         text = intro + _format_order_text(order)
         await update.message.reply_text(
             text,
-            reply_markup=_order_confirm_keyboard(oid, user.id),
+            reply_markup=_order_saved_keyboard(user.id),
         )
         return
 
@@ -635,11 +672,12 @@ async def show_my_orders(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
     if not user:
         await update.message.reply_text("Не удалось определить пользователя.")
         return
+    _load_bot_orders()
     rows = _orders_for_telegram_user(user.id)
     if not rows:
         await update.message.reply_text(
-            "Пока нет заказов, подтверждённых в боте.\n"
-            "После оформления на сайте откройте ссылку из уведомления и нажмите «Подтвердить».",
+            "Пока нет заказов в боте.\n"
+            "После оформления на сайте заказ появится здесь автоматически.",
         )
         return
     oids = [oid for oid, _ in rows]
@@ -779,14 +817,6 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
             await q.answer("Ошибка", show_alert=True)
             return
 
-        if order_id in BOT_ORDERS:
-            await q.answer("Уже подтверждён")
-            try:
-                await q.edit_message_reply_markup(reply_markup=None)
-            except Exception:
-                pass
-            return
-
         order = await fetch_site_order(order_id)
         if not order:
             await q.answer("Заказ не найден", show_alert=True)
@@ -795,12 +825,17 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
             await q.answer("Это не ваш заказ", show_alert=True)
             return
 
-        rec = {
-            "user_id": int(user.id),
-            "items": _order_items_list(order),
-            "total": _order_total_byn(order),
-            "status": "confirmed",
-        }
+        existing = BOT_ORDERS.get(order_id)
+        if isinstance(existing, dict) and str(existing.get("status") or "").strip().lower() == "confirmed":
+            await q.answer("Уже подтверждён")
+            try:
+                await q.edit_message_reply_markup(reply_markup=None)
+            except Exception:
+                pass
+            return
+
+        rec = _record_site_order_in_bot(order_id, order, user.id)
+        rec["status"] = "confirmed"
         BOT_ORDERS[order_id] = rec
         _persist_bot_orders()
 

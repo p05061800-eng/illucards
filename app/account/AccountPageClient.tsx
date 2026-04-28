@@ -106,12 +106,18 @@ export default function AccountPageClient() {
         user_id?: number;
         username?: string;
       };
-      if (!res.ok || !Number.isFinite(data.user_id)) {
+      const userId = data.user_id;
+      if (
+        !res.ok ||
+        typeof userId !== "number" ||
+        !Number.isFinite(userId) ||
+        userId <= 0
+      ) {
         setTgError(data.error || "Неверный или просроченный код");
         return;
       }
       const established = establishSessionFromTelegramUserId(
-        Math.floor(data.user_id),
+        Math.floor(userId),
         {
           telegramUsername: typeof data.username === "string" ? data.username : null,
         },

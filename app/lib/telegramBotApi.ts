@@ -4,8 +4,9 @@ export async function telegramSendMessage(
   botToken: string,
   chatId: number,
   text: string,
+  options: { replyMarkup?: unknown } = {},
 ): Promise<{ ok: true } | { ok: false; description: string }> {
-  const url = `https://api.telegram.org/bot${encodeURIComponent(botToken)}/sendMessage`;
+  const url = `https://api.telegram.org/bot${botToken}/sendMessage`;
   try {
     const res = await fetch(url, {
       method: "POST",
@@ -15,6 +16,7 @@ export async function telegramSendMessage(
         text,
         parse_mode: "HTML",
         disable_web_page_preview: true,
+        ...(options.replyMarkup ? { reply_markup: options.replyMarkup } : {}),
       }),
       cache: "no-store",
     });

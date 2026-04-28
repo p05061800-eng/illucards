@@ -647,6 +647,10 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
             text,
             reply_markup=_order_saved_keyboard(user.id),
         )
+        await update.message.reply_text(
+            "Каталог и ваши заказы — кнопками ниже.",
+            reply_markup=_main_keyboard(),
+        )
         return
 
     if not user or getattr(user, "id", None) is None:

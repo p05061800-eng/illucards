@@ -4,6 +4,7 @@ import type { DeliveryCountry } from "@/app/lib/delivery";
 import { DELIVERY_COUNTRY_LABELS } from "@/app/lib/delivery";
 import type { OrderLineIn } from "@/app/lib/orderTypes";
 import { telegramSendMessage } from "@/app/lib/telegramBotApi";
+import { TELEGRAM_ORDER_BOT_DEFAULT } from "@/app/lib/telegramOrderCheckout";
 
 const BOT_ORDERS_PATH = path.join(process.cwd(), "data", "bot-orders.json");
 
@@ -67,9 +68,26 @@ async function recordOrderForBot(
   );
 }
 
-function buildTelegramOrderMessage(record: BotOrderRecord): string {
+function resolveBotUsername(): string {
+  const raw =
+    process.env.NEXT_PUBLIC_TELEGRAM_ORDER_BOT_USERNAME ||
+    process.env.NEXT_PUBLIC_TELEGRAM_BOT_USERNAME ||
+    process.env.TELEGRAM_ORDER_BOT_USERNAME ||
+    process.env.TELEGRAM_BOT_USERNAME ||
+    "";
+  return raw.replace(/^@/, "").trim() || TELEGRAM_ORDER_BOT_DEFAULT;
+}
+
+function buildOrderDeepLink(orderId: string): string {
+  const bot = resolveBotUsername();
+  const startParam = `order_${orderId}`;
+  return `https://t.me/${encodeURIComponent(bot)}?start=${encodeURIComponent(startParam)}`;
+}
+
+function buildTelegramOrderMessage(orderId: string, record: BotOrderRecord): string {
   const lines = [
     "📦 Ваш заказ уже записан в боте:",
+    `ID заказа: <code>${escapeTelegramHtml(orderId)}</code>`,
     "",
     ...record.items.map((item) => {
       const qty = Math.max(1, Math.floor(item.quantity));
@@ -117,7 +135,14 @@ export async function recordAndNotifyTelegramOrder(input: {
   const sent = await telegramSendMessage(
     token,
     input.userId,
-    buildTelegramOrderMessage(record),
+    buildTelegramOrderMessage(input.orderId, record),
+    {
+      replyMarkup: {
+        inline_keyboard: [
+          [{ text: "Открыть заказ в боте", url: buildOrderDeepLink(input.orderId) }],
+        ],
+      },
+    },
   );
 
   if (!sent.ok) {

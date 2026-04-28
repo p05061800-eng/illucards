@@ -43,5 +43,10 @@ next-env.d.ts
 # заказы с сайта (JSON в data/orders)
 /data/orders/*.json
 
+# Telegram: пользователи бота и одноразовые коды входа
+/data/telegram-bot-users.json
+/data/telegram-login-codes.json
+/data/bot-orders.json
+
 # ESLint cache (workspace)
 .cache/

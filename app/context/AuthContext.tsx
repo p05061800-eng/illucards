@@ -10,6 +10,12 @@ import {
   type ReactNode,
 } from "react";
 import type { TelegramVerifiedProfile } from "@/app/lib/telegramAuth";
+import {
+  clearTelegramUserIdentity,
+  persistTelegramUserIdentity,
+  readTelegramPrimaryUserId,
+  syncTelegramIdentityFromSession,
+} from "@/app/lib/telegramUserIdentity";
 
 const STORAGE_USERS = "illucards_users";
 const STORAGE_SESSION = "illucards_session";
@@ -20,6 +26,7 @@ export type AuthUser = {
   /** Для Telegram: синтетический адрес tg_{id}@illucards.local; для email-аккаунта — обычный email */
   email: string;
   bonusPoints: number;
+  /** Основной идентификатор для пользователей Telegram (= user_id в API Telegram) */
   telegramId?: number;
   telegramUsername?: string | null;
   firstName?: string | null;
@@ -41,10 +48,13 @@ type AuthContextValue = {
   ) => { ok: true } | { ok: false; error: string };
   /** После проверки кода на сервере: создаёт или поднимает локального пользователя по telegram id */
   establishSessionFromTelegramUserId: (
-    telegramUserId: number
+    telegramUserId: number,
+    options?: { telegramUsername?: string | null }
   ) => { ok: true } | { ok: false; error: string };
   login: (email: string, password: string) => { ok: true } | { ok: false; error: string };
   logout: () => void;
+  /** Telegram user id (как `telegram_user_id` в storage), основной id для сайта и бота */
+  primaryTelegramUserId: number | null;
 };
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -79,8 +89,14 @@ function readSession(): AuthUser | null {
 function writeSession(user: AuthUser | null) {
   if (user) {
     localStorage.setItem(STORAGE_SESSION, JSON.stringify(user));
+    if (user.telegramId != null && Number.isFinite(user.telegramId) && user.telegramId > 0) {
+      persistTelegramUserIdentity(user.telegramId, user.telegramUsername);
+    } else {
+      clearTelegramUserIdentity();
+    }
   } else {
     localStorage.removeItem(STORAGE_SESSION);
+    clearTelegramUserIdentity();
   }
 }
 
@@ -94,7 +110,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
-    setUser(readSession());
+    const session = readSession();
+    setUser(session);
+    if (session?.telegramId) {
+      syncTelegramIdentityFromSession(
+        session.telegramId,
+        session.telegramUsername,
+      );
+    } else {
+      clearTelegramUserIdentity();
+    }
     try {
       const g = localStorage.getItem(STORAGE_GUEST_EMAIL);
       setGuestEmailState(g?.trim() || null);
@@ -175,10 +200,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   );
 
   const establishSessionFromTelegramUserId = useCallback(
-    (telegramUserId: number): { ok: true } | { ok: false; error: string } => {
+    (
+      telegramUserId: number,
+      options?: { telegramUsername?: string | null },
+    ): { ok: true } | { ok: false; error: string } => {
       if (!Number.isFinite(telegramUserId) || telegramUserId <= 0) {
         return { ok: false, error: "Некорректный идентификатор пользователя." };
       }
+      const tgName =
+        typeof options?.telegramUsername === "string" &&
+        options.telegramUsername.trim()
+          ? options.telegramUsername.trim().replace(/^@/, "")
+          : null;
       const users = readUsers();
       let found = users.find((u) => u.telegramId === telegramUserId);
       if (!found) {
@@ -189,12 +222,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           password: crypto.randomUUID(),
           bonusPoints: 0,
           telegramId: telegramUserId,
-          telegramUsername: null,
-          firstName: "Пользователь",
+          telegramUsername: tgName,
+          firstName: tgName ? `@${tgName}` : "Пользователь",
         };
         users.push(newUser);
         writeUsers(users);
         found = newUser;
+      } else if (tgName) {
+        const updated: StoredUser = {
+          ...found,
+          telegramUsername: tgName,
+          firstName:
+            found.firstName && found.firstName !== "Пользователь"
+              ? found.firstName
+              : `@${tgName}`,
+        };
+        const idx = users.findIndex((u) => u.id === found.id);
+        if (idx >= 0) {
+          users[idx] = updated;
+          writeUsers(users);
+        }
+        found = updated;
       }
       const { password: _, ...session } = found;
       setUser(session);
@@ -203,7 +251,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setGuestEmailState(null);
       return { ok: true };
     },
-    []
+    [],
   );
 
   const loginWithTelegram = useCallback(
@@ -269,6 +317,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
+  const primaryTelegramUserId = useMemo((): number | null => {
+    if (user?.telegramId != null && Number.isFinite(user.telegramId) && user.telegramId > 0) {
+      return user.telegramId;
+    }
+    return readTelegramPrimaryUserId();
+  }, [user]);
+
   const value = useMemo(
     () => ({
       user,
@@ -281,6 +336,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       establishSessionFromTelegramUserId,
       login,
       logout,
+      primaryTelegramUserId,
     }),
     [
       user,
@@ -293,6 +349,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       establishSessionFromTelegramUserId,
       login,
       logout,
+      primaryTelegramUserId,
     ]
   );
 

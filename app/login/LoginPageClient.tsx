@@ -1,116 +1,198 @@
 "use client";
 
 import Link from "next/link";
+import type { ReadonlyURLSearchParams } from "next/navigation";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { PrivacyConsentCheckbox } from "@/app/components/PrivacyConsentCheckbox";
 import { TelegramLoginWidget } from "@/app/components/TelegramLoginWidget";
 import { useAuth } from "@/app/context/AuthContext";
-import {
-  getTelegramBotUsername,
-  type TelegramWidgetAuthPayload,
-} from "@/app/lib/telegramAuth";
+import { getTelegramBotUsername } from "@/app/lib/telegramAuth";
+import { fetchTelegramWidgetBootstrapOnce } from "./telegramWidgetBootstrap";
+
+function botLink(): string {
+  const u = getTelegramBotUsername().trim();
+  const name = u || "illucards_bot";
+  return `https://t.me/${encodeURIComponent(name)}`;
+}
+
+function loginHrefWithoutTg(sp: Pick<ReadonlyURLSearchParams, "get">): string {
+  const n = new URLSearchParams();
+  const nx = sp.get("next");
+  if (nx && nx.startsWith("/")) n.set("next", nx);
+  const q = n.toString();
+  return q ? `/login?${q}` : "/login";
+}
 
 export default function LoginPageClient() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const next = searchParams.get("next") || "/account";
-  const { login, loginWithTelegram, establishSessionFromTelegramUserId, hydrated } =
-    useAuth();
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [telegramCode, setTelegramCode] = useState("");
+  const {
+    loginWithTelegram,
+    registerWithTelegram,
+    establishSessionFromTelegramUserId,
+    hydrated,
+  } = useAuth();
+
+  const [telegramUsername, setTelegramUsername] = useState("");
+  const [code, setCode] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [privacyOk, setPrivacyOk] = useState(false);
-  const [tgBusy, setTgBusy] = useState(false);
-  const [codeBusy, setCodeBusy] = useState(false);
+  const [sendBusy, setSendBusy] = useState(false);
+  const [loginBusy, setLoginBusy] = useState(false);
+  /** Сообщение после редиректа с виджета Telegram */
+  const [widgetLine, setWidgetLine] = useState<"none" | "loading" | "success" | "error">("none");
 
-  const botUsername = getTelegramBotUsername();
+  const botUsername = getTelegramBotUsername() || "illucards_bot";
 
-  const handleTelegramAuth = useCallback(
-    async (payload: TelegramWidgetAuthPayload) => {
-      setError(null);
-      if (!privacyOk) {
-        setError("Нужно согласие с политикой конфиденциальности.");
-        return;
+  useEffect(() => {
+    try {
+      const n = searchParams.get("next");
+      if (n && n.startsWith("/")) {
+        sessionStorage.setItem("illucards_tg_login_next", n);
       }
-      setTgBusy(true);
+    } catch {
+      /* ignore */
+    }
+  }, [searchParams]);
+
+  useEffect(() => {
+    const tg = searchParams.get("tg");
+    if (tg === "err") {
+      setWidgetLine("error");
+      router.replace(loginHrefWithoutTg(searchParams));
+      return;
+    }
+    if (tg !== "widget") return;
+
+    let cancelled = false;
+    setWidgetLine("loading");
+
+    (async () => {
       try {
-        const res = await fetch("/api/auth/telegram", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
-        });
-        const data = (await res.json()) as {
-          ok?: boolean;
-          error?: string;
-          profile?: {
-            telegramId: number;
-            firstName: string;
-            lastName: string | null;
-            username: string | null;
-            photoUrl: string | null;
-          };
-        };
-        if (!res.ok || !data.ok || !data.profile) {
-          setError(data.error ?? "Не удалось подтвердить Telegram.");
+        const result = await fetchTelegramWidgetBootstrapOnce();
+        if (cancelled) return;
+
+        if (!result.ok) {
+          setWidgetLine("error");
+          router.replace(loginHrefWithoutTg(searchParams));
           return;
         }
-        const r = loginWithTelegram(data.profile);
-        if (r.ok) {
-          router.push(next.startsWith("/") ? next : "/account");
-          router.refresh();
-        } else {
-          setError(r.error);
-        }
-      } catch {
-        setError("Ошибка сети. Попробуйте ещё раз.");
-      } finally {
-        setTgBusy(false);
-      }
-    },
-    [privacyOk, loginWithTelegram, router, next]
-  );
 
-  const handleTelegramCodeLogin = useCallback(
-    async (e: React.FormEvent) => {
-      e.preventDefault();
-      setError(null);
-      if (!privacyOk) {
-        setError("Нужно согласие с политикой конфиденциальности.");
-        return;
-      }
-      const code = telegramCode.trim();
-      if (!code) {
-        setError("Введите код из Telegram.");
-        return;
-      }
-      setCodeBusy(true);
-      try {
-        const res = await fetch("/api/auth/telegram", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ code }),
-        });
-        const data = (await res.json()) as {
-          ok?: boolean;
-          error?: string;
-          user_id?: number;
-        };
-        if (!res.ok || !data.ok || typeof data.user_id !== "number") {
-          if (res.status === 401) {
-            setError("Неверный или устаревший код");
-          } else {
-            setError(data.error ?? "Неверный или устаревший код");
-          }
+        let r = loginWithTelegram(result.profile);
+        if (!r.ok) {
+          r = registerWithTelegram(result.profile);
+        }
+        if (!r.ok) {
+          setWidgetLine("error");
+          router.replace(loginHrefWithoutTg(searchParams));
           return;
         }
+
+        setWidgetLine("success");
+        router.replace(loginHrefWithoutTg(searchParams));
+
+        let dest = next;
         try {
-          localStorage.setItem("user_id", String(data.user_id));
+          const stored = sessionStorage.getItem("illucards_tg_login_next");
+          if (stored && stored.startsWith("/")) dest = stored;
         } catch {
           /* ignore */
         }
-        const r = establishSessionFromTelegramUserId(data.user_id);
+
+        window.setTimeout(() => {
+          if (cancelled) return;
+          router.push(dest.startsWith("/") ? dest : "/account");
+          router.refresh();
+        }, 1600);
+      } catch {
+        if (!cancelled) {
+          setWidgetLine("error");
+          router.replace(loginHrefWithoutTg(searchParams));
+        }
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [searchParams, router, next, loginWithTelegram, registerWithTelegram]);
+
+  const requirePrivacy = useCallback((): boolean => {
+    if (!privacyOk) {
+      setError("Нужно согласие с политикой конфиденциальности.");
+      return false;
+    }
+    return true;
+  }, [privacyOk]);
+
+  const handleSendCode = useCallback(async () => {
+    setError(null);
+    if (!requirePrivacy()) return;
+    const u = telegramUsername.trim();
+    if (!u) {
+      setError("Введите username Telegram.");
+      return;
+    }
+    setSendBusy(true);
+    try {
+      const res = await fetch("/api/send-code", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username: u.startsWith("@") ? u : `@${u}` }),
+      });
+      const data = (await res.json()) as { error?: string; ok?: boolean };
+      if (!res.ok) {
+        setError(data.error ?? "Не удалось отправить код.");
+        return;
+      }
+      setError(null);
+    } catch {
+      setError("Ошибка сети. Попробуйте ещё раз.");
+    } finally {
+      setSendBusy(false);
+    }
+  }, [requirePrivacy, telegramUsername]);
+
+  const handleVerifyLogin = useCallback(
+    async (e: React.FormEvent) => {
+      e.preventDefault();
+      setError(null);
+      if (!requirePrivacy()) return;
+      const u = telegramUsername.trim();
+      if (!u) {
+        setError("Введите username Telegram.");
+        return;
+      }
+      const c = code.replace(/\D/g, "");
+      if (c.length !== 4) {
+        setError("Введите 4 цифры кода из Telegram.");
+        return;
+      }
+      setLoginBusy(true);
+      try {
+        const res = await fetch("/api/verify-code", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            username: u.startsWith("@") ? u : `@${u}`,
+            code: c,
+          }),
+        });
+        const data = (await res.json()) as {
+          error?: string;
+          ok?: boolean;
+          user_id?: number;
+          username?: string;
+        };
+        if (!res.ok || !data.ok || typeof data.user_id !== "number") {
+          setError(data.error ?? "Неверный или просроченный код.");
+          return;
+        }
+        const r = establishSessionFromTelegramUserId(data.user_id, {
+          telegramUsername: data.username ?? null,
+        });
         if (r.ok) {
           router.push(next.startsWith("/") ? next : "/account");
           router.refresh();
@@ -120,35 +202,17 @@ export default function LoginPageClient() {
       } catch {
         setError("Ошибка сети. Попробуйте ещё раз.");
       } finally {
-        setCodeBusy(false);
+        setLoginBusy(false);
       }
     },
     [
-      telegramCode,
-      privacyOk,
+      code,
       establishSessionFromTelegramUserId,
+      requirePrivacy,
       router,
       next,
-    ]
-  );
-
-  const handleSubmit = useCallback(
-    (e: React.FormEvent) => {
-      e.preventDefault();
-      setError(null);
-      if (!privacyOk) {
-        setError("Нужно согласие с политикой конфиденциальности.");
-        return;
-      }
-      const r = login(email, password);
-      if (r.ok) {
-        router.push(next.startsWith("/") ? next : "/account");
-        router.refresh();
-      } else {
-        setError(r.error);
-      }
-    },
-    [email, password, privacyOk, login, router, next]
+      telegramUsername,
+    ],
   );
 
   if (!hydrated) {
@@ -159,21 +223,56 @@ export default function LoginPageClient() {
     );
   }
 
+  const showWidgetSuccess =
+    widgetLine === "success" || widgetLine === "loading";
+  const showWidgetError = widgetLine === "error";
+
   return (
     <div className="mx-auto w-full max-w-md px-4 pb-24 pt-16 sm:pt-24">
-      <h1 className="text-center text-2xl font-semibold tracking-tight text-white">
-        Вход
-      </h1>
-      <p className="mt-2 text-center text-sm text-zinc-500">
-        Личный кабинет IlluCards (данные в этом браузере)
-      </p>
+      <div className="text-center">
+        <h1 className="text-2xl font-semibold tracking-tight text-white sm:text-3xl">
+          Вход
+        </h1>
+        <p className="mt-2 text-sm text-zinc-500">
+          IlluCards — личный кабинет в этом браузере
+        </p>
+      </div>
 
-      <div className="mt-10 space-y-4 rounded-2xl border border-white/[0.08] bg-zinc-950/60 p-6 shadow-[0_20px_60px_rgba(0,0,0,0.45)]">
-        {error ? (
-          <p className="rounded-xl border border-red-500/30 bg-red-950/30 px-3 py-2 text-sm text-red-200">
-            {error}
+      <div className="mt-8 space-y-5 rounded-2xl border border-violet-500/25 bg-gradient-to-b from-violet-950/40 via-zinc-950/80 to-black/80 p-6 shadow-[0_24px_80px_rgba(88,28,135,0.25)] ring-1 ring-inset ring-white/[0.06] sm:p-8">
+        {showWidgetSuccess ? (
+          <p className="rounded-xl border border-emerald-500/35 bg-emerald-950/30 px-3 py-2.5 text-center text-sm font-medium text-emerald-100">
+            {widgetLine === "loading"
+              ? "Входим через Telegram…"
+              : "✅ Вы вошли через Telegram"}
           </p>
         ) : null}
+        {showWidgetError ? (
+          <p
+            className="rounded-xl border border-red-500/35 bg-red-950/35 px-3 py-2.5 text-center text-sm font-medium text-red-100"
+            role="alert"
+          >
+            ❌ Ошибка авторизации
+          </p>
+        ) : null}
+
+        <div className="rounded-xl border border-violet-500/20 bg-violet-950/20 px-4 py-4">
+          <h2 className="text-center text-lg font-semibold text-white">
+            🔐 Вход через Telegram
+          </h2>
+          <p className="mt-1.5 text-center text-xs text-zinc-400 sm:text-sm">
+            Войдите одним нажатием — откроется Telegram и вернёт вас на сайт
+          </p>
+          <div className="mt-4 flex justify-center">
+            {privacyOk ? (
+              <TelegramLoginWidget botUsername={botUsername} authMode="redirect" />
+            ) : (
+              <p className="text-center text-xs text-zinc-500">
+                Отметьте согласие с политикой ниже — затем появится кнопка виджета.
+              </p>
+            )}
+          </div>
+        </div>
+
         <PrivacyConsentCheckbox
           id="login-privacy"
           checked={privacyOk}
@@ -181,98 +280,118 @@ export default function LoginPageClient() {
           required
         />
 
-        <form onSubmit={handleTelegramCodeLogin} className="space-y-3">
-          <label htmlFor="telegram-auth-code" className="sr-only">
-            Код из Telegram
-          </label>
-          <input
-            id="telegram-auth-code"
-            name="telegram-auth-code"
-            type="text"
-            autoComplete="one-time-code"
-            placeholder="Введите код из Telegram"
-            value={telegramCode}
-            onChange={(e) => setTelegramCode(e.target.value)}
-            className="w-full rounded-xl border border-white/15 bg-black/40 px-4 py-3 text-sm text-white placeholder:text-zinc-600 focus:border-[#5D6BF3]/60 focus:outline-none focus:ring-2 focus:ring-[#5D6BF3]/25"
+        <div className="relative py-2 text-center text-xs text-zinc-600">
+          <span className="relative z-10 bg-zinc-950/80 px-2">или по коду из Telegram</span>
+          <span
+            className="absolute left-0 right-0 top-1/2 z-0 h-px bg-white/10"
+            aria-hidden
           />
-          <button
-            type="submit"
-            disabled={codeBusy}
-            className="w-full rounded-xl bg-gradient-to-r from-violet-600 to-fuchsia-600 py-3.5 text-sm font-semibold text-white transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            {codeBusy ? "Проверяем…" : "Войти"}
-          </button>
-        </form>
-
-        <div className="relative py-2 text-center text-xs text-zinc-600">
-          <span className="relative z-10 bg-zinc-950/60 px-2">
-            или виджет Telegram
-          </span>
-          <span className="absolute left-0 right-0 top-1/2 z-0 h-px bg-white/10" aria-hidden />
         </div>
 
-        <div>
-          <p className="mb-3 text-center text-xs font-medium uppercase tracking-wide text-zinc-500">
-            Через Telegram
+        <div className="rounded-xl border border-white/[0.08] bg-black/30 px-4 py-3 text-left text-sm leading-relaxed text-zinc-300">
+          <p className="font-medium text-violet-200/95">Введите код из Telegram</p>
+          <p className="mt-2 text-xs text-zinc-500 sm:text-sm">Чтобы войти:</p>
+          <ol className="mt-1.5 list-decimal space-y-1 pl-4 text-xs text-zinc-400 sm:text-sm">
+            <li>
+              Напишите боту{" "}
+              <a
+                href={botLink()}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-medium text-violet-300 underline-offset-2 hover:text-violet-200 hover:underline"
+              >
+                /start
+              </a>
+            </li>
+            <li>Введите ваш @username ниже</li>
+            <li>Нажмите «Получить код» и введите 4 цифры из чата</li>
+          </ol>
+        </div>
+
+        {error ? (
+          <p
+            className="rounded-xl border border-red-500/35 bg-red-950/35 px-3 py-2.5 text-sm text-red-100"
+            role="alert"
+          >
+            {error}
           </p>
-          {tgBusy ? (
-            <p className="text-center text-sm text-zinc-400">Проверяем…</p>
-          ) : (
-            <TelegramLoginWidget botUsername={botUsername} onAuth={handleTelegramAuth} />
-          )}
-        </div>
+        ) : null}
 
-        <div className="relative py-2 text-center text-xs text-zinc-600">
-          <span className="relative z-10 bg-zinc-950/60 px-2">или email, если аккаунт создан раньше</span>
-          <span className="absolute left-0 right-0 top-1/2 z-0 h-px bg-white/10" aria-hidden />
-        </div>
-
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleVerifyLogin} className="space-y-4">
           <div>
-            <label htmlFor="login-email" className="mb-1.5 block text-xs text-zinc-500">
-              Email
+            <label
+              htmlFor="login-tg-username"
+              className="mb-1.5 block text-xs font-medium text-zinc-400"
+            >
+              Username Telegram (@username)
             </label>
             <input
-              id="login-email"
-              type="email"
-              autoComplete="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              className="w-full rounded-xl border border-white/15 bg-black/40 px-4 py-3 text-sm text-white focus:border-[#5D6BF3]/60 focus:outline-none focus:ring-2 focus:ring-[#5D6BF3]/25"
+              id="login-tg-username"
+              name="telegram-username"
+              type="text"
+              autoComplete="username"
+              placeholder="@username"
+              value={telegramUsername}
+              onChange={(e) => setTelegramUsername(e.target.value)}
+              className="w-full rounded-xl border border-white/15 bg-black/50 px-4 py-3 text-sm text-white placeholder:text-zinc-600 focus:border-violet-500/50 focus:outline-none focus:ring-2 focus:ring-violet-500/30"
             />
           </div>
           <div>
-            <label htmlFor="login-pass" className="mb-1.5 block text-xs text-zinc-500">
-              Пароль
+            <label
+              htmlFor="login-tg-code"
+              className="mb-1.5 block text-xs font-medium text-zinc-400"
+            >
+              Код (4 цифры)
             </label>
             <input
-              id="login-pass"
-              type="password"
-              autoComplete="current-password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              minLength={4}
-              className="w-full rounded-xl border border-white/15 bg-black/40 px-4 py-3 text-sm text-white focus:border-[#5D6BF3]/60 focus:outline-none focus:ring-2 focus:ring-[#5D6BF3]/25"
+              id="login-tg-code"
+              name="telegram-code"
+              type="text"
+              inputMode="numeric"
+              autoComplete="one-time-code"
+              placeholder="0000"
+              maxLength={4}
+              value={code}
+              onChange={(e) =>
+                setCode(e.target.value.replace(/\D/g, "").slice(0, 4))
+              }
+              className="w-full rounded-xl border border-white/15 bg-black/50 px-4 py-3 text-center font-mono text-lg tracking-[0.35em] text-white placeholder:text-zinc-600 focus:border-violet-500/50 focus:outline-none focus:ring-2 focus:ring-violet-500/30"
             />
           </div>
-          <button
-            type="submit"
-            className="w-full rounded-xl bg-[#5D6BF3] py-3.5 text-sm font-semibold text-white transition hover:brightness-110"
-          >
-            Войти по email
-          </button>
+
+          <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+            <button
+              type="button"
+              onClick={() => {
+                void handleSendCode();
+              }}
+              disabled={sendBusy}
+              className="w-full rounded-xl border border-violet-400/40 bg-violet-950/50 py-3.5 text-sm font-semibold text-violet-100 transition hover:border-violet-400/60 hover:bg-violet-900/50 disabled:cursor-not-allowed disabled:opacity-50 sm:flex-1"
+            >
+              {sendBusy ? "Отправляем…" : "Получить код"}
+            </button>
+            <button
+              type="submit"
+              disabled={loginBusy}
+              className="w-full rounded-xl bg-gradient-to-r from-violet-600 to-fuchsia-600 py-3.5 text-sm font-semibold text-white shadow-lg shadow-violet-900/40 transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-50 sm:flex-1"
+            >
+              {loginBusy ? "Входим…" : "Войти"}
+            </button>
+          </div>
         </form>
       </div>
 
-      <p className="mt-6 text-center text-sm text-zinc-500">
+      <p className="mt-8 text-center text-sm text-zinc-500">
         Нет аккаунта?{" "}
         <Link
-          href={next !== "/account" ? `/register?next=${encodeURIComponent(next)}` : "/register"}
-          className="text-[#5D6BF3] hover:underline"
+          href={
+            next !== "/account"
+              ? `/register?next=${encodeURIComponent(next)}`
+              : "/register"
+          }
+          className="text-violet-400 hover:underline"
         >
-          Регистрация через Telegram
+          Регистрация
         </Link>
       </p>
     </div>

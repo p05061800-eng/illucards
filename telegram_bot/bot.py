@@ -6,6 +6,7 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
+import os
 import time
 from pathlib import Path
 from typing import Any
@@ -30,8 +31,201 @@ from telegram.ext import (
 logging.basicConfig(format="%(asctime)s %(levelname)s %(message)s", level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+REPO_ROOT = Path(__file__).resolve().parent.parent
+TELEGRAM_USERS_PATH = REPO_ROOT / "data" / "telegram-bot-users.json"
+BOT_ORDERS_PATH = REPO_ROOT / "data" / "bot-orders.json"
+# Подтверждённые в боте заказы: order_id → { user_id, items, total, status }
+BOT_ORDERS: dict[str, dict[str, Any]] = {}
+
+
+def persist_telegram_site_user(user_id: int, username: str) -> None:
+    """Сохраняет username → user_id для входа на сайте (POST /api/send-code).
+
+    Это тот же числовой id, что в заказах с сайта (data/orders/*.json, поле user_id)
+    и в браузере (cookie/localStorage telegram_user_id).
+    """
+    key = username.strip().lstrip("@").lower()
+    if not key:
+        return
+    TELEGRAM_USERS_PATH.parent.mkdir(parents=True, exist_ok=True)
+    data: dict[str, Any] = {}
+    if TELEGRAM_USERS_PATH.exists():
+        try:
+            with open(TELEGRAM_USERS_PATH, "r", encoding="utf-8") as f:
+                raw = json.load(f)
+            if isinstance(raw, dict):
+                data = raw
+        except (OSError, json.JSONDecodeError, ValueError) as e:
+            logger.warning("telegram-bot-users read: %s", e)
+    data[key] = {"user_id": int(user_id), "username": username.strip().lstrip("@")}
+    try:
+        with open(TELEGRAM_USERS_PATH, "w", encoding="utf-8") as f:
+            json.dump(data, f, ensure_ascii=False, indent=2)
+    except OSError as e:
+        logger.warning("telegram-bot-users write: %s", e)
+
+
+def _load_bot_orders() -> None:
+    global BOT_ORDERS
+    if not BOT_ORDERS_PATH.exists():
+        return
+    try:
+        with open(BOT_ORDERS_PATH, "r", encoding="utf-8") as f:
+            raw = json.load(f)
+        if not isinstance(raw, dict):
+            return
+        out: dict[str, dict[str, Any]] = {}
+        for k, v in raw.items():
+            if isinstance(v, dict):
+                out[str(k)] = v
+        BOT_ORDERS = out
+    except (OSError, json.JSONDecodeError, ValueError) as e:
+        logger.warning("bot-orders read: %s", e)
+
+
+def _persist_bot_orders() -> None:
+    try:
+        BOT_ORDERS_PATH.parent.mkdir(parents=True, exist_ok=True)
+        with open(BOT_ORDERS_PATH, "w", encoding="utf-8") as f:
+            json.dump(BOT_ORDERS, f, ensure_ascii=False, indent=2)
+    except OSError as e:
+        logger.warning("bot-orders write: %s", e)
+
+
+# Статусы: из bot-orders и (при появлении) с сайта
+ORDER_STATUS_RU: dict[str, str] = {
+    "new": "⏳ Новый",
+    "confirmed": "✅ Принят",
+    "accepted": "✅ Принят",
+    "shipped": "🚚 Отправлен",
+    "sent": "🚚 Отправлен",
+    "delivered": "✅ Доставлен",
+    "cancelled": "❌ Отменён",
+    "canceled": "❌ Отменён",
+}
+
+
+def _order_status_display(status: str) -> str:
+    key = (status or "").strip().lower()
+    if not key:
+        return "—"
+    return ORDER_STATUS_RU.get(key, f"📋 {status}")
+
+
+def _merge_order_status_for_display(rec: dict[str, Any], site: dict[str, Any] | None) -> str:
+    """Сайт пока часто отдаёт только new; приоритет у обновлённого статуса с сайта, иначе из бота."""
+    r = str(rec.get("status") or "new").strip().lower()
+    if not site:
+        return r
+    s = str(site.get("status") or "").strip().lower()
+    if s and s != "new":
+        return s
+    return r or s or "new"
+
+
+def _merge_total_byn(rec: dict[str, Any], site: dict[str, Any] | None) -> float:
+    if site:
+        t = _order_total_byn(site)
+        if t > 0:
+            return t
+    return _order_total_byn(rec)
+
+
+def _order_id_short(oid: str) -> str:
+    o = (oid or "").strip()
+    if not o:
+        return "—"
+    if len(o) <= 18:
+        return o
+    return o[:14] + "…"
+
+
+def _orders_for_telegram_user(telegram_user_id: int) -> list[tuple[str, dict[str, Any]]]:
+    out: list[tuple[str, dict[str, Any]]] = []
+    for oid, rec in BOT_ORDERS.items():
+        if not isinstance(rec, dict):
+            continue
+        try:
+            uid = int(rec.get("user_id"))
+        except (TypeError, ValueError):
+            continue
+        if uid == int(telegram_user_id):
+            out.append((str(oid), rec))
+    out.sort(key=lambda x: x[0])
+    return out
+
+
+def _order_total_byn(order: dict[str, Any]) -> float:
+    try:
+        return float(order.get("total", 0) or 0)
+    except (TypeError, ValueError):
+        return 0.0
+
+
+def _order_items_list(order: dict[str, Any]) -> list[dict[str, Any]]:
+    items = order.get("items")
+    if not isinstance(items, list):
+        return []
+    out: list[dict[str, Any]] = []
+    for it in items:
+        if isinstance(it, dict):
+            out.append(dict(it))
+    return out
+
+
+def _format_order_admin(
+    order_id: str,
+    order: dict[str, Any],
+    telegram_user_id: int,
+    username: str | None,
+    record: dict[str, Any],
+) -> str:
+    u = f"@{username}" if username else f"id {telegram_user_id}"
+    lines = [
+        "✅ Подтверждение заказа (бот)",
+        f"ID заказа: `{order_id}`",
+        f"Пользователь: {u} (tg {telegram_user_id})",
+        "",
+    ]
+    for it in record.get("items") or []:
+        if not isinstance(it, dict):
+            continue
+        title = str(it.get("title") or "—")
+        try:
+            qty = int(it.get("quantity", 1))
+        except (TypeError, ValueError):
+            qty = 1
+        try:
+            p = float(it.get("priceByn", 0) or 0)
+        except (TypeError, ValueError):
+            p = 0.0
+        sub = p * max(qty, 1)
+        lines.append(f"• {title} ×{qty} — {sub:g} BYN")
+    if len(lines) <= 4:
+        lines.append("—")
+    dcode = str(order.get("delivery") or "—")
+    dlabel = DELIVERY_LABELS.get(dcode, dcode)
+    try:
+        total = float(record.get("total", 0) or 0)
+    except (TypeError, ValueError):
+        total = 0.0
+    lines.append("")
+    lines.append(f"🚚 Доставка: {dlabel}")
+    lines.append(f"💰 Итого: {total:g} BYN · статус: {record.get('status', '—')}")
+    return "\n".join(lines)
+
+
 PRODUCTS_API = "https://www.illucards.by/api/products"
+# База сайта для GET /api/order/{id} (тот же хост, что и витрина)
+DEFAULT_SITE_ORIGIN = os.getenv("ILLUCARDS_SITE_ORIGIN", "https://www.illucards.by").rstrip("/")
 CARDS_PATH = Path(__file__).resolve().parent / "cards.json"
+
+DELIVERY_LABELS: dict[str, str] = {
+    "BY": "Беларусь",
+    "RU": "Россия",
+    "UA": "Украина",
+    "OTHER": "Другие страны",
+}
 CACHE_TTL_SEC = 60.0
 
 _products_cache: list[dict[str, Any]] | None = None
@@ -155,7 +349,10 @@ def _categories_from_products(products: list[dict[str, Any]]) -> list[str]:
 
 def _main_keyboard() -> ReplyKeyboardMarkup:
     return ReplyKeyboardMarkup(
-        [["📦 Категории", "🛒 Корзина"]],
+        [
+            ["📦 Категории", "🛒 Корзина"],
+            ["📦 Мои заказы"],
+        ],
         resize_keyboard=True,
     )
 
@@ -177,14 +374,186 @@ def _caption(p: dict[str, Any]) -> str:
     return f"{p.get('name', '—')}\n{p.get('price', '—')}"
 
 
+def _order_id_from_start_args(args: list[str]) -> str | None:
+    """Deep link: start=order_<order_id> → args ['order_...']."""
+    if not args:
+        return None
+    raw = (args[0] or "").strip()
+    if not raw.startswith("order_"):
+        return None
+    oid = raw[len("order_") :].strip()
+    if not oid or ".." in oid or "/" in oid or "\\" in oid or len(oid) > 200:
+        return None
+    return oid
+
+
+async def fetch_site_order(order_id: str) -> dict[str, Any] | None:
+    base = os.getenv("ILLUCARDS_SITE_ORIGIN", DEFAULT_SITE_ORIGIN).rstrip("/")
+    url = f"{base}/api/order/{order_id}"
+    timeout = aiohttp.ClientTimeout(total=20)
+    try:
+        async with aiohttp.ClientSession(timeout=timeout) as session:
+            async with session.get(
+                url,
+                headers={"Accept": "application/json"},
+            ) as resp:
+                if resp.status != 200:
+                    logger.warning("GET order HTTP %s %s", resp.status, order_id)
+                    return None
+                data = await resp.json(content_type=None)
+                if not isinstance(data, dict):
+                    return None
+                return data
+    except (aiohttp.ClientError, asyncio.TimeoutError, OSError, json.JSONDecodeError, ValueError) as e:
+        logger.warning("GET order: %s", e)
+        return None
+
+
+async def post_site_order_status(order_id: str, status: str) -> bool:
+    """POST /api/order/update — синхронизация статуса с сайтом (при смене в боте)."""
+    base = os.getenv("ILLUCARDS_SITE_ORIGIN", DEFAULT_SITE_ORIGIN).rstrip("/")
+    url = f"{base}/api/order/update"
+    secret = os.getenv("ILLUCARDS_ORDER_UPDATE_SECRET", "").strip()
+    headers: dict[str, str] = {
+        "Accept": "application/json",
+        "Content-Type": "application/json",
+    }
+    if secret:
+        headers["Authorization"] = f"Bearer {secret}"
+    timeout = aiohttp.ClientTimeout(total=20)
+    try:
+        async with aiohttp.ClientSession(timeout=timeout) as session:
+            async with session.post(
+                url,
+                headers=headers,
+                json={"order_id": order_id, "status": status},
+            ) as resp:
+                if resp.status != 200:
+                    text = (await resp.text())[:300]
+                    logger.warning("POST order/update HTTP %s: %s", resp.status, text)
+                    return False
+                return True
+    except (aiohttp.ClientError, asyncio.TimeoutError, OSError) as e:
+        logger.warning("POST order/update: %s", e)
+        return False
+
+
+def _format_order_text(order: dict[str, Any]) -> str:
+    items = order.get("items")
+    if not isinstance(items, list):
+        items = []
+    lines: list[str] = ["📦 Ваш заказ:", ""]
+    for it in items:
+        if not isinstance(it, dict):
+            continue
+        title = str(it.get("title") or "—").strip()
+        try:
+            qty = int(it.get("quantity", 1))
+        except (TypeError, ValueError):
+            qty = 1
+        try:
+            p = float(it.get("priceByn", 0) or 0)
+        except (TypeError, ValueError):
+            p = 0.0
+        sub = p * max(qty, 1)
+        lines.append(f"• {title} ×{qty} — {sub:g} BYN")
+    if len(lines) <= 2:
+        lines.append("—")
+    dcode = str(order.get("delivery") or "—")
+    dlabel = DELIVERY_LABELS.get(dcode, dcode)
+    try:
+        total = float(order.get("total", 0) or 0)
+    except (TypeError, ValueError):
+        total = 0.0
+    lines.append("")
+    lines.append(f"🚚 Доставка: {dlabel}")
+    lines.append(f"💰 Итого: {total:g} BYN")
+    return "\n".join(lines)
+
+
+def _order_confirm_keyboard(order_id: str) -> InlineKeyboardMarkup:
+    # callback_data ≤ 64 байт: orderok: + uuid
+    return InlineKeyboardMarkup(
+        [[InlineKeyboardButton("✅ Подтвердить заказ", callback_data=f"orderok:{order_id}")]]
+    )
+
+
+def _order_belongs_to_telegram_user(order: dict[str, Any], telegram_user_id: int) -> bool:
+    """Заказ с user_id с сайта должен совпадать с id пользователя в Telegram."""
+    raw = order.get("user_id")
+    if raw is None:
+        return True
+    try:
+        return int(raw) == int(telegram_user_id)
+    except (TypeError, ValueError):
+        return False
+
+
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     if not update.message:
         return
+    user = update.effective_user
+    if user and user.username:
+        persist_telegram_site_user(user.id, user.username)
     context.user_data.setdefault("cart", [])
+
+    args = list(context.args) if context.args else []
+    oid = _order_id_from_start_args(args)
+    if oid:
+        order = await fetch_site_order(oid)
+        if not order:
+            await update.message.reply_text(
+                "❌ Заказ не найден или сервис недоступен. Попробуйте позже.",
+                reply_markup=_main_keyboard(),
+            )
+            return
+        if not user or not _order_belongs_to_telegram_user(order, user.id):
+            await update.message.reply_text(
+                "❌ Это не ваш заказ",
+                reply_markup=_main_keyboard(),
+            )
+            return
+        text = _format_order_text(order)
+        await update.message.reply_text(
+            text,
+            reply_markup=_order_confirm_keyboard(oid),
+        )
+        return
+
     await update.message.reply_text(
         "IlluCards",
         reply_markup=_main_keyboard(),
     )
+
+
+async def show_my_orders(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    if not update.message:
+        return
+    user = update.effective_user
+    if not user:
+        await update.message.reply_text("Не удалось определить пользователя.")
+        return
+    rows = _orders_for_telegram_user(user.id)
+    if not rows:
+        await update.message.reply_text(
+            "Пока нет заказов, подтверждённых в боте.\n"
+            "После оформления на сайте откройте ссылку из уведомления и нажмите «Подтвердить».",
+        )
+        return
+    oids = [oid for oid, _ in rows]
+    sites = await asyncio.gather(
+        *[fetch_site_order(oid) for oid in oids],
+        return_exceptions=True,
+    )
+    lines: list[str] = ["📦 Мои заказы", ""]
+    for (oid, rec), site in zip(rows, sites):
+        order_site: dict[str, Any] | None = site if isinstance(site, dict) else None
+        st = _merge_order_status_for_display(rec, order_site)
+        label = _order_status_display(st)
+        total = _merge_total_byn(rec, order_site)
+        ref = _order_id_short(oid)
+        lines.append(f"#{ref} — {total:g} BYN — {label}")
+    await update.message.reply_text("\n".join(lines))
 
 
 async def show_cart_text(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -214,6 +583,9 @@ async def text_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
     t = update.message.text.strip()
     if t == "🛒 Корзина":
         await show_cart_text(update, context)
+        return
+    if t == "📦 Мои заказы":
+        await show_my_orders(update, context)
         return
     if t != "📦 Категории":
         return
@@ -293,9 +665,74 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
     q = update.callback_query
     if not q or not q.data or not q.message:
         return
+    data = q.data
+
+    if data.startswith("orderok:"):
+        order_id = data.split(":", 1)[1].strip()
+        if not order_id:
+            await q.answer("Некорректный заказ", show_alert=True)
+            return
+        user = q.from_user
+        if not user:
+            await q.answer("Ошибка", show_alert=True)
+            return
+
+        if order_id in BOT_ORDERS:
+            await q.answer("Уже подтверждён")
+            try:
+                await q.edit_message_reply_markup(reply_markup=None)
+            except Exception:
+                pass
+            return
+
+        order = await fetch_site_order(order_id)
+        if not order:
+            await q.answer("Заказ не найден", show_alert=True)
+            return
+        if not _order_belongs_to_telegram_user(order, user.id):
+            await q.answer("Это не ваш заказ", show_alert=True)
+            return
+
+        rec = {
+            "user_id": int(user.id),
+            "items": _order_items_list(order),
+            "total": _order_total_byn(order),
+            "status": "confirmed",
+        }
+        BOT_ORDERS[order_id] = rec
+        _persist_bot_orders()
+
+        if not await post_site_order_status(order_id, "confirmed"):
+            logger.warning("Сайт: не удалось обновить статус заказа %s", order_id)
+
+        admin_raw = os.getenv("TELEGRAM_ADMIN_CHAT_ID") or os.getenv(
+            "ILLUCARDS_TELEGRAM_ADMIN_CHAT_ID", ""
+        ).strip()
+        if admin_raw:
+            try:
+                admin_chat_id = int(admin_raw)
+            except (TypeError, ValueError):
+                admin_chat_id = 0
+            if admin_chat_id:
+                uname = (user.username or "").strip() or None
+                admin_text = _format_order_admin(order_id, order, user.id, uname, rec)
+                try:
+                    await context.bot.send_message(chat_id=admin_chat_id, text=admin_text)
+                except Exception as e:
+                    logger.warning("admin notify: %s", e)
+        else:
+            logger.warning("TELEGRAM_ADMIN_CHAT_ID не задан — админу не отправлено")
+
+        await q.answer("Принято")
+        try:
+            await q.edit_message_reply_markup(reply_markup=None)
+        except Exception:
+            pass
+        await q.message.reply_text("✅ Заказ подтверждён. Спасибо!")
+        return
+
     await q.answer()
     chat_id = q.message.chat_id
-    data = q.data
 
     if data.startswith("cat:"):
         ci = int(data.split(":", 1)[1])
@@ -392,11 +829,11 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
 
 
 if __name__ == "__main__":
-    import os
-
     token = os.getenv("TELEGRAM_BOT_TOKEN")
     if not token:
         raise Exception("Нет TELEGRAM_BOT_TOKEN")
+
+    _load_bot_orders()
 
     app = ApplicationBuilder().token(token).build()
 

@@ -178,6 +178,24 @@ type CartContextValue = {
   removeFromCart: (id: string) => void;
   setQuantity: (id: string, quantity: number) => void;
   clearCart: () => void;
+  /**
+   * Повтор заказа: добавить позиции в корзину (совпадающие id — суммируем quantity),
+   * опционально выставить страну доставки. Картинка — заглушка, если позиции ещё нет.
+   */
+  repeatOrderToCart: (
+    lines: Array<{
+      id: string;
+      title: string;
+      quantity: number;
+      priceByn: number;
+      priceRub: number;
+    }>,
+    options?: {
+      deliveryCountry?: DeliveryCountry | null;
+      /** По умолчанию false — удобно перед переходом на /checkout */
+      openCart?: boolean;
+    },
+  ) => void;
 };
 
 const CartContext = createContext<CartContextValue | null>(null);
@@ -276,6 +294,73 @@ export function CartProvider({ children }: { children: ReactNode }) {
     setCartItems([]);
   }, []);
 
+  const PLACEHOLDER_IMAGE = "/file.svg";
+
+  const repeatOrderToCart = useCallback(
+    (
+      lines: Array<{
+        id: string;
+        title: string;
+        quantity: number;
+        priceByn: number;
+        priceRub: number;
+      }>,
+      options?: {
+        deliveryCountry?: DeliveryCountry | null;
+        openCart?: boolean;
+      },
+    ) => {
+      const toAdd: CartLine[] = [];
+      for (const l of lines) {
+        const id = typeof l.id === "string" ? l.id.trim() : "";
+        if (!id) continue;
+        const title = typeof l.title === "string" ? l.title.trim() : "";
+        if (!title) continue;
+        const q = Math.max(1, Math.floor(Number(l.quantity) || 1));
+        const priceByn = Number.isFinite(l.priceByn) ? l.priceByn : 0;
+        const priceRub = Number.isFinite(l.priceRub) ? l.priceRub : rubFromByn(priceByn);
+        toAdd.push({
+          id,
+          title,
+          priceByn,
+          priceRub,
+          frontImage: PLACEHOLDER_IMAGE,
+          quantity: q,
+        });
+      }
+      if (toAdd.length === 0) return;
+
+      setCartItems((prev) => {
+        const next = prev.map((x) => ({ ...x }));
+        for (const l of toAdd) {
+          const i = next.findIndex((x) => x.id === l.id);
+          if (i >= 0) {
+            next[i] = {
+              ...next[i],
+              quantity: next[i].quantity + l.quantity,
+              priceByn: l.priceByn,
+              priceRub: l.priceRub,
+              title: l.title,
+            };
+          } else {
+            next.push(l);
+          }
+        }
+        return next;
+      });
+
+      if (options?.deliveryCountry != null) {
+        setDeliveryCountryState(options.deliveryCountry);
+      }
+      if (options?.openCart === true) {
+        setCartOpen(true);
+      } else {
+        setCartOpen(false);
+      }
+    },
+    [],
+  );
+
   const itemCount = useMemo(
     () => cartItems.reduce((s, l) => s + l.quantity, 0),
     [cartItems]
@@ -335,6 +420,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
       removeFromCart,
       setQuantity,
       clearCart,
+      repeatOrderToCart,
     }),
     [
       cartItems,
@@ -356,6 +442,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
       removeFromCart,
       setQuantity,
       clearCart,
+      repeatOrderToCart,
     ]
   );
 

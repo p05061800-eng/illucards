@@ -11,17 +11,30 @@ declare global {
 
 type Props = {
   botUsername: string;
-  onAuth: (user: TelegramWidgetAuthPayload) => void | Promise<void>;
+  /**
+   * `redirect` — официальный виджет с `data-auth-url` (GET /api/auth/telegram).
+   * `callback` — `data-onauth` и обработка на клиенте (например POST).
+   */
+  authMode?: "redirect" | "callback";
+  /** Только для `authMode="callback"`. */
+  onAuth?: (user: TelegramWidgetAuthPayload) => void | Promise<void>;
 };
 
 /**
- * Виджет входа Telegram: в @BotFather задайте домен сайта и переменные
- * NEXT_PUBLIC_TELEGRAM_BOT_USERNAME и TELEGRAM_BOT_TOKEN.
+ * Виджет входа Telegram. В @BotFather укажите домен сайта;
+ * `NEXT_PUBLIC_TELEGRAM_BOT_USERNAME`, `TELEGRAM_BOT_TOKEN`.
  */
-export function TelegramLoginWidget({ botUsername, onAuth }: Props) {
+export function TelegramLoginWidget({
+  botUsername,
+  authMode = "callback",
+  onAuth,
+}: Props) {
   const hostRef = useRef<HTMLDivElement>(null);
   const onAuthRef = useRef(onAuth);
-  onAuthRef.current = onAuth;
+
+  useEffect(() => {
+    onAuthRef.current = onAuth;
+  }, [onAuth]);
 
   useEffect(() => {
     const name = botUsername.replace(/^@/, "").trim();
@@ -29,9 +42,6 @@ export function TelegramLoginWidget({ botUsername, onAuth }: Props) {
     if (!el || !name) return;
 
     el.replaceChildren();
-    window.TelegramLogin__illucards = (user: TelegramWidgetAuthPayload) => {
-      void Promise.resolve(onAuthRef.current(user));
-    };
 
     const script = document.createElement("script");
     script.async = true;
@@ -39,15 +49,27 @@ export function TelegramLoginWidget({ botUsername, onAuth }: Props) {
     script.setAttribute("data-telegram-login", name);
     script.setAttribute("data-size", "large");
     script.setAttribute("data-radius", "12");
-    script.setAttribute("data-onauth", "TelegramLogin__illucards");
     script.setAttribute("data-request-access", "write");
+
+    if (authMode === "redirect") {
+      const origin = window.location.origin.replace(/\/$/, "");
+      script.setAttribute("data-auth-url", `${origin}/api/auth/telegram`);
+    } else {
+      window.TelegramLogin__illucards = (user: TelegramWidgetAuthPayload) => {
+        void Promise.resolve(onAuthRef.current?.(user));
+      };
+      script.setAttribute("data-onauth", "TelegramLogin__illucards");
+    }
+
     el.appendChild(script);
 
     return () => {
-      delete window.TelegramLogin__illucards;
+      if (authMode === "callback") {
+        delete window.TelegramLogin__illucards;
+      }
       el.replaceChildren();
     };
-  }, [botUsername]);
+  }, [botUsername, authMode]);
 
   if (!botUsername.replace(/^@/, "").trim()) {
     return (

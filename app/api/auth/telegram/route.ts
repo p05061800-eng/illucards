@@ -1,54 +1,76 @@
-import crypto from "node:crypto";
+import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
-import type { TelegramVerifiedProfile } from "@/app/lib/telegramAuth";
+import {
+  profileFromVerifiedWidgetData,
+  telegramWidgetParamsFromSearchParams,
+  verifyTelegramWidgetFromSearchParams,
+  verifyTelegramWidgetHash,
+} from "@/app/lib/telegramLoginVerify";
 import {
   isTelegramCodeAuthConfigured,
   resolveTelegramAuthCodeToUserId,
 } from "@/app/lib/telegramAuthCode";
+import {
+  sealTelegramWidgetProfile,
+  TELEGRAM_WIDGET_SESSION_COOKIE,
+} from "@/app/lib/telegramWidgetSessionCookie";
 
-const MAX_AUTH_AGE_SEC = 86400;
+function loginRedirect(request: NextRequest, tg: "widget" | "err"): NextResponse {
+  const u = new URL("/login", request.url);
+  u.searchParams.set("tg", tg);
+  return NextResponse.redirect(u);
+}
 
-function verifyTelegramLogin(
-  botToken: string,
-  data: Record<string, unknown>
-): boolean {
-  const hash = data.hash;
-  if (typeof hash !== "string" || !hash) return false;
+function isHttps(request: NextRequest): boolean {
+  if (request.nextUrl.protocol === "https:") return true;
+  const fwd = request.headers.get("x-forwarded-proto");
+  return fwd === "https";
+}
 
-  const authDate = data.auth_date;
-  if (typeof authDate !== "number" && typeof authDate !== "string") {
-    return false;
-  }
-  const ts = Number(authDate);
-  if (!Number.isFinite(ts)) return false;
-  const now = Math.floor(Date.now() / 1000);
-  if (now - ts > MAX_AUTH_AGE_SEC || ts - now > 60) {
-    return false;
-  }
-
-  const pairs: [string, string][] = [];
-  for (const key of Object.keys(data).sort()) {
-    if (key === "hash") continue;
-    const val = data[key];
-    if (val === undefined || val === null) continue;
-    const str = String(val).trim();
-    if (str === "") continue;
-    pairs.push([key, str]);
+/**
+ * GET — редирект с официального Telegram Login Widget (`data-auth-url`).
+ * Query: id, first_name, username?, auth_date, hash, …
+ */
+export async function GET(request: NextRequest) {
+  const token = process.env.TELEGRAM_BOT_TOKEN?.trim();
+  if (!token) {
+    return loginRedirect(request, "err");
   }
 
-  const checkString = pairs.map(([k, v]) => `${k}=${v}`).join("\n");
-  const secretKey = crypto.createHash("sha256").update(botToken).digest();
-  const hmac = crypto
-    .createHmac("sha256", secretKey)
-    .update(checkString)
-    .digest("hex");
+  const params = request.nextUrl.searchParams;
+  if (!params.get("hash")) {
+    return loginRedirect(request, "err");
+  }
 
+  if (!verifyTelegramWidgetFromSearchParams(token, params)) {
+    return loginRedirect(request, "err");
+  }
+
+  const data = telegramWidgetParamsFromSearchParams(params);
+
+  const profile = profileFromVerifiedWidgetData(data);
+  if (!profile) {
+    return loginRedirect(request, "err");
+  }
+
+  let sealed: string;
   try {
-    if (hmac.length !== hash.length) return false;
-    return crypto.timingSafeEqual(Buffer.from(hmac, "hex"), Buffer.from(hash, "hex"));
+    sealed = sealTelegramWidgetProfile(profile);
   } catch {
-    return false;
+    return loginRedirect(request, "err");
   }
+
+  const res = loginRedirect(request, "widget");
+  res.cookies.set({
+    name: TELEGRAM_WIDGET_SESSION_COOKIE,
+    value: sealed,
+    httpOnly: true,
+    secure: isHttps(request),
+    sameSite: "lax",
+    path: "/",
+    maxAge: 300,
+  });
+  return res;
 }
 
 export async function POST(req: Request) {
@@ -110,34 +132,14 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: false, error: "Нет корректного id Telegram." }, { status: 400 });
   }
 
-  if (!verifyTelegramLogin(token, data)) {
+  if (!verifyTelegramWidgetHash(token, data)) {
     return NextResponse.json({ ok: false, error: "Подпись Telegram недействительна." }, { status: 401 });
   }
 
-  const firstName =
-    typeof data.first_name === "string" && data.first_name.trim()
-      ? data.first_name.trim()
-      : "Пользователь";
-  const lastName =
-    typeof data.last_name === "string" && data.last_name.trim()
-      ? data.last_name.trim()
-      : null;
-  const username =
-    typeof data.username === "string" && data.username.trim()
-      ? data.username.trim()
-      : null;
-  const photoUrl =
-    typeof data.photo_url === "string" && data.photo_url.trim()
-      ? data.photo_url.trim()
-      : null;
-
-  const profile: TelegramVerifiedProfile = {
-    telegramId: id,
-    firstName,
-    lastName,
-    username,
-    photoUrl,
-  };
+  const profile = profileFromVerifiedWidgetData(data);
+  if (!profile) {
+    return NextResponse.json({ ok: false, error: "Нет корректного id Telegram." }, { status: 400 });
+  }
 
   return NextResponse.json({ ok: true, profile });
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useState } from "react";
+import { useAuth } from "@/app/context/AuthContext";
 import { useCart } from "@/app/context/CartContext";
 import { TELEGRAM_ORDER_BOT_DEFAULT } from "@/app/lib/telegramOrderCheckout";
 
@@ -29,7 +30,8 @@ export function TelegramCheckoutButton({
   className = "",
   onBeforeNavigate,
 }: Props) {
-  const { cartItems, hydrated, deliveryCountry } = useCart();
+  const { cartItems, hydrated, deliveryCountry, orderTotalByn } = useCart();
+  const { primaryTelegramUserId, user } = useAuth();
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -50,19 +52,31 @@ export function TelegramCheckoutButton({
         priceRub: l.priceRub,
       }));
 
-      const res = await fetch("/api/order", {
+      const orderPayload: Record<string, unknown> = {
+        items,
+        total: orderTotalByn,
+        delivery: deliveryCountry,
+      };
+      if (primaryTelegramUserId != null) {
+        orderPayload.user_id = primaryTelegramUserId;
+      }
+      if (user?.telegramUsername) {
+        orderPayload.username = user.telegramUsername;
+      }
+
+      const res = await fetch("/api/order/create", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ deliveryCountry, items }),
+        body: JSON.stringify(orderPayload),
       });
 
       const data: unknown = await res.json().catch(() => null);
       const orderId =
         data &&
         typeof data === "object" &&
-        "orderId" in data &&
-        typeof (data as { orderId: unknown }).orderId === "string"
-          ? (data as { orderId: string }).orderId.trim()
+        "order_id" in data &&
+        typeof (data as { order_id: unknown }).order_id === "string"
+          ? (data as { order_id: string }).order_id.trim()
           : "";
 
       if (!res.ok || !orderId) {
@@ -86,7 +100,16 @@ export function TelegramCheckoutButton({
       setError("Сеть недоступна. Попробуйте ещё раз.");
       setSubmitting(false);
     }
-  }, [cartItems, deliveryCountry, hydrated, onBeforeNavigate, submitting]);
+  }, [
+    cartItems,
+    deliveryCountry,
+    hydrated,
+    onBeforeNavigate,
+    orderTotalByn,
+    primaryTelegramUserId,
+    submitting,
+    user?.telegramUsername,
+  ]);
 
   const disabled =
     !hydrated || cartItems.length === 0 || !deliveryCountry || submitting;

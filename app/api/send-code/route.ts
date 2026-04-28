@@ -28,10 +28,8 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Ожидается объект" }, { status: 400 });
   }
 
-  const usernameRaw =
-    typeof (body as Record<string, unknown>).username === "string"
-      ? (body as Record<string, unknown>).username
-      : "";
+  const o = body as Record<string, unknown>;
+  const usernameRaw = typeof o.username === "string" ? o.username : "";
   const norm = normalizeTelegramUsername(usernameRaw);
   if (!norm) {
     return NextResponse.json(

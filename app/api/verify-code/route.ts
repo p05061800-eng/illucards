@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
-import { normalizeTelegramUsername } from "@/app/lib/telegramBotUsersStore";
-import { consumeLoginCode } from "@/app/lib/telegramLoginCodesStore";
+import { consumeLoginCodeByCode } from "@/app/lib/telegramLoginCodesStore";
 
 export async function POST(request: Request) {
   let body: unknown;
@@ -15,16 +14,7 @@ export async function POST(request: Request) {
   }
 
   const o = body as Record<string, unknown>;
-  const usernameRaw = typeof o.username === "string" ? o.username : "";
   const codeRaw = typeof o.code === "string" ? o.code : "";
-
-  const norm = normalizeTelegramUsername(usernameRaw);
-  if (!norm) {
-    return NextResponse.json(
-      { error: "Укажите корректный username Telegram" },
-      { status: 400 },
-    );
-  }
 
   const digits = codeRaw.replace(/\D/g, "");
   if (digits.length !== 4) {
@@ -34,7 +24,7 @@ export async function POST(request: Request) {
     );
   }
 
-  const result = await consumeLoginCode(norm, digits);
+  const result = await consumeLoginCodeByCode(digits);
   if (!result) {
     return NextResponse.json(
       { error: "Неверный или просроченный код" },

@@ -7,6 +7,7 @@ import asyncio
 import json
 import logging
 import os
+import random
 import time
 from pathlib import Path
 from typing import Any
@@ -35,8 +36,10 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 TELEGRAM_USERS_PATH = REPO_ROOT / "data" / "telegram-bot-users.json"
 BOT_ORDERS_PATH = REPO_ROOT / "data" / "bot-orders.json"
 KNOWN_START_IDS_PATH = REPO_ROOT / "data" / "bot-known-start-user-ids.json"
+LOGIN_CODES_PATH = REPO_ROOT / "data" / "telegram-login-codes.json"
 # Подтверждённые в боте заказы: order_id → { user_id, items, total, status }
 BOT_ORDERS: dict[str, dict[str, Any]] = {}
+LOGIN_CODE_TTL_SEC = 5 * 60
 
 
 def persist_telegram_site_user(user_id: int, username: str) -> None:
@@ -612,6 +615,73 @@ def _order_belongs_to_telegram_user(order: dict[str, Any], telegram_user_id: int
         return False
 
 
+def _load_login_codes() -> dict[str, dict[str, Any]]:
+    if not LOGIN_CODES_PATH.exists():
+        return {}
+    try:
+        with open(LOGIN_CODES_PATH, "r", encoding="utf-8") as f:
+            raw = json.load(f)
+        if not isinstance(raw, dict):
+            return {}
+        out: dict[str, dict[str, Any]] = {}
+        for k, v in raw.items():
+            if isinstance(v, dict):
+                out[str(k)] = dict(v)
+        return out
+    except (OSError, json.JSONDecodeError, ValueError):
+        return {}
+
+
+def _save_login_codes(data: dict[str, dict[str, Any]]) -> None:
+    try:
+        LOGIN_CODES_PATH.parent.mkdir(parents=True, exist_ok=True)
+        with open(LOGIN_CODES_PATH, "w", encoding="utf-8") as f:
+            json.dump(data, f, ensure_ascii=False, indent=2)
+    except OSError as e:
+        logger.warning("telegram-login-codes write: %s", e)
+
+
+def _issue_login_code_for_user(telegram_user_id: int, username: str | None) -> str | None:
+    now_ms = int(time.time() * 1000)
+    expires_ms = now_ms + LOGIN_CODE_TTL_SEC * 1000
+    data = _load_login_codes()
+
+    pruned: dict[str, dict[str, Any]] = {}
+    for code, row in data.items():
+        try:
+            exp = int(row.get("expires", 0))
+        except (TypeError, ValueError):
+            exp = 0
+        if exp <= now_ms:
+            continue
+        try:
+            uid = int(row.get("user_id", 0))
+        except (TypeError, ValueError):
+            uid = 0
+        if uid == int(telegram_user_id):
+            continue
+        pruned[code] = row
+
+    username_norm = (username or "").strip().lstrip("@").lower()
+    username_display = (username or "").strip().lstrip("@")
+    if not username_display:
+        username_display = f"id{int(telegram_user_id)}"
+
+    for _ in range(50):
+        code = f"{random.randint(0, 9999):04d}"
+        if code in pruned:
+            continue
+        pruned[code] = {
+            "user_id": int(telegram_user_id),
+            "username_norm": username_norm,
+            "username_display": username_display,
+            "expires": expires_ms,
+        }
+        _save_login_codes(pruned)
+        return code
+    return None
+
+
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     if not update.message:
         return
@@ -621,6 +691,25 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     context.user_data.setdefault("cart", [])
 
     args = list(context.args) if context.args else []
+    if args and (args[0] or "").strip().lower() == "web_login":
+        code = _issue_login_code_for_user(user.id, user.username if user else None) if user else None
+        if not code:
+            await update.message.reply_text(
+                "Не удалось создать код входа. Попробуйте ещё раз через минуту."
+            )
+            return
+        await update.message.reply_text(
+            "🔐 Код для входа на сайт:\n\n"
+            f"<code>{code}</code>\n\n"
+            "⏳ Действует 5 минут.",
+            parse_mode="HTML",
+        )
+        await update.message.reply_text(
+            "Вернитесь на сайт IlluCards и введите 4 цифры в поле кода.",
+            reply_markup=_site_open_markup(int(user.id)) if user else None,
+        )
+        return
+
     oid = _order_id_from_start_args(args)
     if oid:
         order = await fetch_site_order(oid)

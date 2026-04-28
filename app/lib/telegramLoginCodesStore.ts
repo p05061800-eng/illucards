@@ -106,3 +106,28 @@ export async function consumeLoginCode(
     username: row.username_display,
   };
 }
+
+/** Проверить код без username; при успехе удалить запись и вернуть данные. */
+export async function consumeLoginCodeByCode(
+  codeRaw: string,
+): Promise<{ user_id: number; username: string } | null> {
+  const digits = codeRaw.replace(/\D/g, "");
+  if (digits.length !== 4) return null;
+  const code = digits;
+
+  const data = pruneExpired(await readFile());
+  const row = data[code];
+  if (!row) return null;
+  if (Date.now() > row.expires) {
+    delete data[code];
+    await writeFile(data);
+    return null;
+  }
+
+  delete data[code];
+  await writeFile(data);
+  return {
+    user_id: row.user_id,
+    username: row.username_display,
+  };
+}

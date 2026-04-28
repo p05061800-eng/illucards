@@ -32,10 +32,14 @@ function formatMoneyByn(n: number): string {
 
 export default function AccountPageClient() {
   const router = useRouter();
-  const { user, hydrated, logout } = useAuth();
+  const { user, hydrated, logout, establishSessionFromTelegramUserId } = useAuth();
   const [lsGate, setLsGate] = useState<LsGate>("pending");
   const [orders, setOrders] = useState<OrderListSummary[] | null>(null);
   const [ordersError, setOrdersError] = useState<string | null>(null);
+  const [tgCode, setTgCode] = useState("");
+  const [tgInfo, setTgInfo] = useState<string | null>(null);
+  const [tgError, setTgError] = useState<string | null>(null);
+  const [verifyCodePending, setVerifyCodePending] = useState(false);
 
   useEffect(() => {
     const id = readTelegramPrimaryUserId();
@@ -81,6 +85,53 @@ export default function AccountPageClient() {
     router.refresh();
   }, [logout, router]);
 
+  const handleVerifyTelegramCode = useCallback(async () => {
+    const codeDigits = tgCode.replace(/\D/g, "").slice(0, 4);
+    if (codeDigits.length !== 4) {
+      setTgError("Введите 4 цифры кода");
+      setTgInfo(null);
+      return;
+    }
+    setVerifyCodePending(true);
+    setTgError(null);
+    setTgInfo(null);
+    try {
+      const res = await fetch("/api/verify-code", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code: codeDigits }),
+      });
+      const data = (await res.json().catch(() => ({}))) as {
+        error?: string;
+        user_id?: number;
+        username?: string;
+      };
+      if (!res.ok || !Number.isFinite(data.user_id)) {
+        setTgError(data.error || "Неверный или просроченный код");
+        return;
+      }
+      const established = establishSessionFromTelegramUserId(
+        Math.floor(data.user_id),
+        {
+          telegramUsername: typeof data.username === "string" ? data.username : null,
+        },
+      );
+      if (!established.ok) {
+        setTgError(established.error);
+        return;
+      }
+      setTgInfo("Вход выполнен.");
+      setTgCode("");
+      setLsGate("ok");
+      router.replace("/account");
+      router.refresh();
+    } catch {
+      setTgError("Ошибка сети. Попробуйте снова.");
+    } finally {
+      setVerifyCodePending(false);
+    }
+  }, [tgCode, establishSessionFromTelegramUserId, router]);
+
   if (lsGate === "pending") {
     return (
       <div className="mx-auto max-w-lg px-4 py-20 text-center text-sm text-zinc-500">
@@ -121,6 +172,51 @@ export default function AccountPageClient() {
           >
             Войти через Telegram
           </a>
+        </div>
+
+        <div className="mt-4 rounded-2xl bg-zinc-50 p-5 text-zinc-900 shadow-[0_2px_12px_rgba(0,0,0,0.12)] ring-1 ring-zinc-200/90 sm:rounded-3xl sm:p-6">
+          <h3 className="text-base font-bold tracking-tight text-zinc-950">
+            Вход по коду из бота
+          </h3>
+          <p className="mt-1 text-sm text-zinc-600">
+            Нажмите «Войти через Telegram», получите код в боте и введите 4 цифры.
+          </p>
+          <div className="mt-3 grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto]">
+            <label className="block">
+              <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-zinc-500">
+                Код из бота
+              </span>
+              <input
+                type="text"
+                inputMode="numeric"
+                pattern="[0-9]*"
+                maxLength={4}
+                placeholder="0000"
+                value={tgCode}
+                onChange={(e) => setTgCode(e.target.value.replace(/\D/g, "").slice(0, 4))}
+                className="h-11 w-full rounded-xl border border-zinc-300 bg-white px-3 text-sm tracking-[0.3em] text-zinc-900 outline-none transition focus:border-violet-400 focus:ring-2 focus:ring-violet-500/20"
+              />
+            </label>
+            <button
+              type="button"
+              onClick={handleVerifyTelegramCode}
+              disabled={verifyCodePending}
+              className="inline-flex min-h-11 items-center justify-center rounded-xl bg-[#5D6BF3] px-4 text-sm font-semibold text-white transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {verifyCodePending ? "Проверка..." : "Войти"}
+            </button>
+          </div>
+
+          {tgError ? (
+            <p className="mt-3 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+              {tgError}
+            </p>
+          ) : null}
+          {tgInfo ? (
+            <p className="mt-3 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-700">
+              {tgInfo}
+            </p>
+          ) : null}
         </div>
 
         <section className="mt-8" aria-labelledby="account-orders-heading">

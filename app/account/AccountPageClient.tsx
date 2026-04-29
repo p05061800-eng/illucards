@@ -2,9 +2,11 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { ChevronRight, Package } from "lucide-react";
+import { DeliveryCountryField } from "@/app/components/DeliveryCountryField";
 import { useAuth } from "@/app/context/AuthContext";
+import { useCart } from "@/app/context/CartContext";
 import type { OrderListSummary } from "@/app/lib/ordersStore";
 import {
   formatOrderCardRef,
@@ -16,6 +18,12 @@ import {
   readTelegramPrimaryUserId,
   readTelegramUserLink,
 } from "@/app/lib/telegramUserIdentity";
+import {
+  deliveryCharge,
+  DELIVERY_COUNTRY_LABELS,
+  type DeliveryCountry,
+} from "@/app/lib/delivery";
+import { getTelegramOrderBotUsername } from "@/app/lib/telegramOrderBotUsername";
 import { startTelegramWebLoginWithWait } from "@/app/lib/startTelegramWebLoginClient";
 import { telegramWebLoginDeepLink } from "@/app/lib/telegramWebLoginUrl";
 
@@ -37,6 +45,13 @@ function formatMoneyByn(n: number): string {
 export default function AccountPageClient() {
   const router = useRouter();
   const { user, hydrated, logout, establishSessionFromTelegramUserId } = useAuth();
+  const {
+    cartItems,
+    hydrated: cartHydrated,
+    deliveryCountry,
+    setDeliveryCountry,
+    totalPriceByn,
+  } = useCart();
   const [lsGate, setLsGate] = useState<LsGate>("pending");
   const [orders, setOrders] = useState<OrderListSummary[] | null>(null);
   const [ordersError, setOrdersError] = useState<string | null>(null);
@@ -44,8 +59,12 @@ export default function AccountPageClient() {
   const [tgInfo, setTgInfo] = useState<string | null>(null);
   const [tgError, setTgError] = useState<string | null>(null);
   const [verifyCodePending, setVerifyCodePending] = useState(false);
+  const [pendingCartDismissed, setPendingCartDismissed] = useState(false);
+  const [cartOrderBusy, setCartOrderBusy] = useState(false);
+  const [cartOrderErr, setCartOrderErr] = useState<string | null>(null);
   const prevCodeDigitsLen = useRef(0);
   const verifyInFlight = useRef(false);
+  const deliveryFieldId = useId();
 
   useEffect(() => {
     const id = readTelegramPrimaryUserId();
@@ -96,9 +115,81 @@ export default function AccountPageClient() {
     logout();
     setOrders([]);
     setLsGate("no_telegram");
+    setPendingCartDismissed(false);
     router.push("/account");
     router.refresh();
   }, [logout, router]);
+
+  const handleConfirmCartOrder = useCallback(async () => {
+    if (!cartHydrated || cartItems.length === 0 || cartOrderBusy) return;
+    const uid = readTelegramPrimaryUserId();
+    if (uid == null) return;
+    const dc: DeliveryCountry = deliveryCountry ?? "BY";
+    const orderTotalByn =
+      Math.round((totalPriceByn + deliveryCharge(dc).amountByn) * 100) / 100;
+    setCartOrderErr(null);
+    setCartOrderBusy(true);
+    try {
+      const items = cartItems.map((l) => ({
+        id: l.id,
+        title: l.title.trim(),
+        quantity: l.quantity,
+        priceByn: l.priceByn,
+        priceRub: l.priceRub,
+      }));
+      const orderPayload: Record<string, unknown> = {
+        items,
+        total: orderTotalByn,
+        delivery: dc,
+        user_id: uid,
+      };
+      if (user?.telegramUsername) {
+        orderPayload.username = user.telegramUsername;
+      }
+      const res = await fetch("/api/order/create", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(orderPayload),
+      });
+      const data: unknown = await res.json().catch(() => null);
+      const orderId =
+        data &&
+        typeof data === "object" &&
+        "order_id" in data &&
+        typeof (data as { order_id: unknown }).order_id === "string"
+          ? (data as { order_id: string }).order_id.trim()
+          : "";
+      if (!res.ok || !orderId) {
+        const msg =
+          data &&
+          typeof data === "object" &&
+          "error" in data &&
+          typeof (data as { error: unknown }).error === "string"
+            ? (data as { error: string }).error
+            : "Не удалось оформить заказ";
+        setCartOrderErr(msg);
+        setCartOrderBusy(false);
+        return;
+      }
+      const bot = getTelegramOrderBotUsername();
+      const startParam = `order_${orderId}`;
+      if (typeof window !== "undefined") {
+        window.location.assign(
+          `https://t.me/${encodeURIComponent(bot)}?start=${encodeURIComponent(startParam)}`,
+        );
+      }
+    } catch {
+      setCartOrderErr("Сеть недоступна. Попробуйте ещё раз.");
+      setCartOrderBusy(false);
+    }
+  }, [
+    cartHydrated,
+    cartItems,
+    cartOrderBusy,
+    deliveryCountry,
+    totalPriceByn,
+    user?.telegramUsername,
+  ]);
 
   const handleVerifyTelegramCode = useCallback(async () => {
     const codeDigits = tgCode.replace(/\D/g, "").slice(0, 4);
@@ -113,10 +204,20 @@ export default function AccountPageClient() {
     setTgError(null);
     setTgInfo(null);
     try {
+      const verifyBody: Record<string, unknown> = { code: codeDigits };
+      if (cartHydrated && cartItems.length > 0) {
+        verifyBody.cart = cartItems.map((l) => ({
+          id: l.id,
+          title: l.title,
+          quantity: l.quantity,
+          priceByn: l.priceByn,
+        }));
+        verifyBody.deliveryCountry = deliveryCountry ?? "BY";
+      }
       const res = await fetch(TELEGRAM_CODE_VERIFY_URL, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ code: codeDigits }),
+        body: JSON.stringify(verifyBody),
       });
       const data = (await res.json().catch(() => ({}))) as {
         error?: string;
@@ -158,7 +259,14 @@ export default function AccountPageClient() {
       verifyInFlight.current = false;
       setVerifyCodePending(false);
     }
-  }, [tgCode, establishSessionFromTelegramUserId, router]);
+  }, [
+    tgCode,
+    establishSessionFromTelegramUserId,
+    router,
+    cartHydrated,
+    cartItems,
+    deliveryCountry,
+  ]);
 
   /** После ввода 4-й цифры кода — сразу проверка и переход в ЛК (без лишнего клика). */
   useEffect(() => {
@@ -347,6 +455,100 @@ export default function AccountPageClient() {
           </span>
         </p>
       </div>
+
+      {cartHydrated &&
+      cartItems.length > 0 &&
+      !pendingCartDismissed ? (
+        <section
+          className="mt-8 overflow-hidden rounded-2xl bg-zinc-50 p-5 text-zinc-900 shadow-[0_2px_12px_rgba(0,0,0,0.12)] ring-1 ring-zinc-200/90 sm:rounded-3xl sm:p-6"
+          aria-labelledby="account-cart-pending-heading"
+        >
+          <h2
+            id="account-cart-pending-heading"
+            className="text-lg font-semibold tracking-tight text-zinc-950 sm:text-xl"
+          >
+            Заказ из корзины
+          </h2>
+          <p className="mt-1 text-sm text-zinc-600">
+            Подтвердите состав — заказ уйдёт в обработку; откроется чат с ботом. Отмена скрывает
+            этот блок (корзину на сайте не очищаем).
+          </p>
+          <div className="mt-4">
+            <DeliveryCountryField
+              id={deliveryFieldId}
+              value={deliveryCountry}
+              onChange={setDeliveryCountry}
+              className="text-zinc-900"
+            />
+          </div>
+          <ul className="mt-4 space-y-2 border-t border-zinc-200/90 pt-4">
+            {cartItems.map((l) => {
+              const line = l.priceByn * l.quantity;
+              return (
+                <li
+                  key={l.id}
+                  className="flex flex-wrap justify-between gap-2 text-sm text-zinc-800"
+                >
+                  <span className="min-w-0 flex-1 font-medium">
+                    {l.title}
+                    <span className="text-zinc-500"> ×{l.quantity}</span>
+                  </span>
+                  <span className="shrink-0 font-semibold tabular-nums">
+                    {formatMoneyByn(line)} BYN
+                  </span>
+                </li>
+              );
+            })}
+          </ul>
+          <p className="mt-3 text-base font-semibold text-zinc-900">
+            Доставка:{" "}
+            {DELIVERY_COUNTRY_LABELS[deliveryCountry ?? "BY"]} (
+            {formatMoneyByn(deliveryCharge(deliveryCountry ?? "BY").amountByn)} BYN
+            {deliveryCountry && deliveryCountry !== "BY"
+              ? ` / ${deliveryCharge(deliveryCountry).amountRub.toLocaleString("ru-RU")} RUB`
+              : ""}
+            )
+          </p>
+          <p className="mt-1 text-lg font-bold tabular-nums text-zinc-950">
+            Итого:{" "}
+            {formatMoneyByn(
+              Math.round(
+                (totalPriceByn + deliveryCharge(deliveryCountry ?? "BY").amountByn) * 100,
+              ) / 100,
+            )}{" "}
+            BYN
+          </p>
+          <div className="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-2">
+            <button
+              type="button"
+              onClick={() => void handleConfirmCartOrder()}
+              disabled={cartOrderBusy}
+              className="flex min-h-11 items-center justify-center rounded-xl bg-[#5D6BF3] px-4 text-sm font-semibold text-white shadow-md transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {cartOrderBusy ? "Отправка…" : "Подтвердить заказ"}
+            </button>
+            <button
+              type="button"
+              onClick={() => setPendingCartDismissed(true)}
+              disabled={cartOrderBusy}
+              className="flex min-h-11 items-center justify-center rounded-xl border-2 border-zinc-300 bg-white px-4 text-sm font-semibold text-zinc-900 transition hover:bg-zinc-50 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              Отмена
+            </button>
+          </div>
+          {cartOrderErr ? (
+            <p
+              className="mt-3 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700"
+              role="alert"
+            >
+              {cartOrderErr}
+            </p>
+          ) : null}
+          <p className="mt-3 text-xs text-zinc-500">
+            В Telegram после входа вам пришло то же сообщение с кнопками — можно подтвердить там.
+          </p>
+        </section>
+      ) : null}
 
       <section className="mt-8" aria-labelledby="account-orders-heading">
         <div className="mb-3 flex flex-wrap items-end justify-between gap-2">

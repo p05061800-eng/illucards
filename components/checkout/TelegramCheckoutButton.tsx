@@ -5,7 +5,7 @@ import { useCallback, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/app/context/AuthContext";
 import { useCart } from "@/app/context/CartContext";
-import { TELEGRAM_ORDER_BOT_DEFAULT } from "@/app/lib/telegramOrderCheckout";
+import { getTelegramOrderBotUsername } from "@/app/lib/telegramOrderBotUsername";
 import { startTelegramWebLoginWithWait } from "@/app/lib/startTelegramWebLoginClient";
 import { telegramWebLoginDeepLink } from "@/app/lib/telegramWebLoginUrl";
 
@@ -13,22 +13,6 @@ type Props = {
   className?: string;
   onBeforeNavigate?: () => void;
 };
-
-function resolveBotUsername(): string {
-  if (typeof document !== "undefined") {
-    const fromDom =
-      document.documentElement.getAttribute("data-telegram-order-bot") ||
-      document.documentElement.getAttribute("data-telegram-bot-username");
-    const trimmed = (fromDom ?? "").replace(/^@/, "").trim();
-    if (trimmed) return trimmed;
-  }
-  const fromEnv =
-    process.env.NEXT_PUBLIC_TELEGRAM_ORDER_BOT_USERNAME ||
-    process.env.NEXT_PUBLIC_TELEGRAM_BOT_USERNAME ||
-    "";
-  const fromEnvTrim = fromEnv.replace(/^@/, "").trim();
-  return fromEnvTrim || TELEGRAM_ORDER_BOT_DEFAULT;
-}
 
 export function TelegramCheckoutButton({
   className = "",
@@ -114,7 +98,7 @@ export function TelegramCheckoutButton({
         return;
       }
 
-      const bot = resolveBotUsername();
+      const bot = getTelegramOrderBotUsername();
       const startParam = `order_${orderId}`;
       onBeforeNavigate?.();
       window.location.assign(

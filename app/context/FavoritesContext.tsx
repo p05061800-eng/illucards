@@ -15,6 +15,7 @@ import {
 } from "react";
 import type { StoredCard } from "../api/cards/route";
 import { apiUrl } from "../lib/apiUrl";
+import { readTelegramPrimaryUserId } from "../lib/telegramUserIdentity";
 
 export const FAVORITES_STORAGE_KEY = "illucards-favorites";
 
@@ -91,6 +92,16 @@ export function FavoritesProvider({ children }: { children: ReactNode }) {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(favoriteIds),
+    }).catch(() => {});
+    const userId = readTelegramPrimaryUserId();
+    if (userId == null) return;
+    void fetch(apiUrl("/api/user-state"), {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        user_id: userId,
+        favorites: favoriteIds,
+      }),
     }).catch(() => {});
   }, [favoriteIds, hydrated]);
 

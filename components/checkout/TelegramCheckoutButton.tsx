@@ -2,6 +2,7 @@
 
 import { MessageCircle } from "lucide-react";
 import { useCallback, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import { useAuth } from "@/app/context/AuthContext";
 import { useCart } from "@/app/context/CartContext";
 import { TELEGRAM_ORDER_BOT_DEFAULT } from "@/app/lib/telegramOrderCheckout";
@@ -32,6 +33,7 @@ export function TelegramCheckoutButton({
   className = "",
   onBeforeNavigate,
 }: Props) {
+  const router = useRouter();
   const botLoginHref = useMemo(() => telegramWebLoginDeepLink(), []);
 
   const { cartItems, hydrated, deliveryCountry, orderTotalByn } = useCart();
@@ -44,6 +46,8 @@ export function TelegramCheckoutButton({
       return;
     }
     if (primaryTelegramUserId == null) {
+      setError("Сначала войдите в личный кабинет");
+      router.push("/account");
       return;
     }
 
@@ -91,7 +95,12 @@ export function TelegramCheckoutButton({
           typeof (data as { error: unknown }).error === "string"
             ? (data as { error: string }).error
             : "Не удалось оформить заказ";
-        setError(msg);
+        if (res.status === 401) {
+          setError("Сначала войдите в личный кабинет");
+          router.push("/account");
+        } else {
+          setError(msg);
+        }
         setSubmitting(false);
         return;
       }
@@ -113,6 +122,7 @@ export function TelegramCheckoutButton({
     onBeforeNavigate,
     orderTotalByn,
     primaryTelegramUserId,
+    router,
     submitting,
     user,
   ]);

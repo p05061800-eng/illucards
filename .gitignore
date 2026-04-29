@@ -48,6 +48,7 @@ next-env.d.ts
 /data/telegram-login-codes.json
 /data/bot-orders.json
 /data/bot-known-start-user-ids.json
+/data/telegram-user-state.json
 
 # ESLint cache (workspace)
 .cache/

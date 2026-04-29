@@ -23,6 +23,8 @@ import {
   ADULT_FIXED_PRICE_RUB,
   rubFromByn,
 } from "../lib/formatPrice";
+import { apiUrl } from "../lib/apiUrl";
+import { readTelegramPrimaryUserId } from "../lib/telegramUserIdentity";
 
 export type CartLine = {
   id: string;
@@ -241,6 +243,26 @@ export function CartProvider({ children }: { children: ReactNode }) {
     } catch {
       /* ignore quota */
     }
+  }, [cartItems, hydrated]);
+
+  useEffect(() => {
+    if (!hydrated) return;
+    const userId = readTelegramPrimaryUserId();
+    if (userId == null) return;
+    void fetch(apiUrl("/api/user-state"), {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        user_id: userId,
+        cart: cartItems.map((x) => ({
+          id: x.id,
+          title: x.title,
+          quantity: x.quantity,
+          priceByn: x.priceByn,
+          priceRub: x.priceRub,
+        })),
+      }),
+    }).catch(() => {});
   }, [cartItems, hydrated]);
 
   const addToCart = useCallback((card: StoredCard) => {

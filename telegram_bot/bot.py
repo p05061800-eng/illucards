@@ -445,7 +445,7 @@ def _main_keyboard() -> ReplyKeyboardMarkup:
     return ReplyKeyboardMarkup(
         [
             ["📦 Категории", "🛒 Корзина"],
-            ["📦 Мои заказы"],
+            ["❤️ Избранное", "📦 Мои заказы"],
         ],
         resize_keyboard=True,
     )
@@ -522,6 +522,36 @@ async def fetch_site_order(order_id: str) -> dict[str, Any] | None:
                 return data
     except (aiohttp.ClientError, asyncio.TimeoutError, OSError, json.JSONDecodeError, ValueError) as e:
         logger.warning("GET order: %s", e)
+        return None
+
+
+async def fetch_site_user_state(telegram_user_id: int) -> dict[str, Any] | None:
+    """Получить синхронизированные с сайта корзину и избранное пользователя."""
+    base = os.getenv("ILLUCARDS_SITE_ORIGIN", DEFAULT_SITE_ORIGIN).rstrip("/")
+    secret = (os.getenv("ILLUCARDS_USER_STATE_SYNC_SECRET") or "").strip()
+    if not secret:
+        return None
+    url = f"{base}/api/user-state?user_id={int(telegram_user_id)}"
+    timeout = aiohttp.ClientTimeout(total=15)
+    try:
+        async with aiohttp.ClientSession(timeout=timeout) as session:
+            async with session.get(
+                url,
+                headers={
+                    "Accept": "application/json",
+                    "Authorization": f"Bearer {secret}",
+                },
+            ) as resp:
+                if resp.status != 200:
+                    text = (await resp.text())[:300]
+                    logger.warning("GET user-state HTTP %s: %s", resp.status, text)
+                    return None
+                data = await resp.json(content_type=None)
+                if not isinstance(data, dict):
+                    return None
+                return data
+    except (aiohttp.ClientError, asyncio.TimeoutError, OSError, json.JSONDecodeError, ValueError) as e:
+        logger.warning("GET user-state: %s", e)
         return None
 
 
@@ -854,7 +884,17 @@ async def show_my_orders(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
 async def show_cart_text(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     if not update.message:
         return
-    cart: list[dict[str, Any]] = context.user_data.get("cart") or []
+    user = update.effective_user
+    synced_cart: list[dict[str, Any]] = []
+    if user:
+        state = await fetch_site_user_state(int(user.id))
+        if isinstance(state, dict):
+            raw = state.get("cart")
+            if isinstance(raw, list):
+                synced_cart = [x for x in raw if isinstance(x, dict)]
+    cart: list[dict[str, Any]] = (
+        synced_cart if synced_cart else (context.user_data.get("cart") or [])
+    )
     if not cart:
         await update.message.reply_text("Корзина пуста.")
         return
@@ -872,6 +912,41 @@ async def show_cart_text(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
     )
 
 
+async def show_favorites_text(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    if not update.message:
+        return
+    user = update.effective_user
+    if not user:
+        await update.message.reply_text("Не удалось определить пользователя.")
+        return
+    state = await fetch_site_user_state(int(user.id))
+    favorites_raw = state.get("favorites") if isinstance(state, dict) else []
+    if not isinstance(favorites_raw, list):
+        favorites_raw = []
+    favorites = [x for x in favorites_raw if isinstance(x, str)]
+    if not favorites:
+        await update.message.reply_text("В избранном пока пусто.")
+        return
+
+    products = await load_products()
+    title_by_id: dict[str, str] = {}
+    for p in products:
+        if not isinstance(p, dict):
+            continue
+        pid = str(p.get("id") or "").strip()
+        title = str(p.get("name") or "—").strip()
+        if pid:
+            title_by_id[pid] = title
+
+    lines = ["❤️ Избранное", ""]
+    for pid in favorites[:50]:
+        lines.append(f"• {title_by_id.get(pid, f'Карточка {pid}')}")
+    if len(favorites) > 50:
+        lines.append("")
+        lines.append(f"И ещё {len(favorites) - 50} шт.")
+    await update.message.reply_text("\n".join(lines))
+
+
 async def text_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     if not update.message or not update.message.text:
         return
@@ -881,6 +956,9 @@ async def text_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
         return
     if t == "📦 Мои заказы":
         await show_my_orders(update, context)
+        return
+    if t == "❤️ Избранное":
+        await show_favorites_text(update, context)
         return
     if t != "📦 Категории":
         return

@@ -26,7 +26,7 @@ export default function CartView() {
     setQuantity,
     hydrated,
   } = useCart();
-  const { currency } = useCurrency();
+  const { currency, setCurrency } = useCurrency();
   const categoryTiles = useCategoryTiles();
   const deliveryFieldId = useId();
 
@@ -152,6 +152,39 @@ export default function CartView() {
             </ul>
 
             <div className="mt-8 flex flex-col gap-6 border-t border-white/10 pt-8">
+              <div className="flex items-center justify-between gap-3">
+                <span className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
+                  Валюта
+                </span>
+                <div
+                  className="inline-flex rounded-full border border-white/12 bg-black/50 p-0.5"
+                  role="group"
+                  aria-label="Валюта"
+                >
+                  <button
+                    type="button"
+                    onClick={() => setCurrency("BYN")}
+                    className={`rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-wide transition ${
+                      currency === "BYN"
+                        ? "bg-purple-600/90 text-white shadow-[0_0_14px_rgba(168,85,247,0.35)]"
+                        : "text-zinc-500 hover:text-zinc-300"
+                    }`}
+                  >
+                    BY
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setCurrency("RUB")}
+                    className={`rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-wide transition ${
+                      currency === "RUB"
+                        ? "bg-purple-600/90 text-white shadow-[0_0_14px_rgba(168,85,247,0.35)]"
+                        : "text-zinc-500 hover:text-zinc-300"
+                    }`}
+                  >
+                    RUB
+                  </button>
+                </div>
+              </div>
               <DeliveryCountryField
                 id={deliveryFieldId}
                 value={deliveryCountry}

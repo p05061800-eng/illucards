@@ -3,6 +3,7 @@
 import type { ReactNode } from "react";
 import { Suspense } from "react";
 import { CartDrawer } from "./components/CartDrawer";
+import { TelegramLoginWaitPoller } from "./components/TelegramLoginWaitPoller";
 import { TelegramUserQueryAuth } from "./components/TelegramUserQueryAuth";
 import { AuthProvider } from "./context/AuthContext";
 import { CartProvider } from "./context/CartContext";
@@ -19,6 +20,7 @@ export function Providers({ children }: { children: ReactNode }) {
       <Suspense fallback={null}>
         <TelegramUserQueryAuth />
       </Suspense>
+      <TelegramLoginWaitPoller />
       <CurrencyProvider>
         <FavoritesProvider>
           <CategoryFramesProvider>

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { ChevronRight, Package } from "lucide-react";
 import { useAuth } from "@/app/context/AuthContext";
 import type { OrderListSummary } from "@/app/lib/ordersStore";
@@ -16,6 +16,7 @@ import {
   readTelegramPrimaryUserId,
   readTelegramUserLink,
 } from "@/app/lib/telegramUserIdentity";
+import { startTelegramWebLoginWithWait } from "@/app/lib/startTelegramWebLoginClient";
 import { telegramWebLoginDeepLink } from "@/app/lib/telegramWebLoginUrl";
 
 type LsGate = "pending" | "ok" | "no_telegram";
@@ -43,6 +44,8 @@ export default function AccountPageClient() {
   const [tgInfo, setTgInfo] = useState<string | null>(null);
   const [tgError, setTgError] = useState<string | null>(null);
   const [verifyCodePending, setVerifyCodePending] = useState(false);
+  const prevCodeDigitsLen = useRef(0);
+  const verifyInFlight = useRef(false);
 
   useEffect(() => {
     const id = readTelegramPrimaryUserId();
@@ -80,6 +83,13 @@ export default function AccountPageClient() {
     void loadOrders();
   }, [lsGate, hydrated, loadOrders]);
 
+  const handleOpenTelegramForLogin = useCallback(async () => {
+    const ok = await startTelegramWebLoginWithWait();
+    if (!ok && typeof window !== "undefined") {
+      window.open(telegramWebLoginDeepLink(), "_blank", "noopener,noreferrer");
+    }
+  }, []);
+
   const handleLogout = useCallback(() => {
     logout();
     setOrders([]);
@@ -95,6 +105,8 @@ export default function AccountPageClient() {
       setTgInfo(null);
       return;
     }
+    if (verifyInFlight.current) return;
+    verifyInFlight.current = true;
     setVerifyCodePending(true);
     setTgError(null);
     setTgInfo(null);
@@ -129,17 +141,41 @@ export default function AccountPageClient() {
         setTgError(established.error);
         return;
       }
-      setTgInfo("Вход выполнен.");
+      setTgInfo("Вход выполнен. Переход в личный кабинет…");
       setTgCode("");
       setLsGate("ok");
-      router.replace("/account");
-      router.refresh();
+      if (typeof window !== "undefined") {
+        window.location.assign("/account");
+      } else {
+        router.replace("/account");
+        router.refresh();
+      }
     } catch {
       setTgError("Ошибка сети. Попробуйте снова.");
     } finally {
+      verifyInFlight.current = false;
       setVerifyCodePending(false);
     }
   }, [tgCode, establishSessionFromTelegramUserId, router]);
+
+  /** После ввода 4-й цифры кода — сразу проверка и переход в ЛК (без лишнего клика). */
+  useEffect(() => {
+    const digits = tgCode.replace(/\D/g, "").slice(0, 4);
+    const len = digits.length;
+    if (len === 0) {
+      prevCodeDigitsLen.current = 0;
+      return;
+    }
+    if (
+      len === 4 &&
+      prevCodeDigitsLen.current < 4 &&
+      !verifyCodePending &&
+      lsGate === "no_telegram"
+    ) {
+      void handleVerifyTelegramCode();
+    }
+    prevCodeDigitsLen.current = len;
+  }, [tgCode, verifyCodePending, lsGate, handleVerifyTelegramCode]);
 
   if (lsGate === "pending") {
     return (
@@ -173,14 +209,17 @@ export default function AccountPageClient() {
             После авторизации через Telegram в кабинете появятся ваши заказы и
             текущие статусы доставки.
           </p>
-          <a
-            href={telegramWebLoginDeepLink()}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="mt-5 inline-flex min-h-11 items-center justify-center rounded-xl bg-[#5D6BF3] px-6 text-sm font-semibold text-white shadow-md transition hover:brightness-110"
+          <button
+            type="button"
+            onClick={() => void handleOpenTelegramForLogin()}
+            className="mt-5 inline-flex min-h-11 w-full items-center justify-center rounded-xl bg-[#5D6BF3] px-6 text-sm font-semibold text-white shadow-md transition hover:brightness-110 sm:w-auto"
           >
             Войти через Telegram
-          </a>
+          </button>
+          <p className="mx-auto mt-2 max-w-md text-xs text-zinc-500">
+            Когда код придёт в боте, эта вкладка сама откроет личный кабинет — оставьте сайт
+            открытым.
+          </p>
         </div>
 
         <div className="mt-4 rounded-2xl bg-zinc-50 p-5 text-zinc-900 shadow-[0_2px_12px_rgba(0,0,0,0.12)] ring-1 ring-zinc-200/90 sm:rounded-3xl sm:p-6">

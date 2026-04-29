@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { normalizeTelegramUsername } from "@/app/lib/telegramBotUsersStore";
 import { upsertLoginCodeEntry } from "@/app/lib/telegramLoginCodesStore";
+import { isValidLoginWaitId } from "@/app/lib/telegramLoginWaitKeys";
+import { markLoginWaitReady } from "@/app/lib/telegramLoginWaitStore";
 
 function bearerToken(request: Request): string | null {
   const h = request.headers.get("authorization");
@@ -77,6 +79,11 @@ export async function POST(request: Request) {
     });
   } catch {
     return NextResponse.json({ error: "Не удалось сохранить код" }, { status: 500 });
+  }
+
+  const waitRaw = typeof o.wait_id === "string" ? o.wait_id.trim() : "";
+  if (waitRaw && isValidLoginWaitId(waitRaw)) {
+    await markLoginWaitReady(waitRaw);
   }
 
   return NextResponse.json({ ok: true });

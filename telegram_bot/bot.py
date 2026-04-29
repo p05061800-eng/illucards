@@ -310,8 +310,8 @@ def _resolve_admin_chat_id() -> int:
 PRODUCTS_API = "https://www.illucards.by/api/products"
 # База сайта для GET /api/order/{id} (тот же хост, что и витрина)
 DEFAULT_SITE_ORIGIN = os.getenv("ILLUCARDS_SITE_ORIGIN", "https://www.illucards.by").rstrip("/")
-# Ссылка «вход на сайт» (?user_id=<telegram id>) — по умолчанию без www
-SITE_LOGIN_ORIGIN = os.getenv("ILLUCARDS_SITE_LOGIN_ORIGIN", "https://illucards.by").rstrip("/")
+# Ссылка «вход на сайт» (?user_id=<telegram id>) — по умолчанию на www-домен.
+SITE_LOGIN_ORIGIN = os.getenv("ILLUCARDS_SITE_LOGIN_ORIGIN", "https://www.illucards.by").rstrip("/")
 CARDS_PATH = Path(__file__).resolve().parent / "cards.json"
 
 DELIVERY_LABELS: dict[str, str] = {
@@ -456,6 +456,14 @@ def _site_open_markup(telegram_user_id: int) -> InlineKeyboardMarkup:
     uid = int(telegram_user_id)
     url = f"{SITE_LOGIN_ORIGIN}/?user_id={uid}"
     return InlineKeyboardMarkup([[InlineKeyboardButton("Открыть сайт", url=url)]])
+
+
+def _account_open_markup() -> InlineKeyboardMarkup:
+    """Личный кабинет — ввод кода из бота после web_login."""
+    url = f"{SITE_LOGIN_ORIGIN}/account"
+    return InlineKeyboardMarkup(
+        [[InlineKeyboardButton("Открыть личный кабинет", url=url)]]
+    )
 
 
 async def _reply_text_with_main_menu_and_site(
@@ -688,6 +696,7 @@ async def _sync_login_code_to_site(
     code: str,
     telegram_user_id: int,
     username: str | None,
+    wait_id: str | None = None,
 ) -> bool:
     """Продакшен (Vercel): код хранится в Redis на сайте, не в файле на машине бота."""
     url = (os.getenv("ILLUCARDS_LOGIN_CODE_SYNC_URL") or "").strip()
@@ -702,6 +711,8 @@ async def _sync_login_code_to_site(
         "username_display": un if un else f"id{int(telegram_user_id)}",
         "username_norm": un.lower() if un else "",
     }
+    if wait_id and len(wait_id) == 32 and all(c in "0123456789abcdef" for c in wait_id.lower()):
+        payload["wait_id"] = wait_id.lower()
     timeout = aiohttp.ClientTimeout(total=15)
     try:
         async with aiohttp.ClientSession(timeout=timeout) as session:
@@ -773,7 +784,15 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     context.user_data.setdefault("cart", [])
 
     args = list(context.args) if context.args else []
-    if args and (args[0] or "").strip().lower() == "web_login":
+    arg0 = (args[0] or "").strip() if args else ""
+    low0 = arg0.lower()
+    web_login_wait_id: str | None = None
+    if low0.startswith("web_login_"):
+        suf = arg0[len("web_login_") :].strip().lower()
+        if len(suf) == 32 and all(c in "0123456789abcdef" for c in suf):
+            web_login_wait_id = suf
+    is_web_login = low0 == "web_login" or low0.startswith("web_login_")
+    if args and is_web_login:
         code = _issue_login_code_for_user(user.id, user.username if user else None) if user else None
         if not code:
             await update.message.reply_text(
@@ -784,6 +803,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
             code,
             int(user.id),
             user.username if user else None,
+            web_login_wait_id,
         )
         if not synced:
             await update.message.reply_text(
@@ -797,8 +817,8 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
             parse_mode="HTML",
         )
         await update.message.reply_text(
-            "Вернитесь на сайт IlluCards и введите 4 цифры в поле кода.",
-            reply_markup=_site_open_markup(int(user.id)) if user else None,
+            "Нажмите кнопку ниже — откроется личный кабинет, введите там 4 цифры кода.",
+            reply_markup=_account_open_markup() if user else None,
         )
         return
 

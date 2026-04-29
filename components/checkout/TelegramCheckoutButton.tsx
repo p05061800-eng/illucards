@@ -1,11 +1,12 @@
 "use client";
 
 import { MessageCircle } from "lucide-react";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/app/context/AuthContext";
 import { useCart } from "@/app/context/CartContext";
 import { TELEGRAM_ORDER_BOT_DEFAULT } from "@/app/lib/telegramOrderCheckout";
+import { startTelegramWebLoginWithWait } from "@/app/lib/startTelegramWebLoginClient";
 import { telegramWebLoginDeepLink } from "@/app/lib/telegramWebLoginUrl";
 
 type Props = {
@@ -34,7 +35,13 @@ export function TelegramCheckoutButton({
   onBeforeNavigate,
 }: Props) {
   const router = useRouter();
-  const botLoginHref = useMemo(() => telegramWebLoginDeepLink(), []);
+
+  const openTelegramLogin = useCallback(async () => {
+    const ok = await startTelegramWebLoginWithWait();
+    if (!ok && typeof window !== "undefined") {
+      window.open(telegramWebLoginDeepLink(), "_blank", "noopener,noreferrer");
+    }
+  }, []);
 
   const { cartItems, hydrated, deliveryCountry, orderTotalByn } = useCart();
   const { primaryTelegramUserId, user } = useAuth();
@@ -138,15 +145,14 @@ export function TelegramCheckoutButton({
   if (primaryTelegramUserId == null) {
     return (
       <div className="w-full">
-        <a
-          href={botLoginHref}
-          target="_blank"
-          rel="noopener noreferrer"
+        <button
+          type="button"
+          onClick={() => void openTelegramLogin()}
           className="inline-flex min-h-14 w-full items-center justify-center gap-2 rounded-2xl bg-[#229ED9] px-3 py-3 text-center text-xs font-semibold leading-snug text-white shadow-md transition hover:brightness-105 focus-visible:outline focus-visible:ring-2 focus-visible:ring-sky-400/80 active:scale-[0.99] sm:min-h-[3.5rem] sm:px-4 sm:text-sm md:text-base"
         >
           <MessageCircle className="h-5 w-5 shrink-0 sm:h-6 sm:w-6" strokeWidth={2} aria-hidden />
           Авторизоваться через телеграм для заказа
-        </a>
+        </button>
       </div>
     );
   }

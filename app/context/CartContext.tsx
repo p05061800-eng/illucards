@@ -25,6 +25,7 @@ import {
 } from "../lib/formatPrice";
 import { apiUrl } from "../lib/apiUrl";
 import { readTelegramPrimaryUserId } from "../lib/telegramUserIdentity";
+import { useCurrency } from "./CurrencyContext";
 
 export type CartLine = {
   id: string;
@@ -208,6 +209,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const [cartOpen, setCartOpen] = useState(false);
   const [deliveryCountry, setDeliveryCountryState] =
     useState<DeliveryCountry | null>(null);
+  const { setCurrency, hydrated: currencyHydrated } = useCurrency();
 
   const openCart = useCallback(() => setCartOpen(true), []);
   const closeCart = useCallback(() => setCartOpen(false), []);
@@ -231,6 +233,20 @@ export function CartProvider({ children }: { children: ReactNode }) {
       /* ignore */
     }
   }, [deliveryCountry, hydrated]);
+
+  /** В корзине цены показываются в валюте переключателя: привязываем к стране доставки (BY → BYN, иначе → RUB). */
+  useEffect(() => {
+    if (!hydrated || !currencyHydrated) return;
+    if (deliveryCountry === "BY") {
+      setCurrency("BYN");
+    } else if (
+      deliveryCountry === "RU" ||
+      deliveryCountry === "UA" ||
+      deliveryCountry === "OTHER"
+    ) {
+      setCurrency("RUB");
+    }
+  }, [deliveryCountry, hydrated, currencyHydrated, setCurrency]);
 
   const setDeliveryCountry = useCallback((country: DeliveryCountry | null) => {
     setDeliveryCountryState(country);

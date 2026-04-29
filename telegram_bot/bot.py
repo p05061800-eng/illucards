@@ -641,6 +641,41 @@ def _save_login_codes(data: dict[str, dict[str, Any]]) -> None:
         logger.warning("telegram-login-codes write: %s", e)
 
 
+async def _sync_login_code_to_site(
+    code: str,
+    telegram_user_id: int,
+    username: str | None,
+) -> None:
+    """Продакшен (Vercel): код хранится в Redis на сайте, не в файле на машине бота."""
+    url = (os.getenv("ILLUCARDS_LOGIN_CODE_SYNC_URL") or "").strip()
+    secret = (os.getenv("ILLUCARDS_LOGIN_CODE_SYNC_SECRET") or "").strip()
+    if not url or not secret:
+        return
+    un = (username or "").strip().lstrip("@")
+    payload: dict[str, Any] = {
+        "code": code,
+        "user_id": int(telegram_user_id),
+        "username_display": un if un else f"id{int(telegram_user_id)}",
+        "username_norm": un.lower() if un else "",
+    }
+    timeout = aiohttp.ClientTimeout(total=15)
+    try:
+        async with aiohttp.ClientSession(timeout=timeout) as session:
+            async with session.post(
+                url,
+                headers={
+                    "Authorization": f"Bearer {secret}",
+                    "Content-Type": "application/json",
+                },
+                json=payload,
+            ) as resp:
+                if resp.status != 200:
+                    text = (await resp.text())[:400]
+                    logger.warning("sync-login-code HTTP %s: %s", resp.status, text)
+    except Exception as e:
+        logger.warning("sync-login-code: %s", e)
+
+
 def _issue_login_code_for_user(telegram_user_id: int, username: str | None) -> str | None:
     now_ms = int(time.time() * 1000)
     expires_ms = now_ms + LOGIN_CODE_TTL_SEC * 1000
@@ -698,6 +733,11 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
                 "Не удалось создать код входа. Попробуйте ещё раз через минуту."
             )
             return
+        await _sync_login_code_to_site(
+            code,
+            int(user.id),
+            user.username if user else None,
+        )
         await update.message.reply_text(
             "🔐 Код для входа на сайт:\n\n"
             f"<code>{code}</code>\n\n"

@@ -91,8 +91,15 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const cart = parseCart(o.cart);
-  const favorites = parseFavorites(o.favorites);
+  const prev = await getTelegramUserState(userId);
+  let cart = prev?.cart ?? [];
+  let favorites = prev?.favorites ?? [];
+  if ("cart" in o) {
+    cart = parseCart(o.cart);
+  }
+  if ("favorites" in o) {
+    favorites = parseFavorites(o.favorites);
+  }
   await saveTelegramUserState(userId, { cart, favorites });
   await syncToTelegramBot({ userId, cart, favorites });
   return NextResponse.json({ ok: true });

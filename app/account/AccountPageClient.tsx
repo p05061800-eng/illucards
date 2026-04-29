@@ -84,11 +84,13 @@ export default function AccountPageClient() {
   }, [lsGate, hydrated, loadOrders]);
 
   const handleOpenTelegramForLogin = useCallback(async () => {
+    router.push("/account");
+    router.refresh();
     const ok = await startTelegramWebLoginWithWait();
     if (!ok && typeof window !== "undefined") {
       window.open(telegramWebLoginDeepLink(), "_blank", "noopener,noreferrer");
     }
-  }, []);
+  }, [router]);
 
   const handleLogout = useCallback(() => {
     logout();

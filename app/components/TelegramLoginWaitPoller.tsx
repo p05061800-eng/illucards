@@ -63,12 +63,17 @@ export function TelegramLoginWaitPoller() {
           } catch {
             /* ignore */
           }
-          try {
-            window.__illucardsTgLoginPopup?.close();
-            window.__illucardsTgLoginPopup = null;
-          } catch {
-            /* ignore */
-          }
+          const closePopup = () => {
+            try {
+              window.__illucardsTgLoginPopup?.close();
+            } catch {
+              /* ignore */
+            }
+          };
+          closePopup();
+          window.setTimeout(closePopup, 120);
+          window.setTimeout(closePopup, 350);
+          window.__illucardsTgLoginPopup = null;
           startedAt.current = null;
           window.location.assign(ACCOUNT_REDIRECT_URL);
         }

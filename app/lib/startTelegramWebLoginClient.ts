@@ -28,12 +28,9 @@ export async function startTelegramWebLoginWithWait(): Promise<boolean> {
       "popup=yes,width=520,height=820,menubar=no,toolbar=no,location=yes,status=no,scrollbars=yes,resizable=yes",
     );
     window.__illucardsTgLoginPopup = popup;
-    if (popup && !popup.closed) {
-      popup.focus();
-      // Пользователь остаётся на сайте и сразу попадает в ЛК для ввода кода.
-      window.location.assign("https://www.illucards.by/account");
-      return true;
-    }
+    if (popup && !popup.closed) popup.focus();
+    // Независимо от статуса popup переводим текущую вкладку в ЛК.
+    window.location.assign("https://www.illucards.by/account");
     return true;
   } catch {
     return false;

@@ -37,11 +37,13 @@ export function TelegramCheckoutButton({
   const router = useRouter();
 
   const openTelegramLogin = useCallback(async () => {
+    router.push("/account");
+    router.refresh();
     const ok = await startTelegramWebLoginWithWait();
     if (!ok && typeof window !== "undefined") {
       window.open(telegramWebLoginDeepLink(), "_blank", "noopener,noreferrer");
     }
-  }, []);
+  }, [router]);
 
   const { cartItems, hydrated, deliveryCountry, orderTotalByn } = useCart();
   const { primaryTelegramUserId, user } = useAuth();

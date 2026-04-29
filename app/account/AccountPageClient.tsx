@@ -21,6 +21,9 @@ import { telegramWebLoginDeepLink } from "@/app/lib/telegramWebLoginUrl";
 type LsGate = "pending" | "ok" | "no_telegram";
 
 const PREVIEW_LIMIT = 5;
+const TELEGRAM_CODE_VERIFY_URL =
+  process.env.NEXT_PUBLIC_TELEGRAM_CODE_VERIFY_URL?.trim() ||
+  "https://illucards-telegram-bot.onrender.com/api/verify-code";
 
 function formatMoneyByn(n: number): string {
   if (!Number.isFinite(n)) return "0";
@@ -96,7 +99,7 @@ export default function AccountPageClient() {
     setTgError(null);
     setTgInfo(null);
     try {
-      const res = await fetch("/api/verify-code", {
+      const res = await fetch(TELEGRAM_CODE_VERIFY_URL, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ code: codeDigits }),

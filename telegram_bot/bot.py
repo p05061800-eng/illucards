@@ -294,6 +294,19 @@ def _format_order_admin(
     return "\n".join(lines)
 
 
+def _resolve_admin_chat_id() -> int:
+    raw = (
+        (os.getenv("TELEGRAM_ADMIN_CHAT_ID") or "").strip()
+        or (os.getenv("ILLUCARDS_TELEGRAM_ADMIN_CHAT_ID") or "").strip()
+    )
+    if not raw:
+        return 0
+    try:
+        return int(raw)
+    except (TypeError, ValueError):
+        return 0
+
+
 PRODUCTS_API = "https://www.illucards.by/api/products"
 # База сайта для GET /api/order/{id} (тот же хост, что и витрина)
 DEFAULT_SITE_ORIGIN = os.getenv("ILLUCARDS_SITE_ORIGIN", "https://www.illucards.by").rstrip("/")
@@ -950,48 +963,43 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
     data = q.data
 
     if data.startswith("orderok:"):
-        order_id = data.split(":", 1)[1].strip()
-        if not order_id:
-            await q.answer("Некорректный заказ", show_alert=True)
-            return
-        user = q.from_user
-        if not user:
-            await q.answer("Ошибка", show_alert=True)
-            return
+        try:
+            order_id = data.split(":", 1)[1].strip()
+            if not order_id:
+                await q.answer("Некорректный заказ", show_alert=True)
+                return
+            user = q.from_user
+            if not user:
+                await q.answer("Ошибка", show_alert=True)
+                return
 
-        order = await fetch_site_order(order_id)
-        if not order:
-            await q.answer("Заказ не найден", show_alert=True)
-            return
-        if not _order_belongs_to_telegram_user(order, user.id):
-            await q.answer("Это не ваш заказ", show_alert=True)
-            return
+            order = await fetch_site_order(order_id)
+            if not order:
+                await q.answer("Заказ не найден", show_alert=True)
+                return
+            if not _order_belongs_to_telegram_user(order, user.id):
+                await q.answer("Это не ваш заказ", show_alert=True)
+                return
 
-        existing = BOT_ORDERS.get(order_id)
-        if isinstance(existing, dict) and str(existing.get("status") or "").strip().lower() == "confirmed":
-            await q.answer("Уже подтверждён")
-            try:
-                await q.edit_message_reply_markup(reply_markup=None)
-            except Exception:
-                pass
-            return
+            existing = BOT_ORDERS.get(order_id)
+            if isinstance(existing, dict) and str(existing.get("status") or "").strip().lower() == "confirmed":
+                await q.answer("Уже подтверждён")
+                try:
+                    await q.edit_message_reply_markup(reply_markup=None)
+                except Exception:
+                    pass
+                return
 
-        rec = _record_site_order_in_bot(order_id, order, user.id)
-        rec["status"] = "confirmed"
-        BOT_ORDERS[order_id] = rec
-        _persist_bot_orders()
+            rec = _record_site_order_in_bot(order_id, order, user.id)
+            rec["status"] = "confirmed"
+            BOT_ORDERS[order_id] = rec
+            _persist_bot_orders()
 
-        if not await post_site_order_status(order_id, "confirmed"):
-            logger.warning("Сайт: не удалось обновить статус заказа %s", order_id)
+            if not await post_site_order_status(order_id, "confirmed"):
+                logger.warning("Сайт: не удалось обновить статус заказа %s", order_id)
 
-        admin_raw = os.getenv("TELEGRAM_ADMIN_CHAT_ID") or os.getenv(
-            "ILLUCARDS_TELEGRAM_ADMIN_CHAT_ID", ""
-        ).strip()
-        if admin_raw:
-            try:
-                admin_chat_id = int(admin_raw)
-            except (TypeError, ValueError):
-                admin_chat_id = 0
+            # Ошибка уведомления админа не должна ломать подтверждение заказа пользователю.
+            admin_chat_id = _resolve_admin_chat_id()
             if admin_chat_id:
                 uname = (user.username or "").strip() or None
                 admin_text = _format_order_admin(order_id, order, user.id, uname, rec)
@@ -999,16 +1007,20 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
                     await context.bot.send_message(chat_id=admin_chat_id, text=admin_text)
                 except Exception as e:
                     logger.warning("admin notify: %s", e)
-        else:
-            logger.warning("TELEGRAM_ADMIN_CHAT_ID не задан — админу не отправлено")
+            else:
+                logger.warning("TELEGRAM_ADMIN_CHAT_ID не задан/некорректен — админу не отправлено")
 
-        await q.answer("Принято")
-        try:
-            await q.edit_message_reply_markup(reply_markup=None)
-        except Exception:
-            pass
-        await q.message.reply_text("Заказ подтверждён. Спасибо!")
-        return
+            await q.answer("Принято")
+            try:
+                await q.edit_message_reply_markup(reply_markup=None)
+            except Exception:
+                pass
+            await q.message.reply_text("Заказ подтверждён. Спасибо!")
+            return
+        except Exception as e:
+            logger.exception("order confirm failed: %s", e)
+            await q.answer("Не удалось подтвердить заказ. Повторите через минуту.", show_alert=True)
+            return
 
     await q.answer()
     chat_id = q.message.chat_id

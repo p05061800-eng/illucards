@@ -146,7 +146,7 @@ export function TelegramCheckoutButton({
 
   if (primaryTelegramUserId == null) {
     return (
-      <div className="w-full">
+      <div className="w-full space-y-2">
         <button
           type="button"
           onClick={() => void openTelegramLogin()}
@@ -154,6 +154,16 @@ export function TelegramCheckoutButton({
         >
           <MessageCircle className="h-5 w-5 shrink-0 sm:h-6 sm:w-6" strokeWidth={2} aria-hidden />
           Авторизоваться через телеграм для заказа
+        </button>
+        <button
+          type="button"
+          onClick={() => {
+            onBeforeNavigate?.();
+            router.push("/account");
+          }}
+          className="inline-flex min-h-11 w-full items-center justify-center rounded-xl border border-white/15 bg-white/[0.04] px-3 py-2.5 text-center text-xs font-semibold text-zinc-200 transition hover:bg-white/[0.08] hover:text-white sm:text-sm"
+        >
+          Ввести код
         </button>
       </div>
     );

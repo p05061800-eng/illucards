@@ -6,7 +6,7 @@ import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { ChevronRight, Package } from "lucide-react";
 import { DeliveryCountryField } from "@/app/components/DeliveryCountryField";
 import { useAuth } from "@/app/context/AuthContext";
-import { useCart } from "@/app/context/CartContext";
+import { CART_STORAGE_KEY, useCart } from "@/app/context/CartContext";
 import type { OrderListSummary } from "@/app/lib/ordersStore";
 import {
   formatOrderCardRef,
@@ -40,6 +40,51 @@ function formatMoneyByn(n: number): string {
     minimumFractionDigits: 0,
     maximumFractionDigits: 2,
   });
+}
+
+const LS_DELIVERY_KEY = "illucards-delivery-country";
+
+/** Корзина для verify-code: при автологине React ещё не подхватил localStorage — читаем сразу из LS. */
+function readCartPayloadForVerifyFromStorage(): {
+  cart: Array<{ id: string; title: string; quantity: number; priceByn: number }>;
+  deliveryCountry: DeliveryCountry;
+} {
+  const empty = {
+    cart: [] as Array<{ id: string; title: string; quantity: number; priceByn: number }>,
+    deliveryCountry: "BY" as DeliveryCountry,
+  };
+  if (typeof window === "undefined") return empty;
+  try {
+    let dc: DeliveryCountry = "BY";
+    const rd = localStorage.getItem(LS_DELIVERY_KEY);
+    if (rd === "BY" || rd === "RU" || rd === "UA" || rd === "OTHER") {
+      dc = rd;
+    }
+    const raw = localStorage.getItem(CART_STORAGE_KEY);
+    if (!raw) return { ...empty, deliveryCountry: dc };
+    const parsed = JSON.parse(raw) as unknown;
+    if (!Array.isArray(parsed)) return { ...empty, deliveryCountry: dc };
+    const cart: Array<{ id: string; title: string; quantity: number; priceByn: number }> = [];
+    for (const item of parsed) {
+      if (!item || typeof item !== "object") continue;
+      const o = item as Record<string, unknown>;
+      const id = typeof o.id === "string" ? o.id : "";
+      const title = typeof o.title === "string" ? o.title : "";
+      const q = typeof o.quantity === "number" ? o.quantity : Number(o.quantity);
+      const quantity = Number.isFinite(q) && q >= 1 ? Math.floor(q) : 1;
+      let priceByn = 0;
+      if (typeof o.priceByn === "number" && Number.isFinite(o.priceByn)) {
+        priceByn = o.priceByn;
+      } else if (typeof o.price === "number" && Number.isFinite(o.price)) {
+        priceByn = o.price;
+      }
+      if (!id) continue;
+      cart.push({ id, title, quantity, priceByn });
+    }
+    return { cart, deliveryCountry: dc };
+  } catch {
+    return empty;
+  }
 }
 
 export default function AccountPageClient() {
@@ -205,14 +250,31 @@ export default function AccountPageClient() {
     setTgInfo(null);
     try {
       const verifyBody: Record<string, unknown> = { code: codeDigits };
+      let cartForVerify: Array<{
+        id: string;
+        title: string;
+        quantity: number;
+        priceByn: number;
+      }> | null = null;
+      let deliveryForVerify: DeliveryCountry = "BY";
       if (cartHydrated && cartItems.length > 0) {
-        verifyBody.cart = cartItems.map((l) => ({
+        cartForVerify = cartItems.map((l) => ({
           id: l.id,
           title: l.title,
           quantity: l.quantity,
           priceByn: l.priceByn,
         }));
-        verifyBody.deliveryCountry = deliveryCountry ?? "BY";
+        deliveryForVerify = deliveryCountry ?? "BY";
+      } else {
+        const snap = readCartPayloadForVerifyFromStorage();
+        if (snap.cart.length > 0) {
+          cartForVerify = snap.cart;
+          deliveryForVerify = snap.deliveryCountry;
+        }
+      }
+      if (cartForVerify && cartForVerify.length > 0) {
+        verifyBody.cart = cartForVerify;
+        verifyBody.deliveryCountry = deliveryForVerify;
       }
       const res = await fetch(TELEGRAM_CODE_VERIFY_URL, {
         method: "POST",

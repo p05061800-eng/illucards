@@ -1,6 +1,7 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  turbopack: {},
   /** Меньше модулей в бандле при импорте из barrel-пакетов (легче dev/build). */
   experimental: {
     optimizePackageImports: ["lucide-react"],

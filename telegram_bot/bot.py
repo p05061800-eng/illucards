@@ -645,12 +645,13 @@ async def _sync_login_code_to_site(
     code: str,
     telegram_user_id: int,
     username: str | None,
-) -> None:
+) -> bool:
     """Продакшен (Vercel): код хранится в Redis на сайте, не в файле на машине бота."""
     url = (os.getenv("ILLUCARDS_LOGIN_CODE_SYNC_URL") or "").strip()
     secret = (os.getenv("ILLUCARDS_LOGIN_CODE_SYNC_SECRET") or "").strip()
     if not url or not secret:
-        return
+        # Локальный режим: сайт и бот используют общий файл кодов.
+        return True
     un = (username or "").strip().lstrip("@")
     payload: dict[str, Any] = {
         "code": code,
@@ -672,8 +673,11 @@ async def _sync_login_code_to_site(
                 if resp.status != 200:
                     text = (await resp.text())[:400]
                     logger.warning("sync-login-code HTTP %s: %s", resp.status, text)
+                    return False
+                return True
     except Exception as e:
         logger.warning("sync-login-code: %s", e)
+        return False
 
 
 def _issue_login_code_for_user(telegram_user_id: int, username: str | None) -> str | None:
@@ -733,11 +737,16 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
                 "Не удалось создать код входа. Попробуйте ещё раз через минуту."
             )
             return
-        await _sync_login_code_to_site(
+        synced = await _sync_login_code_to_site(
             code,
             int(user.id),
             user.username if user else None,
         )
+        if not synced:
+            await update.message.reply_text(
+                "Сервис входа временно недоступен. Попробуйте ещё раз через минуту."
+            )
+            return
         await update.message.reply_text(
             "🔐 Код для входа на сайт:\n\n"
             f"<code>{code}</code>\n\n"

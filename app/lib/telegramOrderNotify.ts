@@ -117,19 +117,22 @@ export async function recordAndNotifyTelegramOrder(input: {
     status: "new",
   };
 
+  let recorded = true;
   try {
     await recordOrderForBot(input.orderId, record);
   } catch {
-    return {
-      recorded: false,
-      sent: false,
-      error: "Не удалось записать заказ для Telegram-бота",
-    };
+    recorded = false;
   }
 
   const token = process.env.TELEGRAM_BOT_TOKEN?.trim();
   if (!token) {
-    return { recorded: true, sent: false, error: "TELEGRAM_BOT_TOKEN не задан" };
+    return {
+      recorded,
+      sent: false,
+      error: recorded
+        ? "TELEGRAM_BOT_TOKEN не задан"
+        : "Заказ отправлен без локальной записи (TELEGRAM_BOT_TOKEN не задан)",
+    };
   }
 
   const sent = await telegramSendMessage(
@@ -146,8 +149,8 @@ export async function recordAndNotifyTelegramOrder(input: {
   );
 
   if (!sent.ok) {
-    return { recorded: true, sent: false, error: sent.description };
+    return { recorded, sent: false, error: sent.description };
   }
 
-  return { recorded: true, sent: true };
+  return { recorded, sent: true };
 }

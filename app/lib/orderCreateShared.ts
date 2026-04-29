@@ -124,7 +124,11 @@ export async function persistOrder(
       "utf-8",
     );
   } catch {
-    return { ok: false, error: "Не удалось сохранить заказ", status: 500 };
+    /**
+     * На serverless/readonly FS (например, прод) запись на диск может быть недоступна.
+     * Не блокируем оформление: заказ уже зарегистрирован в памяти и будет отправлен в бота.
+     */
+    return { ok: true, orderId };
   }
 
   return { ok: true, orderId };

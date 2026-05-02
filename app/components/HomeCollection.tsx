@@ -31,6 +31,12 @@ import {
   sortSectionCardsForDefaultCatalog,
   type TypeFilterState,
 } from "../lib/collectionFilter";
+import {
+  catalogCardAnchorId,
+  clearCatalogReturnCardId,
+  parseCatalogCardIdFromHash,
+  peekCatalogReturnCardId,
+} from "../lib/catalogScrollRestore";
 import { collectionSectionId } from "../lib/collectionAnchor";
 import { categoryFocusToStyle } from "../lib/imageFocus";
 import { CardPreview } from "./CardPreview";
@@ -305,6 +311,102 @@ export function HomeCollection({
 
   /** Одна строка превью + «Смотреть ещё» только на главной без фильтров. */
   const useCategoryRowPreview = !hasActiveFilters;
+
+  const pendingCatalogScrollIdRef = useRef<string | null>(null);
+
+  useLayoutEffect(() => {
+    if (pathname !== "/" || typeof window === "undefined") return;
+
+    const fromHash = parseCatalogCardIdFromHash(window.location.hash);
+    const fromStorage = peekCatalogReturnCardId();
+    const targetId =
+      pendingCatalogScrollIdRef.current ?? fromHash ?? fromStorage;
+    if (!targetId) return;
+
+    const stripCatalogHash = () => {
+      if (parseCatalogCardIdFromHash(window.location.hash)) {
+        window.history.replaceState(
+          null,
+          "",
+          `${pathname}${window.location.search}`,
+        );
+      }
+    };
+
+    const scrollToAnchor = (id: string) => {
+      const el = document.getElementById(catalogCardAnchorId(id));
+      if (!el) return false;
+      el.scrollIntoView({ block: "center", behavior: "auto" });
+      clearCatalogReturnCardId();
+      pendingCatalogScrollIdRef.current = null;
+      stripCatalogHash();
+      return true;
+    };
+
+    if (scrollToAnchor(targetId)) return;
+
+    const meta = cards.find((c) => c.id === targetId);
+    if (!meta) {
+      clearCatalogReturnCardId();
+      stripCatalogHash();
+      pendingCatalogScrollIdRef.current = null;
+      return;
+    }
+
+    if (!filteredSorted.some((c) => c.id === targetId)) {
+      clearCatalogReturnCardId();
+      stripCatalogHash();
+      pendingCatalogScrollIdRef.current = null;
+      const sec = collectionSectionId(meta.category?.trim() ?? "");
+      document.getElementById(sec)?.scrollIntoView({
+        block: "start",
+        behavior: "auto",
+      });
+      return;
+    }
+
+    const catName = meta.category?.trim() ?? "";
+    const rawSection = filteredSorted.filter(
+      (c) => (c.category?.trim() ?? "") === catName,
+    );
+    const sectionCards =
+      priceSort === "default"
+        ? sortSectionCardsForDefaultCatalog(rawSection, cards)
+        : rawSection;
+    const idx = sectionCards.findIndex((c) => c.id === targetId);
+    const canCollapseRow =
+      useCategoryRowPreview && sectionCards.length > previewCols;
+    const expanded = expandedCategoryRows[catName] ?? false;
+    if (canCollapseRow && !expanded && idx >= previewCols) {
+      pendingCatalogScrollIdRef.current = targetId;
+      setCategoryExpanded(catName, true);
+      return;
+    }
+
+    pendingCatalogScrollIdRef.current = targetId;
+    queueMicrotask(() => {
+      if (scrollToAnchor(targetId)) return;
+      requestAnimationFrame(() => {
+        if (scrollToAnchor(targetId)) return;
+        pendingCatalogScrollIdRef.current = null;
+        clearCatalogReturnCardId();
+        stripCatalogHash();
+      });
+    });
+  }, [
+    pathname,
+    cards,
+    filteredSorted,
+    priceSort,
+    useCategoryRowPreview,
+    previewCols,
+    expandedCategoryRows,
+    setCategoryExpanded,
+  ]);
+
+  useEffect(() => {
+    if (pathname !== "/") pendingCatalogScrollIdRef.current = null;
+  }, [pathname]);
 
   if (sections.length === 0) {
     return (
@@ -616,7 +718,8 @@ export function HomeCollection({
                       {cardsToRender.map((card) => (
                         <div
                           key={card.id}
-                          className="flex h-full min-h-0 min-w-0"
+                          id={catalogCardAnchorId(card.id)}
+                          className="scroll-mt-24 flex h-full min-h-0 min-w-0"
                         >
                           <CardPreview card={card} hideUltraLayer />
                         </div>

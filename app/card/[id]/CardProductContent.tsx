@@ -20,6 +20,10 @@ import {
   sortCardsForGalleryBrowse,
   sortSectionCardsForDefaultCatalog,
 } from "@/app/lib/collectionFilter";
+import {
+  catalogCardAnchorId,
+  rememberCatalogReturnCardId,
+} from "../../lib/catalogScrollRestore";
 import { collectionSectionId } from "../../lib/collectionAnchor";
 import {
   cardArtFaceFitStyle,
@@ -237,7 +241,7 @@ export default function CardProductContent({
   const addToCartWithFeedback = useAddToCartWithFeedback();
   const rarityUi = primaryRarityForUi(card);
   const rarityLine = formatRarityLabelsRu(card);
-  const backHref = "/#collection";
+  const backHref = `/#${catalogCardAnchorId(card.id)}`;
   const inStock = card.inStock !== false;
   const merged = useMergedRating(card);
   const adminReviews = card.reviews ?? [];
@@ -255,6 +259,10 @@ export default function CardProductContent({
   useEffect(() => {
     refreshUserReviews();
   }, [refreshUserReviews]);
+
+  useEffect(() => {
+    rememberCatalogReturnCardId(card.id);
+  }, [card.id]);
 
   const moreFromCategory = categoryCards.filter((c) => c.id !== card.id);
 

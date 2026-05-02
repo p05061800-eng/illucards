@@ -1,18 +1,18 @@
 import { randomUUID } from "crypto";
 import { promises as fs } from "fs";
 import path from "path";
-import type { DeliveryCountry } from "@/app/lib/delivery";
-import { deliveryCharge } from "@/app/lib/delivery";
+import { parseCardRarity } from "@/app/lib/cardRarityTags";
+import { deliveryCharge, normalizeDeliveryCountry, type DeliveryCountry } from "@/app/lib/delivery";
 import { ORDERS_DIR } from "@/app/lib/orderPaths";
 import type { OrderLineIn, OrderRecord } from "@/app/lib/orderTypes";
 import { registerOrder } from "@/app/lib/ordersStore";
+import { sanitizeOrderLineImageUrl } from "@/app/lib/sanitizeOrderLineImageUrl";
 
 export { ORDERS_DIR } from "@/app/lib/orderPaths";
 export type { OrderLineIn } from "@/app/lib/orderTypes";
 
 export function parseDeliveryCountry(v: unknown): DeliveryCountry | null {
-  if (v === "BY" || v === "RU" || v === "UA" || v === "OTHER") return v;
-  return null;
+  return normalizeDeliveryCountry(v);
 }
 
 export function parseOptionalTelegramUserId(v: unknown): number | undefined {
@@ -51,13 +51,24 @@ export function normalizeOrderItems(raw: unknown): OrderLineIn[] | null {
       return null;
     if (!Number.isFinite(priceRub) || priceRub < 0 || priceRub > 50_000_000)
       return null;
-    out.push({
+    const lineOut: OrderLineIn = {
       id: id.slice(0, 120),
       title: title.slice(0, 300),
       quantity: q,
       priceByn,
       priceRub: Math.round(priceRub),
-    });
+    };
+    const img = sanitizeOrderLineImageUrl(o.frontImage);
+    if (img) lineOut.frontImage = img;
+    const catRaw = o.category;
+    if (typeof catRaw === "string") {
+      const cat = catRaw.trim().slice(0, 120);
+      if (cat) lineOut.category = cat;
+    }
+    if (typeof o.rarity === "string" && o.rarity.trim()) {
+      lineOut.rarity = parseCardRarity(o.rarity);
+    }
+    out.push(lineOut);
   }
   return out;
 }

@@ -17,7 +17,7 @@ import { useCart } from "../context/CartContext";
 import { useCurrency } from "../context/CurrencyContext";
 import { useCategoryTiles } from "../context/CategoryFramesContext";
 import { getCardArtIntrinsicSize } from "../lib/cardArtIntrinsicSize";
-import { formatCardPrice } from "../lib/formatPrice";
+import { displayCurrencyForDelivery, formatCardPrice } from "../lib/formatPrice";
 import { TelegramCheckoutButton } from "@/components/checkout/TelegramCheckoutButton";
 import { DeliveryCountryField } from "./DeliveryCountryField";
 
@@ -39,6 +39,7 @@ export function CartDrawer() {
     setQuantity,
   } = useCart();
   const { currency, setCurrency } = useCurrency();
+  const priceCurrency = displayCurrencyForDelivery(deliveryCountry);
   const categoryTiles = useCategoryTiles();
   const [mounted, setMounted] = useState(false);
   const titleId = useId();
@@ -335,14 +336,14 @@ export function CartDrawer() {
                         <p className="mt-1 text-xs tabular-nums text-purple-200/80">
                           {formatCardPrice(
                             line.priceByn,
-                            currency,
-                            currency === "RUB" ? line.priceRub : undefined
+                            priceCurrency,
+                            priceCurrency === "RUB" ? line.priceRub : undefined
                           )}{" "}
                           × {line.quantity} ={" "}
                           {formatCardPrice(
                             line.priceByn * line.quantity,
-                            currency,
-                            currency === "RUB"
+                            priceCurrency,
+                            priceCurrency === "RUB"
                               ? line.priceRub * line.quantity
                               : undefined
                           )}
@@ -389,53 +390,63 @@ export function CartDrawer() {
               </ul>
 
               <div className="shrink-0 border-t border-white/[0.06] bg-black/20 px-4 py-4 backdrop-blur-md sm:px-6">
-                <div className="mb-4 flex items-center justify-between gap-3">
-                  <span className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
-                    Валюта
-                  </span>
-                  <div
-                    className="inline-flex rounded-full border border-white/12 bg-black/50 p-0.5"
-                    role="group"
-                    aria-label="Валюта"
-                  >
-                    <button
-                      type="button"
-                      onClick={() => setCurrency("BYN")}
-                      className={`rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-wide transition ${
-                        currency === "BYN"
-                          ? "bg-purple-600/90 text-white shadow-[0_0_14px_rgba(168,85,247,0.35)]"
-                          : "text-zinc-500 hover:text-zinc-300"
-                      }`}
-                    >
-                      BY
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setCurrency("RUB")}
-                      className={`rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-wide transition ${
-                        currency === "RUB"
-                          ? "bg-purple-600/90 text-white shadow-[0_0_14px_rgba(168,85,247,0.35)]"
-                          : "text-zinc-500 hover:text-zinc-300"
-                      }`}
-                    >
-                      RUB
-                    </button>
-                  </div>
-                </div>
                 <DeliveryCountryField
                   id={deliveryFieldId}
                   value={deliveryCountry}
                   onChange={setDeliveryCountry}
                   className="mb-4"
                 />
+                {deliveryCountry != null ? (
+                  <p className="mb-4 text-xs leading-relaxed text-zinc-500">
+                    Цены в корзине — в{" "}
+                    {priceCurrency === "RUB"
+                      ? "российских рублях (Россия, Украина, другие страны)"
+                      : "белорусских рублях (Беларусь)"}{" "}
+                    по выбранной доставке.
+                  </p>
+                ) : (
+                  <div className="mb-4 flex items-center justify-between gap-3">
+                    <span className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
+                      Валюта
+                    </span>
+                    <div
+                      className="inline-flex rounded-full border border-white/12 bg-black/50 p-0.5"
+                      role="group"
+                      aria-label="Валюта"
+                    >
+                      <button
+                        type="button"
+                        onClick={() => setCurrency("BYN")}
+                        className={`rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-wide transition ${
+                          currency === "BYN"
+                            ? "bg-purple-600/90 text-white shadow-[0_0_14px_rgba(168,85,247,0.35)]"
+                            : "text-zinc-500 hover:text-zinc-300"
+                        }`}
+                      >
+                        BY
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setCurrency("RUB")}
+                        className={`rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-wide transition ${
+                          currency === "RUB"
+                            ? "bg-purple-600/90 text-white shadow-[0_0_14px_rgba(168,85,247,0.35)]"
+                            : "text-zinc-500 hover:text-zinc-300"
+                        }`}
+                      >
+                        RUB
+                      </button>
+                    </div>
+                  </div>
+                )}
                 <div className="mb-4 space-y-2 text-sm">
                   <div className="flex items-baseline justify-between gap-3">
                     <span className="text-zinc-500">Товары</span>
                     <span className="tabular-nums text-zinc-200">
                       {formatCardPrice(
                         totalPriceByn,
-                        currency,
-                        currency === "RUB" ? totalPriceRub : undefined
+                        priceCurrency,
+                        priceCurrency === "RUB" ? totalPriceRub : undefined
                       )}
                     </span>
                   </div>
@@ -445,8 +456,8 @@ export function CartDrawer() {
                       {deliveryCountry
                         ? formatCardPrice(
                             deliveryPriceByn,
-                            currency,
-                            currency === "RUB"
+                            priceCurrency,
+                            priceCurrency === "RUB"
                               ? deliveryPriceRub
                               : undefined
                           )
@@ -459,8 +470,8 @@ export function CartDrawer() {
                       {deliveryCountry
                         ? formatCardPrice(
                             orderTotalByn,
-                            currency,
-                            currency === "RUB" ? orderTotalRub : undefined
+                            priceCurrency,
+                            priceCurrency === "RUB" ? orderTotalRub : undefined
                           )
                         : "—"}
                     </span>

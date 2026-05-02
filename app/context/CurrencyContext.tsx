@@ -10,10 +10,13 @@ import {
   type ReactNode,
 } from "react";
 import type { DisplayCurrency } from "../lib/formatPrice";
+import { normalizeDeliveryCountry } from "../lib/delivery";
 
 export type { DisplayCurrency };
 
 const STORAGE_KEY = "illucards-currency";
+/** Тот же ключ, что в CartContext — валюта витрины следует стране доставки. */
+const DELIVERY_STORAGE_KEY = "illucards-delivery-country";
 
 type CurrencyContextValue = {
   currency: DisplayCurrency;
@@ -29,9 +32,16 @@ export function CurrencyProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      if (raw === "RUB" || raw === "BYN") {
-        setCurrencyState(raw);
+      const d = normalizeDeliveryCountry(localStorage.getItem(DELIVERY_STORAGE_KEY));
+      if (d === "RU" || d === "UA" || d === "OTHER") {
+        setCurrencyState("RUB");
+      } else if (d === "BY") {
+        setCurrencyState("BYN");
+      } else {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (raw === "RUB" || raw === "BYN") {
+          setCurrencyState(raw);
+        }
       }
     } catch {
       /* ignore */

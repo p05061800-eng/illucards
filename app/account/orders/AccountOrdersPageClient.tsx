@@ -3,18 +3,19 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
-import { ChevronRight, Package } from "lucide-react";
+import { ChevronRight, Package, Trash2, XCircle } from "lucide-react";
 import { useAuth } from "@/app/context/AuthContext";
+import { OrderLineRow } from "@/app/components/orders/OrderLineRow";
 import {
   formatOrderCardRef,
-  orderAccountBadgeClass,
-  orderAccountStatusLabel,
-  orderAccountUiKind,
+  orderAccountFlowBadgeClass,
+  orderAccountFlowKind,
+  orderAccountFlowLabel,
+  ruPositionCountPhrase,
 } from "@/app/lib/orderStatus";
-import type { OrderStatus } from "@/app/lib/orderTypes";
+import { formatOrderTotalForDisplay } from "@/app/lib/formatPrice";
+import type { OrderListSummary } from "@/app/lib/ordersStore";
 import { readTelegramPrimaryUserId } from "@/app/lib/telegramUserIdentity";
-
-type OrderRow = { id: string; total: number; status: OrderStatus };
 
 type LsGate = "pending" | "ok" | "no_telegram";
 
@@ -30,8 +31,10 @@ export default function AccountOrdersPageClient() {
   const router = useRouter();
   const { hydrated } = useAuth();
   const [lsGate, setLsGate] = useState<LsGate>("pending");
-  const [orders, setOrders] = useState<OrderRow[] | null>(null);
+  const [orders, setOrders] = useState<OrderListSummary[] | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [deleteBusyId, setDeleteBusyId] = useState<string | null>(null);
+  const [cancelBusyId, setCancelBusyId] = useState<string | null>(null);
 
   useEffect(() => {
     const id = readTelegramPrimaryUserId();
@@ -56,13 +59,95 @@ export default function AccountOrdersPageClient() {
         setOrders([]);
         return;
       }
-      const data = (await res.json()) as { orders?: OrderRow[] };
+      const data = (await res.json()) as { orders?: OrderListSummary[] };
       setOrders(Array.isArray(data.orders) ? data.orders : []);
     } catch {
       setError("Ошибка сети");
       setOrders([]);
     }
   }, [router]);
+
+  const handleCancelOrder = useCallback(
+    async (orderId: string) => {
+      if (deleteBusyId || cancelBusyId) return;
+      const ok =
+        typeof window !== "undefined"
+          ? window.confirm(
+              "Отменить заказ? Доступно только пока заказ в статусе «Новый» (ещё без подтверждения в Telegram).",
+            )
+          : true;
+      if (!ok) return;
+      setCancelBusyId(orderId);
+      setError(null);
+      try {
+        const res = await fetch("/api/order/cancel", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({ order_id: orderId }),
+        });
+        const data: unknown = await res.json().catch(() => null);
+        const msg =
+          data &&
+          typeof data === "object" &&
+          "error" in data &&
+          typeof (data as { error: unknown }).error === "string"
+            ? (data as { error: string }).error
+            : "Не удалось отменить заказ";
+        if (!res.ok) {
+          setError(msg);
+          return;
+        }
+        await load();
+      } catch {
+        setError("Ошибка сети");
+      } finally {
+        setCancelBusyId(null);
+      }
+    },
+    [cancelBusyId, deleteBusyId, load],
+  );
+
+  const handleDeleteOrder = useCallback(
+    async (orderId: string) => {
+      if (deleteBusyId || cancelBusyId) return;
+      const ok =
+        typeof window !== "undefined"
+          ? window.confirm(
+              "Удалить заказ безвозвратно? Только для статуса «Новый» (ещё без подтверждения в Telegram).",
+            )
+          : true;
+      if (!ok) return;
+      setDeleteBusyId(orderId);
+      setError(null);
+      try {
+        const res = await fetch("/api/order/delete", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({ order_id: orderId }),
+        });
+        const data: unknown = await res.json().catch(() => null);
+        const msg =
+          data &&
+          typeof data === "object" &&
+          "error" in data &&
+          typeof (data as { error: unknown }).error === "string"
+            ? (data as { error: string }).error
+            : "Не удалось удалить заказ";
+        if (!res.ok) {
+          setError(msg);
+          return;
+        }
+        await load();
+      } catch {
+        setError("Ошибка сети");
+      } finally {
+        setDeleteBusyId(null);
+      }
+    },
+    [cancelBusyId, deleteBusyId, load],
+  );
 
   useEffect(() => {
     if (lsGate !== "ok" || !hydrated) return;
@@ -148,10 +233,16 @@ export default function AccountOrdersPageClient() {
         <ul className="flex flex-col gap-4 sm:gap-5">
           {orders.map((o) => {
             const ref = formatOrderCardRef(o.id);
-            const kind = orderAccountUiKind(o.status);
-            const statusText = orderAccountStatusLabel(o.status);
-            const badgeClass = orderAccountBadgeClass(kind);
+            const flowKind = orderAccountFlowKind(o.status);
+            const statusText = orderAccountFlowLabel(o.status);
+            const badgeClass = orderAccountFlowBadgeClass(flowKind);
             const total = Number.isFinite(o.total) ? o.total : 0;
+            const lines = Array.isArray(o.lines) ? o.lines : [];
+            const lineCount =
+              typeof o.lineCount === "number" && o.lineCount > 0
+                ? o.lineCount
+                : lines.length;
+            const moreLines = lineCount > lines.length ? lineCount - lines.length : 0;
             return (
               <li key={o.id}>
                 <article className="overflow-hidden rounded-2xl bg-zinc-50 text-zinc-900 shadow-[0_2px_12px_rgba(0,0,0,0.12)] ring-1 ring-zinc-200/90 transition hover:ring-zinc-300/90 sm:rounded-3xl">
@@ -173,17 +264,51 @@ export default function AccountOrdersPageClient() {
                     </div>
 
                     <p className="mt-5 text-2xl font-bold tabular-nums leading-none text-zinc-900 sm:text-3xl">
-                      {formatMoneyByn(total)}
-                      <span className="ml-1.5 text-base font-semibold text-zinc-500 sm:text-lg">
-                        BYN
-                      </span>
+                      {formatOrderTotalForDisplay(total, o.delivery)}
                     </p>
+
+                    {lines.length > 0 ? (
+                      <ul className="mt-4 space-y-2 border-t border-zinc-200/90 bg-white/70 py-4 pl-0 pr-0 pt-4">
+                        {lines.map((l, idx) => (
+                          <li key={`${o.id}-${idx}`}>
+                            <OrderLineRow line={l} subtitle={`× ${l.quantity}`} />
+                          </li>
+                        ))}
+                        {moreLines > 0 ? (
+                          <li className="px-1 text-xs font-medium text-zinc-500">
+                            и ещё {ruPositionCountPhrase(moreLines)}
+                          </li>
+                        ) : null}
+                      </ul>
+                    ) : null}
                   </div>
 
-                  <div className="border-t border-zinc-200/90 bg-zinc-100/80 p-3 sm:p-4">
+                  <div className="flex flex-col gap-2 border-t border-zinc-200/90 bg-zinc-100/80 p-3 sm:flex-row sm:flex-wrap sm:gap-3 sm:p-4">
+                    {o.status === "new" ? (
+                      <>
+                        <button
+                          type="button"
+                          onClick={() => void handleCancelOrder(o.id)}
+                          disabled={cancelBusyId === o.id || deleteBusyId === o.id}
+                          className="flex min-h-[3.25rem] flex-1 items-center justify-center gap-2 rounded-xl border-2 border-zinc-400/90 bg-white px-4 text-base font-semibold text-zinc-900 shadow-sm transition hover:bg-zinc-50 active:scale-[0.99] disabled:opacity-50 sm:min-h-14"
+                        >
+                          <XCircle className="h-5 w-5 shrink-0" strokeWidth={2} aria-hidden />
+                          {cancelBusyId === o.id ? "Отмена…" : "Отменить"}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => void handleDeleteOrder(o.id)}
+                          disabled={deleteBusyId === o.id || cancelBusyId === o.id}
+                          className="flex min-h-[3.25rem] flex-1 items-center justify-center gap-2 rounded-xl border-2 border-red-200/90 bg-red-50 px-4 text-base font-semibold text-red-900 shadow-sm transition hover:bg-red-100 active:scale-[0.99] disabled:opacity-50 sm:min-h-14"
+                        >
+                          <Trash2 className="h-5 w-5 shrink-0" strokeWidth={2} aria-hidden />
+                          {deleteBusyId === o.id ? "Удаление…" : "Удалить"}
+                        </button>
+                      </>
+                    ) : null}
                     <Link
                       href={`/account/orders/${encodeURIComponent(o.id)}`}
-                      className="group flex min-h-[3.25rem] w-full items-center justify-center gap-2 rounded-xl bg-[#5D6BF3] px-4 text-base font-semibold text-white shadow-md shadow-indigo-900/25 transition hover:brightness-110 active:scale-[0.99] sm:min-h-14 sm:text-[1.05rem]"
+                      className="group flex min-h-[3.25rem] flex-1 items-center justify-center gap-2 rounded-xl bg-[#5D6BF3] px-4 text-base font-semibold text-white shadow-md shadow-indigo-900/25 transition hover:brightness-110 active:scale-[0.99] sm:min-h-14 sm:text-[1.05rem]"
                     >
                       Открыть заказ
                       <ChevronRight

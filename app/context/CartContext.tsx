@@ -15,12 +15,16 @@ import {
   type ReactNode,
 } from "react";
 import type { CardRarity, StoredCard } from "../api/cards/route";
-import { cardTreatsAsAdultPricing } from "../lib/cardRarityTags";
+import {
+  cardTreatsAsAdultPricing,
+  parseCardRarity,
+} from "../lib/cardRarityTags";
 import { deliveryCharge } from "../lib/delivery";
-import type { DeliveryCountry } from "../lib/delivery";
+import { normalizeDeliveryCountry, type DeliveryCountry } from "../lib/delivery";
 import {
   ADULT_FIXED_PRICE_BYN,
   ADULT_FIXED_PRICE_RUB,
+  displayCurrencyForDelivery,
   rubFromByn,
 } from "../lib/formatPrice";
 import { apiUrl } from "../lib/apiUrl";
@@ -48,15 +52,32 @@ export type CartLine = {
 export const CART_STORAGE_KEY = "illucards-cart";
 const STORAGE_KEY = CART_STORAGE_KEY;
 const DELIVERY_STORAGE_KEY = "illucards-delivery-country";
+/** Последний `updatedAt` с сервера (`/api/user-state`) — для согласования после очистки корзины при подтверждении заказа в боте. */
+const USER_STATE_SYNC_AT_KEY = "illucards-user-state-updated-at";
+
+function readClientSeenServerUpdatedAt(): number {
+  if (typeof window === "undefined") return 0;
+  try {
+    const v = Number(localStorage.getItem(USER_STATE_SYNC_AT_KEY));
+    return Number.isFinite(v) && v > 0 ? v : 0;
+  } catch {
+    return 0;
+  }
+}
+
+function writeClientSeenServerUpdatedAt(ts: number): void {
+  if (typeof window === "undefined" || !Number.isFinite(ts) || ts <= 0) return;
+  try {
+    localStorage.setItem(USER_STATE_SYNC_AT_KEY, String(Math.floor(ts)));
+  } catch {
+    /* ignore */
+  }
+}
 
 function loadDeliveryCountry(): DeliveryCountry | null {
   if (typeof window === "undefined") return null;
   try {
-    const raw = localStorage.getItem(DELIVERY_STORAGE_KEY);
-    if (raw === "BY" || raw === "RU" || raw === "UA" || raw === "OTHER") {
-      return raw;
-    }
-    return null;
+    return normalizeDeliveryCountry(localStorage.getItem(DELIVERY_STORAGE_KEY));
   } catch {
     return null;
   }
@@ -183,7 +204,7 @@ type CartContextValue = {
   clearCart: () => void;
   /**
    * Повтор заказа: добавить позиции в корзину (совпадающие id — суммируем quantity),
-   * опционально выставить страну доставки. Картинка — заглушка, если позиции ещё нет.
+   * опционально выставить страну доставки. Обложка из заказа, иначе заглушка.
    */
   repeatOrderToCart: (
     lines: Array<{
@@ -192,6 +213,9 @@ type CartContextValue = {
       quantity: number;
       priceByn: number;
       priceRub: number;
+      frontImage?: string;
+      category?: string;
+      rarity?: string;
     }>,
     options?: {
       deliveryCountry?: DeliveryCountry | null;
@@ -209,7 +233,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const [cartOpen, setCartOpen] = useState(false);
   const [deliveryCountry, setDeliveryCountryState] =
     useState<DeliveryCountry | null>(null);
-  const { setCurrency, hydrated: currencyHydrated } = useCurrency();
+  const { currency, setCurrency, hydrated: currencyHydrated } = useCurrency();
 
   const openCart = useCallback(() => setCartOpen(true), []);
   const closeCart = useCallback(() => setCartOpen(false), []);
@@ -234,19 +258,25 @@ export function CartProvider({ children }: { children: ReactNode }) {
     }
   }, [deliveryCountry, hydrated]);
 
-  /** В корзине цены показываются в валюте переключателя: привязываем к стране доставки (BY → BYN, иначе → RUB). */
+  /**
+   * Страна доставки задаёт валюту глобально, пока выбрана (в т.ч. после ручного BYN/RUB в шапке).
+   * Без страны — переключатель в шапке сам по себе (каталог).
+   */
   useEffect(() => {
     if (!hydrated || !currencyHydrated) return;
-    if (deliveryCountry === "BY") {
-      setCurrency("BYN");
-    } else if (
-      deliveryCountry === "RU" ||
-      deliveryCountry === "UA" ||
-      deliveryCountry === "OTHER"
-    ) {
-      setCurrency("RUB");
+    if (deliveryCountry == null) return;
+    const want =
+      deliveryCountry === "BY" ? "BYN" : "RUB";
+    if (currency !== want) {
+      setCurrency(want);
     }
-  }, [deliveryCountry, hydrated, currencyHydrated, setCurrency]);
+  }, [
+    deliveryCountry,
+    currency,
+    hydrated,
+    currencyHydrated,
+    setCurrency,
+  ]);
 
   const setDeliveryCountry = useCallback((country: DeliveryCountry | null) => {
     setDeliveryCountryState(country);
@@ -261,15 +291,69 @@ export function CartProvider({ children }: { children: ReactNode }) {
     }
   }, [cartItems, hydrated]);
 
+  const applyServerCartIfClearedElsewhere = useCallback(async () => {
+    const userId = readTelegramPrimaryUserId();
+    if (userId == null) return;
+    try {
+      const res = await fetch(apiUrl("/api/user-state"), {
+        method: "GET",
+        credentials: "include",
+        cache: "no-store",
+      });
+      if (!res.ok) return;
+      const data = (await res.json()) as {
+        cart?: unknown[];
+        updatedAt?: unknown;
+      };
+      const ts =
+        typeof data.updatedAt === "number" && Number.isFinite(data.updatedAt)
+          ? data.updatedAt
+          : 0;
+      const cart = Array.isArray(data.cart) ? data.cart : [];
+      if (ts > 0) {
+        writeClientSeenServerUpdatedAt(ts);
+      }
+      if (ts > 0 && cart.length === 0) {
+        setCartItems([]);
+      }
+    } catch {
+      /* ignore */
+    }
+  }, []);
+
   useEffect(() => {
     if (!hydrated) return;
     const userId = readTelegramPrimaryUserId();
     if (userId == null) return;
+    void applyServerCartIfClearedElsewhere();
+    const tick = window.setInterval(() => {
+      void applyServerCartIfClearedElsewhere();
+    }, 28000);
+    const onVis = () => {
+      if (document.visibilityState === "visible") void applyServerCartIfClearedElsewhere();
+    };
+    document.addEventListener("visibilitychange", onVis);
+    return () => {
+      window.clearInterval(tick);
+      document.removeEventListener("visibilitychange", onVis);
+    };
+  }, [hydrated, applyServerCartIfClearedElsewhere]);
+
+  useEffect(() => {
+    if (!hydrated) return;
+    const userId = readTelegramPrimaryUserId();
+    if (userId == null) return;
+    const seen = readClientSeenServerUpdatedAt();
     void fetch(apiUrl("/api/user-state"), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         user_id: userId,
+        ...(seen > 0 ? { client_seen_updated_at: seen } : {}),
+        ...(deliveryCountry != null ? { delivery_country: deliveryCountry } : {}),
+        ...(deliveryCountry != null
+          ? { currency: displayCurrencyForDelivery(deliveryCountry) }
+          : {}),
         cart: cartItems.map((x) => ({
           id: x.id,
           title: x.title,
@@ -278,8 +362,18 @@ export function CartProvider({ children }: { children: ReactNode }) {
           priceRub: x.priceRub,
         })),
       }),
-    }).catch(() => {});
-  }, [cartItems, hydrated]);
+    })
+      .then(async (res) => {
+        if (!res.ok) return;
+        const j = (await res.json().catch(() => null)) as { updatedAt?: unknown } | null;
+        const ua =
+          j && typeof j === "object" && typeof j.updatedAt === "number" && Number.isFinite(j.updatedAt)
+            ? j.updatedAt
+            : NaN;
+        if (ua > 0) writeClientSeenServerUpdatedAt(ua);
+      })
+      .catch(() => {});
+  }, [cartItems, deliveryCountry, hydrated]);
 
   const addToCart = useCallback((card: StoredCard) => {
     const { priceByn, priceRub } = lineFromCard(card);
@@ -342,6 +436,9 @@ export function CartProvider({ children }: { children: ReactNode }) {
         quantity: number;
         priceByn: number;
         priceRub: number;
+        frontImage?: string;
+        category?: string;
+        rarity?: string;
       }>,
       options?: {
         deliveryCountry?: DeliveryCountry | null;
@@ -357,13 +454,27 @@ export function CartProvider({ children }: { children: ReactNode }) {
         const q = Math.max(1, Math.floor(Number(l.quantity) || 1));
         const priceByn = Number.isFinite(l.priceByn) ? l.priceByn : 0;
         const priceRub = Number.isFinite(l.priceRub) ? l.priceRub : rubFromByn(priceByn);
+        const img =
+          typeof l.frontImage === "string" && l.frontImage.trim()
+            ? l.frontImage.trim()
+            : PLACEHOLDER_IMAGE;
+        const category =
+          typeof l.category === "string" && l.category.trim()
+            ? l.category.trim()
+            : undefined;
+        const rarity =
+          typeof l.rarity === "string" && l.rarity.trim()
+            ? parseCardRarity(l.rarity)
+            : undefined;
         toAdd.push({
           id,
           title,
           priceByn,
           priceRub,
-          frontImage: PLACEHOLDER_IMAGE,
+          frontImage: img,
           quantity: q,
+          ...(category ? { category } : {}),
+          ...(rarity ? { rarity } : {}),
         });
       }
       if (toAdd.length === 0) return;
@@ -379,6 +490,12 @@ export function CartProvider({ children }: { children: ReactNode }) {
               priceByn: l.priceByn,
               priceRub: l.priceRub,
               title: l.title,
+              frontImage:
+                l.frontImage && l.frontImage !== PLACEHOLDER_IMAGE
+                  ? l.frontImage
+                  : next[i].frontImage,
+              category: l.category ?? next[i].category,
+              rarity: l.rarity ?? next[i].rarity,
             };
           } else {
             next.push(l);

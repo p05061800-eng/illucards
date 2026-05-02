@@ -54,6 +54,9 @@ export function TelegramCheckoutButton({
         quantity: l.quantity,
         priceByn: l.priceByn,
         priceRub: l.priceRub,
+        ...(l.frontImage?.trim() ? { frontImage: l.frontImage.trim() } : {}),
+        ...(l.category?.trim() ? { category: l.category.trim() } : {}),
+        ...(l.rarity ? { rarity: l.rarity } : {}),
       }));
 
       const orderPayload: Record<string, unknown> = {

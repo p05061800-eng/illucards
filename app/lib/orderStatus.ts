@@ -96,3 +96,66 @@ export function orderAccountBadgeClass(kind: OrderAccountUiKind): string {
       return "bg-zinc-200 text-zinc-800 ring-1 ring-zinc-400/50";
   }
 }
+
+/** Этапы в ЛК — те же статусы, что в ORDERS и в боте (order/update). */
+export type OrderAccountFlowKind =
+  | "await_confirm"
+  | "confirmed"
+  | "delivering"
+  | "delivered"
+  | "cancelled";
+
+export function orderAccountFlowKind(status: OrderStatus): OrderAccountFlowKind {
+  switch (status) {
+    case "new":
+      return "await_confirm";
+    case "confirmed":
+      return "confirmed";
+    case "shipped":
+    case "sent":
+      return "delivering";
+    case "delivered":
+      return "delivered";
+    case "cancelled":
+      return "cancelled";
+    default:
+      return "await_confirm";
+  }
+}
+
+const FLOW_LABEL: Record<OrderAccountFlowKind, string> = {
+  await_confirm: "Ожидает подтверждения",
+  /** После подтверждения в боте/на сайте — тот же `confirmed` в ORDERS. */
+  confirmed: "В сборке",
+  delivering: "Доставляем",
+  delivered: "Пришёл",
+  cancelled: "Отменён",
+};
+
+export function orderAccountFlowLabel(status: OrderStatus): string {
+  return FLOW_LABEL[orderAccountFlowKind(status)];
+}
+
+export function orderAccountFlowBadgeClass(kind: OrderAccountFlowKind): string {
+  switch (kind) {
+    case "await_confirm":
+      return "bg-amber-100 text-amber-950 ring-1 ring-amber-300/60";
+    case "confirmed":
+      return "bg-violet-100 text-violet-950 ring-1 ring-violet-300/60";
+    case "delivering":
+      return "bg-sky-100 text-sky-950 ring-1 ring-sky-300/60";
+    case "delivered":
+      return "bg-emerald-100 text-emerald-950 ring-1 ring-emerald-300/60";
+    case "cancelled":
+      return "bg-zinc-200 text-zinc-800 ring-1 ring-zinc-400/50";
+  }
+}
+
+/** «22 позиции» и т.п. для подписи «и ещё …» в списке заказов. */
+export function ruPositionCountPhrase(n: number): string {
+  if (!Number.isFinite(n) || n <= 0) return "";
+  const sel = new Intl.PluralRules("ru").select(Math.floor(n));
+  const w =
+    sel === "one" ? "позиция" : sel === "few" ? "позиции" : "позиций";
+  return `${Math.floor(n)} ${w}`;
+}

@@ -3,6 +3,29 @@ import { BYN_TO_RUB, rubFromByn } from "./formatPrice";
 /** Страна доставки (до оформления заказа). */
 export type DeliveryCountry = "BY" | "RU" | "UA" | "OTHER";
 
+/** Нормализация страны доставки из localStorage/API/legacy значений. */
+export function normalizeDeliveryCountry(raw: unknown): DeliveryCountry | null {
+  if (typeof raw !== "string") return null;
+  const value = raw.trim();
+  if (!value) return null;
+  const upper = value.toUpperCase();
+  if (upper === "BY" || upper === "RU" || upper === "UA" || upper === "OTHER") {
+    return upper;
+  }
+  if (upper === "BELARUS" || upper === "BELARUSI" || upper === "БЕЛАРУСЬ") return "BY";
+  if (upper === "RUSSIA" || upper === "РОССИЯ") return "RU";
+  if (upper === "UKRAINE" || upper === "УКРАИНА") return "UA";
+  if (
+    upper === "OTHER_COUNTRIES" ||
+    upper === "OTHERS" ||
+    upper === "ДРУГИЕ СТРАНЫ" ||
+    upper === "ДРУГИЕ"
+  ) {
+    return "OTHER";
+  }
+  return null;
+}
+
 export const DELIVERY_COUNTRY_LABELS: Record<DeliveryCountry, string> = {
   BY: "Беларусь",
   RU: "Россия",

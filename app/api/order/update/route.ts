@@ -1,7 +1,9 @@
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 import { parseOrderStatusInput } from "@/app/lib/orderStatus";
-import { updateOrderStatus } from "@/app/lib/ordersStore";
+import { getOrder, updateOrderStatus } from "@/app/lib/ordersStore";
+import { notifyTelegramWebhookUserState } from "@/app/lib/telegramStateBotSync";
+import { clearSyncedCartForTelegramUser } from "@/app/lib/telegramUserStateStore";
 
 /**
  * Обновление статуса заказа (в т.ч. из Telegram-бота).
@@ -40,9 +42,28 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Некорректный status" }, { status: 400 });
   }
 
+  const existing = await getOrder(orderId);
   const result = await updateOrderStatus(orderId, status);
   if (!result.ok) {
     return NextResponse.json({ error: result.error }, { status: result.status });
   }
+
+  if (status === "confirmed" && existing?.user_id != null) {
+    const uid = Math.floor(existing.user_id);
+    if (uid > 0) {
+      try {
+        const st = await clearSyncedCartForTelegramUser(uid);
+        await notifyTelegramWebhookUserState({
+          userId: uid,
+          cart: st.cart,
+          favorites: st.favorites,
+          deliveryCountry: st.deliveryCountry,
+        });
+      } catch {
+        /* очистка корзины не должна ломать подтверждение заказа */
+      }
+    }
+  }
+
   return NextResponse.json({ ok: true });
 }

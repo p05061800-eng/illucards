@@ -3,16 +3,23 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { MessageCircle, RefreshCw } from "lucide-react";
+import { MessageCircle, RefreshCw, Trash2, XCircle } from "lucide-react";
 import { useAuth } from "@/app/context/AuthContext";
 import { useCart } from "@/app/context/CartContext";
 import { DELIVERY_COUNTRY_LABELS, type DeliveryCountry } from "@/app/lib/delivery";
-import { rubFromByn } from "@/app/lib/formatPrice";
+import { OrderLineRow } from "@/app/components/orders/OrderLineRow";
+import { parseCardRarity } from "@/app/lib/cardRarityTags";
+import {
+  type DisplayCurrency,
+  formatCardPrice,
+  formatOrderTotalForDisplay,
+  rubFromByn,
+} from "@/app/lib/formatPrice";
 import {
   formatOrderCardRef,
-  orderAccountBadgeClass,
-  orderAccountStatusLabel,
-  orderAccountUiKind,
+  orderAccountFlowBadgeClass,
+  orderAccountFlowKind,
+  orderAccountFlowLabel,
   orderStatusFromStorage,
 } from "@/app/lib/orderStatus";
 import { TELEGRAM_ORDER_BOT_DEFAULT } from "@/app/lib/telegramOrderCheckout";
@@ -24,6 +31,9 @@ type OrderLineApi = {
   quantity?: number;
   priceByn?: number;
   priceRub?: number;
+  frontImage?: string;
+  category?: string;
+  rarity?: string;
 };
 
 type OrderApi = {
@@ -50,20 +60,23 @@ function supportTelegramHref(orderId: string): string {
   return `https://t.me/${name}?start=${encodeURIComponent(start)}`;
 }
 
+/** Deep link заказа: в боте откроется карточка заказа с кнопками "Подтвердить/Отмена". */
+function orderTelegramHref(orderId: string): string {
+  const raw =
+    process.env.NEXT_PUBLIC_TELEGRAM_ORDER_BOT_USERNAME ||
+    process.env.NEXT_PUBLIC_TELEGRAM_BOT_USERNAME ||
+    "";
+  const name = (raw || TELEGRAM_ORDER_BOT_DEFAULT).replace(/^@/, "").trim();
+  const start = `order_${orderId}`;
+  return `https://t.me/${name}?start=${encodeURIComponent(start)}`;
+}
+
 function parseOrderDelivery(o: OrderApi): DeliveryCountry | null {
   const d = o.delivery ?? o.deliveryCountry;
   if (d === "BY" || d === "RU" || d === "UA" || d === "OTHER") {
     return d;
   }
   return null;
-}
-
-function formatMoneyByn(n: number): string {
-  if (!Number.isFinite(n)) return "0";
-  return n.toLocaleString("ru-RU", {
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 2,
-  });
 }
 
 export default function AccountOrderDetailClient({ orderId }: { orderId: string }) {
@@ -73,6 +86,10 @@ export default function AccountOrderDetailClient({ orderId }: { orderId: string 
   const [lsGate, setLsGate] = useState<LsGate>("pending");
   const [load, setLoad] = useState<LoadState>("idle");
   const [order, setOrder] = useState<OrderApi | null>(null);
+  const [cancelBusy, setCancelBusy] = useState(false);
+  const [cancelErr, setCancelErr] = useState<string | null>(null);
+  const [deleteBusy, setDeleteBusy] = useState(false);
+  const [deleteErr, setDeleteErr] = useState<string | null>(null);
 
   useEffect(() => {
     const id = readTelegramPrimaryUserId();
@@ -121,6 +138,102 @@ export default function AccountOrderDetailClient({ orderId }: { orderId: string 
     };
   }, [lsGate, hydrated, orderId, router]);
 
+  const reloadOrder = useCallback(async () => {
+    const myId = readTelegramPrimaryUserId();
+    if (myId == null) return;
+    try {
+      const res = await fetch(`/api/order/${encodeURIComponent(orderId)}`, {
+        credentials: "include",
+      });
+      if (!res.ok) return;
+      const data = (await res.json()) as OrderApi;
+      const uid = data.user_id;
+      if (uid == null || Math.floor(uid) !== myId) return;
+      setOrder(data);
+    } catch {
+      /* ignore */
+    }
+  }, [orderId]);
+
+  const handleDeleteOrder = useCallback(async () => {
+    if (deleteBusy) return;
+    const ok =
+      typeof window !== "undefined"
+        ? window.confirm(
+            "Удалить заказ безвозвратно? Доступно только пока статус «Новый» (ещё без подтверждения в Telegram).",
+          )
+        : true;
+    if (!ok) return;
+    setDeleteErr(null);
+    setDeleteBusy(true);
+    try {
+      const res = await fetch("/api/order/delete", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ order_id: orderId }),
+      });
+      const data: unknown = await res.json().catch(() => null);
+      const msg =
+        data &&
+        typeof data === "object" &&
+        "error" in data &&
+        typeof (data as { error: unknown }).error === "string"
+          ? (data as { error: string }).error
+          : "Не удалось удалить заказ";
+      if (!res.ok) {
+        setDeleteErr(msg);
+        setDeleteBusy(false);
+        return;
+      }
+      router.replace("/account/orders");
+      router.refresh();
+    } catch {
+      setDeleteErr("Сеть недоступна. Попробуйте ещё раз.");
+    } finally {
+      setDeleteBusy(false);
+    }
+  }, [deleteBusy, orderId, router]);
+
+  const handleCancelOrder = useCallback(async () => {
+    if (cancelBusy) return;
+    const ok =
+      typeof window !== "undefined"
+        ? window.confirm(
+            "Отменить заказ? Доступно только пока вы ещё не подтвердили заказ в Telegram. После подтверждения отмена с сайта недоступна.",
+          )
+        : true;
+    if (!ok) return;
+    setCancelErr(null);
+    setCancelBusy(true);
+    try {
+      const res = await fetch("/api/order/cancel", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ order_id: orderId }),
+      });
+      const data: unknown = await res.json().catch(() => null);
+      const msg =
+        data &&
+        typeof data === "object" &&
+        "error" in data &&
+        typeof (data as { error: unknown }).error === "string"
+          ? (data as { error: string }).error
+          : "Не удалось отменить заказ";
+      if (!res.ok) {
+        setCancelErr(msg);
+        setCancelBusy(false);
+        return;
+      }
+      await reloadOrder();
+    } catch {
+      setCancelErr("Сеть недоступна. Попробуйте ещё раз.");
+    } finally {
+      setCancelBusy(false);
+    }
+  }, [cancelBusy, orderId, reloadOrder]);
+
   const handleRepeat = useCallback(() => {
     if (!order) return;
     const raw = Array.isArray(order.items) ? order.items : [];
@@ -135,6 +248,15 @@ export default function AccountOrderDetailClient({ orderId }: { orderId: string 
         quantity: Math.max(1, Math.floor(Number(it.quantity) || 1)),
         priceByn,
         priceRub,
+        ...(typeof it.frontImage === "string" && it.frontImage.trim()
+          ? { frontImage: it.frontImage.trim() }
+          : {}),
+        ...(typeof it.category === "string" && it.category.trim()
+          ? { category: it.category.trim() }
+          : {}),
+        ...(typeof it.rarity === "string" && it.rarity.trim()
+          ? { rarity: it.rarity.trim() }
+          : {}),
       };
     });
     const dc = parseOrderDelivery(order);
@@ -149,6 +271,7 @@ export default function AccountOrderDetailClient({ orderId }: { orderId: string 
   }, [order, orderId, repeatOrderToCart, router]);
 
   const supportHref = useMemo(() => supportTelegramHref(orderId), [orderId]);
+  const orderHref = useMemo(() => orderTelegramHref(orderId), [orderId]);
 
   if (lsGate === "pending" || (lsGate === "ok" && !hydrated)) {
     return (
@@ -192,9 +315,11 @@ export default function AccountOrderDetailClient({ orderId }: { orderId: string 
 
   const ref = formatOrderCardRef(orderId);
   const st = orderStatusFromStorage(order.status);
-  const statusText = orderAccountStatusLabel(st);
-  const kind = orderAccountUiKind(st);
-  const badgeClass = orderAccountBadgeClass(kind);
+  const canCancelOnSite = st === "new";
+  const canDeleteOnSite = st === "new";
+  const flowKind = orderAccountFlowKind(st);
+  const statusText = orderAccountFlowLabel(st);
+  const badgeClass = orderAccountFlowBadgeClass(flowKind);
   const items = Array.isArray(order.items) ? order.items : [];
   const delivery = parseOrderDelivery(order);
   const deliveryText = delivery
@@ -202,6 +327,8 @@ export default function AccountOrderDetailClient({ orderId }: { orderId: string 
     : "—";
   const total =
     typeof order.total === "number" && Number.isFinite(order.total) ? order.total : null;
+  const priceCurrency: DisplayCurrency =
+    delivery && delivery !== "BY" ? "RUB" : "BYN";
 
   return (
     <div
@@ -246,23 +373,40 @@ export default function AccountOrderDetailClient({ orderId }: { orderId: string 
           {items.length === 0 ? (
             <p className="mt-2 text-sm text-zinc-500">—</p>
           ) : (
-            <ul className="mt-3 space-y-3">
+            <ul className="mt-3 space-y-2">
               {items.map((it, i) => {
                 const q = Math.max(1, Math.floor(Number(it.quantity) || 1));
                 const p = Number.isFinite(Number(it.priceByn)) ? Number(it.priceByn) : 0;
-                const line = p * q;
+                const lineTotal = p * q;
+                const prRaw = Number(it.priceRub);
+                const unitRub = Number.isFinite(prRaw)
+                  ? prRaw
+                  : rubFromByn(p);
+                const id =
+                  typeof it.id === "string" && it.id.trim() ? it.id.trim() : "";
+                const title = typeof it.title === "string" ? it.title : "—";
+                const rarityParsed =
+                  typeof it.rarity === "string" && it.rarity.trim()
+                    ? parseCardRarity(it.rarity)
+                    : undefined;
                 return (
-                  <li
-                    key={it.id || i}
-                    className="flex flex-col gap-1 border-b border-zinc-100 pb-3 last:border-0 last:pb-0 sm:flex-row sm:items-start sm:justify-between sm:gap-4"
-                  >
-                    <span className="min-w-0 flex-1 text-sm font-medium leading-snug text-zinc-900 sm:text-base">
-                      {typeof it.title === "string" ? it.title : "—"}
-                      <span className="whitespace-nowrap text-zinc-500"> ×{q}</span>
-                    </span>
-                    <span className="shrink-0 text-sm font-semibold tabular-nums text-zinc-900 sm:text-base">
-                      {formatMoneyByn(line)} BYN
-                    </span>
+                  <li key={it.id || String(i)}>
+                    <OrderLineRow
+                      line={{
+                        id,
+                        title,
+                        quantity: q,
+                        frontImage:
+                          typeof it.frontImage === "string" ? it.frontImage : undefined,
+                        category:
+                          typeof it.category === "string" ? it.category : undefined,
+                        rarity: rarityParsed,
+                      }}
+                      subtitle={`${formatCardPrice(p, priceCurrency, unitRub)} × ${q}`}
+                      trailing={
+                        <>{formatCardPrice(lineTotal, priceCurrency, unitRub * q)}</>
+                      }
+                    />
                   </li>
                 );
               })}
@@ -282,17 +426,57 @@ export default function AccountOrderDetailClient({ orderId }: { orderId: string 
               Сумма
             </h2>
             <p className="mt-1 text-2xl font-bold tabular-nums text-zinc-900 sm:text-3xl">
-              {total != null ? formatMoneyByn(total) : "—"}
-              {total != null ? (
-                <span className="ml-1 text-base font-semibold text-zinc-500 sm:text-lg">
-                  BYN
-                </span>
-              ) : null}
+              {total != null ? formatOrderTotalForDisplay(total, delivery) : "—"}
             </p>
           </div>
         </div>
 
         <div className="space-y-3 bg-zinc-100/80 p-3 sm:space-y-3 sm:p-4">
+          {deleteErr ? (
+            <p className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700" role="alert">
+              {deleteErr}
+            </p>
+          ) : null}
+          {cancelErr ? (
+            <p className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700" role="alert">
+              {cancelErr}
+            </p>
+          ) : null}
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 sm:gap-3">
+            <a
+              href={orderHref}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex min-h-[3.25rem] w-full items-center justify-center rounded-xl bg-[#5D6BF3] px-4 text-base font-semibold text-white shadow-md shadow-indigo-900/20 transition hover:brightness-110 active:scale-[0.99] sm:min-h-14"
+            >
+              Подтвердить в Telegram
+            </a>
+            {canCancelOnSite ? (
+              <button
+                type="button"
+                onClick={() => void handleCancelOrder()}
+                disabled={cancelBusy}
+                className="flex min-h-[3.25rem] w-full items-center justify-center gap-2 rounded-xl border-2 border-zinc-400/90 bg-white px-4 text-base font-semibold text-zinc-900 shadow-sm transition hover:bg-zinc-50 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-50 sm:min-h-14"
+              >
+                <XCircle className="h-5 w-5 shrink-0" strokeWidth={2} aria-hidden />
+                {cancelBusy ? "Отмена…" : "Отменить заказ"}
+              </button>
+            ) : (
+              <a
+                href={orderHref}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex min-h-[3.25rem] w-full items-center justify-center rounded-xl border-2 border-zinc-300/90 bg-white px-4 text-base font-semibold text-zinc-900 shadow-sm transition hover:bg-zinc-50 active:scale-[0.99] sm:min-h-14"
+              >
+                Открыть в Telegram
+              </a>
+            )}
+          </div>
+          {!canCancelOnSite && st === "confirmed" ? (
+            <p className="rounded-xl border border-zinc-200/90 bg-white px-3 py-2 text-center text-xs text-zinc-600">
+              Заказ уже подтверждён в Telegram — отменить с сайта нельзя. При необходимости напишите в поддержку.
+            </p>
+          ) : null}
           <a
             href={supportHref}
             target="_blank"
@@ -302,6 +486,17 @@ export default function AccountOrderDetailClient({ orderId }: { orderId: string 
             <MessageCircle className="h-5 w-5 shrink-0" strokeWidth={2} aria-hidden />
             Написать в поддержку
           </a>
+          {canDeleteOnSite ? (
+            <button
+              type="button"
+              onClick={() => void handleDeleteOrder()}
+              disabled={deleteBusy}
+              className="flex min-h-[3.25rem] w-full items-center justify-center gap-2 rounded-xl border-2 border-red-300/90 bg-red-50 px-4 text-base font-semibold text-red-900 shadow-sm transition hover:bg-red-100 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-50 sm:min-h-14"
+            >
+              <Trash2 className="h-5 w-5 shrink-0" strokeWidth={2} aria-hidden />
+              {deleteBusy ? "Удаление…" : "Удалить заказ"}
+            </button>
+          ) : null}
           <button
             type="button"
             onClick={handleRepeat}

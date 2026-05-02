@@ -3,16 +3,18 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useId, useRef, useState } from "react";
-import { ChevronRight, Package } from "lucide-react";
+import { ChevronRight, Package, Trash2, XCircle } from "lucide-react";
 import { DeliveryCountryField } from "@/app/components/DeliveryCountryField";
+import { OrderLineRow } from "@/app/components/orders/OrderLineRow";
 import { useAuth } from "@/app/context/AuthContext";
 import { CART_STORAGE_KEY, useCart } from "@/app/context/CartContext";
 import type { OrderListSummary } from "@/app/lib/ordersStore";
 import {
   formatOrderCardRef,
-  orderAccountBadgeClass,
-  orderAccountStatusLabel,
-  orderAccountUiKind,
+  orderAccountFlowBadgeClass,
+  orderAccountFlowKind,
+  orderAccountFlowLabel,
+  ruPositionCountPhrase,
 } from "@/app/lib/orderStatus";
 import {
   readTelegramPrimaryUserId,
@@ -23,6 +25,14 @@ import {
   DELIVERY_COUNTRY_LABELS,
   type DeliveryCountry,
 } from "@/app/lib/delivery";
+import {
+  displayCurrencyForDelivery,
+  type DisplayCurrency,
+  formatCardPrice,
+  formatOrderTotalForDisplay,
+  productPriceByCountry,
+  rubFromByn,
+} from "@/app/lib/formatPrice";
 import { getTelegramOrderBotUsername } from "@/app/lib/telegramOrderBotUsername";
 import { startTelegramWebLoginWithWait } from "@/app/lib/startTelegramWebLoginClient";
 import { telegramWebLoginDeepLink } from "@/app/lib/telegramWebLoginUrl";
@@ -34,23 +44,27 @@ const TELEGRAM_CODE_VERIFY_URL =
   process.env.NEXT_PUBLIC_TELEGRAM_CODE_VERIFY_URL?.trim() ||
   "https://illucards-telegram-bot.onrender.com/api/verify-code";
 
-function formatMoneyByn(n: number): string {
-  if (!Number.isFinite(n)) return "0";
-  return n.toLocaleString("ru-RU", {
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 2,
-  });
-}
-
 const LS_DELIVERY_KEY = "illucards-delivery-country";
 
 /** Корзина для verify-code: при автологине React ещё не подхватил localStorage — читаем сразу из LS. */
 function readCartPayloadForVerifyFromStorage(): {
-  cart: Array<{ id: string; title: string; quantity: number; priceByn: number }>;
+  cart: Array<{
+    id: string;
+    title: string;
+    quantity: number;
+    priceByn: number;
+    priceRub: number;
+  }>;
   deliveryCountry: DeliveryCountry;
 } {
   const empty = {
-    cart: [] as Array<{ id: string; title: string; quantity: number; priceByn: number }>,
+    cart: [] as Array<{
+      id: string;
+      title: string;
+      quantity: number;
+      priceByn: number;
+      priceRub: number;
+    }>,
     deliveryCountry: "BY" as DeliveryCountry,
   };
   if (typeof window === "undefined") return empty;
@@ -64,7 +78,13 @@ function readCartPayloadForVerifyFromStorage(): {
     if (!raw) return { ...empty, deliveryCountry: dc };
     const parsed = JSON.parse(raw) as unknown;
     if (!Array.isArray(parsed)) return { ...empty, deliveryCountry: dc };
-    const cart: Array<{ id: string; title: string; quantity: number; priceByn: number }> = [];
+    const cart: Array<{
+      id: string;
+      title: string;
+      quantity: number;
+      priceByn: number;
+      priceRub: number;
+    }> = [];
     for (const item of parsed) {
       if (!item || typeof item !== "object") continue;
       const o = item as Record<string, unknown>;
@@ -78,8 +98,12 @@ function readCartPayloadForVerifyFromStorage(): {
       } else if (typeof o.price === "number" && Number.isFinite(o.price)) {
         priceByn = o.price;
       }
+      const priceRub =
+        typeof o.priceRub === "number" && Number.isFinite(o.priceRub)
+          ? Math.round(o.priceRub)
+          : rubFromByn(priceByn);
       if (!id) continue;
-      cart.push({ id, title, quantity, priceByn });
+      cart.push({ id, title, quantity, priceByn, priceRub });
     }
     return { cart, deliveryCountry: dc };
   } catch {
@@ -96,10 +120,20 @@ export default function AccountPageClient() {
     deliveryCountry,
     setDeliveryCountry,
     totalPriceByn,
+    orderTotalByn,
+    orderTotalRub,
+    deliveryPriceByn,
+    deliveryPriceRub,
+    clearCart,
   } = useCart();
+  const [accountPriceCurrency, setAccountPriceCurrency] = useState<DisplayCurrency>(
+    displayCurrencyForDelivery(deliveryCountry),
+  );
   const [lsGate, setLsGate] = useState<LsGate>("pending");
   const [orders, setOrders] = useState<OrderListSummary[] | null>(null);
   const [ordersError, setOrdersError] = useState<string | null>(null);
+  const [deleteOrderBusyId, setDeleteOrderBusyId] = useState<string | null>(null);
+  const [cancelOrderBusyId, setCancelOrderBusyId] = useState<string | null>(null);
   const [tgCode, setTgCode] = useState("");
   const [tgInfo, setTgInfo] = useState<string | null>(null);
   const [tgError, setTgError] = useState<string | null>(null);
@@ -142,10 +176,96 @@ export default function AccountPageClient() {
     }
   }, []);
 
+  const handleCancelOrder = useCallback(
+    async (orderId: string) => {
+      if (deleteOrderBusyId || cancelOrderBusyId) return;
+      const ok =
+        typeof window !== "undefined"
+          ? window.confirm(
+              "Отменить заказ? Доступно только пока заказ в статусе «Новый» (ещё без подтверждения в Telegram).",
+            )
+          : true;
+      if (!ok) return;
+      setCancelOrderBusyId(orderId);
+      try {
+        const res = await fetch("/api/order/cancel", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({ order_id: orderId }),
+        });
+        const data: unknown = await res.json().catch(() => null);
+        const msg =
+          data &&
+          typeof data === "object" &&
+          "error" in data &&
+          typeof (data as { error: unknown }).error === "string"
+            ? (data as { error: string }).error
+            : "Не удалось отменить заказ";
+        if (!res.ok) {
+          setOrdersError(msg);
+          return;
+        }
+        setOrdersError(null);
+        await loadOrders();
+      } catch {
+        setOrdersError("Ошибка сети");
+      } finally {
+        setCancelOrderBusyId(null);
+      }
+    },
+    [cancelOrderBusyId, deleteOrderBusyId, loadOrders],
+  );
+
+  const handleDeleteOrder = useCallback(
+    async (orderId: string) => {
+      if (deleteOrderBusyId || cancelOrderBusyId) return;
+      const ok =
+        typeof window !== "undefined"
+          ? window.confirm(
+              "Удалить заказ безвозвратно? Доступно только для заказов в статусе «Новый» (ещё без подтверждения в Telegram).",
+            )
+          : true;
+      if (!ok) return;
+      setDeleteOrderBusyId(orderId);
+      try {
+        const res = await fetch("/api/order/delete", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({ order_id: orderId }),
+        });
+        const data: unknown = await res.json().catch(() => null);
+        const msg =
+          data &&
+          typeof data === "object" &&
+          "error" in data &&
+          typeof (data as { error: unknown }).error === "string"
+            ? (data as { error: string }).error
+            : "Не удалось удалить заказ";
+        if (!res.ok) {
+          setOrdersError(msg);
+          return;
+        }
+        setOrdersError(null);
+        await loadOrders();
+      } catch {
+        setOrdersError("Ошибка сети");
+      } finally {
+        setDeleteOrderBusyId(null);
+      }
+    },
+    [cancelOrderBusyId, deleteOrderBusyId, loadOrders],
+  );
+
   useEffect(() => {
     if (lsGate !== "ok" || !hydrated) return;
     void loadOrders();
   }, [lsGate, hydrated, loadOrders]);
+
+  useEffect(() => {
+    setAccountPriceCurrency(displayCurrencyForDelivery(deliveryCountry));
+  }, [deliveryCountry]);
 
   const handleOpenTelegramForLogin = useCallback(async () => {
     router.push("/account");
@@ -181,6 +301,9 @@ export default function AccountPageClient() {
         quantity: l.quantity,
         priceByn: l.priceByn,
         priceRub: l.priceRub,
+        ...(l.frontImage?.trim() ? { frontImage: l.frontImage.trim() } : {}),
+        ...(l.category?.trim() ? { category: l.category.trim() } : {}),
+        ...(l.rarity ? { rarity: l.rarity } : {}),
       }));
       const orderPayload: Record<string, unknown> = {
         items,
@@ -218,6 +341,9 @@ export default function AccountPageClient() {
       }
       const bot = getTelegramOrderBotUsername();
       const startParam = `order_${orderId}`;
+      clearCart();
+      setPendingCartDismissed(true);
+      void loadOrders();
       if (typeof window !== "undefined") {
         window.location.assign(
           `https://t.me/${encodeURIComponent(bot)}?start=${encodeURIComponent(startParam)}`,
@@ -234,6 +360,8 @@ export default function AccountPageClient() {
     deliveryCountry,
     totalPriceByn,
     user?.telegramUsername,
+    clearCart,
+    loadOrders,
   ]);
 
   const handleVerifyTelegramCode = useCallback(async () => {
@@ -255,6 +383,7 @@ export default function AccountPageClient() {
         title: string;
         quantity: number;
         priceByn: number;
+        priceRub: number;
       }> | null = null;
       let deliveryForVerify: DeliveryCountry = "BY";
       if (cartHydrated && cartItems.length > 0) {
@@ -263,6 +392,7 @@ export default function AccountPageClient() {
           title: l.title,
           quantity: l.quantity,
           priceByn: l.priceByn,
+          priceRub: l.priceRub,
         }));
         deliveryForVerify = deliveryCountry ?? "BY";
       } else {
@@ -275,6 +405,7 @@ export default function AccountPageClient() {
       if (cartForVerify && cartForVerify.length > 0) {
         verifyBody.cart = cartForVerify;
         verifyBody.deliveryCountry = deliveryForVerify;
+        verifyBody.currency = displayCurrencyForDelivery(deliveryForVerify);
       }
       const res = await fetch(TELEGRAM_CODE_VERIFY_URL, {
         method: "POST",
@@ -543,42 +674,86 @@ export default function AccountPageClient() {
               className="text-zinc-900"
             />
           </div>
+          <div className="mt-3 flex items-center justify-between gap-3">
+            <span className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
+              Валюта цен
+            </span>
+            <div className="inline-flex rounded-full border border-zinc-300 bg-white p-0.5">
+              <button
+                type="button"
+                onClick={() => setAccountPriceCurrency("BYN")}
+                disabled={deliveryCountry != null && displayCurrencyForDelivery(deliveryCountry) !== "BYN"}
+                className={`rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-wide transition ${
+                  accountPriceCurrency === "BYN"
+                    ? "bg-indigo-600 text-white"
+                    : "text-zinc-500 hover:text-zinc-700"
+                } disabled:cursor-not-allowed disabled:opacity-40`}
+              >
+                BYN
+              </button>
+              <button
+                type="button"
+                onClick={() => setAccountPriceCurrency("RUB")}
+                disabled={deliveryCountry != null && displayCurrencyForDelivery(deliveryCountry) !== "RUB"}
+                className={`rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-wide transition ${
+                  accountPriceCurrency === "RUB"
+                    ? "bg-indigo-600 text-white"
+                    : "text-zinc-500 hover:text-zinc-700"
+                } disabled:cursor-not-allowed disabled:opacity-40`}
+              >
+                RUB
+              </button>
+            </div>
+          </div>
           <ul className="mt-4 space-y-2 border-t border-zinc-200/90 pt-4">
             {cartItems.map((l) => {
-              const line = l.priceByn * l.quantity;
+              const unit = productPriceByCountry(
+                { priceByn: l.priceByn, priceRub: l.priceRub },
+                accountPriceCurrency === "BYN" ? "BY" : "RU",
+              );
+              const line = unit * l.quantity;
               return (
-                <li
-                  key={l.id}
-                  className="flex flex-wrap justify-between gap-2 text-sm text-zinc-800"
-                >
-                  <span className="min-w-0 flex-1 font-medium">
-                    {l.title}
-                    <span className="text-zinc-500"> ×{l.quantity}</span>
-                  </span>
-                  <span className="shrink-0 font-semibold tabular-nums">
-                    {formatMoneyByn(line)} BYN
-                  </span>
+                <li key={l.id}>
+                  <OrderLineRow
+                    line={{
+                      id: l.id,
+                      title: l.title,
+                      quantity: l.quantity,
+                      frontImage: l.frontImage,
+                      category: l.category,
+                      rarity: l.rarity,
+                    }}
+                    subtitle={
+                      <>
+                        {accountPriceCurrency === "BYN"
+                          ? `${unit.toLocaleString("ru-RU", {
+                              minimumFractionDigits: 0,
+                              maximumFractionDigits: 2,
+                            })} BYN`
+                          : `${Math.round(unit).toLocaleString("ru-RU")} RUB`} × {l.quantity} ={" "}
+                        {accountPriceCurrency === "BYN"
+                          ? `${line.toLocaleString("ru-RU", {
+                              minimumFractionDigits: 0,
+                              maximumFractionDigits: 2,
+                            })} BYN`
+                          : `${Math.round(line).toLocaleString("ru-RU")} RUB`}
+                      </>
+                    }
+                  />
                 </li>
               );
             })}
           </ul>
           <p className="mt-3 text-base font-semibold text-zinc-900">
-            Доставка:{" "}
-            {DELIVERY_COUNTRY_LABELS[deliveryCountry ?? "BY"]} (
-            {formatMoneyByn(deliveryCharge(deliveryCountry ?? "BY").amountByn)} BYN
-            {deliveryCountry && deliveryCountry !== "BY"
-              ? ` / ${deliveryCharge(deliveryCountry).amountRub.toLocaleString("ru-RU")} RUB`
-              : ""}
+            Доставка: {DELIVERY_COUNTRY_LABELS[deliveryCountry ?? "BY"]} (
+            {accountPriceCurrency === "BYN"
+              ? formatCardPrice(deliveryPriceByn, "BYN")
+              : formatCardPrice(deliveryPriceByn, "RUB", deliveryPriceRub)}
             )
           </p>
           <p className="mt-1 text-lg font-bold tabular-nums text-zinc-950">
             Итого:{" "}
-            {formatMoneyByn(
-              Math.round(
-                (totalPriceByn + deliveryCharge(deliveryCountry ?? "BY").amountByn) * 100,
-              ) / 100,
-            )}{" "}
-            BYN
+            {formatCardPrice(orderTotalByn, accountPriceCurrency, orderTotalRub)}
           </p>
           <div className="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-2">
             <button
@@ -659,42 +834,100 @@ export default function AccountPageClient() {
             </Link>
           </div>
         ) : (
-          <ul className="flex flex-col gap-2 sm:gap-3">
+          <ul className="flex flex-col gap-3 sm:gap-4">
             {preview.map((o) => {
               const ref = formatOrderCardRef(o.id);
-              const kind = orderAccountUiKind(o.status);
-              const statusText = orderAccountStatusLabel(o.status);
-              const badgeClass = orderAccountBadgeClass(kind);
+              const flowKind = orderAccountFlowKind(o.status);
+              const statusText = orderAccountFlowLabel(o.status);
+              const badgeClass = orderAccountFlowBadgeClass(flowKind);
               const total = Number.isFinite(o.total) ? o.total : 0;
+              const lines = Array.isArray(o.lines) ? o.lines : [];
+              const lineCount =
+                typeof o.lineCount === "number" && o.lineCount > 0
+                  ? o.lineCount
+                  : lines.length;
+              const moreLines = lineCount > lines.length ? lineCount - lines.length : 0;
               return (
                 <li key={o.id}>
-                  <Link
-                    href={`/account/orders/${encodeURIComponent(o.id)}`}
-                    className="flex flex-wrap items-center justify-between gap-3 rounded-2xl bg-zinc-50 px-4 py-3.5 text-zinc-900 shadow-[0_2px_10px_rgba(0,0,0,0.1)] ring-1 ring-zinc-200/90 transition hover:ring-zinc-300/90 sm:rounded-3xl sm:px-5 sm:py-4"
-                  >
-                    <div className="min-w-0 flex-1">
-                      <p className="text-[11px] font-medium uppercase tracking-wide text-zinc-500">
-                        Заказ № {ref}
-                      </p>
-                      <p className="mt-0.5 text-lg font-bold tabular-nums text-zinc-900">
-                        {formatMoneyByn(total)}{" "}
-                        <span className="text-sm font-semibold text-zinc-500">
-                          BYN
+                  <article className="overflow-hidden rounded-2xl bg-zinc-50 text-zinc-900 shadow-[0_2px_10px_rgba(0,0,0,0.1)] ring-1 ring-zinc-200/90 transition hover:ring-zinc-300/90 sm:rounded-3xl">
+                    <Link
+                      href={`/account/orders/${encodeURIComponent(o.id)}`}
+                      className="block px-4 pb-3 pt-4 sm:px-5 sm:pt-5"
+                    >
+                      <div className="flex flex-wrap items-start justify-between gap-2">
+                        <div className="min-w-0">
+                          <p className="text-[11px] font-medium uppercase tracking-wide text-zinc-500">
+                            Заказ № {ref}
+                          </p>
+                          <p className="mt-0.5 text-lg font-bold tabular-nums text-zinc-900">
+                            {formatOrderTotalForDisplay(total, o.delivery)}
+                          </p>
+                        </div>
+                        <span
+                          className={`inline-flex max-w-[min(100%,11rem)] shrink-0 rounded-full px-2.5 py-1 text-[11px] font-semibold sm:max-w-none sm:px-3 sm:text-xs ${badgeClass}`}
+                        >
+                          {statusText}
                         </span>
-                      </p>
-                    </div>
-                    <div className="flex shrink-0 items-center gap-2">
-                      <span
-                        className={`inline-flex max-w-[10rem] truncate rounded-full px-2.5 py-1 text-[11px] font-semibold sm:max-w-none sm:px-3 sm:text-xs ${badgeClass}`}
+                      </div>
+                    </Link>
+                    {lines.length > 0 ? (
+                      <ul className="space-y-2 border-t border-zinc-200/90 bg-white/70 px-4 py-3 sm:px-5">
+                        {lines.map((l, idx) => (
+                          <li key={`${o.id}-${idx}`}>
+                            <OrderLineRow line={l} subtitle={`× ${l.quantity}`} />
+                          </li>
+                        ))}
+                        {moreLines > 0 ? (
+                          <li className="px-1 text-xs font-medium text-zinc-500">
+                            и ещё {ruPositionCountPhrase(moreLines)}
+                          </li>
+                        ) : null}
+                      </ul>
+                    ) : null}
+                    <div className="flex flex-wrap items-center justify-end gap-2 border-t border-zinc-200/90 px-4 py-3 sm:px-5">
+                      {o.status === "new" ? (
+                        <>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              void handleCancelOrder(o.id);
+                            }}
+                            disabled={
+                              cancelOrderBusyId === o.id || deleteOrderBusyId === o.id
+                            }
+                            className="inline-flex min-h-9 items-center gap-1 rounded-lg border border-zinc-300/90 bg-white px-3 text-xs font-semibold text-zinc-800 transition hover:bg-zinc-50 disabled:opacity-50"
+                            title="Отменить заказ (только до подтверждения в Telegram)"
+                          >
+                            <XCircle className="h-3.5 w-3.5" aria-hidden />
+                            {cancelOrderBusyId === o.id ? "…" : "Отменить"}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              void handleDeleteOrder(o.id);
+                            }}
+                            disabled={
+                              deleteOrderBusyId === o.id || cancelOrderBusyId === o.id
+                            }
+                            className="inline-flex min-h-9 items-center gap-1 rounded-lg border border-red-200/90 bg-red-50 px-3 text-xs font-semibold text-red-800 transition hover:bg-red-100 disabled:opacity-50"
+                            title="Удалить заказ безвозвратно (только «Новый»)"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" aria-hidden />
+                            {deleteOrderBusyId === o.id ? "…" : "Удалить"}
+                          </button>
+                        </>
+                      ) : null}
+                      <Link
+                        href={`/account/orders/${encodeURIComponent(o.id)}`}
+                        className="inline-flex min-h-9 items-center gap-1 text-xs font-semibold text-violet-600 transition hover:text-violet-700"
                       >
-                        {statusText}
-                      </span>
-                      <ChevronRight
-                        className="h-5 w-5 shrink-0 text-zinc-400"
-                        aria-hidden
-                      />
+                        Подробнее
+                        <ChevronRight className="h-4 w-4" aria-hidden />
+                      </Link>
                     </div>
-                  </Link>
+                  </article>
                 </li>
               );
             })}

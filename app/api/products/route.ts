@@ -4,6 +4,10 @@ import { NextResponse } from "next/server";
 import path from "path";
 import type { StoredCard } from "@/app/api/cards/route";
 import { parseCardsJson } from "@/app/lib/cardsJson";
+import {
+  effectiveCardPriceByn,
+  effectiveCardPriceRub,
+} from "@/app/lib/formatPrice";
 
 const DATA_PATH = path.join(process.cwd(), "data", "cards.json");
 
@@ -11,7 +15,12 @@ export type BotProduct = {
   id: string;
   name: string;
   category: string;
+  /** Цена в бел. рублях (как на сайте). */
+  priceByn: number;
+  /** Legacy fallback (BYN), оставлено для совместимости внешних клиентов. */
   price: number;
+  /** Розница в RUB (как на сайте при доставке не в BY). */
+  priceRub: number;
   image: string;
 };
 
@@ -33,11 +42,19 @@ function absoluteImage(origin: string, frontImage: string): string {
 }
 
 function toProduct(card: StoredCard, origin: string): BotProduct {
+  const fields = {
+    rarity: card.rarity,
+    rarities: card.rarities,
+    price: Number.isFinite(card.price) ? card.price : 0,
+    priceRub: card.priceRub,
+  };
   return {
     id: card.id,
     name: card.title.trim() || "—",
     category: card.category.trim(),
-    price: Number.isFinite(card.price) ? card.price : 0,
+    priceByn: effectiveCardPriceByn(fields),
+    price: effectiveCardPriceByn(fields),
+    priceRub: effectiveCardPriceRub(fields),
     image: absoluteImage(origin, card.frontImage),
   };
 }

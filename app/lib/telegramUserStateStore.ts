@@ -1,5 +1,6 @@
 import { promises as fs } from "fs";
 import path from "path";
+import type { DeliveryCountry } from "@/app/lib/delivery";
 
 const STORE_FILE = path.join(process.cwd(), "data", "telegram-user-state.json");
 const REDIS_KEY = (userId: number) => `illucards:user-state:${userId}`;
@@ -16,6 +17,8 @@ export type SyncedCartItem = {
 export type SyncedUserState = {
   favorites: string[];
   cart: SyncedCartItem[];
+  /** Страна доставки с сайта — для цен в боте (BY → BYN, иначе RUB). */
+  deliveryCountry: DeliveryCountry | null;
   updatedAt: number;
 };
 
@@ -48,6 +51,11 @@ async function redisCommand(
   }
 }
 
+function parseDeliveryCountry(v: unknown): DeliveryCountry | null {
+  if (v === "BY" || v === "RU" || v === "UA" || v === "OTHER") return v;
+  return null;
+}
+
 function sanitize(data: Partial<SyncedUserState>): SyncedUserState {
   const favorites = Array.isArray(data.favorites)
     ? data.favorites.filter((x): x is string => typeof x === "string").slice(0, 500)
@@ -68,6 +76,7 @@ function sanitize(data: Partial<SyncedUserState>): SyncedUserState {
   return {
     favorites,
     cart,
+    deliveryCountry: parseDeliveryCountry(data.deliveryCountry),
     updatedAt:
       typeof data.updatedAt === "number" && Number.isFinite(data.updatedAt)
         ? data.updatedAt
@@ -94,7 +103,7 @@ async function writeFileStore(data: Record<string, SyncedUserState>): Promise<vo
 export async function saveTelegramUserState(
   userId: number,
   nextState: Partial<SyncedUserState>,
-): Promise<void> {
+): Promise<SyncedUserState> {
   const state = sanitize({ ...nextState, updatedAt: Date.now() });
 
   const j = await redisCommand([
@@ -104,11 +113,27 @@ export async function saveTelegramUserState(
     "EX",
     String(TTL_SEC),
   ]);
-  if (j && !j.error) return;
+  if (j && !j.error) return state;
 
   const data = await readFileStore();
   data[String(userId)] = state;
   await writeFileStore(data);
+  return state;
+}
+
+/** Пустая корзина на сервере, избранное и доставка сохраняются. */
+export async function clearSyncedCartForTelegramUser(
+  userId: number,
+): Promise<SyncedUserState> {
+  if (!Number.isFinite(userId) || userId <= 0) {
+    return sanitize({ cart: [], favorites: [], deliveryCountry: null });
+  }
+  const prev = await getTelegramUserState(userId);
+  return saveTelegramUserState(userId, {
+    cart: [],
+    favorites: prev?.favorites ?? [],
+    deliveryCountry: prev?.deliveryCountry ?? null,
+  });
 }
 
 export async function getTelegramUserState(

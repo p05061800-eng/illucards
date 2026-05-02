@@ -154,3 +154,18 @@ export async function recordAndNotifyTelegramOrder(input: {
 
   return { recorded, sent: true };
 }
+
+/** Убрать заказ из `data/bot-orders.json` на сайте (после удаления из ЛК). */
+export async function removeSiteBotOrderSnapshot(orderId: string): Promise<void> {
+  const id = orderId.trim();
+  if (!id) return;
+  try {
+    const orders = await readBotOrders();
+    if (!(id in orders)) return;
+    delete orders[id];
+    await fs.mkdir(path.dirname(BOT_ORDERS_PATH), { recursive: true });
+    await fs.writeFile(BOT_ORDERS_PATH, JSON.stringify(orders, null, 2), "utf-8");
+  } catch {
+    /* ignore */
+  }
+}

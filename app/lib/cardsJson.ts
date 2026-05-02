@@ -239,7 +239,7 @@ function normalizeCard(raw: Record<string, unknown>): StoredCard {
     subcategory: "",
     frontImage: front,
     backImage: back,
-    price: parsePrice(raw.price),
+    price: parsePrice(raw.priceByn ?? raw.price),
     rarity: rarityValue,
     stats: parseStats(raw.stats),
     isNew: parseCardFlag(raw.isNew),

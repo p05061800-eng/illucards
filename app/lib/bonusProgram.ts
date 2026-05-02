@@ -1,5 +1,14 @@
 import type { DeliveryCountry } from "@/app/lib/delivery";
 import { BYN_TO_RUB } from "@/app/lib/formatPrice";
+import type { OrderStatus } from "@/app/lib/orderTypes";
+
+/**
+ * Заказ переведён в стадию «уже отгружаем / доставлен» — один раз начисляем баллы.
+ * (Только «Доставлен» в админке часто не ставят — тогда бонусы никогда не появлялись.)
+ */
+export function orderStatusEligibleForBonusAccrual(status: OrderStatus): boolean {
+  return status === "shipped" || status === "sent" || status === "delivered";
+}
 
 /** Баллы за одну купленную единицу карточки (шт. в заказе). */
 export const BONUS_POINTS_PER_CARD_UNIT = 100;

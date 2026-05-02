@@ -5,7 +5,7 @@ const DURATION_MS = 740;
 const EASING = "cubic-bezier(0.22, 1, 0.36, 1)";
 
 /**
- * Клонирует превью товара и анимирует полёт к иконке корзины в шапке.
+ * Клонирует превью товара и анимирует полёт к плавающей корзине (FAB снизу).
  */
 export function flyToCart(source: HTMLElement | null | undefined): void {
   if (typeof window === "undefined" || !source) return;

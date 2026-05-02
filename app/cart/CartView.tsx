@@ -237,16 +237,22 @@ export default function CartView() {
                         : "—"}
                     </span>
                   </div>
-                  {primaryTelegramUserId != null && deliveryCountry ? (
+                  {primaryTelegramUserId != null ? (
                     <div className="rounded-xl border border-amber-400/25 bg-amber-950/30 px-3 py-3 text-sm text-amber-100/95">
                       <p className="font-medium text-amber-100">
                         Бонусы: {bonusBalance.toLocaleString("ru-RU")} баллов
                       </p>
                       <p className="mt-1 text-xs leading-relaxed text-amber-200/80">
-                        100 баллов = 4 BYN или 100 RUB при списании. За каждую купленную карточку
-                        начисляется 100 баллов после статуса заказа «Доставлен».
+                        100 баллов за каждую единицу в заказе — начисляются один раз, когда заказ
+                        переведён в «Отправлен» или «Доставлен». Списание: 100 баллов = 4 BYN (Беларусь)
+                        или 100 RUB (другие страны), после выбора доставки ниже.
                       </p>
-                      {bonusBalance > 0 ? (
+                      {!deliveryCountry ? (
+                        <p className="mt-2 text-xs text-amber-200/90">
+                          Выберите страну доставки — тогда можно списать бонусы к этому заказу.
+                        </p>
+                      ) : null}
+                      {deliveryCountry && bonusBalance > 0 ? (
                         <div className="mt-3 space-y-2">
                           <label className="flex flex-col gap-1 text-xs text-amber-100/90">
                             <span>Списать баллов: {bonusSpendPoints.toLocaleString("ru-RU")}</span>

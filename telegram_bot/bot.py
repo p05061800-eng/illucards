@@ -321,6 +321,7 @@ def _resolve_admin_chat_id() -> int:
 PRODUCTS_API = "https://www.illucards.by/api/products"
 # База сайта для GET /api/order/{id} (тот же хост, что и витрина)
 DEFAULT_SITE_ORIGIN = os.getenv("ILLUCARDS_SITE_ORIGIN", "https://www.illucards.by").rstrip("/")
+PROMO_SLIDES_PATH = REPO_ROOT / "data" / "promo-slides.json"
 # Ссылка «вход на сайт» (?user_id=<telegram id>) — по умолчанию на www-домен.
 SITE_LOGIN_ORIGIN = os.getenv("ILLUCARDS_SITE_LOGIN_ORIGIN", "https://www.illucards.by").rstrip("/")
 CARDS_PATH = Path(__file__).resolve().parent / "cards.json"
@@ -496,6 +497,121 @@ async def load_products() -> list[dict[str, Any]]:
 
 load_products.used_local_fallback = False  # type: ignore[attr-defined]
 
+_promo_cache: list[dict[str, Any]] | None = None
+_promo_cache_ts: float = 0.0
+_promo_cache_from_fallback: bool = False
+
+
+def _parse_promo_slides_payload(data: Any) -> list[dict[str, Any]]:
+    raw_items: Any = []
+    if isinstance(data, dict) and "items" in data and isinstance(data["items"], list):
+        raw_items = data["items"]
+    elif isinstance(data, list):
+        raw_items = data
+    out: list[dict[str, Any]] = []
+    for row in raw_items:
+        if not isinstance(row, dict):
+            continue
+        pid = str(row.get("id") or "").strip()
+        image_url = str(row.get("imageUrl") or row.get("image_url") or "").strip()
+        href = str(row.get("href") or "").strip()
+        if not pid or not image_url:
+            continue
+        out.append({"id": pid, "imageUrl": image_url, "href": href})
+    return out
+
+
+def _load_promo_slides_local() -> list[dict[str, Any]]:
+    if not PROMO_SLIDES_PATH.exists():
+        return []
+    with open(PROMO_SLIDES_PATH, "r", encoding="utf-8") as f:
+        raw = json.load(f)
+    return _parse_promo_slides_payload(raw)
+
+
+async def _fetch_promo_slides_api() -> list[dict[str, Any]] | None:
+    base = os.getenv("ILLUCARDS_SITE_ORIGIN", DEFAULT_SITE_ORIGIN).rstrip("/")
+    url = f"{base}/api/promo-slides"
+    timeout = aiohttp.ClientTimeout(total=20)
+    try:
+        async with aiohttp.ClientSession(timeout=timeout) as session:
+            async with session.get(url, headers={"Accept": "application/json"}) as resp:
+                if resp.status != 200:
+                    logger.warning("API promo-slides HTTP %s", resp.status)
+                    return None
+                try:
+                    raw = await resp.json(content_type=None)
+                except (aiohttp.ContentTypeError, json.JSONDecodeError, ValueError) as e:
+                    logger.warning("API promo-slides JSON: %s", e)
+                    return None
+    except (aiohttp.ClientError, asyncio.TimeoutError, OSError) as e:
+        logger.warning("API promo-slides network: %s", e)
+        return None
+    slides = _parse_promo_slides_payload(raw)
+    return slides
+
+
+async def load_promo_slides() -> list[dict[str, Any]]:
+    """Баннеры «Акции на главной» с сайта (как в админке); кеш 60 с; fallback — data/promo-slides.json."""
+    global _promo_cache, _promo_cache_ts, _promo_cache_from_fallback
+
+    now = time.monotonic()
+    if _promo_cache is not None and (now - _promo_cache_ts) < CACHE_TTL_SEC:
+        load_promo_slides.used_local_fallback = _promo_cache_from_fallback  # type: ignore[attr-defined]
+        return list(_promo_cache)
+
+    api_list = await _fetch_promo_slides_api()
+    if api_list is not None:
+        _promo_cache = api_list
+        _promo_cache_ts = now
+        _promo_cache_from_fallback = False
+        load_promo_slides.used_local_fallback = False  # type: ignore[attr-defined]
+        return list(api_list)
+
+    try:
+        local_list = _load_promo_slides_local()
+    except (OSError, json.JSONDecodeError, ValueError) as e:
+        logger.warning("promo-slides local: %s", e)
+        local_list = []
+
+    _promo_cache = local_list
+    _promo_cache_ts = now
+    _promo_cache_from_fallback = True
+    load_promo_slides.used_local_fallback = True  # type: ignore[attr-defined]
+    return list(local_list)
+
+
+load_promo_slides.used_local_fallback = False  # type: ignore[attr-defined]
+
+
+def _absolute_asset_url(origin: str, path_or_url: str) -> str:
+    u = (path_or_url or "").strip()
+    if not u:
+        return origin + "/"
+    if u.startswith("http://") or u.startswith("https://"):
+        return u
+    if u.startswith("//"):
+        return "https:" + u
+    if u.startswith("/"):
+        return origin.rstrip("/") + u
+    return origin.rstrip("/") + "/" + u
+
+
+def _promo_open_url(origin: str, href: str) -> str:
+    """Полный URL для кнопки «На сайте» (Telegram требует http(s))."""
+    h = (href or "").strip()
+    if not h:
+        return origin + "/"
+    if h.startswith("http://") or h.startswith("https://"):
+        return h
+    if h.startswith("//"):
+        return "https:" + h
+    if h.startswith("#"):
+        return origin.rstrip("/") + h
+    if h.startswith("/"):
+        return origin.rstrip("/") + h
+    return h
+
 
 def _categories_from_products(products: list[dict[str, Any]]) -> list[str]:
     cats = {
@@ -507,10 +623,13 @@ def _categories_from_products(products: list[dict[str, Any]]) -> list[str]:
 
 
 def _main_keyboard() -> ReplyKeyboardMarkup:
+    """Кнопки как на витрине: каталог, акции (баннеры с главной), заказы, корзина, связь, доставка."""
     return ReplyKeyboardMarkup(
         [
-            ["📦 Категории", "🛒 Корзина"],
-            ["❤️ Избранное", "📦 Мои заказы"],
+            ["📦 Каталог", "🔥 Акции"],
+            ["📜 Мои заказы", "💚 Корзина"],
+            ["💬 Связь", "🚚 Доставка"],
+            ["❤️ Избранное"],
         ],
         resize_keyboard=True,
     )
@@ -557,6 +676,32 @@ def _product_inline_kb() -> InlineKeyboardMarkup:
             [InlineKeyboardButton("⬅️ Назад", callback_data="nav:back")],
         ]
     )
+
+
+def _promo_inline_kb(
+    slides: list[dict[str, Any]], idx: int, site_origin: str
+) -> InlineKeyboardMarkup:
+    rows: list[list[InlineKeyboardButton]] = []
+    if slides:
+        s = slides[idx % len(slides)]
+        href = str(s.get("href") or "").strip()
+        if href:
+            rows.append(
+                [
+                    InlineKeyboardButton(
+                        "🔗 На сайте",
+                        url=_promo_open_url(site_origin, href),
+                    )
+                ]
+            )
+    rows.append(
+        [
+            InlineKeyboardButton("◀️", callback_data="promo:prev"),
+            InlineKeyboardButton("▶️", callback_data="promo:next"),
+        ]
+    )
+    rows.append([InlineKeyboardButton("⬅️ Назад", callback_data="promo:back")])
+    return InlineKeyboardMarkup(rows)
 
 
 def _format_product_price_line(p: dict[str, Any], delivery_code: str) -> str:
@@ -1013,7 +1158,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
                 reply_markup=_order_saved_keyboard(user.id),
             )
         await update.message.reply_text(
-            "Каталог и ваши заказы — кнопками ниже.",
+            "Каталог, акции на главной и заказы — кнопками ниже.",
             reply_markup=_main_keyboard(),
         )
         return
@@ -1029,7 +1174,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         reply_markup=_site_open_markup(int(user.id)),
     )
     await update.message.reply_text(
-        "Каталог и корзина — кнопками ниже.",
+        "Каталог, акции на главной и корзина — кнопками ниже.",
         reply_markup=_main_keyboard(),
     )
 
@@ -1099,6 +1244,7 @@ async def show_cart_text(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
     synced_cart: list[dict[str, Any]] = []
     dcode = "BY"
     state = await fetch_site_user_state(int(user.id))
+    bonus_points = 0
     if isinstance(state, dict):
         raw = state.get("cart")
         if isinstance(raw, list):
@@ -1106,6 +1252,11 @@ async def show_cart_text(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
         raw_dc = state.get("delivery_country") or state.get("deliveryCountry")
         if isinstance(raw_dc, str) and raw_dc.strip().upper() in ("BY", "RU", "UA", "OTHER"):
             dcode = raw_dc.strip().upper()
+        bp_raw = state.get("bonus_points")
+        if isinstance(bp_raw, (int, float)) and bp_raw >= 0:
+            bonus_points = int(bp_raw)
+        elif isinstance(bp_raw, str) and bp_raw.strip().isdigit():
+            bonus_points = int(bp_raw.strip())
     context.user_data["_delivery_cache"] = {
         "uid": int(user.id),
         "ts": time.monotonic(),
@@ -1144,8 +1295,15 @@ async def show_cart_text(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
         total_suffix = f"{total_main:g} BYN"
     else:
         total_suffix = f"{int(round(total_main))} RUB"
+    bonus_line = ""
+    if bonus_points > 0:
+        bonus_line = f"\n\n💎 Бонусные баллы на сайте: {bonus_points:,}".replace(",", " ")
+    elif synced_cart or cart:
+        bonus_line = (
+            "\n\n💎 Бонусы начисляются после перевода заказа в «Отправлен» или «Доставлен» на сайте."
+        )
     await update.message.reply_text(
-        "🛒 Корзина\n\n" + "\n".join(lines) + f"\n\nИтого: {total_suffix}"
+        "🛒 Корзина\n\n" + "\n".join(lines) + f"\n\nИтого: {total_suffix}" + bonus_line
     )
 
 
@@ -1184,20 +1342,58 @@ async def show_favorites_text(update: Update, context: ContextTypes.DEFAULT_TYPE
     await update.message.reply_text("\n".join(lines))
 
 
+async def show_promo_slides(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    if not update.message:
+        return
+    slides = await load_promo_slides()
+    if getattr(load_promo_slides, "used_local_fallback", False):
+        await update.message.reply_text("⚠️ Показаны локальные баннеры (сайт недоступен)")
+    if not slides:
+        await update.message.reply_text(
+            "Пока нет баннеров «Акции на главной».\n"
+            "Их настраивают в админке сайта (раздел «Акции на главной»)."
+        )
+        return
+    context.user_data["promo_slides"] = slides
+    context.user_data["promo_index"] = 0
+    mid = await _show_promo_message(
+        context, update.message.chat_id, message_id=None
+    )
+    context.user_data["promo_message_id"] = mid
+
+
 async def text_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     if not update.message or not update.message.text:
         return
     t = update.message.text.strip()
-    if t == "🛒 Корзина":
+    if t in ("🛒 Корзина", "💚 Корзина"):
         await show_cart_text(update, context)
         return
-    if t == "📦 Мои заказы":
+    if t in ("📦 Мои заказы", "📜 Мои заказы"):
         await show_my_orders(update, context)
         return
     if t == "❤️ Избранное":
         await show_favorites_text(update, context)
         return
-    if t != "📦 Категории":
+    if t == "🔥 Акции":
+        await show_promo_slides(update, context)
+        return
+    if t == "💬 Связь":
+        support = (os.getenv("ILLUCARDS_SUPPORT_TEXT") or "").strip()
+        if support:
+            await update.message.reply_text(support)
+        else:
+            await update.message.reply_text(
+                "Напишите нам через форму на сайте или в соцсетях — ссылки внизу главной страницы IlluCards."
+            )
+        return
+    if t == "🚚 Доставка":
+        await update.message.reply_text(
+            "Условия и сроки доставки — на сайте при оформлении заказа.\n"
+            "Нажмите «Открыть сайт» в приветствии или выберите страну доставки в корзине на сайте."
+        )
+        return
+    if t not in ("📦 Каталог", "📦 Категории"):
         return
 
     products = await load_products()
@@ -1217,7 +1413,7 @@ async def text_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
     context.user_data["_cats"] = categories
     rows = [[InlineKeyboardButton(c, callback_data=f"cat:{i}")] for i, c in enumerate(categories)]
     await update.message.reply_text(
-        "Категории:",
+        "Каталог — выберите категорию:",
         reply_markup=InlineKeyboardMarkup(rows),
     )
 
@@ -1244,6 +1440,57 @@ async def _resolve_delivery_for_user(context: ContextTypes.DEFAULT_TYPE, user_id
         "code": dcode,
     }
     return dcode
+
+
+async def _show_promo_message(
+    context: ContextTypes.DEFAULT_TYPE,
+    chat_id: int,
+    *,
+    message_id: int | None,
+) -> int:
+    """Карусель баннеров с главной (те же данные, что «Акции на главной» в админке)."""
+    slides: list[dict[str, Any]] = context.user_data.get("promo_slides") or []
+    if not slides:
+        raise ValueError("no promo slides")
+    idx = int(context.user_data.get("promo_index") or 0) % len(slides)
+    context.user_data["promo_index"] = idx
+    origin = os.getenv("ILLUCARDS_SITE_ORIGIN", DEFAULT_SITE_ORIGIN).rstrip("/")
+    s = slides[idx]
+    photo = _absolute_asset_url(origin, str(s.get("imageUrl") or ""))
+    cap = f"🔥 Акции на главной — {idx + 1}/{len(slides)}"
+    kb = _promo_inline_kb(slides, idx, origin)
+
+    if message_id is not None:
+        try:
+            await context.bot.edit_message_media(
+                chat_id=chat_id,
+                message_id=message_id,
+                media=InputMediaPhoto(media=photo, caption=cap),
+                reply_markup=kb,
+            )
+            return message_id
+        except Exception:
+            try:
+                await context.bot.edit_message_caption(
+                    chat_id=chat_id,
+                    message_id=message_id,
+                    caption=cap,
+                    reply_markup=kb,
+                )
+                return message_id
+            except Exception:
+                try:
+                    await context.bot.delete_message(chat_id=chat_id, message_id=message_id)
+                except Exception:
+                    pass
+
+    m = await context.bot.send_photo(
+        chat_id=chat_id,
+        photo=photo,
+        caption=cap,
+        reply_markup=kb,
+    )
+    return m.message_id
 
 
 async def _show_product_message(
@@ -1460,6 +1707,49 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
             await q.answer("Не удалось отменить заказ. Повторите через минуту.", show_alert=True)
             return
 
+    if data.startswith("promo:"):
+        action = data.split(":", 1)[1]
+        chat_id_pb = q.message.chat_id
+        slides_pb: list[dict[str, Any]] = context.user_data.get("promo_slides") or []
+        if not slides_pb:
+            await q.answer("Сначала откройте «🔥 Акции»", show_alert=True)
+            return
+        if action == "back":
+            await q.answer()
+            mid = context.user_data.get("promo_message_id")
+            try:
+                if mid is not None:
+                    await context.bot.delete_message(
+                        chat_id=chat_id_pb, message_id=int(mid)
+                    )
+            except Exception:
+                pass
+            context.user_data["promo_message_id"] = None
+            await context.bot.send_message(
+                chat_id=chat_id_pb,
+                text="Выберите раздел кнопками ниже.",
+                reply_markup=_main_keyboard(),
+            )
+            return
+        if action == "prev":
+            i = int(context.user_data.get("promo_index") or 0)
+            context.user_data["promo_index"] = (i - 1) % len(slides_pb)
+        elif action == "next":
+            i = int(context.user_data.get("promo_index") or 0)
+            context.user_data["promo_index"] = (i + 1) % len(slides_pb)
+        else:
+            await q.answer()
+            return
+        await q.answer()
+        mid_old = context.user_data.get("promo_message_id")
+        mid = await _show_promo_message(
+            context,
+            chat_id_pb,
+            message_id=mid_old if isinstance(mid_old, int) else None,
+        )
+        context.user_data["promo_message_id"] = mid
+        return
+
     await q.answer()
     chat_id = q.message.chat_id
 
@@ -1516,7 +1806,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
         rows = [[InlineKeyboardButton(c, callback_data=f"cat:{i}")] for i, c in enumerate(categories)]
         await context.bot.send_message(
             chat_id=chat_id,
-            text="Категории:",
+            text="Каталог — выберите категорию:",
             reply_markup=InlineKeyboardMarkup(rows),
         )
         context.user_data["product_message_id"] = None

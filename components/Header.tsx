@@ -305,7 +305,6 @@ export default function Header() {
 
           <button
             type="button"
-            data-cart-fly-target
             onClick={openCart}
             aria-expanded={cartOpen}
             aria-controls="cart-drawer-panel"

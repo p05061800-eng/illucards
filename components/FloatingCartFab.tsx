@@ -13,7 +13,7 @@ export function FloatingCartFab() {
   return (
     <button
       type="button"
-      data-cart-fly-target
+      data-cart-fly-fab
       onClick={openCart}
       aria-expanded={cartOpen}
       aria-controls="cart-drawer-panel"

@@ -13,6 +13,7 @@ import {
 import { createPortal } from "react-dom";
 import { AdultContentBlurGate } from "./AdultContentBlurGate";
 import { cardRequiresAgeConfirmation } from "../lib/cardRequiresAgeConfirmation";
+import { useAuth } from "../context/AuthContext";
 import { useCart } from "../context/CartContext";
 import { useCurrency } from "../context/CurrencyContext";
 import { useCategoryTiles } from "../context/CategoryFramesContext";
@@ -34,7 +35,10 @@ export function CartDrawer() {
     orderTotalRub,
     checkoutTotalByn,
     checkoutTotalRub,
+    bonusBalance,
     bonusSpendPoints,
+    setBonusSpendPoints,
+    maxBonusSpendPoints,
     bonusDiscountByn,
     hydrated,
     cartOpen,
@@ -42,6 +46,7 @@ export function CartDrawer() {
     removeFromCart,
     setQuantity,
   } = useCart();
+  const { primaryTelegramUserId } = useAuth();
   const { currency, setCurrency } = useCurrency();
   const priceCurrency = displayCurrencyForDelivery(deliveryCountry);
   const categoryTiles = useCategoryTiles();
@@ -443,6 +448,53 @@ export function CartDrawer() {
                     </div>
                   </div>
                 )}
+                {primaryTelegramUserId != null ? (
+                  <div className="mb-4 rounded-xl border border-amber-400/25 bg-amber-950/25 px-3 py-3 text-xs text-amber-100/95">
+                    <p className="font-medium text-amber-100">
+                      Бонусы: {bonusBalance.toLocaleString("ru-RU")} баллов
+                    </p>
+                    <p className="mt-1 leading-relaxed text-amber-200/85">
+                      Начисление после «Отправлен» / «Доставлен». Списание — после выбора доставки.
+                    </p>
+                    {!deliveryCountry ? (
+                      <p className="mt-2 text-amber-200/90">Укажите страну доставки выше, чтобы списать бонусы.</p>
+                    ) : null}
+                    {deliveryCountry && bonusBalance > 0 ? (
+                      <div className="mt-2 space-y-2">
+                        <label className="flex flex-col gap-1 text-amber-100/90">
+                          <span>Списать: {bonusSpendPoints.toLocaleString("ru-RU")}</span>
+                          <input
+                            type="range"
+                            min={0}
+                            max={Math.max(0, maxBonusSpendPoints)}
+                            step={1}
+                            value={Math.min(bonusSpendPoints, maxBonusSpendPoints)}
+                            onChange={(e) =>
+                              setBonusSpendPoints(Number(e.target.value) || 0)
+                            }
+                            className="w-full accent-amber-400"
+                          />
+                        </label>
+                        <div className="flex justify-between gap-2">
+                          <button
+                            type="button"
+                            className="rounded-lg border border-amber-400/40 px-2 py-1 font-medium text-amber-200/90 transition hover:bg-amber-500/20"
+                            onClick={() => setBonusSpendPoints(0)}
+                          >
+                            Не списывать
+                          </button>
+                          <button
+                            type="button"
+                            className="rounded-lg border border-amber-400/40 px-2 py-1 font-medium text-amber-200/90 transition hover:bg-amber-500/20"
+                            onClick={() => setBonusSpendPoints(maxBonusSpendPoints)}
+                          >
+                            Макс.
+                          </button>
+                        </div>
+                      </div>
+                    ) : null}
+                  </div>
+                ) : null}
                 <div className="mb-4 space-y-2 text-sm">
                   <div className="flex items-baseline justify-between gap-3">
                     <span className="text-zinc-500">Товары</span>

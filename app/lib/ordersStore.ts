@@ -6,7 +6,10 @@ import { normalizeDeliveryCountry, type DeliveryCountry } from "@/app/lib/delive
 import { orderStatusFromStorage } from "@/app/lib/orderStatus";
 import { ORDERS_DIR } from "@/app/lib/orderPaths";
 import type { OrderLineIn, OrderRecord, OrderStatus } from "@/app/lib/orderTypes";
-import { bonusPointsToEarnForOrderItems } from "@/app/lib/bonusProgram";
+import {
+  bonusPointsToEarnForOrderItems,
+  orderStatusEligibleForBonusAccrual,
+} from "@/app/lib/bonusProgram";
 import { sanitizeOrderLineImageUrl } from "@/app/lib/sanitizeOrderLineImageUrl";
 import { notifyTelegramWebhookUserState } from "@/app/lib/telegramStateBotSync";
 import {
@@ -196,14 +199,18 @@ export async function updateOrderStatus(
     /* нет файла или FS только для чтения — статус уже в ORDERS */
   }
 
-  const deliveredNow =
-    status === "delivered" &&
-    existing.status !== "delivered" &&
+  const wasBonusEligible = orderStatusEligibleForBonusAccrual(existing.status);
+  const nowBonusEligible =
+    orderStatusEligibleForBonusAccrual(status) &&
     existing.status !== "cancelled" &&
+    status !== "cancelled";
+  const grantBonusNow =
+    nowBonusEligible &&
+    !wasBonusEligible &&
     !existing.bonus_awarded &&
     existing.user_id != null &&
     existing.user_id > 0;
-  if (deliveredNow) {
+  if (grantBonusNow) {
     const earn = bonusPointsToEarnForOrderItems(existing.items);
     if (earn > 0) {
       try {

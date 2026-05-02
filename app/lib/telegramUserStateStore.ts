@@ -202,7 +202,7 @@ export async function getTelegramUserState(
     try {
       return sanitize(JSON.parse(j.result) as Partial<SyncedUserState>);
     } catch {
-      return null;
+      /* Redis мог содержать битый JSON — читаем файл */
     }
   }
 

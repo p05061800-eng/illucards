@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { Autoplay } from "swiper/modules";
@@ -107,10 +106,10 @@ export default function PromoSlider({ initialSlides = [] }: Props) {
           }
           className="hero-promo-swiper w-full cursor-grab active:cursor-grabbing"
         >
-          {slides.map((slide) => (
+          {slides.map((slide, i) => (
             <SwiperSlide key={slide.id} className="!h-auto">
               <div className="relative aspect-video w-full bg-zinc-900">
-                <BannerSlide slide={slide} />
+                <BannerSlide slide={slide} eager={i === 0} />
               </div>
             </SwiperSlide>
           ))}
@@ -120,15 +119,27 @@ export default function PromoSlider({ initialSlides = [] }: Props) {
   );
 }
 
-function BannerSlide({ slide }: { slide: PromoSlide }) {
+function BannerSlide({ slide, eager }: { slide: PromoSlide; eager?: boolean }) {
   const href = slide.href?.trim();
-  const image = (
-    <Image
-      src={slide.imageUrl}
-      alt="Акция"
-      fill
-      sizes="(max-width: 1024px) 100vw, 60vw"
-      className="object-cover"
+  const src = slide.imageUrl?.trim() ?? "";
+  const [loadFailed, setLoadFailed] = useState(false);
+
+  const image = loadFailed || !src ? (
+    <div className="absolute inset-0 flex flex-col items-center justify-center gap-1 bg-zinc-900 px-4 text-center">
+      <span className="text-xs font-medium text-zinc-400">Акция</span>
+      <span className="text-[11px] leading-snug text-zinc-600">
+        Не удалось загрузить баннер. Проверьте файл в админке или загрузите картинку заново.
+      </span>
+    </div>
+  ) : (
+    // eslint-disable-next-line @next/next/no-img-element -- баннеры из /uploads/: next/image через _next/image часто даёт 404 на проде
+    <img
+      src={src}
+      alt=""
+      className="absolute inset-0 h-full w-full object-cover"
+      loading={eager ? "eager" : "lazy"}
+      decoding="async"
+      onError={() => setLoadFailed(true)}
     />
   );
 

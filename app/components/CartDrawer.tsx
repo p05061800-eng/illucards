@@ -17,7 +17,7 @@ import { useCart } from "../context/CartContext";
 import { useCurrency } from "../context/CurrencyContext";
 import { useCategoryTiles } from "../context/CategoryFramesContext";
 import { getCardArtIntrinsicSize } from "../lib/cardArtIntrinsicSize";
-import { displayCurrencyForDelivery, formatCardPrice } from "../lib/formatPrice";
+import { displayCurrencyForDelivery, formatCardPrice, rubFromByn } from "../lib/formatPrice";
 import { TelegramCheckoutButton } from "@/components/checkout/TelegramCheckoutButton";
 import { DeliveryCountryField } from "./DeliveryCountryField";
 
@@ -32,6 +32,10 @@ export function CartDrawer() {
     deliveryPriceRub,
     orderTotalByn,
     orderTotalRub,
+    checkoutTotalByn,
+    checkoutTotalRub,
+    bonusSpendPoints,
+    bonusDiscountByn,
     hydrated,
     cartOpen,
     closeCart,
@@ -464,14 +468,31 @@ export function CartDrawer() {
                         : "—"}
                     </span>
                   </div>
+                  {bonusSpendPoints > 0 && deliveryCountry ? (
+                    <div className="flex items-baseline justify-between gap-3 text-xs text-amber-200/90">
+                      <span>Бонусы</span>
+                      <span className="tabular-nums">
+                        −
+                        {formatCardPrice(
+                          bonusDiscountByn,
+                          priceCurrency,
+                          priceCurrency === "RUB" ? rubFromByn(bonusDiscountByn) : undefined,
+                        )}
+                      </span>
+                    </div>
+                  ) : null}
                   <div className="flex items-baseline justify-between gap-3 border-t border-white/[0.08] pt-2">
                     <span className="font-medium text-zinc-400">Итого</span>
                     <span className="bg-gradient-to-r from-purple-200 to-violet-200 bg-clip-text text-lg font-semibold tabular-nums text-transparent">
                       {deliveryCountry
                         ? formatCardPrice(
-                            orderTotalByn,
+                            bonusSpendPoints > 0 ? checkoutTotalByn : orderTotalByn,
                             priceCurrency,
-                            priceCurrency === "RUB" ? orderTotalRub : undefined
+                            priceCurrency === "RUB"
+                              ? bonusSpendPoints > 0
+                                ? checkoutTotalRub
+                                : orderTotalRub
+                              : undefined,
                           )
                         : "—"}
                     </span>

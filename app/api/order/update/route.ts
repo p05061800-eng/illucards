@@ -58,6 +58,7 @@ export async function POST(request: NextRequest) {
           cart: st.cart,
           favorites: st.favorites,
           deliveryCountry: st.deliveryCountry,
+          bonus_points: st.bonus_points,
         });
       } catch {
         /* очистка корзины не должна ломать подтверждение заказа */

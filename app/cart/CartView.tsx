@@ -3,11 +3,12 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useId } from "react";
+import { useAuth } from "../context/AuthContext";
 import { useCart } from "../context/CartContext";
 import { useCurrency } from "../context/CurrencyContext";
 import { useCategoryTiles } from "../context/CategoryFramesContext";
 import { getCardArtIntrinsicSize } from "../lib/cardArtIntrinsicSize";
-import { displayCurrencyForDelivery, formatCardPrice } from "../lib/formatPrice";
+import { displayCurrencyForDelivery, formatCardPrice, rubFromByn } from "../lib/formatPrice";
 import { TelegramCheckoutButton } from "@/components/checkout/TelegramCheckoutButton";
 import { DeliveryCountryField } from "../components/DeliveryCountryField";
 
@@ -22,10 +23,18 @@ export default function CartView() {
     deliveryPriceRub,
     orderTotalByn,
     orderTotalRub,
+    checkoutTotalByn,
+    checkoutTotalRub,
+    bonusBalance,
+    bonusSpendPoints,
+    setBonusSpendPoints,
+    maxBonusSpendPoints,
+    bonusDiscountByn,
     removeFromCart,
     setQuantity,
     hydrated,
   } = useCart();
+  const { primaryTelegramUserId } = useAuth();
   const { currency, setCurrency } = useCurrency();
   const priceCurrency = displayCurrencyForDelivery(deliveryCountry);
   const categoryTiles = useCategoryTiles();
@@ -228,14 +237,73 @@ export default function CartView() {
                         : "—"}
                     </span>
                   </div>
+                  {primaryTelegramUserId != null && deliveryCountry ? (
+                    <div className="rounded-xl border border-amber-400/25 bg-amber-950/30 px-3 py-3 text-sm text-amber-100/95">
+                      <p className="font-medium text-amber-100">
+                        Бонусы: {bonusBalance.toLocaleString("ru-RU")} баллов
+                      </p>
+                      <p className="mt-1 text-xs leading-relaxed text-amber-200/80">
+                        100 баллов = 4 BYN или 100 RUB при списании. За каждую купленную карточку
+                        начисляется 100 баллов после статуса заказа «Доставлен».
+                      </p>
+                      {bonusBalance > 0 ? (
+                        <div className="mt-3 space-y-2">
+                          <label className="flex flex-col gap-1 text-xs text-amber-100/90">
+                            <span>Списать баллов: {bonusSpendPoints.toLocaleString("ru-RU")}</span>
+                            <input
+                              type="range"
+                              min={0}
+                              max={Math.max(0, maxBonusSpendPoints)}
+                              step={1}
+                              value={Math.min(bonusSpendPoints, maxBonusSpendPoints)}
+                              onChange={(e) =>
+                                setBonusSpendPoints(Number(e.target.value) || 0)
+                              }
+                              className="w-full accent-amber-400"
+                            />
+                          </label>
+                          <div className="flex flex-wrap justify-between gap-2 text-xs text-amber-200/85">
+                            <button
+                              type="button"
+                              className="rounded-lg border border-amber-400/40 px-2 py-1 font-medium transition hover:bg-amber-500/20"
+                              onClick={() => setBonusSpendPoints(0)}
+                            >
+                              Не списывать
+                            </button>
+                            <button
+                              type="button"
+                              className="rounded-lg border border-amber-400/40 px-2 py-1 font-medium transition hover:bg-amber-500/20"
+                              onClick={() => setBonusSpendPoints(maxBonusSpendPoints)}
+                            >
+                              Максимум
+                            </button>
+                          </div>
+                          {bonusSpendPoints > 0 ? (
+                            <p className="text-xs text-amber-100/90">
+                              Скидка:{" "}
+                              {formatCardPrice(
+                                bonusDiscountByn,
+                                priceCurrency,
+                                priceCurrency === "RUB" ? rubFromByn(bonusDiscountByn) : undefined,
+                              )}
+                            </p>
+                          ) : null}
+                        </div>
+                      ) : null}
+                    </div>
+                  ) : null}
                   <div className="flex items-baseline justify-between gap-6 border-t border-white/10 pt-2 sm:justify-start sm:gap-10">
                     <span className="font-medium text-zinc-400">Итого</span>
                     <span className="bg-gradient-to-r from-purple-200 to-violet-200 bg-clip-text text-lg font-semibold tabular-nums text-transparent sm:text-xl">
                       {deliveryCountry
                         ? formatCardPrice(
-                            orderTotalByn,
+                            bonusSpendPoints > 0 ? checkoutTotalByn : orderTotalByn,
                             priceCurrency,
-                            priceCurrency === "RUB" ? orderTotalRub : undefined
+                            priceCurrency === "RUB"
+                              ? bonusSpendPoints > 0
+                                ? checkoutTotalRub
+                                : orderTotalRub
+                              : undefined,
                           )
                         : "—"}
                     </span>

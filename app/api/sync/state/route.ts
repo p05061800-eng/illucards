@@ -1,7 +1,11 @@
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 import { normalizeDeliveryCountry, type DeliveryCountry } from "@/app/lib/delivery";
-import { saveTelegramUserState, type SyncedCartItem } from "@/app/lib/telegramUserStateStore";
+import {
+  getTelegramUserState,
+  saveTelegramUserState,
+  type SyncedCartItem,
+} from "@/app/lib/telegramUserStateStore";
 
 function syncSecretOk(request: NextRequest): boolean {
   const need = process.env.TELEGRAM_SYNC_API_SECRET?.trim();
@@ -73,6 +77,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Некорректный user_id" }, { status: 400 });
   }
 
+  const prev = await getTelegramUserState(userId);
   const cart = parseCartFromBotSync(o.cart);
   const favorites = parseFavoritesFromBotSync(o.favorites);
   let deliveryCountry: DeliveryCountry | null = null;
@@ -81,11 +86,18 @@ export async function POST(request: NextRequest) {
   } else {
     deliveryCountry = normalizeDeliveryCountry(o.delivery_country);
   }
+  let bonus_points = Math.max(0, Math.floor(prev?.bonus_points ?? 0));
+  const bpRaw = o.bonus_points;
+  if (bpRaw !== undefined && bpRaw !== null) {
+    const n = typeof bpRaw === "number" ? bpRaw : Number(bpRaw);
+    if (Number.isFinite(n) && n >= 0 && n <= 1e9) bonus_points = Math.floor(n);
+  }
 
   const saved = await saveTelegramUserState(userId, {
     cart,
     favorites,
     deliveryCountry,
+    bonus_points,
   });
 
   return NextResponse.json({ ok: true, updatedAt: saved.updatedAt });

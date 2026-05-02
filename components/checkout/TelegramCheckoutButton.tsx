@@ -29,7 +29,13 @@ export function TelegramCheckoutButton({
     }
   }, [router]);
 
-  const { cartItems, hydrated, deliveryCountry, orderTotalByn } = useCart();
+  const {
+    cartItems,
+    hydrated,
+    deliveryCountry,
+    checkoutTotalByn,
+    bonusSpendPoints,
+  } = useCart();
   const { primaryTelegramUserId, user } = useAuth();
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -61,10 +67,13 @@ export function TelegramCheckoutButton({
 
       const orderPayload: Record<string, unknown> = {
         items,
-        total: orderTotalByn,
+        total: checkoutTotalByn,
         delivery: deliveryCountry,
         user_id: primaryTelegramUserId,
       };
+      if (bonusSpendPoints > 0) {
+        orderPayload.bonus_points_to_spend = bonusSpendPoints;
+      }
       if (user?.telegramUsername) {
         orderPayload.username = user.telegramUsername;
       }
@@ -116,7 +125,8 @@ export function TelegramCheckoutButton({
     deliveryCountry,
     hydrated,
     onBeforeNavigate,
-    orderTotalByn,
+    checkoutTotalByn,
+    bonusSpendPoints,
     primaryTelegramUserId,
     router,
     submitting,

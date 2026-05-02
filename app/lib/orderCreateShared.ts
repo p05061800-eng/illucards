@@ -2,11 +2,16 @@ import { randomUUID } from "crypto";
 import { promises as fs } from "fs";
 import path from "path";
 import { parseCardRarity } from "@/app/lib/cardRarityTags";
+import { bonusDiscountByn, maxSpendableBonusPoints } from "@/app/lib/bonusProgram";
 import { deliveryCharge, normalizeDeliveryCountry, type DeliveryCountry } from "@/app/lib/delivery";
 import { ORDERS_DIR } from "@/app/lib/orderPaths";
 import type { OrderLineIn, OrderRecord } from "@/app/lib/orderTypes";
 import { registerOrder } from "@/app/lib/ordersStore";
 import { sanitizeOrderLineImageUrl } from "@/app/lib/sanitizeOrderLineImageUrl";
+import {
+  getTelegramUserState,
+  trySpendTelegramUserBonusPoints,
+} from "@/app/lib/telegramUserStateStore";
 
 export { ORDERS_DIR } from "@/app/lib/orderPaths";
 export type { OrderLineIn } from "@/app/lib/orderTypes";
@@ -28,6 +33,13 @@ export function parseOptionalUsername(v: unknown): string | null | undefined {
   const t = v.trim().replace(/^@/, "").slice(0, 64);
   if (!/^[a-zA-Z0-9_]*$/.test(t)) return undefined;
   return t || null;
+}
+
+export function parseOptionalBonusPointsToSpend(v: unknown): number {
+  if (v === undefined || v === null) return 0;
+  const n = typeof v === "number" ? v : Number(v);
+  if (!Number.isFinite(n) || n <= 0) return 0;
+  return Math.min(1_000_000_000, Math.floor(n));
 }
 
 export function normalizeOrderItems(raw: unknown): OrderLineIn[] | null {
@@ -81,6 +93,8 @@ export type PersistOrderInput = {
   userId?: number;
   username?: string | null;
   clientTotalByn: number;
+  /** Сколько бонусных баллов списать (после проверки баланса и лимита по сумме). */
+  bonusPointsToSpend?: number;
 };
 
 export type PersistOrderResult =
@@ -91,7 +105,14 @@ export type PersistOrderResult =
 export async function persistOrder(
   input: PersistOrderInput,
 ): Promise<PersistOrderResult> {
-  const { deliveryCountry, items, userId, username, clientTotalByn } = input;
+  const {
+    deliveryCountry,
+    items,
+    userId,
+    username,
+    clientTotalByn,
+    bonusPointsToSpend: rawBonusSpend = 0,
+  } = input;
 
   if (!Number.isFinite(clientTotalByn) || clientTotalByn < 0) {
     return { ok: false, error: "Некорректная сумма заказа", status: 400 };
@@ -102,10 +123,41 @@ export async function persistOrder(
       items.reduce((s, l) => s + l.priceByn * l.quantity, 0) * 100,
     ) / 100;
   const d = deliveryCharge(deliveryCountry);
-  const orderByn = Math.round((goodsByn + d.amountByn) * 100) / 100;
+  const orderBynBefore = Math.round((goodsByn + d.amountByn) * 100) / 100;
 
-  if (Math.abs(orderByn - clientTotalByn) > TOTAL_EPS) {
+  let spendApplied = 0;
+  const wantSpend = Math.max(0, Math.floor(Number(rawBonusSpend) || 0));
+  if (wantSpend > 0) {
+    if (userId == null || userId <= 0) {
+      return {
+        ok: false,
+        error: "Чтобы списать бонусы, войдите через Telegram",
+        status: 401,
+      };
+    }
+    const balState = await getTelegramUserState(userId);
+    const balance = Math.max(0, Math.floor(balState?.bonus_points ?? 0));
+    spendApplied = Math.min(
+      wantSpend,
+      maxSpendableBonusPoints(balance, orderBynBefore, deliveryCountry),
+    );
+  }
+
+  const discountByn = bonusDiscountByn(spendApplied, deliveryCountry);
+  const orderBynCharged = Math.round((orderBynBefore - discountByn) * 100) / 100;
+  if (orderBynCharged < -TOTAL_EPS) {
+    return { ok: false, error: "Некорректная скидка бонусами", status: 400 };
+  }
+
+  if (Math.abs(orderBynCharged - clientTotalByn) > TOTAL_EPS) {
     return { ok: false, error: "Сумма заказа не совпадает с корзиной", status: 400 };
+  }
+
+  if (spendApplied > 0 && userId != null && userId > 0) {
+    const spent = await trySpendTelegramUserBonusPoints(userId, spendApplied);
+    if (!spent.ok) {
+      return { ok: false, error: "Недостаточно бонусов", status: 409 };
+    }
   }
 
   const orderId = randomUUID();
@@ -114,9 +166,10 @@ export async function persistOrder(
     ...(userId != null && userId > 0 ? { user_id: userId } : {}),
     username: username ?? null,
     items,
-    total: orderByn,
+    total: orderBynCharged,
     delivery: deliveryCountry,
     status: "new",
+    ...(spendApplied > 0 ? { bonus_points_spent: spendApplied } : {}),
   };
 
   registerOrder(orderId, record);

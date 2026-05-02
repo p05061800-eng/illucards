@@ -31,4 +31,8 @@ export type OrderRecord = {
   status: OrderStatus;
   /** message_id уведомления админу в Telegram (пишет бот после подтверждения). */
   telegram_admin_message_id?: number;
+  /** Бонусы за этот заказ уже начислены покупателю (при статусе «Доставлен»). */
+  bonus_awarded?: boolean;
+  /** Сколько бонусных баллов списано при оформлении. */
+  bonus_points_spent?: number;
 };

@@ -19,6 +19,8 @@ export type SyncedUserState = {
   cart: SyncedCartItem[];
   /** Страна доставки с сайта — для цен в боте (BY → BYN, иначе RUB). */
   deliveryCountry: DeliveryCountry | null;
+  /** Бонусные баллы (начисление за доставленные заказы, списание в корзине). */
+  bonus_points: number;
   updatedAt: number;
 };
 
@@ -73,10 +75,17 @@ function sanitize(data: Partial<SyncedUserState>): SyncedUserState {
         .filter((x) => x.id.length > 0)
         .slice(0, 200)
     : [];
+  const bpRaw = (data as Record<string, unknown>).bonus_points;
+  const bonus_points =
+    typeof bpRaw === "number" && Number.isFinite(bpRaw) && bpRaw >= 0 && bpRaw <= 1e9
+      ? Math.floor(bpRaw)
+      : 0;
+
   return {
     favorites,
     cart,
     deliveryCountry: parseDeliveryCountry(data.deliveryCountry),
+    bonus_points,
     updatedAt:
       typeof data.updatedAt === "number" && Number.isFinite(data.updatedAt)
         ? data.updatedAt
@@ -104,7 +113,20 @@ export async function saveTelegramUserState(
   userId: number,
   nextState: Partial<SyncedUserState>,
 ): Promise<SyncedUserState> {
-  const state = sanitize({ ...nextState, updatedAt: Date.now() });
+  const prev = await getTelegramUserState(userId);
+  const merged: Partial<SyncedUserState> = {
+    favorites: nextState.favorites ?? prev?.favorites ?? [],
+    cart: nextState.cart ?? prev?.cart ?? [],
+    deliveryCountry:
+      "deliveryCountry" in nextState
+        ? (nextState.deliveryCountry ?? null)
+        : (prev?.deliveryCountry ?? null),
+    bonus_points:
+      "bonus_points" in nextState
+        ? Math.max(0, Math.floor(Number(nextState.bonus_points) || 0))
+        : Math.max(0, Math.floor(prev?.bonus_points ?? 0)),
+  };
+  const state = sanitize(merged);
 
   const j = await redisCommand([
     "SET",
@@ -126,14 +148,50 @@ export async function clearSyncedCartForTelegramUser(
   userId: number,
 ): Promise<SyncedUserState> {
   if (!Number.isFinite(userId) || userId <= 0) {
-    return sanitize({ cart: [], favorites: [], deliveryCountry: null });
+    return sanitize({ cart: [], favorites: [], deliveryCountry: null, bonus_points: 0 });
   }
   const prev = await getTelegramUserState(userId);
   return saveTelegramUserState(userId, {
     cart: [],
     favorites: prev?.favorites ?? [],
     deliveryCountry: prev?.deliveryCountry ?? null,
+    bonus_points: Math.max(0, Math.floor(prev?.bonus_points ?? 0)),
   });
+}
+
+export async function incrementTelegramUserBonusPoints(
+  userId: number,
+  delta: number,
+): Promise<SyncedUserState> {
+  const prev = await getTelegramUserState(userId);
+  const cur = Math.max(0, Math.floor(prev?.bonus_points ?? 0));
+  const next = Math.min(1_000_000_000, Math.max(0, cur + Math.floor(delta)));
+  return saveTelegramUserState(userId, {
+    cart: prev?.cart ?? [],
+    favorites: prev?.favorites ?? [],
+    deliveryCountry: prev?.deliveryCountry ?? null,
+    bonus_points: next,
+  });
+}
+
+/**
+ * Списать баллы (уже проверенные). Возвращает false, если на счёте меньше, чем spend.
+ */
+export async function trySpendTelegramUserBonusPoints(
+  userId: number,
+  spend: number,
+): Promise<{ ok: true; state: SyncedUserState } | { ok: false }> {
+  const prev = await getTelegramUserState(userId);
+  const cur = Math.max(0, Math.floor(prev?.bonus_points ?? 0));
+  const s = Math.max(0, Math.floor(spend));
+  if (s > cur) return { ok: false };
+  const state = await saveTelegramUserState(userId, {
+    cart: prev?.cart ?? [],
+    favorites: prev?.favorites ?? [],
+    deliveryCountry: prev?.deliveryCountry ?? null,
+    bonus_points: cur - s,
+  });
+  return { ok: true, state };
 }
 
 export async function getTelegramUserState(

@@ -9,6 +9,7 @@ import { OrderLineRow } from "@/app/components/orders/OrderLineRow";
 import { useAuth } from "@/app/context/AuthContext";
 import { CART_STORAGE_KEY, useCart } from "@/app/context/CartContext";
 import type { OrderListSummary } from "@/app/lib/ordersStore";
+import { bonusBalanceDescriptionRu } from "@/app/lib/bonusProgram";
 import {
   formatOrderCardRef,
   orderAccountFlowBadgeClass,
@@ -132,6 +133,7 @@ export default function AccountPageClient() {
   const [lsGate, setLsGate] = useState<LsGate>("pending");
   const [orders, setOrders] = useState<OrderListSummary[] | null>(null);
   const [ordersError, setOrdersError] = useState<string | null>(null);
+  const [bonusPointsBalance, setBonusPointsBalance] = useState(0);
   const [deleteOrderBusyId, setDeleteOrderBusyId] = useState<string | null>(null);
   const [cancelOrderBusyId, setCancelOrderBusyId] = useState<string | null>(null);
   const [tgCode, setTgCode] = useState("");
@@ -157,22 +159,36 @@ export default function AccountPageClient() {
   const loadOrders = useCallback(async () => {
     setOrdersError(null);
     try {
-      const res = await fetch("/api/orders/mine", { credentials: "include" });
-      if (res.status === 401) {
+      const [ordersRes, stateRes] = await Promise.all([
+        fetch("/api/orders/mine", { credentials: "include" }),
+        fetch("/api/user-state", { method: "GET", credentials: "include", cache: "no-store" }),
+      ]);
+      if (ordersRes.status === 401) {
         setLsGate("no_telegram");
         setOrders([]);
+        setBonusPointsBalance(0);
         return;
       }
-      if (!res.ok) {
+      if (!ordersRes.ok) {
         setOrdersError("Не удалось загрузить заказы");
         setOrders([]);
+        setBonusPointsBalance(0);
         return;
       }
-      const data = (await res.json()) as { orders?: OrderListSummary[] };
+      const data = (await ordersRes.json()) as { orders?: OrderListSummary[] };
       setOrders(Array.isArray(data.orders) ? data.orders : []);
+      let bp = 0;
+      if (stateRes.ok) {
+        const st = (await stateRes.json()) as { bonus_points?: unknown };
+        if (typeof st.bonus_points === "number" && Number.isFinite(st.bonus_points)) {
+          bp = Math.max(0, Math.floor(st.bonus_points));
+        }
+      }
+      setBonusPointsBalance(bp);
     } catch {
       setOrdersError("Ошибка сети");
       setOrders([]);
+      setBonusPointsBalance(0);
     }
   }, []);
 
@@ -646,6 +662,27 @@ export default function AccountPageClient() {
           <span className="font-mono font-medium tabular-nums text-zinc-900">
             {telegramId}
           </span>
+        </p>
+      </div>
+
+      <div className="mt-6 rounded-2xl bg-zinc-50 p-5 text-zinc-900 shadow-[0_2px_12px_rgba(0,0,0,0.12)] ring-1 ring-zinc-200/90 sm:rounded-3xl sm:p-6">
+        <h2 className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
+          Бонусная программа
+        </h2>
+        <p className="mt-2 text-lg font-bold tabular-nums text-zinc-950">
+          {orders === null
+            ? "…"
+            : `${bonusPointsBalance.toLocaleString("ru-RU")} баллов`}
+        </p>
+        {orders !== null ? (
+          <p className="mt-1 text-sm text-zinc-600">{bonusBalanceDescriptionRu(bonusPointsBalance)}</p>
+        ) : (
+          <p className="mt-1 text-sm text-zinc-500">Загрузка…</p>
+        )}
+        <p className="mt-3 text-xs leading-relaxed text-zinc-500">
+          За каждую карточку в заказе со статусом «Доставлен» начисляется 100 баллов. В корзине
+          можно списать баллы к оплате (шаг 100): при доставке по Беларуси 100 баллов = 4 BYN,
+          при доставке в другие страны 100 баллов = 100 RUB.
         </p>
       </div>
 

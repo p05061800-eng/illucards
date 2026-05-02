@@ -6,7 +6,13 @@ import { normalizeDeliveryCountry, type DeliveryCountry } from "@/app/lib/delive
 import { orderStatusFromStorage } from "@/app/lib/orderStatus";
 import { ORDERS_DIR } from "@/app/lib/orderPaths";
 import type { OrderLineIn, OrderRecord, OrderStatus } from "@/app/lib/orderTypes";
+import { bonusPointsToEarnForOrderItems } from "@/app/lib/bonusProgram";
 import { sanitizeOrderLineImageUrl } from "@/app/lib/sanitizeOrderLineImageUrl";
+import { notifyTelegramWebhookUserState } from "@/app/lib/telegramStateBotSync";
+import {
+  getTelegramUserState,
+  incrementTelegramUserBonusPoints,
+} from "@/app/lib/telegramUserStateStore";
 
 /**
  * In-memory заказы (сервер). При перезапуске подгружается из `data/orders/*.json`.
@@ -89,6 +95,13 @@ function fileToOrderRecord(raw: unknown): OrderRecord | null {
       ? Math.floor(adminMidRaw)
       : undefined;
 
+  const bonus_awarded = o.bonus_awarded === true || o.bonus_awarded === "true";
+  const bpsRaw = o.bonus_points_spent;
+  const bonus_points_spent =
+    typeof bpsRaw === "number" && Number.isFinite(bpsRaw) && bpsRaw > 0
+      ? Math.floor(bpsRaw)
+      : undefined;
+
   return {
     ...(user_id != null && Number.isFinite(user_id) && user_id > 0
       ? { user_id: Math.floor(user_id) }
@@ -100,6 +113,10 @@ function fileToOrderRecord(raw: unknown): OrderRecord | null {
     status: orderStatusFromStorage(o.status),
     ...(telegram_admin_message_id != null
       ? { telegram_admin_message_id }
+      : {}),
+    ...(bonus_awarded ? { bonus_awarded: true as const } : {}),
+    ...(bonus_points_spent != null && bonus_points_spent > 0
+      ? { bonus_points_spent }
       : {}),
   };
 }
@@ -167,17 +184,57 @@ export async function updateOrderStatus(
   try {
     const text = await fs.readFile(filePath, "utf-8");
     const parsed: unknown = JSON.parse(text);
-    if (typeof parsed !== "object" || parsed === null) {
-      return { ok: true };
+    if (typeof parsed === "object" && parsed !== null) {
+      const raw = parsed as Record<string, unknown>;
+      raw.status = status;
+      if (updated.telegram_admin_message_id != null) {
+        raw.telegram_admin_message_id = updated.telegram_admin_message_id;
+      }
+      await fs.writeFile(filePath, JSON.stringify(raw, null, 2), "utf-8");
     }
-    const raw = parsed as Record<string, unknown>;
-    raw.status = status;
-    if (updated.telegram_admin_message_id != null) {
-      raw.telegram_admin_message_id = updated.telegram_admin_message_id;
-    }
-    await fs.writeFile(filePath, JSON.stringify(raw, null, 2), "utf-8");
   } catch {
     /* нет файла или FS только для чтения — статус уже в ORDERS */
+  }
+
+  const deliveredNow =
+    status === "delivered" &&
+    existing.status !== "delivered" &&
+    existing.status !== "cancelled" &&
+    !existing.bonus_awarded &&
+    existing.user_id != null &&
+    existing.user_id > 0;
+  if (deliveredNow) {
+    const earn = bonusPointsToEarnForOrderItems(existing.items);
+    if (earn > 0) {
+      try {
+        const uid = Math.floor(existing.user_id!);
+        await incrementTelegramUserBonusPoints(uid, earn);
+        ORDERS[id] = { ...ORDERS[id]!, bonus_awarded: true };
+        const st = await getTelegramUserState(uid);
+        if (st) {
+          await notifyTelegramWebhookUserState({
+            userId: uid,
+            cart: st.cart,
+            favorites: st.favorites,
+            deliveryCountry: st.deliveryCountry,
+            bonus_points: st.bonus_points,
+          });
+        }
+        try {
+          const text2 = await fs.readFile(filePath, "utf-8");
+          const parsed2: unknown = JSON.parse(text2);
+          if (typeof parsed2 === "object" && parsed2 !== null) {
+            const raw2 = parsed2 as Record<string, unknown>;
+            raw2.bonus_awarded = true;
+            await fs.writeFile(filePath, JSON.stringify(raw2, null, 2), "utf-8");
+          }
+        } catch {
+          /* ignore */
+        }
+      } catch {
+        /* начисление бонусов не должно ломать смену статуса */
+      }
+    }
   }
 
   return { ok: true };

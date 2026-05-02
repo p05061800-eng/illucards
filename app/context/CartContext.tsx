@@ -19,6 +19,7 @@ import {
   cardTreatsAsAdultPricing,
   parseCardRarity,
 } from "../lib/cardRarityTags";
+import { bonusDiscountByn, maxSpendableBonusPoints } from "../lib/bonusProgram";
 import { deliveryCharge } from "../lib/delivery";
 import { normalizeDeliveryCountry, type DeliveryCountry } from "../lib/delivery";
 import {
@@ -223,6 +224,19 @@ type CartContextValue = {
       openCart?: boolean;
     },
   ) => void;
+  /** Баллы на счёте (с сервера). */
+  bonusBalance: number;
+  /** Сколько баллов списать в этом заказе. */
+  bonusSpendPoints: number;
+  setBonusSpendPoints: (points: number) => void;
+  /** Максимум баллов к списанию при текущей корзине и доставке. */
+  maxBonusSpendPoints: number;
+  /** Скидка в BYN от выбранных баллов. */
+  bonusDiscountByn: number;
+  /** Итого к оплате после бонусов (BYN). */
+  checkoutTotalByn: number;
+  /** Итого после бонусов для отображения в RUB (доставка не BY). */
+  checkoutTotalRub: number;
 };
 
 const CartContext = createContext<CartContextValue | null>(null);
@@ -233,6 +247,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const [cartOpen, setCartOpen] = useState(false);
   const [deliveryCountry, setDeliveryCountryState] =
     useState<DeliveryCountry | null>(null);
+  const [bonusBalance, setBonusBalance] = useState(0);
+  const [bonusSpendPoints, setBonusSpendPointsState] = useState(0);
   const { currency, setCurrency, hydrated: currencyHydrated } = useCurrency();
 
   const openCart = useCallback(() => setCartOpen(true), []);
@@ -280,6 +296,12 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   const setDeliveryCountry = useCallback((country: DeliveryCountry | null) => {
     setDeliveryCountryState(country);
+    if (country == null) setBonusSpendPointsState(0);
+  }, []);
+
+  const setBonusSpendPoints = useCallback((points: number) => {
+    const p = Math.max(0, Math.floor(Number(points) || 0));
+    setBonusSpendPointsState(p);
   }, []);
 
   useEffect(() => {
@@ -304,15 +326,21 @@ export function CartProvider({ children }: { children: ReactNode }) {
       const data = (await res.json()) as {
         cart?: unknown[];
         updatedAt?: unknown;
+        bonus_points?: unknown;
       };
       const ts =
         typeof data.updatedAt === "number" && Number.isFinite(data.updatedAt)
           ? data.updatedAt
           : 0;
       const cart = Array.isArray(data.cart) ? data.cart : [];
+      const bp =
+        typeof data.bonus_points === "number" && Number.isFinite(data.bonus_points)
+          ? Math.max(0, Math.floor(data.bonus_points))
+          : 0;
       if (ts > 0) {
         writeClientSeenServerUpdatedAt(ts);
       }
+      setBonusBalance(bp);
       if (ts > 0 && cart.length === 0) {
         setCartItems([]);
       }
@@ -554,6 +582,37 @@ export function CartProvider({ children }: { children: ReactNode }) {
     [totalPriceRub, deliveryPriceRub]
   );
 
+  const bonusDiscountBynValue = useMemo(() => {
+    if (!deliveryCountry) return 0;
+    return bonusDiscountByn(bonusSpendPoints, deliveryCountry);
+  }, [bonusSpendPoints, deliveryCountry]);
+
+  const maxBonusSpendPointsValue = useMemo(() => {
+    if (!deliveryCountry || bonusBalance <= 0 || orderTotalByn <= 0) return 0;
+    return maxSpendableBonusPoints(bonusBalance, orderTotalByn, deliveryCountry);
+  }, [bonusBalance, deliveryCountry, orderTotalByn]);
+
+  useEffect(() => {
+    setBonusSpendPointsState((p) => Math.min(p, maxBonusSpendPointsValue));
+  }, [maxBonusSpendPointsValue]);
+
+  useEffect(() => {
+    if (cartItems.length === 0) setBonusSpendPointsState(0);
+  }, [cartItems.length]);
+
+  const checkoutTotalByn = useMemo(
+    () => Math.max(0, Math.round((orderTotalByn - bonusDiscountBynValue) * 100) / 100),
+    [orderTotalByn, bonusDiscountBynValue],
+  );
+
+  const checkoutTotalRub = useMemo(() => {
+    if (!deliveryCountry) return orderTotalRub;
+    if (deliveryCountry === "BY") {
+      return Math.max(0, Math.round(orderTotalRub - rubFromByn(bonusDiscountBynValue)));
+    }
+    return Math.max(0, orderTotalRub - bonusSpendPoints);
+  }, [bonusDiscountBynValue, bonusSpendPoints, deliveryCountry, orderTotalRub]);
+
   const value = useMemo(
     () => ({
       cartItems,
@@ -576,6 +635,13 @@ export function CartProvider({ children }: { children: ReactNode }) {
       setQuantity,
       clearCart,
       repeatOrderToCart,
+      bonusBalance,
+      bonusSpendPoints,
+      setBonusSpendPoints,
+      maxBonusSpendPoints: maxBonusSpendPointsValue,
+      bonusDiscountByn: bonusDiscountBynValue,
+      checkoutTotalByn,
+      checkoutTotalRub,
     }),
     [
       cartItems,
@@ -598,6 +664,13 @@ export function CartProvider({ children }: { children: ReactNode }) {
       setQuantity,
       clearCart,
       repeatOrderToCart,
+      bonusBalance,
+      bonusSpendPoints,
+      setBonusSpendPoints,
+      maxBonusSpendPointsValue,
+      bonusDiscountBynValue,
+      checkoutTotalByn,
+      checkoutTotalRub,
     ]
   );
 

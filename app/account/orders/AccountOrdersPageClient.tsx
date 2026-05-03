@@ -3,7 +3,8 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
-import { ChevronRight, Package, Trash2, XCircle } from "lucide-react";
+import type { OrderStatus } from "@/app/lib/orderTypes";
+import { ChevronDown, ChevronRight, Package, Trash2, XCircle } from "lucide-react";
 import { useAuth } from "@/app/context/AuthContext";
 import { OrderLineRow } from "@/app/components/orders/OrderLineRow";
 import {
@@ -35,6 +36,7 @@ export default function AccountOrdersPageClient() {
   const [error, setError] = useState<string | null>(null);
   const [deleteBusyId, setDeleteBusyId] = useState<string | null>(null);
   const [cancelBusyId, setCancelBusyId] = useState<string | null>(null);
+  const [orderLinesOpenById, setOrderLinesOpenById] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     const id = readTelegramPrimaryUserId();
@@ -148,6 +150,22 @@ export default function AccountOrdersPageClient() {
     },
     [cancelBusyId, deleteBusyId, load],
   );
+
+  const isOrderLinesOpen = useCallback(
+    (orderId: string, status: OrderStatus) => {
+      const v = orderLinesOpenById[orderId];
+      if (v !== undefined) return v;
+      return status === "new";
+    },
+    [orderLinesOpenById],
+  );
+
+  const toggleOrderLines = useCallback((orderId: string, status: OrderStatus) => {
+    setOrderLinesOpenById((prev) => {
+      const cur = prev[orderId] ?? status === "new";
+      return { ...prev, [orderId]: !cur };
+    });
+  }, []);
 
   useEffect(() => {
     if (lsGate !== "ok" || !hydrated) return;
@@ -267,8 +285,26 @@ export default function AccountOrdersPageClient() {
                       {formatOrderTotalForDisplay(total, o.delivery)}
                     </p>
 
-                    {lines.length > 0 ? (
-                      <ul className="mt-4 space-y-2 border-t border-zinc-200/90 bg-white/70 py-4 pl-0 pr-0 pt-4">
+                    {o.status !== "new" && lines.length > 0 ? (
+                      <button
+                        type="button"
+                        onClick={() => toggleOrderLines(o.id, o.status)}
+                        className="mt-4 flex w-full items-center justify-between gap-2 rounded-xl border border-zinc-200/90 bg-zinc-100/80 px-3 py-2.5 text-left text-xs font-medium text-zinc-600 transition hover:bg-zinc-100 sm:px-4"
+                        aria-expanded={isOrderLinesOpen(o.id, o.status)}
+                      >
+                        <span>
+                          {isOrderLinesOpen(o.id, o.status)
+                            ? "Скрыть состав"
+                            : `Показать состав · ${ruPositionCountPhrase(lineCount)}`}
+                        </span>
+                        <ChevronDown
+                          className={`h-4 w-4 shrink-0 text-zinc-500 transition-transform ${isOrderLinesOpen(o.id, o.status) ? "rotate-180" : ""}`}
+                          aria-hidden
+                        />
+                      </button>
+                    ) : null}
+                    {lines.length > 0 && isOrderLinesOpen(o.id, o.status) ? (
+                      <ul className="mt-3 space-y-2 border-t border-zinc-200/90 bg-white/70 py-4 pl-0 pr-0 pt-4">
                         {lines.map((l, idx) => (
                           <li key={`${o.id}-${idx}`}>
                             <OrderLineRow line={l} subtitle={`× ${l.quantity}`} />

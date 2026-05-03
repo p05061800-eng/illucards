@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useId, useRef, useState } from "react";
-import { ChevronRight, Package, Trash2, XCircle } from "lucide-react";
+import { ChevronDown, ChevronRight, Package, Trash2, XCircle } from "lucide-react";
 import { DeliveryCountryField } from "@/app/components/DeliveryCountryField";
 import { OrderLineRow } from "@/app/components/orders/OrderLineRow";
 import { useAuth } from "@/app/context/AuthContext";
@@ -136,6 +136,7 @@ export default function AccountPageClient() {
   const [bonusPointsBalance, setBonusPointsBalance] = useState(0);
   const [deleteOrderBusyId, setDeleteOrderBusyId] = useState<string | null>(null);
   const [cancelOrderBusyId, setCancelOrderBusyId] = useState<string | null>(null);
+  const [orderLinesOpenById, setOrderLinesOpenById] = useState<Record<string, boolean>>({});
   const [tgCode, setTgCode] = useState("");
   const [tgInfo, setTgInfo] = useState<string | null>(null);
   const [tgError, setTgError] = useState<string | null>(null);
@@ -273,6 +274,22 @@ export default function AccountPageClient() {
     },
     [cancelOrderBusyId, deleteOrderBusyId, loadOrders],
   );
+
+  const isOrderLinesOpen = useCallback(
+    (orderId: string, status: string) => {
+      const v = orderLinesOpenById[orderId];
+      if (v !== undefined) return v;
+      return status === "new";
+    },
+    [orderLinesOpenById],
+  );
+
+  const toggleOrderLines = useCallback((orderId: string, status: string) => {
+    setOrderLinesOpenById((prev) => {
+      const cur = prev[orderId] ?? status === "new";
+      return { ...prev, [orderId]: !cur };
+    });
+  }, []);
 
   useEffect(() => {
     if (lsGate !== "ok" || !hydrated) return;
@@ -680,9 +697,9 @@ export default function AccountPageClient() {
           <p className="mt-1 text-sm text-zinc-500">Загрузка…</p>
         )}
         <p className="mt-3 text-xs leading-relaxed text-zinc-500">
-          За каждую единицу товара в заказе начисляется 100 баллов один раз, когда заказ переведён
-          в «Отправлен» или «Доставлен» (в админке или через бота). В корзине можно списать баллы
-          к оплате (шаг 100): по Беларуси 100 баллов = 4 BYN, в другие страны 100 баллов = 100 RUB.
+          За каждую единицу товара в заказе — 100 баллов один раз после принятия заказа админом
+          («Принят») или при «Отправлен» / «Доставлен». Списание в корзине: 100 баллов = 4 BYN (BY)
+          или 100 RUB (другие страны), шаг 100.
         </p>
       </div>
 
@@ -907,7 +924,25 @@ export default function AccountPageClient() {
                         </span>
                       </div>
                     </Link>
-                    {lines.length > 0 ? (
+                    {o.status !== "new" && lines.length > 0 ? (
+                      <button
+                        type="button"
+                        onClick={() => toggleOrderLines(o.id, o.status)}
+                        className="flex w-full items-center justify-between gap-2 border-t border-zinc-200/90 bg-zinc-100/70 px-4 py-2.5 text-left text-xs font-medium text-zinc-600 transition hover:bg-zinc-100 sm:px-5"
+                        aria-expanded={isOrderLinesOpen(o.id, o.status)}
+                      >
+                        <span>
+                          {isOrderLinesOpen(o.id, o.status)
+                            ? "Скрыть состав"
+                            : `Показать состав · ${ruPositionCountPhrase(lineCount)}`}
+                        </span>
+                        <ChevronDown
+                          className={`h-4 w-4 shrink-0 text-zinc-500 transition-transform ${isOrderLinesOpen(o.id, o.status) ? "rotate-180" : ""}`}
+                          aria-hidden
+                        />
+                      </button>
+                    ) : null}
+                    {lines.length > 0 && isOrderLinesOpen(o.id, o.status) ? (
                       <ul className="space-y-2 border-t border-zinc-200/90 bg-white/70 px-4 py-3 sm:px-5">
                         {lines.map((l, idx) => (
                           <li key={`${o.id}-${idx}`}>

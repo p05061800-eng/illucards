@@ -35,6 +35,7 @@ export function TelegramCheckoutButton({
     deliveryCountry,
     checkoutTotalByn,
     bonusSpendPoints,
+    clearCart,
   } = useCart();
   const { primaryTelegramUserId, user } = useAuth();
   const [submitting, setSubmitting] = useState(false);
@@ -109,6 +110,8 @@ export function TelegramCheckoutButton({
         setSubmitting(false);
         return;
       }
+
+      clearCart();
 
       const bot = getTelegramOrderBotUsername();
       const startParam = `order_${orderId}`;

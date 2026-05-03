@@ -2,12 +2,13 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useId } from "react";
+import { useId, useMemo } from "react";
 import { useAuth } from "../context/AuthContext";
 import { useCart } from "../context/CartContext";
 import { useCurrency } from "../context/CurrencyContext";
 import { useCategoryTiles } from "../context/CategoryFramesContext";
 import { getCardArtIntrinsicSize } from "../lib/cardArtIntrinsicSize";
+import { bonusPointsToEarnForOrderItems } from "../lib/bonusProgram";
 import { displayCurrencyForDelivery, formatCardPrice, rubFromByn } from "../lib/formatPrice";
 import { TelegramCheckoutButton } from "@/components/checkout/TelegramCheckoutButton";
 import { DeliveryCountryField } from "../components/DeliveryCountryField";
@@ -39,6 +40,10 @@ export default function CartView() {
   const priceCurrency = displayCurrencyForDelivery(deliveryCountry);
   const categoryTiles = useCategoryTiles();
   const deliveryFieldId = useId();
+  const bonusPointsFromThisCart = useMemo(
+    () => bonusPointsToEarnForOrderItems(cartItems.map((i) => ({ quantity: i.quantity }))),
+    [cartItems],
+  );
 
   return (
     <>
@@ -242,14 +247,10 @@ export default function CartView() {
                       <p className="font-medium text-amber-100">
                         Бонусы: {bonusBalance.toLocaleString("ru-RU")} баллов
                       </p>
-                      <p className="mt-1 text-xs leading-relaxed text-amber-200/80">
-                        100 баллов за каждую единицу в заказе — начисляются один раз, когда заказ
-                        переведён в «Отправлен» или «Доставлен». Списание: 100 баллов = 4 BYN (Беларусь)
-                        или 100 RUB (другие страны), после выбора доставки ниже.
-                      </p>
-                      {!deliveryCountry ? (
-                        <p className="mt-2 text-xs text-amber-200/90">
-                          Выберите страну доставки — тогда можно списать бонусы к этому заказу.
+                      {bonusPointsFromThisCart > 0 ? (
+                        <p className="mt-1.5 text-sm font-semibold tabular-nums text-amber-50">
+                          За эту покупку:{" "}
+                          {bonusPointsFromThisCart.toLocaleString("ru-RU")} баллов
                         </p>
                       ) : null}
                       {deliveryCountry && bonusBalance > 0 ? (

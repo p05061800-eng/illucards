@@ -6,6 +6,7 @@ import {
   useCallback,
   useEffect,
   useId,
+  useMemo,
   useRef,
   useState,
   type PointerEvent,
@@ -18,6 +19,7 @@ import { useCart } from "../context/CartContext";
 import { useCurrency } from "../context/CurrencyContext";
 import { useCategoryTiles } from "../context/CategoryFramesContext";
 import { getCardArtIntrinsicSize } from "../lib/cardArtIntrinsicSize";
+import { bonusPointsToEarnForOrderItems } from "../lib/bonusProgram";
 import { displayCurrencyForDelivery, formatCardPrice, rubFromByn } from "../lib/formatPrice";
 import { TelegramCheckoutButton } from "@/components/checkout/TelegramCheckoutButton";
 import { DeliveryCountryField } from "./DeliveryCountryField";
@@ -49,6 +51,10 @@ export function CartDrawer() {
   const { primaryTelegramUserId } = useAuth();
   const { currency, setCurrency } = useCurrency();
   const priceCurrency = displayCurrencyForDelivery(deliveryCountry);
+  const bonusPointsFromThisCart = useMemo(
+    () => bonusPointsToEarnForOrderItems(cartItems.map((i) => ({ quantity: i.quantity }))),
+    [cartItems],
+  );
   const categoryTiles = useCategoryTiles();
   const [mounted, setMounted] = useState(false);
   const titleId = useId();
@@ -453,11 +459,11 @@ export function CartDrawer() {
                     <p className="font-medium text-amber-100">
                       Бонусы: {bonusBalance.toLocaleString("ru-RU")} баллов
                     </p>
-                    <p className="mt-1 leading-relaxed text-amber-200/85">
-                      Начисление после «Отправлен» / «Доставлен». Списание — после выбора доставки.
-                    </p>
-                    {!deliveryCountry ? (
-                      <p className="mt-2 text-amber-200/90">Укажите страну доставки выше, чтобы списать бонусы.</p>
+                    {bonusPointsFromThisCart > 0 ? (
+                      <p className="mt-1.5 text-[13px] font-semibold tabular-nums text-amber-50">
+                        За эту покупку:{" "}
+                        {bonusPointsFromThisCart.toLocaleString("ru-RU")} баллов
+                      </p>
                     ) : null}
                     {deliveryCountry && bonusBalance > 0 ? (
                       <div className="mt-2 space-y-2">

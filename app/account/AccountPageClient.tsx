@@ -309,8 +309,8 @@ export default function AccountPageClient() {
     }
   }, [router]);
 
-  const handleLogout = useCallback(() => {
-    logout();
+  const handleLogout = useCallback(async () => {
+    await logout();
     setOrders([]);
     setLsGate("no_telegram");
     setPendingCartDismissed(false);
@@ -460,15 +460,23 @@ export default function AccountPageClient() {
         setTgError(data.error || "Неверный или просроченный код");
         return;
       }
-      const established = establishSessionFromTelegramUserId(
-        Math.floor(userId),
-        {
-          telegramUsername: typeof data.username === "string" ? data.username : null,
-        },
-      );
+      const uidFloor = Math.floor(userId);
+      const established = establishSessionFromTelegramUserId(uidFloor, {
+        telegramUsername: typeof data.username === "string" ? data.username : null,
+      });
       if (!established.ok) {
         setTgError(established.error);
         return;
+      }
+      try {
+        await fetch("/api/auth/telegram-cookie", {
+          method: "POST",
+          credentials: "include",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ user_id: uidFloor }),
+        });
+      } catch {
+        /* cookie bridge optional; LS + JS cookie уже выставлены в establishSession */
       }
       setTgInfo("Вход выполнен. Переход в личный кабинет…");
       setTgCode("");

@@ -10,7 +10,10 @@ export const LS_TG_USER_ID = "tg_user_id";
 export const LS_TELEGRAM_USER = "illucards_telegram_user";
 
 export const COOKIE_TELEGRAM_USER_ID = "telegram_user_id";
-const COOKIE_MAX_AGE_SEC = 60 * 60 * 24 * 365;
+/** Срок cookie `telegram_user_id` (и в JS, и на сервере после входа). */
+export const TELEGRAM_USER_ID_COOKIE_MAX_AGE_SEC = 60 * 60 * 24 * 400;
+
+const COOKIE_MAX_AGE_SEC = TELEGRAM_USER_ID_COOKIE_MAX_AGE_SEC;
 
 function canUseDom(): boolean {
   return typeof window !== "undefined" && typeof localStorage !== "undefined";

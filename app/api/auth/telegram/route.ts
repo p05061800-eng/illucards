@@ -10,6 +10,7 @@ import {
   isTelegramCodeAuthConfigured,
   resolveTelegramAuthCodeToUserId,
 } from "@/app/lib/telegramAuthCode";
+import { COOKIE_TELEGRAM_USER_ID, TELEGRAM_USER_ID_COOKIE_MAX_AGE_SEC } from "@/app/lib/telegramUserIdentity";
 import {
   sealTelegramWidgetProfile,
   TELEGRAM_WIDGET_SESSION_COOKIE,
@@ -70,15 +71,24 @@ export async function GET(request: NextRequest) {
     path: "/",
     maxAge: 300,
   });
+  res.cookies.set({
+    name: COOKIE_TELEGRAM_USER_ID,
+    value: String(Math.floor(profile.telegramId)),
+    httpOnly: true,
+    secure: isHttps(request),
+    sameSite: "lax",
+    path: "/",
+    maxAge: TELEGRAM_USER_ID_COOKIE_MAX_AGE_SEC,
+  });
   return res;
 }
 
-export async function POST(req: Request) {
+export async function POST(request: NextRequest) {
   const token = process.env.TELEGRAM_BOT_TOKEN?.trim();
 
   let body: unknown;
   try {
-    body = await req.json();
+    body = await request.json();
   } catch {
     return NextResponse.json({ ok: false, error: "Некорректный JSON." }, { status: 400 });
   }
@@ -117,7 +127,18 @@ export async function POST(req: Request) {
         { status: 401 }
       );
     }
-    return NextResponse.json({ ok: true, user_id: uid });
+    const uidFloor = Math.floor(uid);
+    const out = NextResponse.json({ ok: true, user_id: uidFloor });
+    out.cookies.set({
+      name: COOKIE_TELEGRAM_USER_ID,
+      value: String(uidFloor),
+      httpOnly: true,
+      secure: isHttps(request),
+      sameSite: "lax",
+      path: "/",
+      maxAge: TELEGRAM_USER_ID_COOKIE_MAX_AGE_SEC,
+    });
+    return out;
   }
 
   if (!token) {
@@ -141,5 +162,15 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: false, error: "Нет корректного id Telegram." }, { status: 400 });
   }
 
-  return NextResponse.json({ ok: true, profile });
+  const out = NextResponse.json({ ok: true, profile });
+  out.cookies.set({
+    name: COOKIE_TELEGRAM_USER_ID,
+    value: String(Math.floor(profile.telegramId)),
+    httpOnly: true,
+    secure: isHttps(request),
+    sameSite: "lax",
+    path: "/",
+    maxAge: TELEGRAM_USER_ID_COOKIE_MAX_AGE_SEC,
+  });
+  return out;
 }

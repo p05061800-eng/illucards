@@ -13,6 +13,7 @@ import {
   clearTelegramUserIdentity,
   persistTelegramUserIdentity,
   readTelegramPrimaryUserId,
+  readTelegramUserLink,
   syncTelegramIdentityFromSession,
 } from "@/app/lib/telegramUserIdentity";
 
@@ -44,7 +45,7 @@ type AuthContextValue = {
     telegramUserId: number,
     options?: { telegramUsername?: string | null }
   ) => { ok: true } | { ok: false; error: string };
-  logout: () => void;
+  logout: () => Promise<void>;
   /** Telegram user id (как `telegram_user_id` в storage), основной id для сайта и бота */
   primaryTelegramUserId: number | null;
 };
@@ -125,7 +126,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         session.telegramUsername,
       );
     } else {
-      clearTelegramUserIdentity();
+      const orphanId = readTelegramPrimaryUserId();
+      if (orphanId != null) {
+        const link = readTelegramUserLink();
+        persistTelegramUserIdentity(
+          orphanId,
+          link?.user_id === orphanId ? link.username : null,
+        );
+      } else {
+        clearTelegramUserIdentity();
+      }
     }
     try {
       const g = localStorage.getItem(STORAGE_GUEST_EMAIL);
@@ -201,7 +211,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     [],
   );
 
-  const logout = useCallback(() => {
+  const logout = useCallback(async () => {
+    try {
+      await fetch("/api/auth/logout", { method: "POST", credentials: "include" });
+    } catch {
+      /* ignore */
+    }
     setUser(null);
     writeSession(null);
     try {

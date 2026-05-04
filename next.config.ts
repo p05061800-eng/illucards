@@ -1,6 +1,16 @@
 import type { NextConfig } from "next";
 
+/** Попадает в клиентский бандл и в RSC layout — при каждом новом деплое (новый commit) сброс волатильного LS. */
+const nextPublicAppBuildId =
+  process.env.NEXT_PUBLIC_APP_BUILD_ID?.trim() ||
+  process.env.VERCEL_GIT_COMMIT_SHA?.trim() ||
+  process.env.npm_package_version?.trim() ||
+  "dev";
+
 const nextConfig: NextConfig = {
+  env: {
+    NEXT_PUBLIC_APP_BUILD_ID: nextPublicAppBuildId,
+  },
   turbopack: {},
   /** Меньше модулей в бандле при импорте из barrel-пакетов (легче dev/build). */
   experimental: {

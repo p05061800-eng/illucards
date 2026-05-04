@@ -48,7 +48,8 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: result.error }, { status: result.status });
   }
 
-  if (status === "confirmed" && existing?.user_id != null) {
+  /** Корзина на сайте и в синке очищается только после отметки «чек отправлен» (`paid`). */
+  if (status === "paid" && existing?.user_id != null) {
     const uid = Math.floor(existing.user_id);
     if (uid > 0) {
       try {
@@ -61,7 +62,7 @@ export async function POST(request: NextRequest) {
           bonus_points: st.bonus_points,
         });
       } catch {
-        /* очистка корзины не должна ломать подтверждение заказа */
+        /* очистка корзины не должна ломать обновление статуса */
       }
     }
   }

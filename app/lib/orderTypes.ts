@@ -16,6 +16,8 @@ export type OrderLineIn = {
 export type OrderStatus =
   | "new"
   | "confirmed"
+  /** Клиент отметил отправку чека оплаты — после этого сбрасывается корзина на сайте и в синке. */
+  | "paid"
   | "shipped"
   | "sent"
   | "delivered"
@@ -31,7 +33,7 @@ export type OrderRecord = {
   status: OrderStatus;
   /** message_id уведомления админу в Telegram (пишет бот после подтверждения). */
   telegram_admin_message_id?: number;
-  /** Бонусы за этот заказ уже начислены (при первом «Принят» / «Отправлен» / «Доставлен»). */
+  /** Бонусы за этот заказ уже начислены (при первом «Принят» / «Чек получен» / «Отправлен» / «Доставлен»). */
   bonus_awarded?: boolean;
   /** Сколько бонусных баллов списано при оформлении. */
   bonus_points_spent?: number;

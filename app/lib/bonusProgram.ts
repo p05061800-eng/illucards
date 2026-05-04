@@ -8,6 +8,7 @@ import type { OrderStatus } from "@/app/lib/orderTypes";
 export function orderStatusEligibleForBonusAccrual(status: OrderStatus): boolean {
   return (
     status === "confirmed" ||
+    status === "paid" ||
     status === "shipped" ||
     status === "sent" ||
     status === "delivered"

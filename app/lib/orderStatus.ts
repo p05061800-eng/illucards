@@ -13,6 +13,7 @@ export function formatOrderCardRef(orderId: string): string {
 const STATUS_RU: Record<OrderStatus, string> = {
   new: "⏳ Новый",
   confirmed: "✅ Принят",
+  paid: "💳 Чек получен",
   shipped: "🚚 Отправлен",
   sent: "🚚 Отправлен",
   delivered: "✅ Доставлен",
@@ -26,6 +27,7 @@ export function orderStatusLabelRu(status: OrderStatus): string {
 const ALLOWED: readonly OrderStatus[] = [
   "new",
   "confirmed",
+  "paid",
   "shipped",
   "sent",
   "delivered",
@@ -66,6 +68,7 @@ export function orderAccountUiKind(status: OrderStatus): OrderAccountUiKind {
   switch (status) {
     case "new":
     case "confirmed":
+    case "paid":
       return "processing";
     case "shipped":
     case "sent":
@@ -110,6 +113,7 @@ export function orderAccountFlowKind(status: OrderStatus): OrderAccountFlowKind 
     case "new":
       return "await_confirm";
     case "confirmed":
+    case "paid":
       return "confirmed";
     case "shipped":
     case "sent":

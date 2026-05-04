@@ -125,7 +125,6 @@ export default function AccountPageClient() {
     orderTotalRub,
     deliveryPriceByn,
     deliveryPriceRub,
-    clearCart,
   } = useCart();
   const [accountPriceCurrency, setAccountPriceCurrency] = useState<DisplayCurrency>(
     displayCurrencyForDelivery(deliveryCountry),
@@ -374,7 +373,6 @@ export default function AccountPageClient() {
       }
       const bot = getTelegramOrderBotUsername();
       const startParam = `order_${orderId}`;
-      clearCart();
       setPendingCartDismissed(true);
       void loadOrders();
       if (typeof window !== "undefined") {
@@ -393,7 +391,6 @@ export default function AccountPageClient() {
     deliveryCountry,
     totalPriceByn,
     user?.telegramUsername,
-    clearCart,
     loadOrders,
   ]);
 
@@ -705,9 +702,9 @@ export default function AccountPageClient() {
           <p className="mt-1 text-sm text-zinc-500">Загрузка…</p>
         )}
         <p className="mt-3 text-xs leading-relaxed text-zinc-500">
-          За каждую единицу товара в заказе — 100 баллов один раз после принятия заказа админом
-          («Принят») или при «Отправлен» / «Доставлен». Списание в корзине: 100 баллов = 4 BYN (BY)
-          или 100 RUB (другие страны), шаг 100.
+          За каждую единицу товара — 100 баллов один раз после «Принят», отметки чека («Чек получен»)
+          или при «Отправлен» / «Доставлен». Списание в корзине: 100 баллов = 4 BYN (BY) или 100 RUB
+          (другие страны), шаг 100.
         </p>
       </div>
 

@@ -153,6 +153,7 @@ ORDER_STATUS_RU: dict[str, str] = {
     "new": "⏳ Новый",
     "confirmed": "✅ Принят",
     "accepted": "✅ Принят",
+    "paid": "💳 Чек получен",
     "shipped": "🚚 Отправлен",
     "sent": "🚚 Отправлен",
     "delivered": "✅ Доставлен",
@@ -921,21 +922,38 @@ def _format_order_text(order: dict[str, Any]) -> str:
     return "\n".join(lines)
 
 
-def _order_confirm_keyboard(order_id: str, telegram_user_id: int) -> InlineKeyboardMarkup:
-    # callback_data ≤ 64 байт: orderok:/ordercx: + uuid (36) ≈ 44 байта
+def _order_confirm_keyboard(
+    order_id: str, telegram_user_id: int, site_status: str
+) -> InlineKeyboardMarkup:
+    # callback_data ≤ 64 байт: orderok:/ordercx:/orderpaid: + uuid (36)
     uid = int(telegram_user_id)
-    return InlineKeyboardMarkup(
-        [
-            [InlineKeyboardButton("Подтвердить заказ", callback_data=f"orderok:{order_id}")],
-            [InlineKeyboardButton("Отменить заказ", callback_data=f"ordercx:{order_id}")],
+    st = (site_status or "new").strip().lower()
+    rows: list[list[InlineKeyboardButton]] = []
+    if st == "new":
+        rows.append(
+            [InlineKeyboardButton("Подтвердить заказ", callback_data=f"orderok:{order_id}")]
+        )
+    rows.append(
+        [InlineKeyboardButton("Отменить заказ", callback_data=f"ordercx:{order_id}")]
+    )
+    if st not in ("paid", "shipped", "sent", "delivered", "cancelled", "canceled"):
+        rows.append(
             [
                 InlineKeyboardButton(
-                    "Открыть сайт",
-                    url=f"{SITE_LOGIN_ORIGIN}/?user_id={uid}",
+                    "💳 Чек оплаты отправил",
+                    callback_data=f"orderpaid:{order_id}",
                 )
-            ],
+            ]
+        )
+    rows.append(
+        [
+            InlineKeyboardButton(
+                "Открыть сайт",
+                url=f"{SITE_LOGIN_ORIGIN}/?user_id={uid}",
+            )
         ]
     )
+    return InlineKeyboardMarkup(rows)
 
 
 def _order_saved_keyboard(telegram_user_id: int) -> InlineKeyboardMarkup:
@@ -1150,7 +1168,12 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         elif st in ("new", "confirmed"):
             await update.message.reply_text(
                 text,
-                reply_markup=_order_confirm_keyboard(oid, user.id),
+                reply_markup=_order_confirm_keyboard(oid, user.id, st),
+            )
+        elif st == "paid":
+            await update.message.reply_text(
+                text + "\n\n💳 Чек оплаты отмечен. Спасибо!",
+                reply_markup=_order_saved_keyboard(user.id),
             )
         else:
             await update.message.reply_text(
@@ -1628,6 +1651,64 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
             await q.answer("Не удалось подтвердить заказ. Повторите через минуту.", show_alert=True)
             return
 
+    if data.startswith("orderpaid:"):
+        try:
+            order_id = data.split(":", 1)[1].strip()
+            if not order_id:
+                await q.answer("Некорректный заказ", show_alert=True)
+                return
+            user = q.from_user
+            if not user:
+                await q.answer("Ошибка", show_alert=True)
+                return
+
+            order = await fetch_site_order(order_id)
+            if not order:
+                await q.answer("Заказ не найден", show_alert=True)
+                return
+            if not _order_belongs_to_telegram_user(order, user.id):
+                await q.answer("Это не ваш заказ", show_alert=True)
+                return
+
+            site_st = str(order.get("status") or "").strip().lower()
+            if site_st in ("cancelled", "canceled"):
+                await q.answer("Заказ отменён", show_alert=True)
+                return
+            if site_st == "paid":
+                await q.answer("Чек уже отмечен")
+                try:
+                    await q.edit_message_reply_markup(reply_markup=None)
+                except Exception:
+                    pass
+                return
+            if site_st in ("shipped", "sent", "delivered"):
+                await q.answer("Заказ уже отправлен", show_alert=True)
+                return
+
+            rec = _record_site_order_in_bot(order_id, order, user.id)
+            rec["status"] = "paid"
+            BOT_ORDERS[order_id] = rec
+            _persist_bot_orders()
+
+            if not await post_site_order_status(order_id, "paid"):
+                logger.warning("Сайт: не удалось выставить paid для %s", order_id)
+                await q.answer("Не удалось связаться с сайтом.", show_alert=True)
+                return
+
+            await q.answer("Сохранено")
+            try:
+                await q.edit_message_reply_markup(reply_markup=None)
+            except Exception:
+                pass
+            await q.message.reply_text(
+                "💳 Принято. Корзина на сайте очищена. Спасибо!"
+            )
+            return
+        except Exception as e:
+            logger.exception("order paid failed: %s", e)
+            await q.answer("Не удалось сохранить. Повторите позже.", show_alert=True)
+            return
+
     if data.startswith("ordercx:"):
         try:
             order_id = data.split(":", 1)[1].strip()
@@ -1654,6 +1735,13 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
                     await q.edit_message_reply_markup(reply_markup=None)
                 except Exception:
                     pass
+                return
+
+            if site_st == "paid":
+                await q.answer(
+                    "После отметки чека отмена только через поддержку.",
+                    show_alert=True,
+                )
                 return
 
             if site_st not in ("new", "confirmed", ""):

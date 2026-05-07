@@ -5,6 +5,11 @@ import type { DeliveryCountry } from "@/app/lib/delivery";
 const STORE_FILE = path.join(process.cwd(), "data", "telegram-user-state.json");
 const REDIS_KEY = (userId: number) => `illucards:user-state:${userId}`;
 const TTL_SEC = 60 * 60 * 24 * 30;
+/**
+ * Fallback для окружений без Redis и без записи на диск (например, serverless).
+ * Не долговечно между инстансами, но не теряет состояние в рамках живого процесса.
+ */
+const MEMORY_STORE: Record<string, SyncedUserState> = Object.create(null);
 
 export type SyncedCartItem = {
   id: string;
@@ -127,6 +132,7 @@ export async function saveTelegramUserState(
         : Math.max(0, Math.floor(prev?.bonus_points ?? 0)),
   };
   const state = sanitize(merged);
+  MEMORY_STORE[String(userId)] = state;
 
   const j = await redisCommand([
     "SET",
@@ -137,9 +143,13 @@ export async function saveTelegramUserState(
   ]);
   if (j && !j.error) return state;
 
-  const data = await readFileStore();
-  data[String(userId)] = state;
-  await writeFileStore(data);
+  try {
+    const data = await readFileStore();
+    data[String(userId)] = state;
+    await writeFileStore(data);
+  } catch {
+    /* readonly FS: остаёмся на in-memory fallback */
+  }
   return state;
 }
 
@@ -208,6 +218,8 @@ export async function getTelegramUserState(
 
   const data = await readFileStore();
   const row = data[String(userId)];
-  if (!row) return null;
-  return sanitize(row);
+  if (row) return sanitize(row);
+  const mem = MEMORY_STORE[String(userId)];
+  if (mem) return sanitize(mem);
+  return null;
 }

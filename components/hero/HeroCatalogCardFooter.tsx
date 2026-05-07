@@ -7,6 +7,10 @@ import type { StoredCard } from "@/app/api/cards/route";
 import { FavoritePopup } from "@/app/components/FavoritePopup";
 import { useFavorites } from "@/app/context/FavoritesContext";
 import { useAddToCartWithFeedback } from "@/app/lib/cartUx/useAddToCartWithFeedback";
+import {
+  catalogCardAnchorId,
+  rememberCatalogReturnCardId,
+} from "@/app/lib/catalogScrollRestore";
 
 type Props = {
   card: StoredCard;
@@ -36,7 +40,8 @@ export function HeroCatalogCardFooter({
   }
 
   function goToCardPage() {
-    router.push(`/card/${card.id}`);
+    rememberCatalogReturnCardId(card.id);
+    router.push(`/#${catalogCardAnchorId(card.id)}`);
   }
 
   return (

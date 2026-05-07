@@ -12,10 +12,7 @@ import {
 } from "@/app/lib/bonusProgram";
 import { sanitizeOrderLineImageUrl } from "@/app/lib/sanitizeOrderLineImageUrl";
 import { notifyTelegramWebhookUserState } from "@/app/lib/telegramStateBotSync";
-import {
-  getTelegramUserState,
-  incrementTelegramUserBonusPoints,
-} from "@/app/lib/telegramUserStateStore";
+import { incrementTelegramUserBonusPoints } from "@/app/lib/telegramUserStateStore";
 
 /**
  * In-memory заказы (сервер). При перезапуске подгружается из `data/orders/*.json`.
@@ -215,18 +212,15 @@ export async function updateOrderStatus(
     if (earn > 0) {
       try {
         const uid = Math.floor(existing.user_id!);
-        await incrementTelegramUserBonusPoints(uid, earn);
+        const st = await incrementTelegramUserBonusPoints(uid, earn);
         ORDERS[id] = { ...ORDERS[id]!, bonus_awarded: true };
-        const st = await getTelegramUserState(uid);
-        if (st) {
-          await notifyTelegramWebhookUserState({
-            userId: uid,
-            cart: st.cart,
-            favorites: st.favorites,
-            deliveryCountry: st.deliveryCountry,
-            bonus_points: st.bonus_points,
-          });
-        }
+        await notifyTelegramWebhookUserState({
+          userId: uid,
+          cart: st.cart,
+          favorites: st.favorites,
+          deliveryCountry: st.deliveryCountry,
+          bonus_points: st.bonus_points,
+        });
         try {
           const text2 = await fs.readFile(filePath, "utf-8");
           const parsed2: unknown = JSON.parse(text2);

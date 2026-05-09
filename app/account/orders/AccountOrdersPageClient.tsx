@@ -20,14 +20,6 @@ import { readTelegramPrimaryUserId } from "@/app/lib/telegramUserIdentity";
 
 type LsGate = "pending" | "ok" | "no_telegram";
 
-function formatMoneyByn(n: number): string {
-  if (!Number.isFinite(n)) return "0";
-  return n.toLocaleString("ru-RU", {
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 2,
-  });
-}
-
 export default function AccountOrdersPageClient() {
   const router = useRouter();
   const { hydrated } = useAuth();

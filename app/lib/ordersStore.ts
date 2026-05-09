@@ -18,9 +18,112 @@ import { incrementTelegramUserBonusPoints } from "@/app/lib/telegramUserStateSto
  * In-memory заказы (сервер). При перезапуске подгружается из `data/orders/*.json`.
  */
 export const ORDERS: Record<string, OrderRecord> = Object.create(null);
+const REDIS_ORDER_KEY = (orderId: string) => `illucards:order:${orderId}`;
+const REDIS_USER_ORDERS_KEY = (userId: number) => `illucards:user-orders:${userId}`;
 
 export function registerOrder(orderId: string, record: OrderRecord): void {
   ORDERS[orderId] = record;
+}
+
+function redisRestCredentials(): { url: string; token: string } | null {
+  const u =
+    process.env.UPSTASH_REDIS_REST_URL?.trim() ||
+    process.env.KV_REST_API_URL?.trim();
+  const t =
+    process.env.UPSTASH_REDIS_REST_TOKEN?.trim() ||
+    process.env.KV_REST_API_TOKEN?.trim();
+  if (!u || !t) return null;
+  return { url: u, token: t };
+}
+
+async function redisCommand(
+  cmd: unknown[],
+): Promise<{ result?: unknown; error?: string } | null> {
+  const cred = redisRestCredentials();
+  if (!cred) return null;
+  try {
+    const res = await fetch(cred.url, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${cred.token}` },
+      body: JSON.stringify(cmd),
+      cache: "no-store",
+    });
+    return (await res.json()) as { result?: unknown; error?: string };
+  } catch {
+    return null;
+  }
+}
+
+async function readOrderRecordFromRedis(orderId: string): Promise<OrderRecord | null> {
+  const j = await redisCommand(["GET", REDIS_ORDER_KEY(orderId)]);
+  if (!j || j.error || typeof j.result !== "string") return null;
+  try {
+    return fileToOrderRecord(JSON.parse(j.result) as unknown);
+  } catch {
+    return null;
+  }
+}
+
+async function persistOrderRecordToRedis(
+  orderId: string,
+  record: OrderRecord,
+  score = Date.now(),
+): Promise<boolean> {
+  const payload = JSON.stringify({
+    id: orderId,
+    updatedAt: new Date(score).toISOString(),
+    ...record,
+  });
+  const saved = await redisCommand(["SET", REDIS_ORDER_KEY(orderId), payload]);
+  if (!saved || saved.error) return false;
+  if (record.user_id != null && record.user_id > 0) {
+    await redisCommand([
+      "ZADD",
+      REDIS_USER_ORDERS_KEY(Math.floor(record.user_id)),
+      String(score),
+      orderId,
+    ]);
+  }
+  return true;
+}
+
+async function readUserOrderIdsFromRedis(userId: number): Promise<string[] | null> {
+  const j = await redisCommand([
+    "ZREVRANGE",
+    REDIS_USER_ORDERS_KEY(Math.floor(userId)),
+    "0",
+    "199",
+  ]);
+  if (!j || j.error || !Array.isArray(j.result)) return null;
+  return j.result.filter((x): x is string => typeof x === "string");
+}
+
+export async function saveOrderRecord(
+  orderId: string,
+  record: OrderRecord,
+  createdAt = new Date(),
+): Promise<void> {
+  registerOrder(orderId, record);
+  await persistOrderRecordToRedis(orderId, record, createdAt.getTime());
+
+  try {
+    await fs.mkdir(ORDERS_DIR, { recursive: true });
+    await fs.writeFile(
+      path.join(ORDERS_DIR, `${orderId}.json`),
+      JSON.stringify(
+        {
+          id: orderId,
+          createdAt: createdAt.toISOString(),
+          ...record,
+        },
+        null,
+        2,
+      ),
+      "utf-8",
+    );
+  } catch {
+    /* На serverless/readonly FS остаёмся на Redis/in-memory. */
+  }
 }
 
 function parseItemsLoose(raw: unknown): OrderLineIn[] | null {
@@ -136,6 +239,13 @@ export async function getOrder(orderId: string): Promise<OrderRecord | null> {
     return cached;
   }
 
+  const redisRecord = await readOrderRecordFromRedis(id);
+  if (redisRecord) {
+    await enrichOrderRecordItemsIfNeeded(redisRecord);
+    ORDERS[id] = redisRecord;
+    return redisRecord;
+  }
+
   const filePath = path.join(ORDERS_DIR, `${id}.json`);
   try {
     const text = await fs.readFile(filePath, "utf-8");
@@ -179,6 +289,7 @@ export async function updateOrderStatus(
 
   const updated: OrderRecord = { ...existing, status };
   ORDERS[id] = updated;
+  await persistOrderRecordToRedis(id, updated);
 
   const filePath = path.join(ORDERS_DIR, `${id}.json`);
   try {
@@ -214,6 +325,7 @@ export async function updateOrderStatus(
         const uid = Math.floor(existing.user_id!);
         const st = await incrementTelegramUserBonusPoints(uid, earn);
         ORDERS[id] = { ...ORDERS[id]!, bonus_awarded: true };
+        await persistOrderRecordToRedis(id, ORDERS[id]!);
         await notifyTelegramWebhookUserState({
           userId: uid,
           cart: st.cart,
@@ -262,6 +374,7 @@ export async function setOrderTelegramAdminMessageId(
 
   const updated: OrderRecord = { ...existing, telegram_admin_message_id: mid };
   ORDERS[id] = updated;
+  await persistOrderRecordToRedis(id, updated);
 
   const filePath = path.join(ORDERS_DIR, `${id}.json`);
   try {
@@ -312,6 +425,8 @@ export async function deleteOrderForOwner(
   }
 
   delete ORDERS[id];
+  await redisCommand(["DEL", REDIS_ORDER_KEY(id)]);
+  await redisCommand(["ZREM", REDIS_USER_ORDERS_KEY(userId), id]);
   const filePath = path.join(ORDERS_DIR, `${id}.json`);
   try {
     await fs.unlink(filePath);
@@ -408,6 +523,19 @@ export async function listOrdersForUser(
 ): Promise<OrderListSummary[]> {
   if (!Number.isFinite(userId) || userId <= 0) return [];
   const uid = Math.floor(userId);
+  const redisIds = await readUserOrderIdsFromRedis(uid);
+  if (redisIds && redisIds.length > 0) {
+    const rows: OrderListSummary[] = [];
+    const catalogMap = await catalogImageByCardId();
+    for (const id of redisIds) {
+      if (!id || id.length > 200 || /[/\\]/.test(id) || id.includes("..")) continue;
+      const record = await getOrder(id);
+      if (!record || record.user_id !== uid) continue;
+      rows.push(orderSummaryFromRecord(id, record, catalogMap));
+    }
+    return rows;
+  }
+
   let files: string[] = [];
   try {
     files = await fs.readdir(ORDERS_DIR);
@@ -429,52 +557,66 @@ export async function listOrdersForUser(
     } catch {
       /* ignore */
     }
-    const rawItems = Array.isArray(record.items) ? record.items : [];
-    const lineCount = rawItems.length;
-    const lines: OrderLinePreview[] =
-      lineCount === 0
-        ? []
-        : rawItems.slice(0, 4).map((it) => {
-            const id =
-              typeof it.id === "string" && it.id.trim() ? it.id.trim() : "";
-            const title =
-              typeof it.title === "string" && it.title.trim()
-                ? it.title.trim()
-                : "—";
-            const preview: OrderLinePreview = {
-              id,
-              title,
-              quantity: Math.max(1, Math.floor(Number(it.quantity) || 1)),
-            };
-            const img = sanitizeOrderLineImageUrl(it.frontImage);
-            if (img) preview.frontImage = img;
-            if (typeof it.category === "string" && it.category.trim()) {
-              preview.category = it.category.trim().slice(0, 120);
-            }
-            if (it.rarity) preview.rarity = it.rarity;
-            if (!preview.frontImage && preview.id) {
-              const hit = catalogMap.get(preview.id);
-              if (hit) {
-                preview.frontImage = hit.frontImage;
-                if (!preview.category && hit.category) preview.category = hit.category;
-                if (!preview.rarity && hit.rarity) preview.rarity = hit.rarity;
-              }
-            }
-            return preview;
-          });
     rows.push({
-      id,
-      total: record.total,
-      status: record.status,
-      delivery: record.delivery,
-      lines: lines.length > 0 ? lines : undefined,
-      lineCount: lineCount > 0 ? lineCount : undefined,
+      ...orderSummaryFromRecord(id, record, catalogMap),
       mtime,
     });
   }
   rows.sort((a, b) => b.mtime - a.mtime);
-  return rows.map((row) => {
-    const { mtime: _m, ...rest } = row;
-    return rest;
-  });
+  return rows.map((row) => ({
+    id: row.id,
+    total: row.total,
+    status: row.status,
+    delivery: row.delivery,
+    ...(row.lines ? { lines: row.lines } : {}),
+    ...(row.lineCount ? { lineCount: row.lineCount } : {}),
+  }));
+}
+
+function orderSummaryFromRecord(
+  id: string,
+  record: OrderRecord,
+  catalogMap: Map<string, { frontImage: string; category?: string; rarity?: CardRarity }>,
+): OrderListSummary {
+  const rawItems = Array.isArray(record.items) ? record.items : [];
+  const lineCount = rawItems.length;
+  const lines: OrderLinePreview[] =
+    lineCount === 0
+      ? []
+      : rawItems.slice(0, 4).map((it) => {
+          const itemId =
+            typeof it.id === "string" && it.id.trim() ? it.id.trim() : "";
+          const title =
+            typeof it.title === "string" && it.title.trim()
+              ? it.title.trim()
+              : "—";
+          const preview: OrderLinePreview = {
+            id: itemId,
+            title,
+            quantity: Math.max(1, Math.floor(Number(it.quantity) || 1)),
+          };
+          const img = sanitizeOrderLineImageUrl(it.frontImage);
+          if (img) preview.frontImage = img;
+          if (typeof it.category === "string" && it.category.trim()) {
+            preview.category = it.category.trim().slice(0, 120);
+          }
+          if (it.rarity) preview.rarity = it.rarity;
+          if (!preview.frontImage && preview.id) {
+            const hit = catalogMap.get(preview.id);
+            if (hit) {
+              preview.frontImage = hit.frontImage;
+              if (!preview.category && hit.category) preview.category = hit.category;
+              if (!preview.rarity && hit.rarity) preview.rarity = hit.rarity;
+            }
+          }
+          return preview;
+        });
+  return {
+    id,
+    total: record.total,
+    status: record.status,
+    delivery: record.delivery,
+    lines: lines.length > 0 ? lines : undefined,
+    lineCount: lineCount > 0 ? lineCount : undefined,
+  };
 }

@@ -1,12 +1,9 @@
 import { randomUUID } from "crypto";
-import { promises as fs } from "fs";
-import path from "path";
 import { parseCardRarity } from "@/app/lib/cardRarityTags";
 import { bonusDiscountByn, maxSpendableBonusPoints } from "@/app/lib/bonusProgram";
 import { deliveryCharge, normalizeDeliveryCountry, type DeliveryCountry } from "@/app/lib/delivery";
-import { ORDERS_DIR } from "@/app/lib/orderPaths";
 import type { OrderLineIn, OrderRecord } from "@/app/lib/orderTypes";
-import { registerOrder } from "@/app/lib/ordersStore";
+import { saveOrderRecord } from "@/app/lib/ordersStore";
 import { sanitizeOrderLineImageUrl } from "@/app/lib/sanitizeOrderLineImageUrl";
 import {
   getTelegramUserState,
@@ -172,28 +169,7 @@ export async function persistOrder(
     ...(spendApplied > 0 ? { bonus_points_spent: spendApplied } : {}),
   };
 
-  registerOrder(orderId, record);
-
-  const filePayload = {
-    id: orderId,
-    createdAt: new Date().toISOString(),
-    ...record,
-  };
-
-  try {
-    await fs.mkdir(ORDERS_DIR, { recursive: true });
-    await fs.writeFile(
-      path.join(ORDERS_DIR, `${orderId}.json`),
-      JSON.stringify(filePayload, null, 2),
-      "utf-8",
-    );
-  } catch {
-    /**
-     * На serverless/readonly FS (например, прод) запись на диск может быть недоступна.
-     * Не блокируем оформление: заказ уже зарегистрирован в памяти и будет отправлен в бота.
-     */
-    return { ok: true, orderId };
-  }
+  await saveOrderRecord(orderId, record);
 
   return { ok: true, orderId };
 }

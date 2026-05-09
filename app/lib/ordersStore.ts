@@ -324,14 +324,12 @@ export async function updateOrderStatus(
     /* нет файла или FS только для чтения — статус уже в ORDERS */
   }
 
-  const wasBonusEligible = orderStatusEligibleForBonusAccrual(existing.status);
   const nowBonusEligible =
     orderStatusEligibleForBonusAccrual(status) &&
     existing.status !== "cancelled" &&
     status !== "cancelled";
   const grantBonusNow =
     nowBonusEligible &&
-    !wasBonusEligible &&
     !existing.bonus_awarded &&
     existing.user_id != null &&
     existing.user_id > 0;

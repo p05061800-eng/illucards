@@ -253,17 +253,17 @@ export default function AccountPageClient() {
   );
 
   const isOrderLinesOpen = useCallback(
-    (orderId: string, status: string) => {
+    (orderId: string) => {
       const v = orderLinesOpenById[orderId];
       if (v !== undefined) return v;
-      return status === "new";
+      return false;
     },
     [orderLinesOpenById],
   );
 
-  const toggleOrderLines = useCallback((orderId: string, status: string) => {
+  const toggleOrderLines = useCallback((orderId: string) => {
     setOrderLinesOpenById((prev) => {
-      const cur = prev[orderId] ?? status === "new";
+      const cur = prev[orderId] ?? false;
       return { ...prev, [orderId]: !cur };
     });
   }, []);
@@ -687,25 +687,25 @@ export default function AccountPageClient() {
                         </span>
                       </div>
                     </Link>
-                    {o.status !== "new" && lines.length > 0 ? (
+                    {lines.length > 0 ? (
                       <button
                         type="button"
-                        onClick={() => toggleOrderLines(o.id, o.status)}
+                        onClick={() => toggleOrderLines(o.id)}
                         className="flex w-full items-center justify-between gap-2 border-t border-zinc-200/90 bg-zinc-100/70 px-4 py-2.5 text-left text-xs font-medium text-zinc-600 transition hover:bg-zinc-100 sm:px-5"
-                        aria-expanded={isOrderLinesOpen(o.id, o.status)}
+                        aria-expanded={isOrderLinesOpen(o.id)}
                       >
                         <span>
-                          {isOrderLinesOpen(o.id, o.status)
+                          {isOrderLinesOpen(o.id)
                             ? "Скрыть состав"
                             : `Показать состав · ${ruPositionCountPhrase(lineCount)}`}
                         </span>
                         <ChevronDown
-                          className={`h-4 w-4 shrink-0 text-zinc-500 transition-transform ${isOrderLinesOpen(o.id, o.status) ? "rotate-180" : ""}`}
+                          className={`h-4 w-4 shrink-0 text-zinc-500 transition-transform ${isOrderLinesOpen(o.id) ? "rotate-180" : ""}`}
                           aria-hidden
                         />
                       </button>
                     ) : null}
-                    {lines.length > 0 && isOrderLinesOpen(o.id, o.status) ? (
+                    {lines.length > 0 && isOrderLinesOpen(o.id) ? (
                       <ul className="space-y-2 border-t border-zinc-200/90 bg-white/70 px-4 py-3 sm:px-5">
                         {lines.map((l, idx) => (
                           <li key={`${o.id}-${idx}`}>

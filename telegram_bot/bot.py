@@ -952,6 +952,7 @@ async def post_site_order_from_bot(
     username: str | None,
     cart: list[dict[str, Any]],
     delivery_code: str,
+    order_id: str | None = None,
 ) -> dict[str, Any] | None:
     """Создать заказ на сайте из корзины Telegram-бота, чтобы он появился в ЛК."""
     items = _site_order_items_from_cart(cart)
@@ -976,6 +977,8 @@ async def post_site_order_from_bot(
         "delivery": _delivery_price_code(delivery_code),
         "status": "confirmed",
     }
+    if order_id:
+        payload["order_id"] = order_id
     timeout = aiohttp.ClientTimeout(total=25)
     try:
         async with aiohttp.ClientSession(timeout=timeout) as session:
@@ -1679,6 +1682,23 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
 
             order = await fetch_site_order(order_id)
             if not order:
+                existing = BOT_ORDERS.get(order_id)
+                if isinstance(existing, dict):
+                    items = _order_items_list(existing)
+                    delivery = _delivery_price_code(str(existing.get("delivery") or "BY"))
+                    restored = await post_site_order_from_bot(
+                        int(user.id),
+                        (user.username or "").strip() or None,
+                        items,
+                        delivery,
+                        order_id,
+                    )
+                    if isinstance(restored, dict):
+                        await q.answer("Принято")
+                        await q.message.reply_text(
+                            "Заказ подтверждён. Корзина на сайте очищена. Бонусы начислены."
+                        )
+                        return
                 await q.answer("Заказ не найден", show_alert=True)
                 return
             if not _order_belongs_to_telegram_user(order, user.id):
@@ -1696,6 +1716,8 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
 
             existing = BOT_ORDERS.get(order_id)
             if isinstance(existing, dict) and str(existing.get("status") or "").strip().lower() == "confirmed":
+                if not await post_site_order_status(order_id, "confirmed"):
+                    logger.warning("Сайт: не удалось повторно синхронизировать заказ %s", order_id)
                 await q.answer("Уже подтверждён")
                 try:
                     await q.edit_message_reply_markup(reply_markup=None)

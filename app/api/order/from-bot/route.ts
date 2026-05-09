@@ -70,6 +70,13 @@ function parsePositiveInt(raw: unknown): number | undefined {
   return Math.floor(n);
 }
 
+function parseOptionalOrderId(raw: unknown): string | null {
+  if (typeof raw !== "string") return null;
+  const id = raw.trim();
+  if (!id || id.length > 200 || /[/\\]/.test(id) || id.includes("..")) return null;
+  return id;
+}
+
 export async function POST(request: NextRequest) {
   const secret = process.env.ILLUCARDS_ORDER_UPDATE_SECRET?.trim();
   if (secret) {
@@ -112,7 +119,7 @@ export async function POST(request: NextRequest) {
     (o.paid === true ? "paid" : "new");
   const initialStatus: OrderStatus = "new";
   const bonusPointsSpent = parsePositiveInt(o.bonus_points_spent ?? o.bonusApplied);
-  const orderId = randomUUID();
+  const orderId = parseOptionalOrderId(o.order_id ?? o.id) ?? randomUUID();
   const record: OrderRecord = {
     user_id: userId,
     username: parseUsername(o.username),

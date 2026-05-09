@@ -18,6 +18,7 @@ import { incrementTelegramUserBonusPoints } from "@/app/lib/telegramUserStateSto
  * In-memory заказы (сервер). При перезапуске подгружается из `data/orders/*.json`.
  */
 export const ORDERS: Record<string, OrderRecord> = Object.create(null);
+const BOT_ORDERS_PATH = path.join(process.cwd(), "data", "bot-orders.json");
 const REDIS_ORDER_KEY = (orderId: string) => `illucards:order:${orderId}`;
 const REDIS_USER_ORDERS_KEY = (userId: number) => `illucards:user-orders:${userId}`;
 
@@ -59,6 +60,18 @@ async function readOrderRecordFromRedis(orderId: string): Promise<OrderRecord | 
   if (!j || j.error || typeof j.result !== "string") return null;
   try {
     return fileToOrderRecord(JSON.parse(j.result) as unknown);
+  } catch {
+    return null;
+  }
+}
+
+async function readBotOrderRecordFromFile(orderId: string): Promise<OrderRecord | null> {
+  try {
+    const text = await fs.readFile(BOT_ORDERS_PATH, "utf-8");
+    const json = JSON.parse(text) as unknown;
+    if (!json || typeof json !== "object" || Array.isArray(json)) return null;
+    const raw = (json as Record<string, unknown>)[orderId];
+    return fileToOrderRecord(raw);
   } catch {
     return null;
   }
@@ -256,7 +269,11 @@ export async function getOrder(orderId: string): Promise<OrderRecord | null> {
     ORDERS[id] = record;
     return record;
   } catch {
-    return null;
+    const botRecord = await readBotOrderRecordFromFile(id);
+    if (!botRecord) return null;
+    await enrichOrderRecordItemsIfNeeded(botRecord);
+    ORDERS[id] = botRecord;
+    return botRecord;
   }
 }
 
@@ -526,13 +543,16 @@ export async function listOrdersForUser(
   const redisIds = await readUserOrderIdsFromRedis(uid);
   if (redisIds && redisIds.length > 0) {
     const rows: OrderListSummary[] = [];
+    const seen = new Set<string>();
     const catalogMap = await catalogImageByCardId();
     for (const id of redisIds) {
       if (!id || id.length > 200 || /[/\\]/.test(id) || id.includes("..")) continue;
       const record = await getOrder(id);
       if (!record || record.user_id !== uid) continue;
+      seen.add(id);
       rows.push(orderSummaryFromRecord(id, record, catalogMap));
     }
+    rows.push(...(await listBotOrderSummariesForUser(uid, catalogMap, seen)));
     return rows;
   }
 
@@ -540,7 +560,7 @@ export async function listOrdersForUser(
   try {
     files = await fs.readdir(ORDERS_DIR);
   } catch {
-    return [];
+    files = [];
   }
   const rows: Array<OrderListSummary & { mtime: number }> = [];
   const catalogMap = await catalogImageByCardId();
@@ -562,6 +582,7 @@ export async function listOrdersForUser(
       mtime,
     });
   }
+  rows.push(...(await listBotOrderSummariesForUser(uid, catalogMap, new Set(rows.map((r) => r.id)))));
   rows.sort((a, b) => b.mtime - a.mtime);
   return rows.map((row) => ({
     id: row.id,
@@ -571,6 +592,38 @@ export async function listOrdersForUser(
     ...(row.lines ? { lines: row.lines } : {}),
     ...(row.lineCount ? { lineCount: row.lineCount } : {}),
   }));
+}
+
+async function listBotOrderSummariesForUser(
+  uid: number,
+  catalogMap: Map<string, { frontImage: string; category?: string; rarity?: CardRarity }>,
+  seen: Set<string>,
+): Promise<Array<OrderListSummary & { mtime: number }>> {
+  let raw: unknown;
+  let mtime = 0;
+  try {
+    const st = await fs.stat(BOT_ORDERS_PATH);
+    mtime = st.mtimeMs;
+    raw = JSON.parse(await fs.readFile(BOT_ORDERS_PATH, "utf-8")) as unknown;
+  } catch {
+    return [];
+  }
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) return [];
+  const rows: Array<OrderListSummary & { mtime: number }> = [];
+  for (const [id, value] of Object.entries(raw as Record<string, unknown>)) {
+    if (!id || id.length > 200 || /[/\\]/.test(id) || id.includes("..") || seen.has(id)) {
+      continue;
+    }
+    const record = fileToOrderRecord(value);
+    if (!record || record.user_id !== uid) continue;
+    await enrichOrderRecordItemsIfNeeded(record);
+    ORDERS[id] = record;
+    rows.push({
+      ...orderSummaryFromRecord(id, record, catalogMap),
+      mtime,
+    });
+  }
+  return rows;
 }
 
 function orderSummaryFromRecord(

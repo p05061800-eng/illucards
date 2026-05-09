@@ -5,7 +5,11 @@ import { normalizeDeliveryCountry, type DeliveryCountry } from "@/app/lib/delive
 import type { OrderLineIn, OrderRecord, OrderStatus } from "@/app/lib/orderTypes";
 import { parseOrderStatusInput } from "@/app/lib/orderStatus";
 import { saveOrderRecord, updateOrderStatus } from "@/app/lib/ordersStore";
-import { getTelegramUserState } from "@/app/lib/telegramUserStateStore";
+import { notifyTelegramWebhookUserState } from "@/app/lib/telegramStateBotSync";
+import {
+  clearSyncedCartForTelegramUser,
+  getTelegramUserState,
+} from "@/app/lib/telegramUserStateStore";
 import {
   bonusPointsToEarnForOrderItems,
   orderStatusEligibleForBonusAccrual,
@@ -123,11 +127,25 @@ export async function POST(request: NextRequest) {
   if (requestedStatus !== "new") {
     await updateOrderStatus(orderId, requestedStatus);
   }
+  if (requestedStatus === "confirmed" || requestedStatus === "paid") {
+    try {
+      const st = await clearSyncedCartForTelegramUser(userId);
+      await notifyTelegramWebhookUserState({
+        userId,
+        cart: st.cart,
+        favorites: st.favorites,
+        deliveryCountry: st.deliveryCountry,
+        bonus_points: st.bonus_points,
+      });
+    } catch {
+      /* Очистка корзины/синк не должны ломать оформление заказа из бота. */
+    }
+  }
 
-  const state = await getTelegramUserState(userId);
   const bonusEarned = orderStatusEligibleForBonusAccrual(requestedStatus)
     ? bonusPointsToEarnForOrderItems(items)
     : 0;
+  const state = await getTelegramUserState(userId);
   return NextResponse.json({
     ok: true,
     order_id: orderId,

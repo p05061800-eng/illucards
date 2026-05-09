@@ -357,6 +357,11 @@ def _delivery_charge_rub(dcode: str) -> int:
     return 800
 
 
+def _delivery_charge_byn(dcode: str) -> float:
+    d = _delivery_price_code(dcode)
+    return round(_delivery_charge_rub(d) / BYN_TO_RUB, 2)
+
+
 def _unit_rub_from_item(it: dict[str, Any]) -> float:
     try:
         pr = float(it.get("priceRub", 0) or it.get("price_rub", 0) or 0)
@@ -793,6 +798,37 @@ async def fetch_site_user_state(telegram_user_id: int) -> dict[str, Any] | None:
         return None
 
 
+async def _cart_snapshot_for_user(
+    context: ContextTypes.DEFAULT_TYPE,
+    telegram_user_id: int,
+) -> tuple[list[dict[str, Any]], str, int, bool]:
+    """Корзина для показа/оформления: сначала синхрон с сайта, затем локальная корзина бота."""
+    synced_cart: list[dict[str, Any]] = []
+    dcode = "BY"
+    bonus_points = 0
+    state = await fetch_site_user_state(int(telegram_user_id))
+    if isinstance(state, dict):
+        raw = state.get("cart")
+        if isinstance(raw, list):
+            synced_cart = [x for x in raw if isinstance(x, dict)]
+        raw_dc = state.get("delivery_country") or state.get("deliveryCountry")
+        if isinstance(raw_dc, str) and raw_dc.strip().upper() in ("BY", "RU", "UA", "OTHER"):
+            dcode = raw_dc.strip().upper()
+        bp_raw = state.get("bonus_points")
+        if isinstance(bp_raw, (int, float)) and bp_raw >= 0:
+            bonus_points = int(bp_raw)
+        elif isinstance(bp_raw, str) and bp_raw.strip().isdigit():
+            bonus_points = int(bp_raw.strip())
+    context.user_data["_delivery_cache"] = {
+        "uid": int(telegram_user_id),
+        "ts": time.monotonic(),
+        "code": dcode,
+    }
+    local_cart = context.user_data.get("cart") or []
+    cart = synced_cart if synced_cart else (local_cart if isinstance(local_cart, list) else [])
+    return cart, dcode, bonus_points, bool(synced_cart)
+
+
 async def post_site_order_bot_delete(order_id: str, telegram_user_id: int) -> bool:
     """POST /api/order/bot-delete — удалить заказ на сайте (статус new), тот же Bearer что у update."""
     base = os.getenv("ILLUCARDS_SITE_ORIGIN", DEFAULT_SITE_ORIGIN).rstrip("/")
@@ -878,6 +914,80 @@ async def post_site_admin_message_id(order_id: str, message_id: int) -> bool:
     except (aiohttp.ClientError, asyncio.TimeoutError, OSError) as e:
         logger.warning("POST order/admin-message: %s", e)
         return False
+
+
+def _site_order_items_from_cart(cart: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    items: list[dict[str, Any]] = []
+    for it in cart:
+        if not isinstance(it, dict):
+            continue
+        cid = str(it.get("id") or it.get("ref") or "").strip()
+        title = str(it.get("title") or it.get("name") or "").strip()
+        try:
+            qty = int(it.get("quantity", it.get("qty", 1)))
+        except (TypeError, ValueError):
+            qty = 1
+        qty = max(1, min(99, qty))
+        try:
+            price_byn = float(it.get("priceByn", it.get("price", 0)) or 0)
+        except (TypeError, ValueError):
+            price_byn = 0.0
+        price_rub = int(round(_unit_rub_from_item(it)))
+        if not cid or not title:
+            continue
+        items.append(
+            {
+                "id": cid[:120],
+                "title": title[:300],
+                "quantity": qty,
+                "priceByn": max(0.0, price_byn),
+                "priceRub": max(0, price_rub),
+            }
+        )
+    return items
+
+
+async def post_site_order_from_bot(
+    telegram_user_id: int,
+    username: str | None,
+    cart: list[dict[str, Any]],
+    delivery_code: str,
+) -> dict[str, Any] | None:
+    """Создать заказ на сайте из корзины Telegram-бота, чтобы он появился в ЛК."""
+    items = _site_order_items_from_cart(cart)
+    if not items:
+        return None
+    goods_byn = sum(float(it["priceByn"]) * int(it["quantity"]) for it in items)
+    total_byn = round(goods_byn + _delivery_charge_byn(delivery_code), 2)
+    base = os.getenv("ILLUCARDS_SITE_ORIGIN", DEFAULT_SITE_ORIGIN).rstrip("/")
+    url = f"{base}/api/order/from-bot"
+    secret = os.getenv("ILLUCARDS_ORDER_UPDATE_SECRET", "").strip()
+    headers: dict[str, str] = {
+        "Accept": "application/json",
+        "Content-Type": "application/json",
+    }
+    if secret:
+        headers["Authorization"] = f"Bearer {secret}"
+    payload = {
+        "user_id": int(telegram_user_id),
+        "username": username,
+        "items": items,
+        "total": total_byn,
+        "delivery": _delivery_price_code(delivery_code),
+        "status": "confirmed",
+    }
+    timeout = aiohttp.ClientTimeout(total=25)
+    try:
+        async with aiohttp.ClientSession(timeout=timeout) as session:
+            async with session.post(url, headers=headers, json=payload) as resp:
+                data = await resp.json(content_type=None)
+                if resp.status != 200 or not isinstance(data, dict):
+                    logger.warning("POST order/from-bot HTTP %s: %s", resp.status, str(data)[:300])
+                    return None
+                return data
+    except (aiohttp.ClientError, asyncio.TimeoutError, OSError, json.JSONDecodeError, ValueError) as e:
+        logger.warning("POST order/from-bot: %s", e)
+        return None
 
 
 def _format_order_text(order: dict[str, Any]) -> str:
@@ -1264,31 +1374,11 @@ async def show_cart_text(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
     if not user:
         await update.message.reply_text("Не удалось определить пользователя.")
         return
-    synced_cart: list[dict[str, Any]] = []
-    dcode = "BY"
-    state = await fetch_site_user_state(int(user.id))
-    bonus_points = 0
-    if isinstance(state, dict):
-        raw = state.get("cart")
-        if isinstance(raw, list):
-            synced_cart = [x for x in raw if isinstance(x, dict)]
-        raw_dc = state.get("delivery_country") or state.get("deliveryCountry")
-        if isinstance(raw_dc, str) and raw_dc.strip().upper() in ("BY", "RU", "UA", "OTHER"):
-            dcode = raw_dc.strip().upper()
-        bp_raw = state.get("bonus_points")
-        if isinstance(bp_raw, (int, float)) and bp_raw >= 0:
-            bonus_points = int(bp_raw)
-        elif isinstance(bp_raw, str) and bp_raw.strip().isdigit():
-            bonus_points = int(bp_raw.strip())
-    context.user_data["_delivery_cache"] = {
-        "uid": int(user.id),
-        "ts": time.monotonic(),
-        "code": dcode,
-    }
-    use_byn = _use_byn_for_delivery(dcode)
-    cart: list[dict[str, Any]] = (
-        synced_cart if synced_cart else (context.user_data.get("cart") or [])
+    cart, dcode, bonus_points, synced_from_site = await _cart_snapshot_for_user(
+        context,
+        int(user.id),
     )
+    use_byn = _use_byn_for_delivery(dcode)
     if not cart:
         await update.message.reply_text("Корзина пуста.")
         return
@@ -1321,12 +1411,15 @@ async def show_cart_text(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
     bonus_line = ""
     if bonus_points > 0:
         bonus_line = f"\n\n💎 Бонусные баллы на сайте: {bonus_points:,}".replace(",", " ")
-    elif synced_cart or cart:
+    elif synced_from_site or cart:
         bonus_line = (
             "\n\n💎 Бонусы начисляются после перевода заказа в «Отправлен» или «Доставлен» на сайте."
         )
     await update.message.reply_text(
-        "🛒 Корзина\n\n" + "\n".join(lines) + f"\n\nИтого: {total_suffix}" + bonus_line
+        "🛒 Корзина\n\n" + "\n".join(lines) + f"\n\nИтого: {total_suffix}" + bonus_line,
+        reply_markup=InlineKeyboardMarkup(
+            [[InlineKeyboardButton("Оформить заказ", callback_data="cartcheckout")]]
+        ),
     )
 
 
@@ -1793,6 +1886,94 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
         except Exception as e:
             logger.exception("order cancel failed: %s", e)
             await q.answer("Не удалось отменить заказ. Повторите через минуту.", show_alert=True)
+            return
+
+    if data == "cartcheckout":
+        try:
+            user = q.from_user
+            if not user:
+                await q.answer("Ошибка", show_alert=True)
+                return
+            cart, dcode, _bonus_points, _synced = await _cart_snapshot_for_user(
+                context,
+                int(user.id),
+            )
+            items = _site_order_items_from_cart(cart)
+            if not items:
+                await q.answer("Корзина пуста", show_alert=True)
+                return
+            result = await post_site_order_from_bot(
+                int(user.id),
+                (user.username or "").strip() or None,
+                cart,
+                dcode,
+            )
+            if not isinstance(result, dict):
+                await q.answer("Не удалось оформить заказ на сайте.", show_alert=True)
+                return
+            order_id = str(result.get("order_id") or "").strip()
+            if not order_id:
+                await q.answer("Сайт не вернул номер заказа.", show_alert=True)
+                return
+
+            goods_byn = sum(float(it["priceByn"]) * int(it["quantity"]) for it in items)
+            total_byn = round(goods_byn + _delivery_charge_byn(dcode), 2)
+            order = {
+                "user_id": int(user.id),
+                "username": (user.username or "").strip() or None,
+                "items": items,
+                "total": total_byn,
+                "delivery": _delivery_price_code(dcode),
+                "status": "confirmed",
+            }
+            rec = _record_site_order_in_bot(order_id, order, int(user.id))
+            rec["status"] = "confirmed"
+            BOT_ORDERS[order_id] = rec
+            _persist_bot_orders()
+            context.user_data["cart"] = []
+
+            admin_chat_id = _resolve_admin_chat_id()
+            if admin_chat_id:
+                admin_msg = None
+                try:
+                    admin_msg = await context.bot.send_message(
+                        chat_id=admin_chat_id,
+                        text=_format_order_admin(
+                            order_id,
+                            order,
+                            int(user.id),
+                            (user.username or "").strip() or None,
+                            rec,
+                        ),
+                    )
+                except Exception as e:
+                    logger.warning("admin notify bot checkout: %s", e)
+                mid = getattr(admin_msg, "message_id", None) if admin_msg else None
+                if isinstance(mid, int) and mid > 0:
+                    await post_site_admin_message_id(order_id, mid)
+
+            earned = int(result.get("bonus_earned") or 0)
+            balance = int(result.get("bonus_points") or 0)
+            bonus_note = ""
+            if earned > 0:
+                bonus_note = (
+                    f"\n\n💎 Начислено: {earned:,} баллов. Баланс: {balance:,}."
+                ).replace(",", " ")
+            await q.answer("Заказ оформлен")
+            try:
+                await q.edit_message_reply_markup(reply_markup=None)
+            except Exception:
+                pass
+            await q.message.reply_text(
+                "✅ Заказ оформлен и появился в личном кабинете.\n\n"
+                + _format_order_text(order)
+                + bonus_note,
+                reply_markup=_order_saved_keyboard(int(user.id)),
+            )
+            return
+        except Exception as e:
+            logger.exception("cart checkout failed: %s", e)
+            await q.answer("Не удалось оформить заказ. Повторите позже.", show_alert=True)
             return
 
     if data.startswith("promo:"):

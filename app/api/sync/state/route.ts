@@ -86,11 +86,14 @@ export async function POST(request: NextRequest) {
   } else {
     deliveryCountry = normalizeDeliveryCountry(o.delivery_country);
   }
-  let bonus_points = Math.max(0, Math.floor(prev?.bonus_points ?? 0));
+  const prevBonusPoints = Math.max(0, Math.floor(prev?.bonus_points ?? 0));
+  let bonus_points = prevBonusPoints;
   const bpRaw = o.bonus_points;
   if (bpRaw !== undefined && bpRaw !== null) {
     const n = typeof bpRaw === "number" ? bpRaw : Number(bpRaw);
-    if (Number.isFinite(n) && n >= 0 && n <= 1e9) bonus_points = Math.floor(n);
+    if (Number.isFinite(n) && n >= 0 && n <= 1e9) {
+      bonus_points = Math.max(prevBonusPoints, Math.floor(n));
+    }
   }
 
   const saved = await saveTelegramUserState(userId, {
@@ -100,5 +103,9 @@ export async function POST(request: NextRequest) {
     bonus_points,
   });
 
-  return NextResponse.json({ ok: true, updatedAt: saved.updatedAt });
+  return NextResponse.json({
+    ok: true,
+    updatedAt: saved.updatedAt,
+    bonus_points: saved.bonus_points,
+  });
 }

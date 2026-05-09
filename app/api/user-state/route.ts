@@ -71,7 +71,7 @@ export async function POST(request: NextRequest) {
   let cart = prev?.cart ?? [];
   let favorites = prev?.favorites ?? [];
   let deliveryCountry: DeliveryCountry | null = prev?.deliveryCountry ?? null;
-  let bonus_points = Math.max(0, Math.floor(prev?.bonus_points ?? 0));
+  const bonus_points = Math.max(0, Math.floor(prev?.bonus_points ?? 0));
   if ("cart" in o) {
     let incoming = parseCart(o.cart);
     const seenRaw = o.client_seen_updated_at;
@@ -106,13 +106,6 @@ export async function POST(request: NextRequest) {
       if (p !== null) deliveryCountry = p;
     }
   }
-  if ("bonus_points" in o) {
-    const bp = o.bonus_points;
-    const n = typeof bp === "number" ? bp : Number(bp);
-    if (Number.isFinite(n) && n >= 0 && n <= 1e9) {
-      bonus_points = Math.floor(n);
-    }
-  }
   const saved = await saveTelegramUserState(userId, {
     cart,
     favorites,
@@ -126,7 +119,11 @@ export async function POST(request: NextRequest) {
     deliveryCountry: saved.deliveryCountry,
     bonus_points: saved.bonus_points,
   });
-  return NextResponse.json({ ok: true, updatedAt: saved.updatedAt });
+  return NextResponse.json({
+    ok: true,
+    updatedAt: saved.updatedAt,
+    bonus_points: saved.bonus_points,
+  });
 }
 
 const EMPTY_STATE: SyncedUserState = {

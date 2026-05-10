@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { ChevronDown, ChevronRight, Package, Trash2, XCircle } from "lucide-react";
+import { ChevronDown, ChevronRight, Package } from "lucide-react";
 import { OrderLineRow } from "@/app/components/orders/OrderLineRow";
 import { useAuth } from "@/app/context/AuthContext";
 import { CART_STORAGE_KEY, useCart } from "@/app/context/CartContext";
@@ -115,8 +115,6 @@ export default function AccountPageClient() {
   const [orders, setOrders] = useState<OrderListSummary[] | null>(null);
   const [ordersError, setOrdersError] = useState<string | null>(null);
   const [bonusPointsBalance, setBonusPointsBalance] = useState(0);
-  const [deleteOrderBusyId, setDeleteOrderBusyId] = useState<string | null>(null);
-  const [cancelOrderBusyId, setCancelOrderBusyId] = useState<string | null>(null);
   const [orderLinesOpenById, setOrderLinesOpenById] = useState<Record<string, boolean>>({});
   const [tgCode, setTgCode] = useState("");
   const [tgInfo, setTgInfo] = useState<string | null>(null);
@@ -169,88 +167,6 @@ export default function AccountPageClient() {
       setBonusPointsBalance(0);
     }
   }, []);
-
-  const handleCancelOrder = useCallback(
-    async (orderId: string) => {
-      if (deleteOrderBusyId || cancelOrderBusyId) return;
-      const ok =
-        typeof window !== "undefined"
-          ? window.confirm(
-              "Отменить заказ? Доступно только пока заказ в статусе «Новый» (ещё без подтверждения в Telegram).",
-            )
-          : true;
-      if (!ok) return;
-      setCancelOrderBusyId(orderId);
-      try {
-        const res = await fetch("/api/order/cancel", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          credentials: "include",
-          body: JSON.stringify({ order_id: orderId }),
-        });
-        const data: unknown = await res.json().catch(() => null);
-        const msg =
-          data &&
-          typeof data === "object" &&
-          "error" in data &&
-          typeof (data as { error: unknown }).error === "string"
-            ? (data as { error: string }).error
-            : "Не удалось отменить заказ";
-        if (!res.ok) {
-          setOrdersError(msg);
-          return;
-        }
-        setOrdersError(null);
-        await loadOrders();
-      } catch {
-        setOrdersError("Ошибка сети");
-      } finally {
-        setCancelOrderBusyId(null);
-      }
-    },
-    [cancelOrderBusyId, deleteOrderBusyId, loadOrders],
-  );
-
-  const handleDeleteOrder = useCallback(
-    async (orderId: string) => {
-      if (deleteOrderBusyId || cancelOrderBusyId) return;
-      const ok =
-        typeof window !== "undefined"
-          ? window.confirm(
-              "Удалить заказ безвозвратно? Доступно только для заказов в статусе «Новый» (ещё без подтверждения в Telegram).",
-            )
-          : true;
-      if (!ok) return;
-      setDeleteOrderBusyId(orderId);
-      try {
-        const res = await fetch("/api/order/delete", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          credentials: "include",
-          body: JSON.stringify({ order_id: orderId }),
-        });
-        const data: unknown = await res.json().catch(() => null);
-        const msg =
-          data &&
-          typeof data === "object" &&
-          "error" in data &&
-          typeof (data as { error: unknown }).error === "string"
-            ? (data as { error: string }).error
-            : "Не удалось удалить заказ";
-        if (!res.ok) {
-          setOrdersError(msg);
-          return;
-        }
-        setOrdersError(null);
-        await loadOrders();
-      } catch {
-        setOrdersError("Ошибка сети");
-      } finally {
-        setDeleteOrderBusyId(null);
-      }
-    },
-    [cancelOrderBusyId, deleteOrderBusyId, loadOrders],
-  );
 
   const isOrderLinesOpen = useCallback(
     (orderId: string) => {
@@ -720,40 +636,6 @@ export default function AccountPageClient() {
                       </ul>
                     ) : null}
                     <div className="flex flex-wrap items-center justify-end gap-2 border-t border-zinc-200/90 px-4 py-3 sm:px-5">
-                      {o.status === "new" ? (
-                        <>
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.preventDefault();
-                              void handleCancelOrder(o.id);
-                            }}
-                            disabled={
-                              cancelOrderBusyId === o.id || deleteOrderBusyId === o.id
-                            }
-                            className="inline-flex min-h-9 items-center gap-1 rounded-lg border border-zinc-300/90 bg-white px-3 text-xs font-semibold text-zinc-800 transition hover:bg-zinc-50 disabled:opacity-50"
-                            title="Отменить заказ (только до подтверждения в Telegram)"
-                          >
-                            <XCircle className="h-3.5 w-3.5" aria-hidden />
-                            {cancelOrderBusyId === o.id ? "…" : "Отменить"}
-                          </button>
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.preventDefault();
-                              void handleDeleteOrder(o.id);
-                            }}
-                            disabled={
-                              deleteOrderBusyId === o.id || cancelOrderBusyId === o.id
-                            }
-                            className="inline-flex min-h-9 items-center gap-1 rounded-lg border border-red-200/90 bg-red-50 px-3 text-xs font-semibold text-red-800 transition hover:bg-red-100 disabled:opacity-50"
-                            title="Удалить заказ безвозвратно (только «Новый»)"
-                          >
-                            <Trash2 className="h-3.5 w-3.5" aria-hidden />
-                            {deleteOrderBusyId === o.id ? "…" : "Удалить"}
-                          </button>
-                        </>
-                      ) : null}
                       <Link
                         href={`/account/orders/${encodeURIComponent(o.id)}`}
                         className="inline-flex min-h-9 items-center gap-1 text-xs font-semibold text-violet-600 transition hover:text-violet-700"

@@ -10,6 +10,7 @@ export async function notifyTelegramWebhookUserState(opts: {
   favorites: string[];
   deliveryCountry: DeliveryCountry | null;
   bonus_points?: number;
+  bonusEarned?: number;
 }): Promise<void> {
   const base = (process.env.TELEGRAM_SYNC_API_URL || "").trim().replace(/\/+$/, "");
   if (!base) return;
@@ -26,6 +27,9 @@ export async function notifyTelegramWebhookUserState(opts: {
         delivery_country: opts.deliveryCountry,
         ...(typeof opts.bonus_points === "number" && Number.isFinite(opts.bonus_points)
           ? { bonus_points: Math.max(0, Math.floor(opts.bonus_points)) }
+          : {}),
+        ...(typeof opts.bonusEarned === "number" && Number.isFinite(opts.bonusEarned)
+          ? { bonusEarned: Math.max(0, Math.floor(opts.bonusEarned)) }
           : {}),
         cart: opts.cart.map((x) => ({
           ref: x.id,

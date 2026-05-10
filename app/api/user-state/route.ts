@@ -40,6 +40,21 @@ function parseDeliveryCountryField(raw: unknown): DeliveryCountry | null {
   return normalizeDeliveryCountry(raw);
 }
 
+function parseBonusPoints(raw: unknown): number | null {
+  const n = typeof raw === "number" ? raw : Number(raw);
+  if (!Number.isFinite(n) || n < 0 || n > 1e9) return null;
+  return Math.floor(n);
+}
+
+function firstBonusNumber(o: Record<string, unknown>, keys: string[]): number | null {
+  for (const key of keys) {
+    if (!(key in o)) continue;
+    const n = parseBonusPoints(o[key]);
+    if (n !== null) return n;
+  }
+  return null;
+}
+
 function bearerToken(request: NextRequest): string | null {
   const h = request.headers.get("authorization");
   if (!h || !h.startsWith("Bearer ")) return null;
@@ -71,7 +86,29 @@ export async function POST(request: NextRequest) {
   let cart = prev?.cart ?? [];
   let favorites = prev?.favorites ?? [];
   let deliveryCountry: DeliveryCountry | null = prev?.deliveryCountry ?? null;
-  const bonus_points = Math.max(0, Math.floor(prev?.bonus_points ?? 0));
+  const prevBonusPoints = Math.max(0, Math.floor(prev?.bonus_points ?? 0));
+  const bonusBalance = firstBonusNumber(o, [
+    "bonus_points",
+    "bonusPoints",
+    "bonusBalance",
+    "bonus_balance",
+    "loyaltyPoints",
+    "loyaltyBalance",
+    "pointsBalance",
+  ]);
+  const bonusEarned = firstBonusNumber(o, [
+    "bonusEarned",
+    "bonus_earned",
+    "pointsEarned",
+    "loyaltyEarned",
+    "earnedBonus",
+    "bonusesAdded",
+    "orderBonusEarned",
+  ]);
+  let bonus_points = bonusBalance ?? prevBonusPoints;
+  if (bonusBalance === null && bonusEarned !== null && bonusEarned > 0) {
+    bonus_points = Math.min(1_000_000_000, prevBonusPoints + bonusEarned);
+  }
   if ("cart" in o) {
     let incoming = parseCart(o.cart);
     const seenRaw = o.client_seen_updated_at;
@@ -118,6 +155,7 @@ export async function POST(request: NextRequest) {
     favorites: saved.favorites,
     deliveryCountry: saved.deliveryCountry,
     bonus_points: saved.bonus_points,
+    ...(bonusEarned !== null && bonusEarned > 0 ? { bonusEarned } : {}),
   });
   return NextResponse.json({
     ok: true,

@@ -1094,6 +1094,19 @@ def _order_belongs_to_telegram_user(order: dict[str, Any], telegram_user_id: int
         return False
 
 
+def _order_owner_user_id(order_id: str, order: dict[str, Any] | None = None) -> int | None:
+    raw = order.get("user_id") if isinstance(order, dict) else None
+    if raw is None:
+        existing = BOT_ORDERS.get(order_id)
+        if isinstance(existing, dict):
+            raw = existing.get("user_id")
+    try:
+        uid = int(raw)
+    except (TypeError, ValueError):
+        return None
+    return uid if uid > 0 else None
+
+
 def _load_login_codes() -> dict[str, dict[str, Any]]:
     if not LOGIN_CODES_PATH.exists():
         return {}
@@ -1684,11 +1697,15 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
             if not order:
                 existing = BOT_ORDERS.get(order_id)
                 if isinstance(existing, dict):
+                    owner_id = _order_owner_user_id(order_id)
+                    if owner_id is None:
+                        await q.answer("Не найден владелец заказа", show_alert=True)
+                        return
                     items = _order_items_list(existing)
                     delivery = _delivery_price_code(str(existing.get("delivery") or "BY"))
                     restored = await post_site_order_from_bot(
-                        int(user.id),
-                        (user.username or "").strip() or None,
+                        owner_id,
+                        None,
                         items,
                         delivery,
                         order_id,
@@ -1701,7 +1718,12 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
                         return
                 await q.answer("Заказ не найден", show_alert=True)
                 return
-            if not _order_belongs_to_telegram_user(order, user.id):
+            owner_id = _order_owner_user_id(order_id, order)
+            admin_chat_id = _resolve_admin_chat_id()
+            if owner_id is None:
+                await q.answer("Не найден владелец заказа", show_alert=True)
+                return
+            if int(user.id) != int(owner_id) and int(user.id) != int(admin_chat_id or 0):
                 await q.answer("Это не ваш заказ", show_alert=True)
                 return
 
@@ -1725,7 +1747,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
                     pass
                 return
 
-            rec = _record_site_order_in_bot(order_id, order, user.id)
+            rec = _record_site_order_in_bot(order_id, order, owner_id)
             rec["status"] = "confirmed"
             BOT_ORDERS[order_id] = rec
             _persist_bot_orders()
@@ -1734,10 +1756,9 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
                 logger.warning("Сайт: не удалось обновить статус заказа %s", order_id)
 
             # Ошибка уведомления админа не должна ломать подтверждение заказа пользователю.
-            admin_chat_id = _resolve_admin_chat_id()
             if admin_chat_id:
-                uname = (user.username or "").strip() or None
-                admin_text = _format_order_admin(order_id, order, user.id, uname, rec)
+                uname = str(order.get("username") or "").strip().lstrip("@") or None
+                admin_text = _format_order_admin(order_id, order, owner_id, uname, rec)
                 admin_msg = None
                 try:
                     admin_msg = await context.bot.send_message(
@@ -1781,7 +1802,12 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
             if not order:
                 await q.answer("Заказ не найден", show_alert=True)
                 return
-            if not _order_belongs_to_telegram_user(order, user.id):
+            owner_id = _order_owner_user_id(order_id, order)
+            admin_chat_id = _resolve_admin_chat_id()
+            if owner_id is None:
+                await q.answer("Не найден владелец заказа", show_alert=True)
+                return
+            if int(user.id) != int(owner_id) and int(user.id) != int(admin_chat_id or 0):
                 await q.answer("Это не ваш заказ", show_alert=True)
                 return
 
@@ -1800,7 +1826,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
                 await q.answer("Заказ уже отправлен", show_alert=True)
                 return
 
-            rec = _record_site_order_in_bot(order_id, order, user.id)
+            rec = _record_site_order_in_bot(order_id, order, owner_id)
             rec["status"] = "paid"
             BOT_ORDERS[order_id] = rec
             _persist_bot_orders()
@@ -1839,7 +1865,12 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
             if not order:
                 await q.answer("Заказ не найден", show_alert=True)
                 return
-            if not _order_belongs_to_telegram_user(order, user.id):
+            owner_id = _order_owner_user_id(order_id, order)
+            admin_chat_id = _resolve_admin_chat_id()
+            if owner_id is None:
+                await q.answer("Не найден владелец заказа", show_alert=True)
+                return
+            if int(user.id) != int(owner_id) and int(user.id) != int(admin_chat_id or 0):
                 await q.answer("Это не ваш заказ", show_alert=True)
                 return
 
@@ -1867,7 +1898,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
                 return
 
             if site_st == "new":
-                site_ok = await post_site_order_bot_delete(order_id, int(user.id))
+                site_ok = await post_site_order_bot_delete(order_id, owner_id)
             else:
                 site_ok = await post_site_order_status(order_id, "cancelled")
             if not site_ok:
@@ -1893,7 +1924,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
                 except Exception:
                     pass
             else:
-                rec = _record_site_order_in_bot(order_id, order, user.id)
+                rec = _record_site_order_in_bot(order_id, order, owner_id)
                 rec["status"] = "cancelled"
                 BOT_ORDERS[order_id] = rec
                 _persist_bot_orders()

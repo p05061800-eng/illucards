@@ -89,7 +89,7 @@ export async function POST(request: NextRequest) {
         : 0;
     /** Сервер очистил корзину новее, чем знает клиент — не затирать пустую корзину старым localStorage. */
     const clientStaleVsServerEmpty =
-      prevEmpty && incoming.length > 0 && prevTs > 0 && (!clientSeenOk || prevTs > clientSeen);
+      prevEmpty && incoming.length > 0 && prevTs > 0 && (!clientSeenOk || clientSeen <= prevTs);
     if (clientStaleVsServerEmpty) {
       incoming = [];
     }

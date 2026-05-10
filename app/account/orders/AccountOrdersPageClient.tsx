@@ -3,8 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
-import type { OrderStatus } from "@/app/lib/orderTypes";
-import { ChevronDown, ChevronRight, Package, Trash2, XCircle } from "lucide-react";
+import { ChevronDown, ChevronRight, Package } from "lucide-react";
 import { useAuth } from "@/app/context/AuthContext";
 import { OrderLineRow } from "@/app/components/orders/OrderLineRow";
 import {
@@ -26,8 +25,6 @@ export default function AccountOrdersPageClient() {
   const [lsGate, setLsGate] = useState<LsGate>("pending");
   const [orders, setOrders] = useState<OrderListSummary[] | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [deleteBusyId, setDeleteBusyId] = useState<string | null>(null);
-  const [cancelBusyId, setCancelBusyId] = useState<string | null>(null);
   const [orderLinesOpenById, setOrderLinesOpenById] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
@@ -61,100 +58,18 @@ export default function AccountOrdersPageClient() {
     }
   }, [router]);
 
-  const handleCancelOrder = useCallback(
-    async (orderId: string) => {
-      if (deleteBusyId || cancelBusyId) return;
-      const ok =
-        typeof window !== "undefined"
-          ? window.confirm(
-              "Отменить заказ? Доступно только пока заказ в статусе «Новый» (ещё без подтверждения в Telegram).",
-            )
-          : true;
-      if (!ok) return;
-      setCancelBusyId(orderId);
-      setError(null);
-      try {
-        const res = await fetch("/api/order/cancel", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          credentials: "include",
-          body: JSON.stringify({ order_id: orderId }),
-        });
-        const data: unknown = await res.json().catch(() => null);
-        const msg =
-          data &&
-          typeof data === "object" &&
-          "error" in data &&
-          typeof (data as { error: unknown }).error === "string"
-            ? (data as { error: string }).error
-            : "Не удалось отменить заказ";
-        if (!res.ok) {
-          setError(msg);
-          return;
-        }
-        await load();
-      } catch {
-        setError("Ошибка сети");
-      } finally {
-        setCancelBusyId(null);
-      }
-    },
-    [cancelBusyId, deleteBusyId, load],
-  );
-
-  const handleDeleteOrder = useCallback(
-    async (orderId: string) => {
-      if (deleteBusyId || cancelBusyId) return;
-      const ok =
-        typeof window !== "undefined"
-          ? window.confirm(
-              "Удалить заказ безвозвратно? Только для статуса «Новый» (ещё без подтверждения в Telegram).",
-            )
-          : true;
-      if (!ok) return;
-      setDeleteBusyId(orderId);
-      setError(null);
-      try {
-        const res = await fetch("/api/order/delete", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          credentials: "include",
-          body: JSON.stringify({ order_id: orderId }),
-        });
-        const data: unknown = await res.json().catch(() => null);
-        const msg =
-          data &&
-          typeof data === "object" &&
-          "error" in data &&
-          typeof (data as { error: unknown }).error === "string"
-            ? (data as { error: string }).error
-            : "Не удалось удалить заказ";
-        if (!res.ok) {
-          setError(msg);
-          return;
-        }
-        await load();
-      } catch {
-        setError("Ошибка сети");
-      } finally {
-        setDeleteBusyId(null);
-      }
-    },
-    [cancelBusyId, deleteBusyId, load],
-  );
-
   const isOrderLinesOpen = useCallback(
-    (orderId: string, status: OrderStatus) => {
+    (orderId: string) => {
       const v = orderLinesOpenById[orderId];
       if (v !== undefined) return v;
-      return status === "new";
+      return false;
     },
     [orderLinesOpenById],
   );
 
-  const toggleOrderLines = useCallback((orderId: string, status: OrderStatus) => {
+  const toggleOrderLines = useCallback((orderId: string) => {
     setOrderLinesOpenById((prev) => {
-      const cur = prev[orderId] ?? status === "new";
+      const cur = prev[orderId] ?? false;
       return { ...prev, [orderId]: !cur };
     });
   }, []);
@@ -277,25 +192,25 @@ export default function AccountOrdersPageClient() {
                       {formatOrderTotalForDisplay(total, o.delivery)}
                     </p>
 
-                    {o.status !== "new" && lines.length > 0 ? (
+                    {lines.length > 0 ? (
                       <button
                         type="button"
-                        onClick={() => toggleOrderLines(o.id, o.status)}
+                        onClick={() => toggleOrderLines(o.id)}
                         className="mt-4 flex w-full items-center justify-between gap-2 rounded-xl border border-zinc-200/90 bg-zinc-100/80 px-3 py-2.5 text-left text-xs font-medium text-zinc-600 transition hover:bg-zinc-100 sm:px-4"
-                        aria-expanded={isOrderLinesOpen(o.id, o.status)}
+                        aria-expanded={isOrderLinesOpen(o.id)}
                       >
                         <span>
-                          {isOrderLinesOpen(o.id, o.status)
+                          {isOrderLinesOpen(o.id)
                             ? "Скрыть состав"
                             : `Показать состав · ${ruPositionCountPhrase(lineCount)}`}
                         </span>
                         <ChevronDown
-                          className={`h-4 w-4 shrink-0 text-zinc-500 transition-transform ${isOrderLinesOpen(o.id, o.status) ? "rotate-180" : ""}`}
+                          className={`h-4 w-4 shrink-0 text-zinc-500 transition-transform ${isOrderLinesOpen(o.id) ? "rotate-180" : ""}`}
                           aria-hidden
                         />
                       </button>
                     ) : null}
-                    {lines.length > 0 && isOrderLinesOpen(o.id, o.status) ? (
+                    {lines.length > 0 && isOrderLinesOpen(o.id) ? (
                       <ul className="mt-3 space-y-2 border-t border-zinc-200/90 bg-white/70 py-4 pl-0 pr-0 pt-4">
                         {lines.map((l, idx) => (
                           <li key={`${o.id}-${idx}`}>
@@ -312,28 +227,6 @@ export default function AccountOrdersPageClient() {
                   </div>
 
                   <div className="flex flex-col gap-2 border-t border-zinc-200/90 bg-zinc-100/80 p-3 sm:flex-row sm:flex-wrap sm:gap-3 sm:p-4">
-                    {o.status === "new" ? (
-                      <>
-                        <button
-                          type="button"
-                          onClick={() => void handleCancelOrder(o.id)}
-                          disabled={cancelBusyId === o.id || deleteBusyId === o.id}
-                          className="flex min-h-[3.25rem] flex-1 items-center justify-center gap-2 rounded-xl border-2 border-zinc-400/90 bg-white px-4 text-base font-semibold text-zinc-900 shadow-sm transition hover:bg-zinc-50 active:scale-[0.99] disabled:opacity-50 sm:min-h-14"
-                        >
-                          <XCircle className="h-5 w-5 shrink-0" strokeWidth={2} aria-hidden />
-                          {cancelBusyId === o.id ? "Отмена…" : "Отменить"}
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => void handleDeleteOrder(o.id)}
-                          disabled={deleteBusyId === o.id || cancelBusyId === o.id}
-                          className="flex min-h-[3.25rem] flex-1 items-center justify-center gap-2 rounded-xl border-2 border-red-200/90 bg-red-50 px-4 text-base font-semibold text-red-900 shadow-sm transition hover:bg-red-100 active:scale-[0.99] disabled:opacity-50 sm:min-h-14"
-                        >
-                          <Trash2 className="h-5 w-5 shrink-0" strokeWidth={2} aria-hidden />
-                          {deleteBusyId === o.id ? "Удаление…" : "Удалить"}
-                        </button>
-                      </>
-                    ) : null}
                     <Link
                       href={`/account/orders/${encodeURIComponent(o.id)}`}
                       className="group flex min-h-[3.25rem] flex-1 items-center justify-center gap-2 rounded-xl bg-[#5D6BF3] px-4 text-base font-semibold text-white shadow-md shadow-indigo-900/25 transition hover:brightness-110 active:scale-[0.99] sm:min-h-14 sm:text-[1.05rem]"

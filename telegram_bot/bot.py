@@ -858,7 +858,12 @@ async def post_site_order_bot_delete(order_id: str, telegram_user_id: int) -> bo
         return False
 
 
-async def post_site_order_status(order_id: str, status: str) -> bool:
+async def post_site_order_status(
+    order_id: str,
+    status: str,
+    order: dict[str, Any] | None = None,
+    owner_id: int | None = None,
+) -> bool:
     """POST /api/order/update — синхронизация статуса с сайтом (при смене в боте)."""
     base = os.getenv("ILLUCARDS_SITE_ORIGIN", DEFAULT_SITE_ORIGIN).rstrip("/")
     url = f"{base}/api/order/update"
@@ -875,7 +880,7 @@ async def post_site_order_status(order_id: str, status: str) -> bool:
             async with session.post(
                 url,
                 headers=headers,
-                json={"order_id": order_id, "status": status},
+                json=payload,
             ) as resp:
                 if resp.status != 200:
                     text = (await resp.text())[:300]
@@ -1738,7 +1743,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
 
             existing = BOT_ORDERS.get(order_id)
             if isinstance(existing, dict) and str(existing.get("status") or "").strip().lower() == "confirmed":
-                if not await post_site_order_status(order_id, "confirmed"):
+                if not await post_site_order_status(order_id, "confirmed", existing, owner_id):
                     logger.warning("Сайт: не удалось повторно синхронизировать заказ %s", order_id)
                 await q.answer("Уже подтверждён")
                 try:
@@ -1831,7 +1836,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
             BOT_ORDERS[order_id] = rec
             _persist_bot_orders()
 
-            if not await post_site_order_status(order_id, "paid"):
+            if not await post_site_order_status(order_id, "paid", order, owner_id):
                 logger.warning("Сайт: не удалось выставить paid для %s", order_id)
                 await q.answer("Не удалось связаться с сайтом.", show_alert=True)
                 return

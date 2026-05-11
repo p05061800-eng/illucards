@@ -88,12 +88,15 @@ export function FavoritesProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (!hydrated) return;
+    const userId = readTelegramPrimaryUserId();
     void fetch(apiUrl("/api/favorites"), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(favoriteIds),
+      body: JSON.stringify(userId == null ? favoriteIds : {
+        user_id: userId,
+        favorites: favoriteIds,
+      }),
     }).catch(() => {});
-    const userId = readTelegramPrimaryUserId();
     if (userId == null) return;
     void fetch(apiUrl("/api/user-state"), {
       method: "POST",

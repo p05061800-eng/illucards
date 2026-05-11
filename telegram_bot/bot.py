@@ -874,6 +874,17 @@ async def post_site_order_status(
     }
     if secret:
         headers["Authorization"] = f"Bearer {secret}"
+    payload: dict[str, Any] = {"order_id": order_id, "status": status}
+    if isinstance(order, dict):
+        oid = owner_id if owner_id is not None else _order_owner_user_id(order_id, order)
+        if oid is not None:
+            payload["user_id"] = int(oid)
+        payload["items"] = _order_items_list(order)
+        payload["total"] = _order_total_byn(order)
+        payload["delivery"] = _delivery_price_code(str(order.get("delivery") or "BY"))
+        username = str(order.get("username") or "").strip().lstrip("@")
+        if username:
+            payload["username"] = username
     timeout = aiohttp.ClientTimeout(total=20)
     try:
         async with aiohttp.ClientSession(timeout=timeout) as session:

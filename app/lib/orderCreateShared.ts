@@ -85,6 +85,7 @@ export function normalizeOrderItems(raw: unknown): OrderLineIn[] | null {
 const TOTAL_EPS = 0.05;
 
 export type PersistOrderInput = {
+  orderId?: string;
   deliveryCountry: DeliveryCountry;
   items: OrderLineIn[];
   userId?: number;
@@ -108,6 +109,7 @@ export async function persistOrder(
   input: PersistOrderInput,
 ): Promise<PersistOrderResult> {
   const {
+    orderId: requestedOrderId,
     deliveryCountry,
     items,
     userId,
@@ -162,7 +164,7 @@ export async function persistOrder(
     }
   }
 
-  const orderId = randomUUID();
+  const orderId = requestedOrderId ?? randomUUID();
 
   const record: OrderRecord = {
     ...(userId != null && userId > 0 ? { user_id: userId } : {}),

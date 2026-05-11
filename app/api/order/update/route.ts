@@ -4,6 +4,13 @@ import { parseOrderStatusInput } from "@/app/lib/orderStatus";
 import { getOrder, updateOrderStatus } from "@/app/lib/ordersStore";
 import { notifyTelegramWebhookUserState } from "@/app/lib/telegramStateBotSync";
 import { clearSyncedCartForTelegramUser } from "@/app/lib/telegramUserStateStore";
+import {
+  normalizeOrderItems,
+  parseDeliveryCountry,
+  parseOptionalTelegramUserId,
+  parseOptionalUsername,
+  persistOrder,
+} from "@/app/lib/orderCreateShared";
 
 /**
  * Обновление статуса заказа (в т.ч. из Telegram-бота).
@@ -42,7 +49,28 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Некорректный status" }, { status: 400 });
   }
 
-  const existing = await getOrder(orderId);
+  let existing = await getOrder(orderId);
+  if (!existing) {
+    const userId = parseOptionalTelegramUserId(o.user_id ?? o.telegramUserId);
+    const items = normalizeOrderItems(o.items);
+    const delivery = parseDeliveryCountry(o.delivery ?? o.delivery_country);
+    const total = typeof o.total === "number" ? o.total : Number(o.total);
+    if (userId != null && items && delivery && Number.isFinite(total) && total >= 0) {
+      const created = await persistOrder({
+        orderId,
+        deliveryCountry: delivery,
+        items,
+        userId,
+        username: parseOptionalUsername(o.username) ?? null,
+        clientTotalByn: total,
+      });
+      if (!created.ok) {
+        return NextResponse.json({ error: created.error }, { status: created.status });
+      }
+      existing = await getOrder(orderId);
+    }
+  }
+
   const result = await updateOrderStatus(orderId, status);
   if (!result.ok) {
     return NextResponse.json({ error: result.error }, { status: result.status });

@@ -15,6 +15,7 @@ import { normalizeDeliveryCountry } from "../lib/delivery";
 export type { DisplayCurrency };
 
 const STORAGE_KEY = "illucards-currency";
+const PROMPT_ANSWERED_STORAGE_KEY = "illucards-currency-prompt-answered";
 /** Тот же ключ, что в CartContext — валюта витрины следует стране доставки. */
 const DELIVERY_STORAGE_KEY = "illucards-delivery-country";
 
@@ -43,7 +44,8 @@ export function CurrencyProvider({ children }: { children: ReactNode }) {
         const raw = localStorage.getItem(STORAGE_KEY);
         if (raw === "RUB" || raw === "BYN") {
           setCurrencyState(raw);
-        } else {
+        }
+        if (localStorage.getItem(PROMPT_ANSWERED_STORAGE_KEY) !== "1") {
           setNeedsCurrencyPrompt(true);
         }
       }
@@ -65,6 +67,11 @@ export function CurrencyProvider({ children }: { children: ReactNode }) {
   const setCurrency = useCallback((c: DisplayCurrency) => {
     setCurrencyState(c);
     setNeedsCurrencyPrompt(false);
+    try {
+      localStorage.setItem(PROMPT_ANSWERED_STORAGE_KEY, "1");
+    } catch {
+      /* ignore */
+    }
   }, []);
 
   const value = useMemo(

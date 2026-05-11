@@ -28,6 +28,7 @@ type Props = {
 
 /** Как в HeroCardStack: короткий тап — переход; микросдвиг — vario/3D без потери click в WebKit */
 const TAP_MAX_PX = 22;
+const TOUCH_MOVE_CANCEL_PX = 8;
 
 const ADULT_BADGE_CLASS =
   "pointer-events-none absolute right-1 top-1 z-[130] rounded border border-rose-400/85 bg-rose-950/92 px-1.5 py-0.5 text-[10px] font-extrabold uppercase leading-none tracking-wide text-rose-50 shadow-[0_0_12px_rgba(244,63,94,0.35)]";
@@ -47,6 +48,7 @@ export function CardItem({ card, hideUltraLayer = false }: Props) {
   const addToCartWithFeedback = useAddToCartWithFeedback();
   const flyRef = useRef<HTMLAnchorElement | null>(null);
   const touchStartRef = useRef<{ x: number; y: number } | null>(null);
+  const touchMovedRef = useRef(false);
   const [showPopup, setShowPopup] = useState(false);
   const liked = isFavorite(card.id);
 
@@ -98,6 +100,11 @@ export function CardItem({ card, hideUltraLayer = false }: Props) {
         className="catalog-card-image-link relative block w-full min-w-0 shrink-0 cursor-pointer overflow-visible"
         aria-label={`Открыть карточку: ${card.title}`}
         onClick={(e) => {
+          if (touchMovedRef.current) {
+            e.preventDefault();
+            touchMovedRef.current = false;
+            return;
+          }
           if (adultBlockedNav) {
             e.preventDefault();
             pendingNavRef.current = cardHref;
@@ -108,6 +115,17 @@ export function CardItem({ card, hideUltraLayer = false }: Props) {
           if (e.touches.length === 0) return;
           const t = e.touches[0];
           touchStartRef.current = { x: t.clientX, y: t.clientY };
+          touchMovedRef.current = false;
+        }}
+        onTouchMove={(e) => {
+          const start = touchStartRef.current;
+          if (!start || e.touches.length === 0) return;
+          const t = e.touches[0];
+          const dx = Math.abs(t.clientX - start.x);
+          const dy = Math.abs(t.clientY - start.y);
+          if (dx > TOUCH_MOVE_CANCEL_PX || dy > TOUCH_MOVE_CANCEL_PX) {
+            touchMovedRef.current = true;
+          }
         }}
         onTouchEnd={(e) => {
           const start = touchStartRef.current;
@@ -116,13 +134,18 @@ export function CardItem({ card, hideUltraLayer = false }: Props) {
           const t = e.changedTouches[0];
           const dx = Math.abs(t.clientX - start.x);
           const dy = Math.abs(t.clientY - start.y);
-          if (dx <= TAP_MAX_PX && dy <= TAP_MAX_PX) {
+          if (dx > TOUCH_MOVE_CANCEL_PX || dy > TOUCH_MOVE_CANCEL_PX) {
+            touchMovedRef.current = true;
+            return;
+          }
+          if (dx <= TAP_MAX_PX && dy <= TAP_MAX_PX && adultBlockedNav) {
             e.preventDefault();
             openCardNav(cardHref);
           }
         }}
         onTouchCancel={() => {
           touchStartRef.current = null;
+          touchMovedRef.current = false;
         }}
       >
         <div
@@ -168,14 +191,14 @@ export function CardItem({ card, hideUltraLayer = false }: Props) {
           </div>
 
           <div className="catalog-card-price-row flex min-h-[2.25rem] min-w-0 flex-nowrap items-center justify-between gap-1 sm:gap-2">
-            <div className="min-w-0 flex-1 overflow-hidden pr-0.5 sm:pr-0">
+            <div className="min-w-0 flex-[1_1_auto] pr-0 sm:pr-0">
               <CardPriceDualRow
                 card={card}
                 variant="catalog"
-                className="text-[11px] font-semibold leading-tight sm:text-sm sm:leading-normal md:text-base"
+                className="text-[10px] font-semibold leading-tight sm:text-sm sm:leading-normal md:text-base"
               />
             </div>
-            <div className="flex shrink-0 items-center gap-0.5 sm:gap-1">
+            <div className="flex shrink-0 items-center gap-0 sm:gap-1">
               <button
                 type="button"
                 onClick={(e) => {

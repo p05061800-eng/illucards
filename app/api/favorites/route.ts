@@ -1,4 +1,6 @@
 import { NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
+import { COOKIE_TELEGRAM_USER_ID } from "@/app/lib/telegramUserIdentity";
 import { notifyTelegramWebhookUserState } from "@/app/lib/telegramStateBotSync";
 import { getTelegramUserState, saveTelegramUserState } from "@/app/lib/telegramUserStateStore";
 
@@ -16,11 +18,25 @@ function parseFavoriteIds(raw: unknown): string[] | null {
   return raw.filter((x): x is string => typeof x === "string").slice(0, 500);
 }
 
-export async function GET() {
+function requestUserId(request: NextRequest, body?: Record<string, unknown> | null): number | null {
+  return (
+    parseUserId(body?.user_id) ??
+    parseUserId(body?.telegramUserId) ??
+    parseUserId(request.nextUrl.searchParams.get("user_id")) ??
+    parseUserId(request.cookies.get(COOKIE_TELEGRAM_USER_ID)?.value)
+  );
+}
+
+export async function GET(request: NextRequest) {
+  const userId = requestUserId(request);
+  if (userId != null) {
+    const state = await getTelegramUserState(userId);
+    return NextResponse.json(state?.favorites ?? []);
+  }
   return NextResponse.json(favoritesStore);
 }
 
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
   try {
     const data = (await req.json()) as unknown;
     const body = data && typeof data === "object" && !Array.isArray(data)
@@ -31,7 +47,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Expected JSON array" }, { status: 400 });
     }
     favoritesStore = ids;
-    const userId = parseUserId(body?.user_id);
+    const userId = requestUserId(req, body);
     if (userId != null) {
       const prev = await getTelegramUserState(userId);
       const saved = await saveTelegramUserState(userId, {

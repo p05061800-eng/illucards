@@ -43,6 +43,7 @@ const fieldClass =
   "w-full rounded-xl border border-white/10 bg-zinc-950/90 px-4 py-2.5 text-sm text-zinc-100 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] transition placeholder:text-zinc-600 focus:border-purple-500/45 focus:outline-none focus:ring-2 focus:ring-purple-500/25";
 
 const TAP_MAX_PX = 22;
+const TOUCH_MOVE_CANCEL_PX = 8;
 
 const ADULT_BADGE_CLASS =
   "pointer-events-none absolute right-0.5 top-0.5 z-[130] rounded border border-rose-400/85 bg-rose-950/92 px-1 py-0.5 text-[9px] font-extrabold uppercase leading-none tracking-wide text-rose-50 shadow-[0_0_12px_rgba(244,63,94,0.35)]";
@@ -67,6 +68,7 @@ function CardItem({
   const [ageOpen, setAgeOpen] = useState(false);
   const pendingNavRef = useRef<string | null>(null);
   const touchStartRef = useRef<{ x: number; y: number } | null>(null);
+  const touchMovedRef = useRef(false);
   const categoryDisplay = card.category
     ? categoryLabel(card.category)
     : "—";
@@ -129,6 +131,11 @@ function CardItem({
               : "group/card flex cursor-pointer flex-col gap-2 rounded-2xl p-0.5 transition-[filter] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)]"
           }`}
           onClick={(e) => {
+            if (touchMovedRef.current) {
+              e.preventDefault();
+              touchMovedRef.current = false;
+              return;
+            }
             if (adultBlockedNav) {
               e.preventDefault();
               pendingNavRef.current = cardHref;
@@ -139,6 +146,17 @@ function CardItem({
             if (e.touches.length === 0) return;
             const t = e.touches[0];
             touchStartRef.current = { x: t.clientX, y: t.clientY };
+            touchMovedRef.current = false;
+          }}
+          onTouchMove={(e) => {
+            const start = touchStartRef.current;
+            if (!start || e.touches.length === 0) return;
+            const t = e.touches[0];
+            const dx = Math.abs(t.clientX - start.x);
+            const dy = Math.abs(t.clientY - start.y);
+            if (dx > TOUCH_MOVE_CANCEL_PX || dy > TOUCH_MOVE_CANCEL_PX) {
+              touchMovedRef.current = true;
+            }
           }}
           onTouchEnd={(e) => {
             const start = touchStartRef.current;
@@ -147,13 +165,18 @@ function CardItem({
             const t = e.changedTouches[0];
             const dx = Math.abs(t.clientX - start.x);
             const dy = Math.abs(t.clientY - start.y);
-            if (dx <= TAP_MAX_PX && dy <= TAP_MAX_PX) {
+            if (dx > TOUCH_MOVE_CANCEL_PX || dy > TOUCH_MOVE_CANCEL_PX) {
+              touchMovedRef.current = true;
+              return;
+            }
+            if (dx <= TAP_MAX_PX && dy <= TAP_MAX_PX && adultBlockedNav) {
               e.preventDefault();
               openNav(cardHref);
             }
           }}
           onTouchCancel={() => {
             touchStartRef.current = null;
+            touchMovedRef.current = false;
           }}
         >
           <div

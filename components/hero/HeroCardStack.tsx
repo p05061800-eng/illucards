@@ -34,6 +34,7 @@ type Props = {
 
 /** Обычный герой: `<Link>` + на таче явный `router.push` при коротком тапе (vario/WebKit). */
 const TAP_MAX_PX = 22;
+const TOUCH_MOVE_CANCEL_PX = 8;
 
 export function HeroCardStack({
   displayCard,
@@ -45,6 +46,7 @@ export function HeroCardStack({
   const router = useRouter();
   const adultGate = useAdultContentGateOptional();
   const touchStartRef = useRef<{ x: number; y: number } | null>(null);
+  const touchMovedRef = useRef(false);
   const pendingNavRef = useRef<string | null>(null);
   const [ageOpen, setAgeOpen] = useState(false);
   const adultLocked =
@@ -138,6 +140,11 @@ export function HeroCardStack({
           aria-label={`Открыть ${displayCard.title}`}
           suppressHydrationWarning
           onClick={(e) => {
+            if (touchMovedRef.current) {
+              e.preventDefault();
+              touchMovedRef.current = false;
+              return;
+            }
             if (adultLocked) {
               e.preventDefault();
               pendingNavRef.current = href;
@@ -148,6 +155,17 @@ export function HeroCardStack({
             if (e.touches.length === 0) return;
             const t = e.touches[0];
             touchStartRef.current = { x: t.clientX, y: t.clientY };
+            touchMovedRef.current = false;
+          }}
+          onTouchMove={(e) => {
+            const start = touchStartRef.current;
+            if (!start || e.touches.length === 0) return;
+            const t = e.touches[0];
+            const dx = Math.abs(t.clientX - start.x);
+            const dy = Math.abs(t.clientY - start.y);
+            if (dx > TOUCH_MOVE_CANCEL_PX || dy > TOUCH_MOVE_CANCEL_PX) {
+              touchMovedRef.current = true;
+            }
           }}
           onTouchEnd={(e) => {
             const start = touchStartRef.current;
@@ -156,13 +174,18 @@ export function HeroCardStack({
             const t = e.changedTouches[0];
             const dx = Math.abs(t.clientX - start.x);
             const dy = Math.abs(t.clientY - start.y);
-            if (dx <= TAP_MAX_PX && dy <= TAP_MAX_PX) {
+            if (dx > TOUCH_MOVE_CANCEL_PX || dy > TOUCH_MOVE_CANCEL_PX) {
+              touchMovedRef.current = true;
+              return;
+            }
+            if (dx <= TAP_MAX_PX && dy <= TAP_MAX_PX && adultLocked) {
               e.preventDefault();
               openCardNav();
             }
           }}
           onTouchCancel={() => {
             touchStartRef.current = null;
+            touchMovedRef.current = false;
           }}
         >
           {stack}

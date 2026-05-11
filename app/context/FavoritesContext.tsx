@@ -55,7 +55,11 @@ export function FavoritesProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     let cancelled = false;
-    fetch(apiUrl("/api/favorites"))
+    const userId = readTelegramPrimaryUserId();
+    const favoritesUrl = userId == null
+      ? apiUrl("/api/favorites")
+      : apiUrl(`/api/favorites?user_id=${encodeURIComponent(String(userId))}`);
+    fetch(favoritesUrl)
       .then((res) => res.json())
       .then((data: unknown) => {
         if (cancelled) return;

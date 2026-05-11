@@ -1,6 +1,12 @@
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 import {
+  getTelegramUserState,
+} from "@/app/lib/telegramUserStateStore";
+import {
+  notifyTelegramWebhookUserState,
+} from "@/app/lib/telegramStateBotSync";
+import {
   normalizeOrderItems,
   parseDeliveryCountry,
   parseOptionalBonusPointsToSpend,
@@ -71,16 +77,32 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: result.error }, { status: result.status });
   }
 
+  if (result.bonusPointsSpent > 0) {
+    const st = await getTelegramUserState(userId);
+    if (st) {
+      await notifyTelegramWebhookUserState({
+        userId,
+        cart: st.cart,
+        favorites: st.favorites,
+        deliveryCountry: st.deliveryCountry,
+        bonus_points: st.bonus_points,
+      });
+    }
+  }
+
   const telegram = await recordAndNotifyTelegramOrder({
     orderId: result.orderId,
     userId,
     items,
-    total,
+    total: result.totalByn,
     delivery,
+    bonusPointsSpent: result.bonusPointsSpent,
   });
 
   return NextResponse.json({
     order_id: result.orderId,
+    total: result.totalByn,
+    bonus_points_spent: result.bonusPointsSpent,
     telegram_recorded: telegram.recorded,
     telegram_sent: telegram.sent,
   });

@@ -5,6 +5,7 @@ import { DELIVERY_COUNTRY_LABELS } from "@/app/lib/delivery";
 import type { OrderLineIn } from "@/app/lib/orderTypes";
 import { telegramSendMessage } from "@/app/lib/telegramBotApi";
 import { TELEGRAM_ORDER_BOT_DEFAULT } from "@/app/lib/telegramOrderCheckout";
+import { bonusDiscountByn } from "@/app/lib/bonusProgram";
 
 const BOT_ORDERS_PATH = path.join(process.cwd(), "data", "bot-orders.json");
 
@@ -14,6 +15,7 @@ type BotOrderRecord = {
   total: number;
   delivery: DeliveryCountry;
   status: string;
+  bonus_points_spent?: number;
 };
 
 function escapeTelegramHtml(s: string): string {
@@ -96,7 +98,15 @@ function buildTelegramOrderMessage(orderId: string, record: BotOrderRecord): str
     }),
     "",
     `🚚 Доставка: ${DELIVERY_COUNTRY_LABELS[record.delivery]}`,
-    `💰 Итого: ${formatByn(record.total)}`,
+    ...(record.bonus_points_spent && record.bonus_points_spent > 0
+      ? [
+          `Списано бонусов: ${record.bonus_points_spent.toLocaleString("ru-RU")}`,
+          `Скидка бонусами: ${formatByn(
+            bonusDiscountByn(record.bonus_points_spent, record.delivery),
+          )}`,
+        ]
+      : []),
+    `� Итого: ${formatByn(record.total)}`,
   ];
 
   return lines.join("\n");
@@ -108,6 +118,7 @@ export async function recordAndNotifyTelegramOrder(input: {
   items: OrderLineIn[];
   total: number;
   delivery: DeliveryCountry;
+  bonusPointsSpent?: number;
 }): Promise<{ recorded: boolean; sent: boolean; error?: string }> {
   const record: BotOrderRecord = {
     user_id: input.userId,
@@ -115,6 +126,9 @@ export async function recordAndNotifyTelegramOrder(input: {
     total: Math.round(input.total * 100) / 100,
     delivery: input.delivery,
     status: "new",
+    ...(input.bonusPointsSpent != null && input.bonusPointsSpent > 0
+      ? { bonus_points_spent: Math.floor(input.bonusPointsSpent) }
+      : {}),
   };
 
   let recorded = true;

@@ -95,7 +95,12 @@ export type PersistOrderInput = {
 };
 
 export type PersistOrderResult =
-  | { ok: true; orderId: string }
+  | {
+      ok: true;
+      orderId: string;
+      totalByn: number;
+      bonusPointsSpent: number;
+    }
   | { ok: false; error: string; status: number };
 
 /** Сохраняет заказ в ORDERS и на диск. */
@@ -171,5 +176,10 @@ export async function persistOrder(
 
   await saveOrderRecord(orderId, record);
 
-  return { ok: true, orderId };
+  return {
+    ok: true,
+    orderId,
+    totalByn: orderBynCharged,
+    bonusPointsSpent: spendApplied,
+  };
 }

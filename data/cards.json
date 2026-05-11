@@ -5227,5 +5227,47 @@
     "varioSmoothing": 0.18,
     "frontImageWidth": 600,
     "frontImageHeight": 900
+  },
+  {
+    "id": "dfadb98f-92d3-46ab-8e64-289b00fe8669",
+    "title": "Доппельгангер",
+    "description": "Доппельгангер — тёмное отражение Человека-Паука, в котором нет ни жалости, ни контроля. Его чудовищная сила, звериная реакция и безумная ярость превращают его в идеального хищника ночного города.\r\nМонстр, рождённый из тени Человека-Паука. Быстрый, беспощадный и смертельно опасный — Доппельгангер существует только ради охоты и разрушения.",
+    "category": "Marvel",
+    "subcategory": "",
+    "frontImage": "/uploads/1778514127642-455334f9.webp",
+    "backImage": "",
+    "price": 25,
+    "rarity": "limited",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "effect": "3d-horizontal",
+    "isNew": false,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": true,
+    "ratingAvg": 5,
+    "reviewCount": 0,
+    "categoryBg": "/uploads/1778514082963-1387028d.webp",
+    "frontImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryOrder": 58,
+    "priceRub": 750,
+    "frontImageWidth": 600,
+    "frontImageHeight": 900,
+    "rarities": [
+      "limited",
+      "common",
+      "novelty"
+    ]
   }
 ]

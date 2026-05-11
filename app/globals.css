@@ -328,8 +328,8 @@ img.category-tile-img {
 }
 
 .social-item > svg {
-  width: min(52%, 1.05rem);
-  height: min(52%, 1.05rem);
+  width: 82%;
+  height: 82%;
   max-width: 100%;
   max-height: 100%;
 }

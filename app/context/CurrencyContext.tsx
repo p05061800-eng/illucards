@@ -22,6 +22,7 @@ type CurrencyContextValue = {
   currency: DisplayCurrency;
   setCurrency: (c: DisplayCurrency) => void;
   hydrated: boolean;
+  needsCurrencyPrompt: boolean;
 };
 
 const CurrencyContext = createContext<CurrencyContextValue | null>(null);
@@ -29,6 +30,7 @@ const CurrencyContext = createContext<CurrencyContextValue | null>(null);
 export function CurrencyProvider({ children }: { children: ReactNode }) {
   const [currency, setCurrencyState] = useState<DisplayCurrency>("BYN");
   const [hydrated, setHydrated] = useState(false);
+  const [needsCurrencyPrompt, setNeedsCurrencyPrompt] = useState(false);
 
   useEffect(() => {
     try {
@@ -41,6 +43,8 @@ export function CurrencyProvider({ children }: { children: ReactNode }) {
         const raw = localStorage.getItem(STORAGE_KEY);
         if (raw === "RUB" || raw === "BYN") {
           setCurrencyState(raw);
+        } else {
+          setNeedsCurrencyPrompt(true);
         }
       }
     } catch {
@@ -60,11 +64,12 @@ export function CurrencyProvider({ children }: { children: ReactNode }) {
 
   const setCurrency = useCallback((c: DisplayCurrency) => {
     setCurrencyState(c);
+    setNeedsCurrencyPrompt(false);
   }, []);
 
   const value = useMemo(
-    () => ({ currency, setCurrency, hydrated }),
-    [currency, setCurrency, hydrated]
+    () => ({ currency, setCurrency, hydrated, needsCurrencyPrompt }),
+    [currency, setCurrency, hydrated, needsCurrencyPrompt]
   );
 
   return (

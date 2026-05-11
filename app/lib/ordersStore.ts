@@ -347,6 +347,7 @@ export async function updateOrderStatus(
           favorites: st.favorites,
           deliveryCountry: st.deliveryCountry,
           bonus_points: st.bonus_points,
+          bonusEarned: earn,
         });
         try {
           const text2 = await fs.readFile(filePath, "utf-8");

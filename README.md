@@ -63,7 +63,9 @@ npm run vercel:deploy  # прод: npx vercel deploy --prod
 
 ### Заказы и файлы на диске
 
-Заказы сохраняются в **`data/orders`** (см. `app/lib/orderPaths.ts`). На **Vercel** (serverless) постоянная запись в такой каталог **как правило непригодна** для продакшена: нужен **VPS/Docker с постоянным томом** для `data/orders` (и при необходимости `public/uploads`) или перенос хранения заказов во внешнее хранилище/БД.
+Заказы и синхронизированное состояние пользователя (корзина, избранное, бонусы) должны храниться во внешнем постоянном хранилище. В продакшене настрой **Redis** через `UPSTASH_REDIS_REST_URL` + `UPSTASH_REDIS_REST_TOKEN` или пару `KV_REST_API_*`: тогда заказы и корзины сохраняются между деплоями.
+
+Файлы **`data/orders`**, **`data/telegram-user-state.json`** и **`data/bot-orders.json`** — только fallback для локальной разработки/VPS с постоянным томом. На **Vercel** (serverless) постоянная запись в такой каталог **как правило непригодна** для продакшена: без Redis данные могут пропасть после деплоя, рестарта или смены инстанса.
 
 На **VPS**: `git clone`, `npm ci`, `npm run build`, за reverse proxy (nginx/Caddy) — `npm run start` или процесс-менеджер (systemd, pm2).
 

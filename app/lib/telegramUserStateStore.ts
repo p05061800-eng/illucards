@@ -4,7 +4,6 @@ import type { DeliveryCountry } from "@/app/lib/delivery";
 
 const STORE_FILE = path.join(process.cwd(), "data", "telegram-user-state.json");
 const REDIS_KEY = (userId: number) => `illucards:user-state:${userId}`;
-const TTL_SEC = 60 * 60 * 24 * 30;
 /**
  * Fallback для окружений без Redis и без записи на диск (например, serverless).
  * Не долговечно между инстансами, но не теряет состояние в рамках живого процесса.
@@ -138,8 +137,6 @@ export async function saveTelegramUserState(
     "SET",
     REDIS_KEY(userId),
     JSON.stringify(state),
-    "EX",
-    String(TTL_SEC),
   ]);
   if (j && !j.error) return state;
 

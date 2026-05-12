@@ -50,6 +50,9 @@ export async function POST(req: NextRequest) {
     const userId = requestUserId(req, body);
     if (userId != null) {
       const prev = await getTelegramUserState(userId);
+      if (ids.length === 0 && (prev?.favorites ?? []).length > 0 && body?.clear !== true) {
+        return NextResponse.json({ ok: true, ignored_empty: true });
+      }
       const saved = await saveTelegramUserState(userId, {
         cart: prev?.cart ?? [],
         favorites: ids,

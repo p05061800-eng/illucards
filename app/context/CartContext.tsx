@@ -313,7 +313,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
     }
   }, [cartItems, hydrated]);
 
-  const applyServerCartIfClearedElsewhere = useCallback(async () => {
+  const refreshServerUserStateMeta = useCallback(async () => {
     const userId = readTelegramPrimaryUserId();
     if (userId == null) return;
     try {
@@ -332,18 +332,17 @@ export function CartProvider({ children }: { children: ReactNode }) {
         typeof data.updatedAt === "number" && Number.isFinite(data.updatedAt)
           ? data.updatedAt
           : 0;
-      const cart = Array.isArray(data.cart) ? data.cart : [];
       const bp =
         typeof data.bonus_points === "number" && Number.isFinite(data.bonus_points)
           ? Math.max(0, Math.floor(data.bonus_points))
           : 0;
-      const seen = readClientSeenServerUpdatedAt();
+      const serverCart = normalizeLines(data.cart);
       if (ts > 0) {
         writeClientSeenServerUpdatedAt(ts);
       }
       setBonusBalance(bp);
-      if (seen > 0 && ts > seen && cart.length === 0) {
-        setCartItems([]);
+      if (serverCart.length > 0) {
+        setCartItems((prev) => (prev.length === 0 ? serverCart : prev));
       }
     } catch {
       /* ignore */
@@ -354,25 +353,33 @@ export function CartProvider({ children }: { children: ReactNode }) {
     if (!hydrated) return;
     const userId = readTelegramPrimaryUserId();
     if (userId == null) return;
-    void applyServerCartIfClearedElsewhere();
+    void refreshServerUserStateMeta();
     const tick = window.setInterval(() => {
-      void applyServerCartIfClearedElsewhere();
+      void refreshServerUserStateMeta();
     }, 28000);
     const onVis = () => {
-      if (document.visibilityState === "visible") void applyServerCartIfClearedElsewhere();
+      if (document.visibilityState === "visible") void refreshServerUserStateMeta();
     };
     document.addEventListener("visibilitychange", onVis);
     return () => {
       window.clearInterval(tick);
       document.removeEventListener("visibilitychange", onVis);
     };
-  }, [hydrated, applyServerCartIfClearedElsewhere]);
+  }, [hydrated, refreshServerUserStateMeta]);
 
   useEffect(() => {
     if (!hydrated) return;
     const userId = readTelegramPrimaryUserId();
     if (userId == null) return;
     const seen = readClientSeenServerUpdatedAt();
+    const cartPayload = cartItems.map((x) => ({
+      id: x.id,
+      title: x.title,
+      quantity: x.quantity,
+      priceByn: x.priceByn,
+      priceRub: x.priceRub,
+    }));
+    if (cartPayload.length === 0 && deliveryCountry == null) return;
     void fetch(apiUrl("/api/user-state"), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -383,13 +390,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
         ...(deliveryCountry != null
           ? { currency: displayCurrencyForDelivery(deliveryCountry) }
           : {}),
-        cart: cartItems.map((x) => ({
-          id: x.id,
-          title: x.title,
-          quantity: x.quantity,
-          priceByn: x.priceByn,
-          priceRub: x.priceRub,
-        })),
+        ...(cartPayload.length > 0 ? { cart: cartPayload } : {}),
       }),
     })
       .then(async (res) => {

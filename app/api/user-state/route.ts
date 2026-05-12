@@ -111,6 +111,7 @@ export async function POST(request: NextRequest) {
   }
   if ("cart" in o) {
     let incoming = parseCart(o.cart);
+    const explicitClearCart = o.clear_cart === true || o.cart_clear === true;
     const seenRaw = o.client_seen_updated_at;
     const clientSeen =
       typeof seenRaw === "number" && Number.isFinite(seenRaw)
@@ -130,10 +131,21 @@ export async function POST(request: NextRequest) {
     if (clientStaleVsServerEmpty) {
       incoming = [];
     }
-    cart = incoming;
+    if (incoming.length > 0 || (prev?.cart ?? []).length === 0 || explicitClearCart) {
+      cart = incoming;
+    }
   }
   if ("favorites" in o) {
-    favorites = parseFavorites(o.favorites);
+    const incomingFavorites = parseFavorites(o.favorites);
+    const explicitClearFavorites =
+      o.clear_favorites === true || o.favorites_clear === true;
+    if (
+      incomingFavorites.length > 0 ||
+      (prev?.favorites ?? []).length === 0 ||
+      explicitClearFavorites
+    ) {
+      favorites = incomingFavorites;
+    }
   }
   if ("delivery_country" in o) {
     if (o.delivery_country === null) {

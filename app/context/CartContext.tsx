@@ -337,11 +337,12 @@ export function CartProvider({ children }: { children: ReactNode }) {
         typeof data.bonus_points === "number" && Number.isFinite(data.bonus_points)
           ? Math.max(0, Math.floor(data.bonus_points))
           : 0;
+      const seen = readClientSeenServerUpdatedAt();
       if (ts > 0) {
         writeClientSeenServerUpdatedAt(ts);
       }
       setBonusBalance(bp);
-      if (ts > 0 && cart.length === 0) {
+      if (seen > 0 && ts > seen && cart.length === 0) {
         setCartItems([]);
       }
     } catch {

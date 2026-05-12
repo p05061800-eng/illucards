@@ -5,6 +5,7 @@ import {
   getTelegramUserState,
   saveTelegramUserState,
   type SyncedCartItem,
+  type SyncedUserState,
 } from "@/app/lib/telegramUserStateStore";
 
 function syncSecretOk(request: NextRequest): boolean {
@@ -78,13 +79,19 @@ export async function POST(request: NextRequest) {
   }
 
   const prev = await getTelegramUserState(userId);
-  const cart = parseCartFromBotSync(o.cart);
-  const favorites = parseFavoritesFromBotSync(o.favorites);
-  let deliveryCountry: DeliveryCountry | null = null;
-  if (o.delivery_country === null || o.delivery_country === undefined) {
-    deliveryCountry = null;
-  } else {
-    deliveryCountry = normalizeDeliveryCountry(o.delivery_country);
+  const nextState: Partial<SyncedUserState> = {};
+  if ("cart" in o) {
+    nextState.cart = parseCartFromBotSync(o.cart);
+  }
+  if ("favorites" in o) {
+    nextState.favorites = parseFavoritesFromBotSync(o.favorites);
+  }
+  if ("delivery_country" in o) {
+    let deliveryCountry: DeliveryCountry | null = null;
+    if (o.delivery_country !== null && o.delivery_country !== undefined) {
+      deliveryCountry = normalizeDeliveryCountry(o.delivery_country);
+    }
+    nextState.deliveryCountry = deliveryCountry;
   }
   const prevBonusPoints = Math.max(0, Math.floor(prev?.bonus_points ?? 0));
   let bonus_points = prevBonusPoints;
@@ -96,12 +103,8 @@ export async function POST(request: NextRequest) {
     }
   }
 
-  const saved = await saveTelegramUserState(userId, {
-    cart,
-    favorites,
-    deliveryCountry,
-    bonus_points,
-  });
+  nextState.bonus_points = bonus_points;
+  const saved = await saveTelegramUserState(userId, nextState);
 
   return NextResponse.json({
     ok: true,

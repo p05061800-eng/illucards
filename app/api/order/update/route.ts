@@ -3,7 +3,10 @@ import { NextResponse } from "next/server";
 import { parseOrderStatusInput } from "@/app/lib/orderStatus";
 import { getOrder, updateOrderStatus } from "@/app/lib/ordersStore";
 import { notifyTelegramWebhookUserState } from "@/app/lib/telegramStateBotSync";
-import { clearSyncedCartForTelegramUser } from "@/app/lib/telegramUserStateStore";
+import {
+  clearSyncedCartForTelegramUser,
+  getTelegramUserState,
+} from "@/app/lib/telegramUserStateStore";
 import {
   normalizeOrderItems,
   parseDeliveryCountry,
@@ -102,5 +105,10 @@ export async function POST(request: NextRequest) {
     }
   }
 
-  return NextResponse.json({ ok: true });
+  const userId = existing?.user_id != null ? Math.floor(existing.user_id) : null;
+  const state = userId != null && userId > 0 ? await getTelegramUserState(userId) : null;
+  return NextResponse.json({
+    ok: true,
+    ...(state ? { bonus_points: state.bonus_points } : {}),
+  });
 }

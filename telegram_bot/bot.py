@@ -96,6 +96,15 @@ def _persist_bot_orders() -> None:
         logger.warning("bot-orders write: %s", e)
 
 
+def _delete_bot_order(order_id: str) -> None:
+    oid = str(order_id or "").strip()
+    if not oid:
+        return
+    if oid in BOT_ORDERS:
+        del BOT_ORDERS[oid]
+        _persist_bot_orders()
+
+
 def _load_known_start_user_ids() -> set[int]:
     if not KNOWN_START_IDS_PATH.exists():
         return set()
@@ -1727,6 +1736,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
                         order_id,
                     )
                     if isinstance(restored, dict):
+                        _delete_bot_order(order_id)
                         await q.answer("Принято")
                         await q.message.reply_text(
                             "Заказ подтверждён. Корзина на сайте очищена. Бонусы начислены."
@@ -1756,6 +1766,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
             if isinstance(existing, dict) and str(existing.get("status") or "").strip().lower() == "confirmed":
                 if not await post_site_order_status(order_id, "confirmed", existing, owner_id):
                     logger.warning("Сайт: не удалось повторно синхронизировать заказ %s", order_id)
+                _delete_bot_order(order_id)
                 await q.answer("Уже подтверждён")
                 try:
                     await q.edit_message_reply_markup(reply_markup=None)
@@ -1768,8 +1779,10 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
             BOT_ORDERS[order_id] = rec
             _persist_bot_orders()
 
-            if not await post_site_order_status(order_id, "confirmed"):
+            if not await post_site_order_status(order_id, "confirmed", order, owner_id):
                 logger.warning("Сайт: не удалось обновить статус заказа %s", order_id)
+            else:
+                _delete_bot_order(order_id)
 
             # Ошибка уведомления админа не должна ломать подтверждение заказа пользователю.
             if admin_chat_id:
@@ -2021,6 +2034,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
                 if isinstance(mid, int) and mid > 0:
                     await post_site_admin_message_id(order_id, mid)
 
+            _delete_bot_order(order_id)
             earned = int(result.get("bonus_earned") or 0)
             balance = int(result.get("bonus_points") or 0)
             bonus_note = ""

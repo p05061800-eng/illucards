@@ -51,7 +51,7 @@ export default function Home() {
 
         <section
           id="collection"
-          className="mx-auto w-full max-w-[min(100%,1800px)] scroll-mt-24 px-5 pb-8 pt-8 sm:px-10 sm:pb-12 sm:pt-10"
+          className="mx-auto w-full max-w-[min(100%,1800px)] scroll-mt-24 px-5 pb-8 pt-2 sm:px-10 sm:pb-12 sm:pt-4"
         >
           <h2 className="site-heading mb-10 text-2xl font-bold tracking-tight text-balance sm:text-3xl">
             Коллекции

@@ -808,7 +808,7 @@ body::after {
     --hero-gap-novelties-title-to-card: clamp(1.05rem, 2vw, 1.65rem);
     --hero-gap-hero-card-to-name: clamp(0.55rem, 1.05vw, 0.85rem);
     /* Высота «окна» новинок на ≥1025px — строка названия+кнопки не смещается при смене карты. */
-    --hero-novelty-card-slot: clamp(34rem, 46vh, 42rem);
+    --hero-novelty-card-slot: clamp(24rem, 36vh, 34rem);
   }
 
   .hero-wordmark-row {
@@ -922,7 +922,7 @@ body::after {
     justify-items: stretch;
     width: 100%;
     min-height: 0;
-    row-gap: clamp(2rem, 4.5vw, 3.75rem);
+    row-gap: clamp(0.75rem, 1.8vw, 1.75rem);
   }
 
   .hero-right-side--novelty .hero-novelty-header {
@@ -950,14 +950,14 @@ body::after {
     align-items: flex-start;
     justify-content: center;
     box-sizing: border-box;
-    padding-bottom: clamp(2.75rem, 6vw, 4.75rem);
+    padding-bottom: clamp(0.75rem, 2vw, 1.5rem);
   }
 
   .hero-right-side--novelty .hero-novelty-meta {
     grid-row: 3;
     align-self: start;
-    margin-top: clamp(2rem, 4.5vw, 3.5rem);
-    padding-top: clamp(1rem, 2.2vw, 1.75rem);
+    margin-top: clamp(0.25rem, 0.9vw, 0.85rem);
+    padding-top: clamp(0.25rem, 0.8vw, 0.65rem);
     transform: none;
   }
 

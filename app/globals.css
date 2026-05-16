@@ -651,7 +651,7 @@ body::after {
   gap: 0;
   padding-top: clamp(8px, 1.8vw, 18px);
   padding-right: var(--hero-inline-pad);
-  padding-bottom: var(--hero-inline-pad);
+  padding-bottom: clamp(0.25rem, 0.8vw, 0.75rem);
   padding-left: var(--hero-inline-pad);
   min-width: 0;
 }
@@ -795,7 +795,7 @@ body::after {
   .hero-stage {
     display: grid;
     grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
-    grid-template-rows: auto 1fr;
+    grid-template-rows: auto auto;
     column-gap: clamp(40px, 2.5vw, 56px);
     row-gap: 24px;
     align-items: start;
@@ -808,7 +808,7 @@ body::after {
     --hero-gap-novelties-title-to-card: clamp(1.05rem, 2vw, 1.65rem);
     --hero-gap-hero-card-to-name: clamp(0.55rem, 1.05vw, 0.85rem);
     /* Высота «окна» новинок на ≥1025px — строка названия+кнопки не смещается при смене карты. */
-    --hero-novelty-card-slot: clamp(24rem, 36vh, 34rem);
+    --hero-novelty-card-slot: clamp(14rem, 24vh, 22rem);
   }
 
   .hero-wordmark-row {
@@ -913,10 +913,7 @@ body::after {
     grid-template-columns: minmax(0, 1fr);
     grid-template-rows:
       auto
-      minmax(
-        var(--hero-novelty-card-slot, 34rem),
-        var(--hero-novelty-card-slot, 34rem)
-      )
+      auto
       auto;
     align-items: stretch;
     justify-items: stretch;
@@ -941,7 +938,7 @@ body::after {
   .hero-right-side--novelty .hero-novelty-card-shell {
     grid-row: 2;
     align-self: stretch;
-    height: 100%;
+    height: auto;
     min-height: 0;
     width: 100%;
     position: relative;

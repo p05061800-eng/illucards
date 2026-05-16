@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import type { DeliveryCountry } from "@/app/lib/delivery";
 import { normalizeDeliveryCountry } from "@/app/lib/delivery";
+import { reconcileBonusPointsForUser } from "@/app/lib/ordersStore";
 import { notifyTelegramWebhookUserState } from "@/app/lib/telegramStateBotSync";
 import {
   getTelegramUserState,
@@ -194,11 +195,13 @@ export async function GET(request: NextRequest) {
     if (userId == null) {
       return NextResponse.json({ error: "Некорректный user_id" }, { status: 400 });
     }
+    await reconcileBonusPointsForUser(userId);
     const state = await getTelegramUserState(userId);
     return NextResponse.json(state ?? EMPTY_STATE);
   }
 
   if (cookieUid != null) {
+    await reconcileBonusPointsForUser(cookieUid);
     const state = await getTelegramUserState(cookieUid);
     return NextResponse.json(state ?? EMPTY_STATE);
   }

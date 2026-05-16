@@ -46,11 +46,14 @@ export async function POST(req: NextRequest) {
     if (!ids) {
       return NextResponse.json({ error: "Expected JSON array" }, { status: 400 });
     }
-    favoritesStore = ids;
+    const explicitClear = body?.clear === true;
+    if (ids.length > 0 || favoritesStore.length === 0 || explicitClear) {
+      favoritesStore = ids;
+    }
     const userId = requestUserId(req, body);
     if (userId != null) {
       const prev = await getTelegramUserState(userId);
-      if (ids.length === 0 && (prev?.favorites ?? []).length > 0 && body?.clear !== true) {
+      if (ids.length === 0 && (prev?.favorites ?? []).length > 0 && !explicitClear) {
         return NextResponse.json({ ok: true, ignored_empty: true });
       }
       const saved = await saveTelegramUserState(userId, {

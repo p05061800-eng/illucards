@@ -625,6 +625,29 @@ async function listBotOrderSummariesForUser(
   return rows;
 }
 
+export async function reconcileBonusPointsForUser(userId: number): Promise<number> {
+  if (!Number.isFinite(userId) || userId <= 0) return 0;
+  const uid = Math.floor(userId);
+  const rows = await listOrdersForUser(uid);
+  let awarded = 0;
+  for (const row of rows) {
+    const record = await getOrder(row.id);
+    if (
+      !record ||
+      record.user_id !== uid ||
+      record.bonus_awarded ||
+      !orderStatusEligibleForBonusAccrual(record.status)
+    ) {
+      continue;
+    }
+    const before = bonusPointsToEarnForOrderItems(record.items);
+    if (before <= 0) continue;
+    const result = await updateOrderStatus(row.id, record.status);
+    if (result.ok) awarded += before;
+  }
+  return awarded;
+}
+
 function orderSummaryFromRecord(
   id: string,
   record: OrderRecord,

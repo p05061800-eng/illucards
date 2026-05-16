@@ -149,7 +149,13 @@ export async function POST(request: NextRequest) {
 
   await saveOrderRecord(orderId, record);
   if (requestedStatus !== "new") {
-    await updateOrderStatus(orderId, requestedStatus);
+    const updateResult = await updateOrderStatus(orderId, requestedStatus);
+    if (!updateResult.ok) {
+      return NextResponse.json(
+        { error: updateResult.error },
+        { status: updateResult.status },
+      );
+    }
   }
   if (requestedStatus === "confirmed" || requestedStatus === "paid") {
     try {

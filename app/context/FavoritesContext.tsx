@@ -10,6 +10,7 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from "react";
@@ -52,6 +53,7 @@ const FavoritesContext = createContext<FavoritesContextValue | null>(null);
 export function FavoritesProvider({ children }: { children: ReactNode }) {
   const [favoriteIds, setFavoriteIds] = useState<string[]>([]);
   const [hydrated, setHydrated] = useState(false);
+  const changedByUserRef = useRef(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -92,13 +94,16 @@ export function FavoritesProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (!hydrated) return;
+    if (!changedByUserRef.current) return;
     const userId = readTelegramPrimaryUserId();
+    const clear = favoriteIds.length === 0;
     void fetch(apiUrl("/api/favorites"), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(userId == null ? favoriteIds : {
         user_id: userId,
         favorites: favoriteIds,
+        ...(clear ? { clear: true } : {}),
       }),
     }).catch(() => {});
     if (userId == null) return;
@@ -108,6 +113,7 @@ export function FavoritesProvider({ children }: { children: ReactNode }) {
       body: JSON.stringify({
         user_id: userId,
         favorites: favoriteIds,
+        ...(clear ? { clear_favorites: true } : {}),
       }),
     }).catch(() => {});
   }, [favoriteIds, hydrated]);
@@ -119,6 +125,7 @@ export function FavoritesProvider({ children }: { children: ReactNode }) {
 
   const toggleFavorite = useCallback((card: StoredCard) => {
     const id = card.id;
+    changedByUserRef.current = true;
     setFavoriteIds((prev) =>
       prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
     );

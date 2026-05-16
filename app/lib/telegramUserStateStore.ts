@@ -25,6 +25,7 @@ export type SyncedUserState = {
   deliveryCountry: DeliveryCountry | null;
   /** Бонусные баллы (начисление за доставленные заказы, списание в корзине). */
   bonus_points: number;
+  cartClearedAt?: number;
   updatedAt: number;
 };
 
@@ -90,6 +91,9 @@ function sanitize(data: Partial<SyncedUserState>): SyncedUserState {
     cart,
     deliveryCountry: parseDeliveryCountry(data.deliveryCountry),
     bonus_points,
+    ...(typeof data.cartClearedAt === "number" && Number.isFinite(data.cartClearedAt)
+      ? { cartClearedAt: data.cartClearedAt }
+      : {}),
     updatedAt:
       typeof data.updatedAt === "number" && Number.isFinite(data.updatedAt)
         ? data.updatedAt
@@ -129,6 +133,10 @@ export async function saveTelegramUserState(
       "bonus_points" in nextState
         ? Math.max(0, Math.floor(Number(nextState.bonus_points) || 0))
         : Math.max(0, Math.floor(prev?.bonus_points ?? 0)),
+    cartClearedAt:
+      "cartClearedAt" in nextState
+        ? nextState.cartClearedAt
+        : prev?.cartClearedAt,
   };
   const state = sanitize(merged);
   MEMORY_STORE[String(userId)] = state;
@@ -163,6 +171,7 @@ export async function clearSyncedCartForTelegramUser(
     favorites: prev?.favorites ?? [],
     deliveryCountry: prev?.deliveryCountry ?? null,
     bonus_points: Math.max(0, Math.floor(prev?.bonus_points ?? 0)),
+    cartClearedAt: Date.now(),
   });
 }
 

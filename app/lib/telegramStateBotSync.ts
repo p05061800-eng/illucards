@@ -11,6 +11,7 @@ export async function notifyTelegramWebhookUserState(opts: {
   deliveryCountry: DeliveryCountry | null;
   bonus_points?: number;
   bonusEarned?: number;
+  cartClearedAt?: number;
 }): Promise<void> {
   const base = (process.env.TELEGRAM_SYNC_API_URL || "").trim().replace(/\/+$/, "");
   if (!base) return;
@@ -30,6 +31,9 @@ export async function notifyTelegramWebhookUserState(opts: {
           : {}),
         ...(typeof opts.bonusEarned === "number" && Number.isFinite(opts.bonusEarned)
           ? { bonusEarned: Math.max(0, Math.floor(opts.bonusEarned)) }
+          : {}),
+        ...(typeof opts.cartClearedAt === "number" && Number.isFinite(opts.cartClearedAt)
+          ? { cartClearedAt: Math.floor(opts.cartClearedAt) }
           : {}),
         cart: opts.cart.map((x) => ({
           ref: x.id,

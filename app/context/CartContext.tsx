@@ -55,6 +55,7 @@ const STORAGE_KEY = CART_STORAGE_KEY;
 const DELIVERY_STORAGE_KEY = "illucards-delivery-country";
 /** Последний `updatedAt` с сервера (`/api/user-state`) — для согласования после очистки корзины при подтверждении заказа в боте. */
 const USER_STATE_SYNC_AT_KEY = "illucards-user-state-updated-at";
+const CART_CLEARED_AT_KEY = "illucards-cart-cleared-at";
 
 function readClientSeenServerUpdatedAt(): number {
   if (typeof window === "undefined") return 0;
@@ -70,6 +71,25 @@ function writeClientSeenServerUpdatedAt(ts: number): void {
   if (typeof window === "undefined" || !Number.isFinite(ts) || ts <= 0) return;
   try {
     localStorage.setItem(USER_STATE_SYNC_AT_KEY, String(Math.floor(ts)));
+  } catch {
+    /* ignore */
+  }
+}
+
+function readClientSeenCartClearedAt(): number {
+  if (typeof window === "undefined") return 0;
+  try {
+    const v = Number(localStorage.getItem(CART_CLEARED_AT_KEY));
+    return Number.isFinite(v) && v > 0 ? v : 0;
+  } catch {
+    return 0;
+  }
+}
+
+function writeClientSeenCartClearedAt(ts: number): void {
+  if (typeof window === "undefined" || !Number.isFinite(ts) || ts <= 0) return;
+  try {
+    localStorage.setItem(CART_CLEARED_AT_KEY, String(Math.floor(ts)));
   } catch {
     /* ignore */
   }
@@ -327,6 +347,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
         cart?: unknown[];
         updatedAt?: unknown;
         bonus_points?: unknown;
+        cartClearedAt?: unknown;
       };
       const ts =
         typeof data.updatedAt === "number" && Number.isFinite(data.updatedAt)
@@ -337,10 +358,20 @@ export function CartProvider({ children }: { children: ReactNode }) {
           ? Math.max(0, Math.floor(data.bonus_points))
           : 0;
       const serverCart = normalizeLines(data.cart);
+      const cartClearedAt =
+        typeof data.cartClearedAt === "number" && Number.isFinite(data.cartClearedAt)
+          ? data.cartClearedAt
+          : 0;
       if (ts > 0) {
         writeClientSeenServerUpdatedAt(ts);
       }
       setBonusBalance(bp);
+      if (cartClearedAt > readClientSeenCartClearedAt()) {
+        writeClientSeenCartClearedAt(cartClearedAt);
+        setCartItems([]);
+        setBonusSpendPointsState(0);
+        return;
+      }
       if (serverCart.length > 0) {
         setCartItems((prev) => (prev.length === 0 ? serverCart : prev));
       }

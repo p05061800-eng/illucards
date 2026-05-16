@@ -166,6 +166,7 @@ export async function POST(request: NextRequest) {
         favorites: st.favorites,
         deliveryCountry: st.deliveryCountry,
         bonus_points: st.bonus_points,
+        cartClearedAt: st.cartClearedAt,
       });
     } catch {
       /* Очистка корзины/синк не должны ломать оформление заказа из бота. */

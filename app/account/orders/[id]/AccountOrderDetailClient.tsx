@@ -443,14 +443,25 @@ export default function AccountOrderDetailClient({ orderId }: { orderId: string 
             </p>
           ) : null}
           <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 sm:gap-3">
-            <a
-              href={orderHref}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex min-h-[3.25rem] w-full items-center justify-center rounded-xl bg-[#5D6BF3] px-4 text-base font-semibold text-white shadow-md shadow-indigo-900/20 transition hover:brightness-110 active:scale-[0.99] sm:min-h-14"
-            >
-              Подтвердить в Telegram
-            </a>
+            {st === "new" ? (
+              <a
+                href={orderHref}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex min-h-[3.25rem] w-full items-center justify-center rounded-xl bg-[#5D6BF3] px-4 text-base font-semibold text-white shadow-md shadow-indigo-900/20 transition hover:brightness-110 active:scale-[0.99] sm:min-h-14"
+              >
+                Подтвердить в Telegram
+              </a>
+            ) : (
+              <a
+                href={orderHref}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex min-h-[3.25rem] w-full items-center justify-center rounded-xl bg-[#5D6BF3] px-4 text-base font-semibold text-white shadow-md shadow-indigo-900/20 transition hover:brightness-110 active:scale-[0.99] sm:min-h-14"
+              >
+                Открыть в Telegram
+              </a>
+            )}
             {canCancelOnSite ? (
               <button
                 type="button"
@@ -461,20 +472,11 @@ export default function AccountOrderDetailClient({ orderId }: { orderId: string 
                 <XCircle className="h-5 w-5 shrink-0" strokeWidth={2} aria-hidden />
                 {cancelBusy ? "Отмена…" : "Отменить заказ"}
               </button>
-            ) : (
-              <a
-                href={orderHref}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex min-h-[3.25rem] w-full items-center justify-center rounded-xl border-2 border-zinc-300/90 bg-white px-4 text-base font-semibold text-zinc-900 shadow-sm transition hover:bg-zinc-50 active:scale-[0.99] sm:min-h-14"
-              >
-                Открыть в Telegram
-              </a>
-            )}
+            ) : null}
           </div>
-          {!canCancelOnSite && st === "confirmed" ? (
+          {!canCancelOnSite && st !== "new" && st !== "cancelled" ? (
             <p className="rounded-xl border border-zinc-200/90 bg-white px-3 py-2 text-center text-xs text-zinc-600">
-              Заказ уже подтверждён в Telegram — отменить с сайта нельзя. При необходимости напишите в поддержку.
+              Заказ уже в сборке — отменить с сайта нельзя. При необходимости напишите в поддержку.
             </p>
           ) : null}
           <a

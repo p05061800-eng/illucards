@@ -98,6 +98,7 @@ export async function POST(request: NextRequest) {
           favorites: st.favorites,
           deliveryCountry: st.deliveryCountry,
           bonus_points: st.bonus_points,
+          cartClearedAt: st.cartClearedAt,
         });
       } catch {
         /* очистка/синк не должны ломать смену статуса */

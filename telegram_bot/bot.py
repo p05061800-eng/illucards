@@ -1288,6 +1288,10 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         )
         return
 
+    if low0 in ("my_orders", "orders"):
+        await show_my_orders(update, context)
+        return
+
     oid = _order_id_from_start_args(args)
     if oid:
         order = await fetch_site_order(oid)

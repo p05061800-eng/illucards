@@ -71,6 +71,16 @@ function orderTelegramHref(orderId: string): string {
   return `https://t.me/${name}?start=${encodeURIComponent(start)}`;
 }
 
+/** Deep link в раздел заказов бота: для уже подтверждённых заказов не открываем сценарий подтверждения. */
+function telegramMyOrdersHref(): string {
+  const raw =
+    process.env.NEXT_PUBLIC_TELEGRAM_ORDER_BOT_USERNAME ||
+    process.env.NEXT_PUBLIC_TELEGRAM_BOT_USERNAME ||
+    "";
+  const name = (raw || TELEGRAM_ORDER_BOT_DEFAULT).replace(/^@/, "").trim();
+  return `https://t.me/${name}?start=${encodeURIComponent("my_orders")}`;
+}
+
 function parseOrderDelivery(o: OrderApi): DeliveryCountry | null {
   const d = o.delivery ?? o.deliveryCountry;
   if (d === "BY" || d === "RU" || d === "UA" || d === "OTHER") {
@@ -272,6 +282,7 @@ export default function AccountOrderDetailClient({ orderId }: { orderId: string 
 
   const supportHref = useMemo(() => supportTelegramHref(orderId), [orderId]);
   const orderHref = useMemo(() => orderTelegramHref(orderId), [orderId]);
+  const myOrdersHref = useMemo(() => telegramMyOrdersHref(), []);
 
   if (lsGate === "pending" || (lsGate === "ok" && !hydrated)) {
     return (
@@ -454,7 +465,7 @@ export default function AccountOrderDetailClient({ orderId }: { orderId: string 
               </a>
             ) : (
               <a
-                href={orderHref}
+                href={myOrdersHref}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex min-h-[3.25rem] w-full items-center justify-center rounded-xl bg-[#5D6BF3] px-4 text-base font-semibold text-white shadow-md shadow-indigo-900/20 transition hover:brightness-110 active:scale-[0.99] sm:min-h-14"
@@ -474,7 +485,7 @@ export default function AccountOrderDetailClient({ orderId }: { orderId: string 
               </button>
             ) : null}
           </div>
-          {!canCancelOnSite && st !== "new" && st !== "cancelled" ? (
+          {!canCancelOnSite && st !== "cancelled" ? (
             <p className="rounded-xl border border-zinc-200/90 bg-white px-3 py-2 text-center text-xs text-zinc-600">
               Заказ уже в сборке — отменить с сайта нельзя. При необходимости напишите в поддержку.
             </p>

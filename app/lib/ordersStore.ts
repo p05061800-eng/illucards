@@ -12,7 +12,10 @@ import {
 } from "@/app/lib/bonusProgram";
 import { sanitizeOrderLineImageUrl } from "@/app/lib/sanitizeOrderLineImageUrl";
 import { notifyTelegramWebhookUserState } from "@/app/lib/telegramStateBotSync";
-import { incrementTelegramUserBonusPoints } from "@/app/lib/telegramUserStateStore";
+import {
+  incrementTelegramUserBonusPoints,
+  trySpendTelegramUserBonusPoints,
+} from "@/app/lib/telegramUserStateStore";
 
 /**
  * In-memory заказы (сервер). При перезапуске подгружается из `data/orders/*.json`.
@@ -311,7 +314,38 @@ export async function updateOrderStatus(
     return { ok: false, error: "Заказ не найден", status: 404 };
   }
 
-  const updated: OrderRecord = { ...existing, status };
+  const nowBonusEligible =
+    orderStatusEligibleForBonusAccrual(status) &&
+    existing.status !== "cancelled" &&
+    status !== "cancelled";
+  const spend = Math.max(0, Math.floor(existing.bonus_points_spent ?? 0));
+  const deductBonusNow =
+    nowBonusEligible &&
+    spend > 0 &&
+    !existing.bonus_points_deducted &&
+    existing.user_id != null &&
+    existing.user_id > 0;
+  let bonusDeductedNow = false;
+  if (deductBonusNow) {
+    const uid = Math.floor(existing.user_id!);
+    const spent = await trySpendTelegramUserBonusPoints(uid, spend);
+    if (!spent.ok) {
+      return { ok: false, error: "Недостаточно бонусов для списания", status: 409 };
+    }
+    bonusDeductedNow = true;
+    await notifyTelegramWebhookUserState({
+      userId: uid,
+      cart: spent.state.cart,
+      favorites: spent.state.favorites,
+      deliveryCountry: spent.state.deliveryCountry,
+      bonus_points: spent.state.bonus_points,
+    });
+  }
+  const updated: OrderRecord = {
+    ...existing,
+    status,
+    ...(bonusDeductedNow ? { bonus_points_deducted: true } : {}),
+  };
   ORDERS[id] = updated;
   await persistOrderRecordToRedis(id, updated);
 
@@ -325,16 +359,14 @@ export async function updateOrderStatus(
       if (updated.telegram_admin_message_id != null) {
         raw.telegram_admin_message_id = updated.telegram_admin_message_id;
       }
+      if (updated.bonus_points_deducted) {
+        raw.bonus_points_deducted = true;
+      }
       await fs.writeFile(filePath, JSON.stringify(raw, null, 2), "utf-8");
     }
   } catch {
     /* нет файла или FS только для чтения — статус уже в ORDERS */
   }
-
-  const nowBonusEligible =
-    orderStatusEligibleForBonusAccrual(status) &&
-    existing.status !== "cancelled" &&
-    status !== "cancelled";
   const grantBonusNow =
     nowBonusEligible &&
     !existing.bonus_awarded &&

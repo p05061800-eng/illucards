@@ -37,4 +37,6 @@ export type OrderRecord = {
   bonus_awarded?: boolean;
   /** Сколько бонусных баллов списано при оформлении. */
   bonus_points_spent?: number;
+  /** Бонусы за скидку уже фактически списаны с баланса пользователя. */
+  bonus_points_deducted?: boolean;
 };

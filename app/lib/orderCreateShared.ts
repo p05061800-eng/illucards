@@ -7,7 +7,6 @@ import { saveOrderRecord } from "@/app/lib/ordersStore";
 import { sanitizeOrderLineImageUrl } from "@/app/lib/sanitizeOrderLineImageUrl";
 import {
   getTelegramUserState,
-  trySpendTelegramUserBonusPoints,
 } from "@/app/lib/telegramUserStateStore";
 
 export { ORDERS_DIR } from "@/app/lib/orderPaths";
@@ -155,13 +154,6 @@ export async function persistOrder(
 
   if (Math.abs(orderBynCharged - clientTotalByn) > TOTAL_EPS) {
     return { ok: false, error: "Сумма заказа не совпадает с корзиной", status: 400 };
-  }
-
-  if (spendApplied > 0 && userId != null && userId > 0) {
-    const spent = await trySpendTelegramUserBonusPoints(userId, spendApplied);
-    if (!spent.ok) {
-      return { ok: false, error: "Недостаточно бонусов", status: 409 };
-    }
   }
 
   const orderId = requestedOrderId ?? randomUUID();

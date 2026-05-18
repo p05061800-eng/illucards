@@ -9,7 +9,6 @@ import { notifyTelegramWebhookUserState } from "@/app/lib/telegramStateBotSync";
 import {
   clearSyncedCartForTelegramUser,
   getTelegramUserState,
-  trySpendTelegramUserBonusPoints,
 } from "@/app/lib/telegramUserStateStore";
 import {
   bonusPointsToEarnForOrderItems,
@@ -120,22 +119,6 @@ export async function POST(request: NextRequest) {
     (o.paid === true ? "paid" : "new");
   const initialStatus: OrderStatus = "new";
   const bonusPointsSpent = parsePositiveInt(o.bonus_points_spent ?? o.bonusApplied);
-  if (bonusPointsSpent != null) {
-    const spendResult = await trySpendTelegramUserBonusPoints(userId, bonusPointsSpent);
-    if (!spendResult.ok) {
-      return NextResponse.json(
-        { error: "Недостаточно бонусов для списания" },
-        { status: 409 },
-      );
-    }
-    await notifyTelegramWebhookUserState({
-      userId,
-      cart: spendResult.state.cart,
-      favorites: spendResult.state.favorites,
-      deliveryCountry: spendResult.state.deliveryCountry,
-      bonus_points: spendResult.state.bonus_points,
-    });
-  }
   const orderId = parseOptionalOrderId(o.order_id ?? o.id) ?? randomUUID();
   const record: OrderRecord = {
     user_id: userId,

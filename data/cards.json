@@ -5244,13 +5244,18 @@
       "intelligence": 50,
       "magic": 50
     },
-    "effect": "3d-horizontal",
     "isNew": false,
     "isPopular": false,
     "isSale": false,
     "inStock": true,
     "ratingAvg": 5,
     "reviewCount": 0,
+    "rarities": [
+      "limited",
+      "common",
+      "novelty"
+    ],
+    "effect": "3d-horizontal",
     "categoryBg": "/uploads/1778514082963-1387028d.webp",
     "frontImageFocus": {
       "x": 50,
@@ -5260,14 +5265,134 @@
       "x": 50,
       "y": 50
     },
-    "categoryOrder": 58,
     "priceRub": 750,
+    "categoryOrder": 58,
     "frontImageWidth": 600,
-    "frontImageHeight": 900,
+    "frontImageHeight": 900
+  },
+  {
+    "id": "a35617b5-28d2-4523-86de-fe429a4862c0",
+    "title": "Леди Хаос",
+    "description": "Огненный взгляд, молниеносные атаки и энергия, которую невозможно остановить. Леди Хаос врывается в бой как красный шторм, сметая всё на своём пути и оставляя после себя только разрушение и страх.\r\nСтоит ей появиться на поле боя — и атмосфера меняется мгновенно. Воздух становится тяжелее, враги начинают паниковать, а исход битвы уже предрешён. Леди Хаос приходит только за победой.",
+    "category": "Marvel",
+    "subcategory": "",
+    "frontImage": "/uploads/1779063843009-479360a2.webp",
+    "backImage": "/uploads/1779063846783-066f511a.webp",
+    "price": 30,
+    "rarity": "adult",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "isNew": false,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": true,
+    "ratingAvg": 5,
+    "reviewCount": 0,
+    "rarities": [
+      "limited",
+      "adult",
+      "novelty"
+    ],
+    "effect": "vario",
+    "categoryBg": "/uploads/1779064173453-c6cef88d.webp",
+    "frontImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "backImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "priceRub": 800,
+    "categoryOrder": 54,
+    "varioSmoothing": 0.18,
+    "frontImageWidth": 600,
+    "frontImageHeight": 900
+  },
+  {
+    "id": "45f8e1f9-1362-425f-b049-f3826b9444df",
+    "title": "Бустер по Человеку-Пауку",
+    "description": "Бустер — это шанс открыть редкую 3D-карточку из вселенной Marvel. Внутри тебя ждут легендарные герои, опасные злодеи и уникальные коллекционные дизайны с эффектом объёма, которые выглядят как кадр из настоящего фильма. Никогда не знаешь, кто попадётся следующим: Человек-Паук, Веном, Майлз Моралес или эксклюзивная лимитированная карта. Собери собственную коллекцию, обменивайся карточками и открой самых редких персонажей серии.»",
+    "category": "Marvel",
+    "subcategory": "",
+    "frontImage": "/uploads/1779064072943-081d3be2.webp",
+    "backImage": "",
+    "price": 20,
+    "rarity": "limited",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "isNew": false,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": true,
+    "ratingAvg": 5,
+    "reviewCount": 0,
+    "effect": "3d-horizontal",
+    "categoryBg": "/uploads/1779064130738-a5101bb7.webp",
+    "frontImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "priceRub": 600,
+    "frontImageWidth": 600,
+    "frontImageHeight": 900
+  },
+  {
+    "id": "b29b06bc-32d0-4854-89df-68bddb673cdd",
+    "title": "Бустеры по Черепашкам Ниндзя",
+    "description": "Лео, Раф, Майки и Донни готовы ворваться в твою коллекцию. Открывай бустеры, находи ультраредкие карточки и собери собственную команду легендарных Черепашек Ниндзя.\r\nКаждая упаковка хранит тайну. Ты никогда не знаешь, какая именно 3D-карточка попадётся внутри: герой, мутант, мастер боевых искусств или опасный враг. Именно поэтому открывать бустеры хочется снова и снова.",
+    "category": "TMNT",
+    "subcategory": "",
+    "frontImage": "/uploads/1779064234778-51fb2f37.webp",
+    "backImage": "",
+    "price": 20,
+    "rarity": "adult",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "isNew": false,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": true,
+    "ratingAvg": 5,
+    "reviewCount": 0,
     "rarities": [
       "limited",
       "common",
-      "novelty"
-    ]
+      "adult"
+    ],
+    "effect": "3d-horizontal",
+    "categoryBg": "/uploads/1779064188423-1aeb2576.webp",
+    "frontImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "priceRub": 600,
+    "categoryOrder": 31,
+    "frontImageWidth": 761,
+    "frontImageHeight": 1024
   }
 ]

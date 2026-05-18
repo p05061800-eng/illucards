@@ -1292,6 +1292,16 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         await show_my_orders(update, context)
         return
 
+    if low0 == "support" or low0.startswith("support_"):
+        support = (os.getenv("ILLUCARDS_SUPPORT_TEXT") or "").strip()
+        if support:
+            await update.message.reply_text(support)
+        else:
+            await update.message.reply_text(
+                "Напишите нам через форму на сайте или в соцсетях — ссылки внизу главной страницы IlluCards."
+            )
+        return
+
     oid = _order_id_from_start_args(args)
     if oid:
         order = await fetch_site_order(oid)

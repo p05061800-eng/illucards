@@ -4,6 +4,7 @@ import type { DeliveryCountry } from "@/app/lib/delivery";
 import { normalizeDeliveryCountry } from "@/app/lib/delivery";
 import { reconcileBonusPointsForUser } from "@/app/lib/ordersStore";
 import { notifyTelegramWebhookUserState } from "@/app/lib/telegramStateBotSync";
+import { findBotUserByUserId } from "@/app/lib/telegramBotUsersStore";
 import {
   getTelegramUserState,
   saveTelegramUserState,
@@ -185,6 +186,16 @@ const EMPTY_STATE: SyncedUserState = {
   updatedAt: 0,
 };
 
+async function stateWithTelegramUsername(
+  userId: number,
+  state: SyncedUserState | null,
+): Promise<SyncedUserState & { telegram_username?: string }> {
+  const base = state ?? EMPTY_STATE;
+  const row = await findBotUserByUserId(userId);
+  const username = row?.username?.replace(/^@/, "").trim();
+  return username ? { ...base, telegram_username: username } : base;
+}
+
 export async function GET(request: NextRequest) {
   const secret = (process.env.ILLUCARDS_USER_STATE_SYNC_SECRET || "").trim();
   const token = bearerToken(request);
@@ -197,13 +208,13 @@ export async function GET(request: NextRequest) {
     }
     await reconcileBonusPointsForUser(userId);
     const state = await getTelegramUserState(userId);
-    return NextResponse.json(state ?? EMPTY_STATE);
+    return NextResponse.json(await stateWithTelegramUsername(userId, state));
   }
 
   if (cookieUid != null) {
     await reconcileBonusPointsForUser(cookieUid);
     const state = await getTelegramUserState(cookieUid);
-    return NextResponse.json(state ?? EMPTY_STATE);
+    return NextResponse.json(await stateWithTelegramUsername(cookieUid, state));
   }
 
   if (!secret) {

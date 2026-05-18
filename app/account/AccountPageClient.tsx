@@ -17,6 +17,7 @@ import {
   ruPositionCountPhrase,
 } from "@/app/lib/orderStatus";
 import {
+  persistTelegramUserIdentity,
   readTelegramPrimaryUserId,
   readTelegramUserLink,
 } from "@/app/lib/telegramUserIdentity";
@@ -115,6 +116,7 @@ export default function AccountPageClient() {
   const [orders, setOrders] = useState<OrderListSummary[] | null>(null);
   const [ordersError, setOrdersError] = useState<string | null>(null);
   const [bonusPointsBalance, setBonusPointsBalance] = useState(0);
+  const [telegramUsernameFromServer, setTelegramUsernameFromServer] = useState("");
   const [orderLinesOpenById, setOrderLinesOpenById] = useState<Record<string, boolean>>({});
   const [tgCode, setTgCode] = useState("");
   const [tgInfo, setTgInfo] = useState<string | null>(null);
@@ -155,9 +157,21 @@ export default function AccountPageClient() {
       setOrders(Array.isArray(data.orders) ? data.orders : []);
       let bp = 0;
       if (stateRes.ok) {
-        const st = (await stateRes.json()) as { bonus_points?: unknown };
+        const st = (await stateRes.json()) as {
+          bonus_points?: unknown;
+          telegram_username?: unknown;
+        };
         if (typeof st.bonus_points === "number" && Number.isFinite(st.bonus_points)) {
           bp = Math.max(0, Math.floor(st.bonus_points));
+        }
+        const serverUsername =
+          typeof st.telegram_username === "string"
+            ? st.telegram_username.replace(/^@/, "").trim()
+            : "";
+        if (serverUsername) {
+          setTelegramUsernameFromServer(serverUsername);
+          const uid = readTelegramPrimaryUserId();
+          if (uid != null) persistTelegramUserIdentity(uid, serverUsername);
         }
       }
       setBonusPointsBalance(bp);
@@ -460,6 +474,7 @@ export default function AccountPageClient() {
   const rawUsername =
     fromSession?.telegramUsername?.trim() ||
     (fromLs?.user_id === telegramId ? fromLs.username : null) ||
+    telegramUsernameFromServer ||
     "";
   const username = rawUsername.replace(/^@/, "").trim();
   const showUsername = username.length > 0;

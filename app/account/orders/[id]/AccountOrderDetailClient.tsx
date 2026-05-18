@@ -49,15 +49,14 @@ type LsGate = "pending" | "ok" | "no_telegram";
 
 type LoadState = "idle" | "loading" | "notfound" | "ok";
 
-/** Deep link: https://t.me/<bot>?start=support_<order_id> */
-function supportTelegramHref(orderId: string): string {
+/** Deep link: https://t.me/<bot>?start=support */
+function supportTelegramHref(): string {
   const raw =
     process.env.NEXT_PUBLIC_TELEGRAM_ORDER_BOT_USERNAME ||
     process.env.NEXT_PUBLIC_TELEGRAM_BOT_USERNAME ||
     "";
   const name = (raw || TELEGRAM_ORDER_BOT_DEFAULT).replace(/^@/, "").trim();
-  const start = `support_${orderId}`;
-  return `https://t.me/${name}?start=${encodeURIComponent(start)}`;
+  return `https://t.me/${name}?start=${encodeURIComponent("support")}`;
 }
 
 /** Deep link заказа: в боте откроется карточка заказа с кнопками "Подтвердить/Отмена". */
@@ -69,16 +68,6 @@ function orderTelegramHref(orderId: string): string {
   const name = (raw || TELEGRAM_ORDER_BOT_DEFAULT).replace(/^@/, "").trim();
   const start = `order_${orderId}`;
   return `https://t.me/${name}?start=${encodeURIComponent(start)}`;
-}
-
-/** Deep link в раздел заказов бота: для уже подтверждённых заказов не открываем сценарий подтверждения. */
-function telegramMyOrdersHref(): string {
-  const raw =
-    process.env.NEXT_PUBLIC_TELEGRAM_ORDER_BOT_USERNAME ||
-    process.env.NEXT_PUBLIC_TELEGRAM_BOT_USERNAME ||
-    "";
-  const name = (raw || TELEGRAM_ORDER_BOT_DEFAULT).replace(/^@/, "").trim();
-  return `https://t.me/${name}?start=${encodeURIComponent("my_orders")}`;
 }
 
 function parseOrderDelivery(o: OrderApi): DeliveryCountry | null {
@@ -170,7 +159,7 @@ export default function AccountOrderDetailClient({ orderId }: { orderId: string 
     const ok =
       typeof window !== "undefined"
         ? window.confirm(
-            "Удалить заказ безвозвратно? Доступно только пока статус «Новый» (ещё без подтверждения в Telegram).",
+            "Удалить заказ из личного кабинета? Это не отменяет заказ, если он уже в сборке.",
           )
         : true;
     if (!ok) return;
@@ -280,9 +269,8 @@ export default function AccountOrderDetailClient({ orderId }: { orderId: string 
     }, 0);
   }, [order, orderId, repeatOrderToCart, router]);
 
-  const supportHref = useMemo(() => supportTelegramHref(orderId), [orderId]);
+  const supportHref = useMemo(() => supportTelegramHref(), []);
   const orderHref = useMemo(() => orderTelegramHref(orderId), [orderId]);
-  const myOrdersHref = useMemo(() => telegramMyOrdersHref(), []);
 
   if (lsGate === "pending" || (lsGate === "ok" && !hydrated)) {
     return (
@@ -327,7 +315,6 @@ export default function AccountOrderDetailClient({ orderId }: { orderId: string 
   const ref = formatOrderCardRef(orderId);
   const st = orderStatusFromStorage(order.status);
   const canCancelOnSite = st === "new";
-  const canDeleteOnSite = st === "new";
   const flowKind = orderAccountFlowKind(st);
   const statusText = orderAccountFlowLabel(st);
   const badgeClass = orderAccountFlowBadgeClass(flowKind);
@@ -453,38 +440,31 @@ export default function AccountOrderDetailClient({ orderId }: { orderId: string 
               {cancelErr}
             </p>
           ) : null}
-          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 sm:gap-3">
-            {st === "new" ? (
-              <a
-                href={orderHref}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex min-h-[3.25rem] w-full items-center justify-center rounded-xl bg-[#5D6BF3] px-4 text-base font-semibold text-white shadow-md shadow-indigo-900/20 transition hover:brightness-110 active:scale-[0.99] sm:min-h-14"
-              >
-                Подтвердить в Telegram
-              </a>
-            ) : (
-              <a
-                href={myOrdersHref}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex min-h-[3.25rem] w-full items-center justify-center rounded-xl bg-[#5D6BF3] px-4 text-base font-semibold text-white shadow-md shadow-indigo-900/20 transition hover:brightness-110 active:scale-[0.99] sm:min-h-14"
-              >
-                Открыть в Telegram
-              </a>
-            )}
-            {canCancelOnSite ? (
-              <button
-                type="button"
-                onClick={() => void handleCancelOrder()}
-                disabled={cancelBusy}
-                className="flex min-h-[3.25rem] w-full items-center justify-center gap-2 rounded-xl border-2 border-zinc-400/90 bg-white px-4 text-base font-semibold text-zinc-900 shadow-sm transition hover:bg-zinc-50 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-50 sm:min-h-14"
-              >
-                <XCircle className="h-5 w-5 shrink-0" strokeWidth={2} aria-hidden />
-                {cancelBusy ? "Отмена…" : "Отменить заказ"}
-              </button>
-            ) : null}
-          </div>
+          {st === "new" || canCancelOnSite ? (
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 sm:gap-3">
+              {st === "new" ? (
+                <a
+                  href={orderHref}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex min-h-[3.25rem] w-full items-center justify-center rounded-xl bg-[#5D6BF3] px-4 text-base font-semibold text-white shadow-md shadow-indigo-900/20 transition hover:brightness-110 active:scale-[0.99] sm:min-h-14"
+                >
+                  Подтвердить в Telegram
+                </a>
+              ) : null}
+              {canCancelOnSite ? (
+                <button
+                  type="button"
+                  onClick={() => void handleCancelOrder()}
+                  disabled={cancelBusy}
+                  className="flex min-h-[3.25rem] w-full items-center justify-center gap-2 rounded-xl border-2 border-zinc-400/90 bg-white px-4 text-base font-semibold text-zinc-900 shadow-sm transition hover:bg-zinc-50 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-50 sm:min-h-14"
+                >
+                  <XCircle className="h-5 w-5 shrink-0" strokeWidth={2} aria-hidden />
+                  {cancelBusy ? "Отмена…" : "Отменить заказ"}
+                </button>
+              ) : null}
+            </div>
+          ) : null}
           {!canCancelOnSite && st !== "cancelled" ? (
             <p className="rounded-xl border border-zinc-200/90 bg-white px-3 py-2 text-center text-xs text-zinc-600">
               Заказ уже в сборке — отменить с сайта нельзя. При необходимости напишите в поддержку.
@@ -499,17 +479,15 @@ export default function AccountOrderDetailClient({ orderId }: { orderId: string 
             <MessageCircle className="h-5 w-5 shrink-0" strokeWidth={2} aria-hidden />
             Написать в поддержку
           </a>
-          {canDeleteOnSite ? (
-            <button
-              type="button"
-              onClick={() => void handleDeleteOrder()}
-              disabled={deleteBusy}
-              className="flex min-h-[3.25rem] w-full items-center justify-center gap-2 rounded-xl border-2 border-red-300/90 bg-red-50 px-4 text-base font-semibold text-red-900 shadow-sm transition hover:bg-red-100 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-50 sm:min-h-14"
-            >
-              <Trash2 className="h-5 w-5 shrink-0" strokeWidth={2} aria-hidden />
-              {deleteBusy ? "Удаление…" : "Удалить заказ"}
-            </button>
-          ) : null}
+          <button
+            type="button"
+            onClick={() => void handleDeleteOrder()}
+            disabled={deleteBusy}
+            className="flex min-h-[3.25rem] w-full items-center justify-center gap-2 rounded-xl border-2 border-red-300/90 bg-red-50 px-4 text-base font-semibold text-red-900 shadow-sm transition hover:bg-red-100 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-50 sm:min-h-14"
+          >
+            <Trash2 className="h-5 w-5 shrink-0" strokeWidth={2} aria-hidden />
+            {deleteBusy ? "Удаление…" : "Удалить заказ"}
+          </button>
           <button
             type="button"
             onClick={handleRepeat}

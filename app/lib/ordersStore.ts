@@ -21,6 +21,7 @@ export const ORDERS: Record<string, OrderRecord> = Object.create(null);
 const BOT_ORDERS_PATH = path.join(process.cwd(), "data", "bot-orders.json");
 const REDIS_ORDER_KEY = (orderId: string) => `illucards:order:${orderId}`;
 const REDIS_USER_ORDERS_KEY = (userId: number) => `illucards:user-orders:${userId}`;
+const REDIS_USER_HIDDEN_ORDERS_KEY = (userId: number) => `illucards:user-hidden-orders:${userId}`;
 
 export function registerOrder(orderId: string, record: OrderRecord): void {
   ORDERS[orderId] = record;
@@ -109,6 +110,12 @@ async function readUserOrderIdsFromRedis(userId: number): Promise<string[] | nul
   ]);
   if (!j || j.error || !Array.isArray(j.result)) return null;
   return j.result.filter((x): x is string => typeof x === "string");
+}
+
+async function readHiddenOrderIdsForUser(userId: number): Promise<Set<string>> {
+  const j = await redisCommand(["SMEMBERS", REDIS_USER_HIDDEN_ORDERS_KEY(Math.floor(userId))]);
+  if (!j || j.error || !Array.isArray(j.result)) return new Set();
+  return new Set(j.result.filter((x): x is string => typeof x === "string"));
 }
 
 export async function saveOrderRecord(
@@ -453,6 +460,31 @@ export async function deleteOrderForOwner(
   return { ok: true };
 }
 
+export async function hideOrderForOwner(
+  orderId: string,
+  userId: number,
+): Promise<{ ok: true } | { ok: false; error: string; status: number }> {
+  const id = sanitizeOrderIdForPath(orderId);
+  if (!id) {
+    return { ok: false, error: "Некорректный order_id", status: 400 };
+  }
+
+  const order = await getOrder(id);
+  if (!order) {
+    return { ok: false, error: "Заказ не найден", status: 404 };
+  }
+
+  const owner = order.user_id;
+  if (owner == null || Math.floor(owner) !== userId) {
+    return { ok: false, error: "Нет доступа к этому заказу", status: 403 };
+  }
+
+  const uid = Math.floor(userId);
+  await redisCommand(["SADD", REDIS_USER_HIDDEN_ORDERS_KEY(uid), id]);
+  await redisCommand(["ZREM", REDIS_USER_ORDERS_KEY(uid), id]);
+  return { ok: true };
+}
+
 export type OrderLinePreview = {
   id: string;
   title: string;
@@ -539,6 +571,7 @@ export async function listOrdersForUser(
 ): Promise<OrderListSummary[]> {
   if (!Number.isFinite(userId) || userId <= 0) return [];
   const uid = Math.floor(userId);
+  const hidden = await readHiddenOrderIdsForUser(uid);
   const redisIds = await readUserOrderIdsFromRedis(uid);
   if (redisIds && redisIds.length > 0) {
     const rows: OrderListSummary[] = [];
@@ -546,12 +579,13 @@ export async function listOrdersForUser(
     const catalogMap = await catalogImageByCardId();
     for (const id of redisIds) {
       if (!id || id.length > 200 || /[/\\]/.test(id) || id.includes("..")) continue;
+      if (hidden.has(id)) continue;
       const record = await getOrder(id);
       if (!record || record.user_id !== uid) continue;
       seen.add(id);
       rows.push(orderSummaryFromRecord(id, record, catalogMap));
     }
-    rows.push(...(await listBotOrderSummariesForUser(uid, catalogMap, seen)));
+    rows.push(...(await listBotOrderSummariesForUser(uid, catalogMap, seen, hidden)));
     return rows;
   }
 
@@ -567,6 +601,7 @@ export async function listOrdersForUser(
     if (!f.toLowerCase().endsWith(".json")) continue;
     const id = f.replace(/\.json$/i, "");
     if (!id || id.length > 200 || /[/\\]/.test(id) || id.includes("..")) continue;
+    if (hidden.has(id)) continue;
     const record = await getOrder(id);
     if (!record || record.user_id !== uid) continue;
     let mtime = 0;
@@ -581,7 +616,7 @@ export async function listOrdersForUser(
       mtime,
     });
   }
-  rows.push(...(await listBotOrderSummariesForUser(uid, catalogMap, new Set(rows.map((r) => r.id)))));
+  rows.push(...(await listBotOrderSummariesForUser(uid, catalogMap, new Set(rows.map((r) => r.id)), hidden)));
   rows.sort((a, b) => b.mtime - a.mtime);
   return rows.map((row) => ({
     id: row.id,
@@ -597,6 +632,7 @@ async function listBotOrderSummariesForUser(
   uid: number,
   catalogMap: Map<string, { frontImage: string; category?: string; rarity?: CardRarity }>,
   seen: Set<string>,
+  hidden: Set<string>,
 ): Promise<Array<OrderListSummary & { mtime: number }>> {
   let raw: unknown;
   let mtime = 0;
@@ -610,7 +646,7 @@ async function listBotOrderSummariesForUser(
   if (!raw || typeof raw !== "object" || Array.isArray(raw)) return [];
   const rows: Array<OrderListSummary & { mtime: number }> = [];
   for (const [id, value] of Object.entries(raw as Record<string, unknown>)) {
-    if (!id || id.length > 200 || /[/\\]/.test(id) || id.includes("..") || seen.has(id)) {
+    if (!id || id.length > 200 || /[/\\]/.test(id) || id.includes("..") || seen.has(id) || hidden.has(id)) {
       continue;
     }
     const record = fileToOrderRecord(value);

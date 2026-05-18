@@ -58,3 +58,12 @@ export async function findBotUserByUsername(
   const all = await loadTelegramBotUsers();
   return all[normalized] ?? null;
 }
+
+export async function findBotUserByUserId(
+  userId: number,
+): Promise<TelegramBotUserRow | null> {
+  if (!Number.isFinite(userId) || userId <= 0) return null;
+  const uid = Math.floor(userId);
+  const all = await loadTelegramBotUsers();
+  return Object.values(all).find((row) => row.user_id === uid) ?? null;
+}

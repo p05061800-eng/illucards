@@ -35,7 +35,7 @@ type LsGate = "pending" | "ok" | "no_telegram";
 const PREVIEW_LIMIT = 5;
 const TELEGRAM_CODE_VERIFY_URL =
   process.env.NEXT_PUBLIC_TELEGRAM_CODE_VERIFY_URL?.trim() ||
-  "https://illucards-telegram-bot.onrender.com/api/verify-code";
+  "/api/verify-code";
 
 const LS_DELIVERY_KEY = "illucards-delivery-country";
 
@@ -204,13 +204,11 @@ export default function AccountPageClient() {
   }, [lsGate, hydrated, loadOrders]);
 
   const handleOpenTelegramForLogin = useCallback(async () => {
-    router.push("/account");
-    router.refresh();
     const ok = await startTelegramWebLoginWithWait();
     if (!ok && typeof window !== "undefined") {
       window.open(telegramWebLoginDeepLink(), "_blank", "noopener,noreferrer");
     }
-  }, [router]);
+  }, []);
 
   const handleLogout = useCallback(async () => {
     await logout();

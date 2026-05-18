@@ -15,6 +15,11 @@ declare global {
 export async function startTelegramWebLoginWithWait(): Promise<boolean> {
   if (typeof window === "undefined") return false;
   try {
+    try {
+      sessionStorage.removeItem(TG_LOGIN_WAIT_STORAGE_KEY);
+    } catch {
+      /* ignore */
+    }
     const res = await fetch(apiUrl("/api/telegram-login-wait"), { method: "POST" });
     if (!res.ok) return false;
     const j = (await res.json()) as { wait_id?: string };
@@ -24,13 +29,11 @@ export async function startTelegramWebLoginWithWait(): Promise<boolean> {
     const url = telegramWebLoginDeepLink(id);
     const popup = window.open(
       url,
-      "illucards_tg_login",
+      "_blank",
       "popup=yes,width=520,height=820,menubar=no,toolbar=no,location=yes,status=no,scrollbars=yes,resizable=yes",
     );
     window.__illucardsTgLoginPopup = popup;
     if (popup && !popup.closed) popup.focus();
-    // Независимо от статуса popup переводим текущую вкладку в ЛК.
-    window.location.assign("https://www.illucards.by/account");
     return true;
   } catch {
     return false;

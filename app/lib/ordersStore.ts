@@ -222,6 +222,8 @@ function fileToOrderRecord(raw: unknown): OrderRecord | null {
       : undefined;
 
   const bonus_awarded = o.bonus_awarded === true || o.bonus_awarded === "true";
+  const bonus_points_deducted =
+    o.bonus_points_deducted === true || o.bonus_points_deducted === "true";
   const bpsRaw = o.bonus_points_spent;
   const bonus_points_spent =
     typeof bpsRaw === "number" && Number.isFinite(bpsRaw) && bpsRaw > 0
@@ -241,6 +243,7 @@ function fileToOrderRecord(raw: unknown): OrderRecord | null {
       ? { telegram_admin_message_id }
       : {}),
     ...(bonus_awarded ? { bonus_awarded: true as const } : {}),
+    ...(bonus_points_deducted ? { bonus_points_deducted: true as const } : {}),
     ...(bonus_points_spent != null && bonus_points_spent > 0
       ? { bonus_points_spent }
       : {}),

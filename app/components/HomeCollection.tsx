@@ -118,9 +118,6 @@ function useCollectionPreviewColumns(
   return cols;
 }
 
-/** Автопереход на страницу карточки: точное совпадение названия или ровно одна карточка по подстроке в title. */
-const SEARCH_NAV_DEBOUNCE_MS = 380;
-
 /** Баннер строки категории: высота по изображению, скруглённые углы. */
 function CategoryRowBanner({
   cat,
@@ -176,8 +173,6 @@ export function HomeCollection({
   const router = useRouter();
   const pathname = usePathname();
   const searchInputRef = useRef<HTMLInputElement>(null);
-  /** Не запускать автопереход в карточку на первом прогоне эффекта после загрузки/обновления страницы. */
-  const skipSearchAutoNavOnceRef = useRef(true);
   const collectionMeasureRef = useRef<HTMLDivElement>(null);
   const previewCols = useCollectionPreviewColumns(
     collectionMeasureRef,
@@ -223,35 +218,49 @@ export function HomeCollection({
   }, [filtersOpen, setFiltersOpen]);
 
   useEffect(() => {
-    if (pathname !== "/") return;
-    if (skipSearchAutoNavOnceRef.current) {
-      skipSearchAutoNavOnceRef.current = false;
-      return;
-    }
-    const q = search.trim();
-    if (q.length < 2) return;
-
-    const id = window.setTimeout(() => {
+    const onSubmit = () => {
+      const q = search.trim();
+      if (q.length < 2) {
+        document
+          .getElementById("collection")
+          ?.scrollIntoView({ behavior: "smooth", block: "start" });
+        return;
+      }
       const lower = q.toLowerCase();
-      const exact = cards.find(
-        (c) => c.title.trim().toLowerCase() === lower
-      );
+      const exact = cards.find((c) => c.title.trim().toLowerCase() === lower);
       if (exact) {
         setSearch("");
         router.push(`/card/${exact.id}`);
         return;
       }
-      const byTitle = cards.filter((c) =>
-        c.title.toLowerCase().includes(lower)
-      );
+      const byTitle = cards.filter((c) => c.title.toLowerCase().includes(lower));
       if (byTitle.length === 1) {
         setSearch("");
         router.push(`/card/${byTitle[0].id}`);
+        return;
       }
-    }, SEARCH_NAV_DEBOUNCE_MS);
+      document
+        .getElementById("collection")
+        ?.scrollIntoView({ behavior: "smooth", block: "start" });
+    };
+    window.addEventListener("illucards:catalog-search-submit", onSubmit);
+    return () => window.removeEventListener("illucards:catalog-search-submit", onSubmit);
+  }, [search, cards, router, setSearch]);
 
+  useEffect(() => {
+    let pending = false;
+    try {
+      pending = sessionStorage.getItem("illucards_pending_catalog_search_submit") === "1";
+      if (pending) sessionStorage.removeItem("illucards_pending_catalog_search_submit");
+    } catch {
+      pending = false;
+    }
+    if (!pending) return;
+    const id = window.setTimeout(() => {
+      window.dispatchEvent(new Event("illucards:catalog-search-submit"));
+    }, 0);
     return () => window.clearTimeout(id);
-  }, [search, cards, pathname, router, setSearch]);
+  }, []);
 
   const apiOrder = categories
     .map((c) => ({ ...c, name: c.name.trim() }))

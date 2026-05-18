@@ -67,6 +67,19 @@ export default function Header() {
     openFiltersAndScrollToCollection,
   ]);
 
+  const handleSearchSubmit = useCallback(() => {
+    if (pathname === "/") {
+      window.dispatchEvent(new Event("illucards:catalog-search-submit"));
+      return;
+    }
+    try {
+      sessionStorage.setItem("illucards_pending_catalog_search_submit", "1");
+    } catch {
+      /* ignore */
+    }
+    router.push("/#collection");
+  }, [pathname, router]);
+
   const catalogFiltersActive = useMemo(() => {
     const tf = typeFilter;
     return (
@@ -189,6 +202,12 @@ export default function Header() {
                 type="search"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    handleSearchSubmit();
+                  }
+                }}
                 placeholder="Поиск…"
                 autoComplete="off"
                 aria-label="Поиск по каталогу"

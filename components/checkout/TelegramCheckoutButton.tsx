@@ -14,6 +14,25 @@ type Props = {
   onBeforeNavigate?: () => void;
 };
 
+function createTelegramLink(input: {
+  orderId: string;
+  telegramUrl?: string;
+  startPayload?: string;
+  draftId?: string;
+}): string {
+  if (input.telegramUrl?.includes("?start=")) return input.telegramUrl;
+  const bot = getTelegramOrderBotUsername();
+  const startPayload =
+    input.startPayload ||
+    (input.draftId ? `ORDER_${input.draftId}` : `order_${input.orderId}`);
+  return `https://t.me/${encodeURIComponent(bot)}?start=${encodeURIComponent(startPayload)}`;
+}
+
+function readResponseString(obj: Record<string, unknown>, key: string): string {
+  const value = obj[key];
+  return typeof value === "string" ? value.trim() : "";
+}
+
 export function TelegramCheckoutButton({
   className = "",
   onBeforeNavigate,
@@ -110,11 +129,40 @@ export function TelegramCheckoutButton({
         return;
       }
 
-      const bot = getTelegramOrderBotUsername();
-      const startParam = `order_${orderId}`;
+      const obj = data as Record<string, unknown>;
+      let telegramUrl = readResponseString(obj, "telegram_url");
+      let startPayload = readResponseString(obj, "start_payload");
+      let draftId = readResponseString(obj, "draft_id");
+
+      const syncRes = await fetch("/api/sync/order/telegram", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          order_id: orderId,
+          user_id: primaryTelegramUserId,
+        }),
+      });
+      const syncData: unknown = await syncRes.json().catch(() => null);
+      if (
+        syncRes.ok &&
+        syncData &&
+        typeof syncData === "object" &&
+        !Array.isArray(syncData)
+      ) {
+        const syncObj = syncData as Record<string, unknown>;
+        telegramUrl = readResponseString(syncObj, "telegram_url") || telegramUrl;
+        startPayload = readResponseString(syncObj, "start_payload") || startPayload;
+        draftId = readResponseString(syncObj, "draft_id") || draftId;
+      }
+
       onBeforeNavigate?.();
       window.location.assign(
-        `https://t.me/${encodeURIComponent(bot)}?start=${encodeURIComponent(startParam)}`,
+        createTelegramLink({
+          orderId,
+          ...(telegramUrl ? { telegramUrl } : {}),
+          ...(startPayload ? { startPayload } : {}),
+          ...(draftId ? { draftId } : {}),
+        }),
       );
     } catch {
       setError("Сеть недоступна. Попробуйте ещё раз.");

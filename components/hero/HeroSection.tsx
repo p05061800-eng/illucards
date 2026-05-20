@@ -15,10 +15,6 @@ import type { CategoryTile } from "@/app/lib/categoriesJson";
 import type { PromoSlide } from "@/app/lib/promoSlidesJson";
 import PromoSlider from "@/components/PromoSlider";
 import { apiUrl } from "@/app/lib/apiUrl";
-import {
-  catalogCardAnchorId,
-  rememberCatalogReturnCardId,
-} from "@/app/lib/catalogScrollRestore";
 import { collectionSectionId } from "@/app/lib/collectionAnchor";
 import { categoryFocusToStyle } from "@/app/lib/imageFocus";
 import { buildNoveltiesCarouselCards } from "@/app/lib/noveltiesHeroCarousel";
@@ -56,12 +52,11 @@ export default function HeroSection({
   initialPromoSlides = [],
 }: Props) {
   const router = useRouter();
-  const openCardInCatalog = useCallback(
+  const openCardPage = useCallback(
     (cardId: string) => {
       const id = String(cardId || "").trim();
       if (!id) return;
-      rememberCatalogReturnCardId(id);
-      router.push(`/#${catalogCardAnchorId(id)}`);
+      router.push(`/card/${id}`);
     },
     [router],
   );
@@ -525,7 +520,7 @@ export default function HeroSection({
                             onNavigate={onNoveltyBrowseNavigate}
                             hideNavigation
                             productCenterConstrained={true}
-                            onCardClick={openCardInCatalog}
+                            onCardClick={openCardPage}
                           />
                         </div>
 
@@ -568,7 +563,7 @@ export default function HeroSection({
                             type="button"
                             onClick={(e) => {
                               e.stopPropagation();
-                              openCardInCatalog(stackCard.id);
+                              openCardPage(stackCard.id);
                             }}
                             className="hero-button hero-novelty-buy-first inline-flex min-h-10 w-auto min-w-0 max-w-full shrink-0 items-center justify-center rounded-xl bg-gradient-to-r from-purple-600 via-violet-600 to-fuchsia-600 px-4 py-2 text-xs font-semibold text-white shadow-[0_16px_40px_-12px_rgba(168,85,247,0.55)] transition hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-500/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black md:min-h-[44px] md:min-w-[160px] md:px-6 md:py-3 md:text-sm"
                           >
@@ -595,7 +590,7 @@ export default function HeroSection({
                           browseCards={heroBrowseNonNovelty}
                           hideNavigation
                           productCenterConstrained={true}
-                          onCardClick={openCardInCatalog}
+                          onCardClick={openCardPage}
                         />
                       </div>
                       </div>

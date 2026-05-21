@@ -30,6 +30,8 @@ export type { CardRarity } from "@/app/lib/cardRarityTags";
 const DATA_PATH = path.join(process.cwd(), "data", "cards.json");
 const UPLOAD_PUBLIC = path.join(process.cwd(), "public", "uploads");
 
+export const dynamic = "force-dynamic";
+
 async function ensureStorage() {
   await fs.mkdir(path.dirname(DATA_PATH), { recursive: true });
   await fs.mkdir(UPLOAD_PUBLIC, { recursive: true });
@@ -356,7 +358,11 @@ async function readCards(): Promise<StoredCard[]> {
 export async function GET() {
   await ensureStorage();
   const cards = await readCards();
-  return NextResponse.json(cards);
+  return NextResponse.json(cards, {
+    headers: {
+      "Cache-Control": "no-store, max-age=0",
+    },
+  });
 }
 
 export async function POST(req: NextRequest) {

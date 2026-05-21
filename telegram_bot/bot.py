@@ -735,12 +735,11 @@ def _caption(p: dict[str, Any], delivery_code: str) -> str:
 
 
 def _order_id_from_start_args(args: list[str]) -> str | None:
-    """Deep link: start=order_<order_id> / ORDER_<order_id>."""
+    """Deep link: start=order_<order_id> → args ['order_...']."""
     if not args:
         return None
     raw = (args[0] or "").strip()
-    low = raw.lower()
-    if not low.startswith("order_"):
+    if not raw.startswith("order_"):
         return None
     oid = raw[len("order_") :].strip()
     if not oid or ".." in oid or "/" in oid or "\\" in oid or len(oid) > 200:

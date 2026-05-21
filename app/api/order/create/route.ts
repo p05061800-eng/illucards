@@ -9,7 +9,6 @@ import {
   persistOrder,
 } from "@/app/lib/orderCreateShared";
 import { recordAndNotifyTelegramOrder } from "@/app/lib/telegramOrderNotify";
-import { telegramOrderDeepLink } from "@/app/lib/telegramOrderSync";
 
 /**
  * Создание заказа.
@@ -80,7 +79,6 @@ export async function POST(request: NextRequest) {
     delivery,
     bonusPointsSpent: result.bonusPointsSpent,
   });
-  const startPayload = `order_${result.orderId}`;
 
   return NextResponse.json({
     order_id: result.orderId,
@@ -88,7 +86,5 @@ export async function POST(request: NextRequest) {
     bonus_points_spent: result.bonusPointsSpent,
     telegram_recorded: telegram.recorded,
     telegram_sent: telegram.sent,
-    start_payload: startPayload,
-    telegram_url: telegramOrderDeepLink(startPayload),
   });
 }

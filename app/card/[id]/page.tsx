@@ -6,6 +6,8 @@ import type { StoredCard } from "../../api/cards/route";
 import { parseCardsJson } from "../../lib/cardsJson";
 import CardProductContent from "./CardProductContent";
 
+export const dynamic = "force-dynamic";
+
 function loadCards(): StoredCard[] {
   const filePath = path.join(process.cwd(), "data", "cards.json");
   const fileData = fs.readFileSync(filePath, "utf-8");

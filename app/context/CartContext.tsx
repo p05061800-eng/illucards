@@ -30,6 +30,7 @@ import {
 } from "../lib/formatPrice";
 import { apiUrl } from "../lib/apiUrl";
 import { readTelegramPrimaryUserId } from "../lib/telegramUserIdentity";
+import { useAuth } from "./AuthContext";
 import { useCurrency } from "./CurrencyContext";
 
 export type CartLine = {
@@ -269,6 +270,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
     useState<DeliveryCountry | null>(null);
   const [bonusBalance, setBonusBalance] = useState(0);
   const [bonusSpendPoints, setBonusSpendPointsState] = useState(0);
+  const { hydrated: authHydrated, primaryTelegramUserId } = useAuth();
   const { currency, setCurrency, hydrated: currencyHydrated } = useCurrency();
 
   const openCart = useCallback(() => setCartOpen(true), []);
@@ -334,8 +336,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
   }, [cartItems, hydrated]);
 
   const refreshServerUserStateMeta = useCallback(async () => {
-    const userId = readTelegramPrimaryUserId();
-    if (userId == null) return;
+    if (!authHydrated) return;
     try {
       const res = await fetch(apiUrl("/api/user-state"), {
         method: "GET",
@@ -378,12 +379,10 @@ export function CartProvider({ children }: { children: ReactNode }) {
     } catch {
       /* ignore */
     }
-  }, []);
+  }, [authHydrated]);
 
   useEffect(() => {
-    if (!hydrated) return;
-    const userId = readTelegramPrimaryUserId();
-    if (userId == null) return;
+    if (!hydrated || !authHydrated) return;
     void refreshServerUserStateMeta();
     const tick = window.setInterval(() => {
       void refreshServerUserStateMeta();
@@ -396,11 +395,11 @@ export function CartProvider({ children }: { children: ReactNode }) {
       window.clearInterval(tick);
       document.removeEventListener("visibilitychange", onVis);
     };
-  }, [hydrated, refreshServerUserStateMeta]);
+  }, [authHydrated, hydrated, refreshServerUserStateMeta]);
 
   useEffect(() => {
     if (!hydrated) return;
-    const userId = readTelegramPrimaryUserId();
+    const userId = primaryTelegramUserId ?? readTelegramPrimaryUserId();
     if (userId == null) return;
     const seen = readClientSeenServerUpdatedAt();
     const cartPayload = cartItems.map((x) => ({
@@ -434,7 +433,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
         if (ua > 0) writeClientSeenServerUpdatedAt(ua);
       })
       .catch(() => {});
-  }, [cartItems, deliveryCountry, hydrated]);
+  }, [cartItems, deliveryCountry, hydrated, primaryTelegramUserId]);
 
   const addToCart = useCallback((card: StoredCard) => {
     const { priceByn, priceRub } = lineFromCard(card);

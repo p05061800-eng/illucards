@@ -17,6 +17,7 @@ import {
 import type { StoredCard } from "../api/cards/route";
 import { apiUrl } from "../lib/apiUrl";
 import { readTelegramPrimaryUserId } from "../lib/telegramUserIdentity";
+import { useAuth } from "./AuthContext";
 
 export const FAVORITES_STORAGE_KEY = "illucards-favorites";
 
@@ -51,17 +52,19 @@ type FavoritesContextValue = {
 const FavoritesContext = createContext<FavoritesContextValue | null>(null);
 
 export function FavoritesProvider({ children }: { children: ReactNode }) {
+  const { hydrated: authHydrated, primaryTelegramUserId } = useAuth();
   const [favoriteIds, setFavoriteIds] = useState<string[]>([]);
   const [hydrated, setHydrated] = useState(false);
   const changedByUserRef = useRef(false);
 
   useEffect(() => {
+    if (!authHydrated) return;
     let cancelled = false;
-    const userId = readTelegramPrimaryUserId();
+    const userId = primaryTelegramUserId ?? readTelegramPrimaryUserId();
     const favoritesUrl = userId == null
       ? apiUrl("/api/favorites")
       : apiUrl(`/api/favorites?user_id=${encodeURIComponent(String(userId))}`);
-    fetch(favoritesUrl)
+    fetch(favoritesUrl, { credentials: "include", cache: "no-store" })
       .then((res) => res.json())
       .then((data: unknown) => {
         if (cancelled) return;
@@ -81,7 +84,7 @@ export function FavoritesProvider({ children }: { children: ReactNode }) {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [authHydrated, primaryTelegramUserId]);
 
   useEffect(() => {
     if (!hydrated) return;
@@ -95,7 +98,7 @@ export function FavoritesProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!hydrated) return;
     if (!changedByUserRef.current) return;
-    const userId = readTelegramPrimaryUserId();
+    const userId = primaryTelegramUserId ?? readTelegramPrimaryUserId();
     const clear = favoriteIds.length === 0;
     void fetch(apiUrl("/api/favorites"), {
       method: "POST",
@@ -116,7 +119,7 @@ export function FavoritesProvider({ children }: { children: ReactNode }) {
         ...(clear ? { clear_favorites: true } : {}),
       }),
     }).catch(() => {});
-  }, [favoriteIds, hydrated]);
+  }, [favoriteIds, hydrated, primaryTelegramUserId]);
 
   const isFavorite = useCallback(
     (id: string) => favoriteIds.includes(id),

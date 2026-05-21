@@ -18,8 +18,8 @@ export function orderStatusEligibleForBonusAccrual(status: OrderStatus): boolean
 /** Баллы за одну купленную единицу карточки (шт. в заказе). */
 export const BONUS_POINTS_PER_CARD_UNIT = 100;
 
-/** 100 баллов = 4 BYN при оплате/списании в режиме доставки BY. */
-export const BYN_PER_100_BONUS_POINTS = 4;
+/** 100 баллов = 3.5 BYN при оплате/списании в режиме доставки BY. */
+export const BYN_PER_100_BONUS_POINTS = 3.5;
 
 /** 100 баллов = 100 RUB при доставке не в BY (списание в рублёвом эквиваленте). */
 export const RUB_PER_100_BONUS_POINTS = 100;

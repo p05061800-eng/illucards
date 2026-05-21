@@ -72,7 +72,26 @@ export function FavoritesProvider({ children }: { children: ReactNode }) {
         if (fromServer) {
           setFavoriteIds(fromServer);
         } else {
-          setFavoriteIds(loadIds());
+          const localIds = loadIds();
+          setFavoriteIds(localIds);
+          if (userId != null && localIds.length > 0) {
+            void fetch(apiUrl("/api/favorites"), {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                user_id: userId,
+                favorites: localIds,
+              }),
+            }).catch(() => {});
+            void fetch(apiUrl("/api/user-state"), {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                user_id: userId,
+                favorites: localIds,
+              }),
+            }).catch(() => {});
+          }
         }
         setHydrated(true);
       })

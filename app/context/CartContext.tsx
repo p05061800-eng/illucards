@@ -375,6 +375,11 @@ export function CartProvider({ children }: { children: ReactNode }) {
       }
       if (serverCart.length > 0) {
         setCartItems((prev) => (prev.length === 0 ? serverCart : prev));
+      } else {
+        const localCart = loadFromStorage();
+        if (localCart.length > 0) {
+          setCartItems((prev) => (prev.length === 0 ? localCart : prev));
+        }
       }
     } catch {
       /* ignore */

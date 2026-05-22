@@ -29,6 +29,12 @@ function parseCart(raw: unknown): SyncedCartItem[] {
       quantity: Number(x.quantity),
       priceByn: Number(x.priceByn),
       priceRub: Number(x.priceRub),
+      ...(typeof x.frontImage === "string" ? { frontImage: x.frontImage } : {}),
+      ...(typeof x.category === "string" ? { category: x.category } : {}),
+      ...(Number.isFinite(Number(x.categoryOrder))
+        ? { categoryOrder: Math.floor(Number(x.categoryOrder)) }
+        : {}),
+      ...(typeof x.rarity === "string" ? { rarity: x.rarity } : {}),
     }))
     .filter((x) => x.id.length > 0);
 }
@@ -129,7 +135,7 @@ export async function POST(request: NextRequest) {
         : 0;
     /** Сервер очистил корзину новее, чем знает клиент — не затирать пустую корзину старым localStorage. */
     const clientStaleVsServerEmpty =
-      prevEmpty && incoming.length > 0 && prevTs > 0 && (!clientSeenOk || clientSeen <= prevTs);
+      prevEmpty && incoming.length > 0 && prevTs > 0 && (!clientSeenOk || clientSeen < prevTs);
     if (clientStaleVsServerEmpty) {
       incoming = [];
     }

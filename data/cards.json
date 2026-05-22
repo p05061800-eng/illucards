@@ -279,8 +279,8 @@
     "subcategory": "",
     "frontImage": "/uploads/1776085913118-e43844d2.webp",
     "backImage": "/uploads/1776085917876-39062250.webp",
-    "price": 25,
-    "rarity": "common",
+    "price": 30,
+    "rarity": "adult",
     "stats": {
       "power": 50,
       "speed": 50,
@@ -293,6 +293,10 @@
     "inStock": true,
     "ratingAvg": 5,
     "reviewCount": 0,
+    "rarities": [
+      "common",
+      "adult"
+    ],
     "effect": "vario",
     "categoryBg": "/uploads/1776085893538-cc2f98a5.webp",
     "frontImageFocus": {
@@ -307,8 +311,9 @@
       "x": 50,
       "y": 50
     },
-    "priceRub": 750,
+    "priceRub": 800,
     "categoryOrder": 15,
+    "varioSmoothing": 0.18,
     "frontImageWidth": 761,
     "frontImageHeight": 1024
   },

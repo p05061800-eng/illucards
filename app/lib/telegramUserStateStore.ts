@@ -16,6 +16,10 @@ export type SyncedCartItem = {
   quantity: number;
   priceByn: number;
   priceRub: number;
+  frontImage?: string;
+  category?: string;
+  categoryOrder?: number;
+  rarity?: string;
 };
 
 export type SyncedUserState = {
@@ -76,6 +80,12 @@ function sanitize(data: Partial<SyncedUserState>): SyncedUserState {
           quantity: Math.max(1, Math.min(99, Math.floor(Number(x.quantity) || 1))),
           priceByn: Number.isFinite(Number(x.priceByn)) ? Number(x.priceByn) : 0,
           priceRub: Number.isFinite(Number(x.priceRub)) ? Number(x.priceRub) : 0,
+          ...(typeof x.frontImage === "string" ? { frontImage: x.frontImage.slice(0, 500) } : {}),
+          ...(typeof x.category === "string" ? { category: x.category.slice(0, 120) } : {}),
+          ...(Number.isFinite(Number(x.categoryOrder))
+            ? { categoryOrder: Math.floor(Number(x.categoryOrder)) }
+            : {}),
+          ...(typeof x.rarity === "string" ? { rarity: x.rarity.slice(0, 40) } : {}),
         }))
         .filter((x) => x.id.length > 0)
         .slice(0, 200)

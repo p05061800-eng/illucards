@@ -413,6 +413,10 @@ export function CartProvider({ children }: { children: ReactNode }) {
       quantity: x.quantity,
       priceByn: x.priceByn,
       priceRub: x.priceRub,
+      frontImage: x.frontImage,
+      ...(x.category ? { category: x.category } : {}),
+      ...(x.categoryOrder != null ? { categoryOrder: x.categoryOrder } : {}),
+      ...(x.rarity ? { rarity: x.rarity } : {}),
     }));
     if (cartPayload.length === 0 && deliveryCountry == null) return;
     void fetch(apiUrl("/api/user-state"), {

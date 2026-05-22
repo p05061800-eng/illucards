@@ -13,6 +13,7 @@ from pathlib import Path
 from typing import Any
 
 import aiohttp
+from aiohttp import web
 from telegram import (
     InlineKeyboardButton,
     InlineKeyboardMarkup,
@@ -40,6 +41,58 @@ LOGIN_CODES_PATH = REPO_ROOT / "data" / "telegram-login-codes.json"
 # Подтверждённые в боте заказы: order_id → { user_id, items, total, status }
 BOT_ORDERS: dict[str, dict[str, Any]] = {}
 LOGIN_CODE_TTL_SEC = 5 * 60
+
+
+def _sync_secret_ok(request: web.Request) -> bool:
+    need = (os.getenv("TELEGRAM_SYNC_API_SECRET") or "").strip()
+    if not need:
+        return True
+    return (request.headers.get("X-Sync-Secret") or "").strip() == need
+
+
+def _parse_sync_user_id(raw: Any) -> int | None:
+    try:
+        n = int(raw)
+    except (TypeError, ValueError):
+        return None
+    if n <= 0 or n > 10**12:
+        return None
+    return n
+
+
+def _parse_sync_cart(raw: Any) -> list[dict[str, Any]]:
+    if not isinstance(raw, list):
+        return []
+    out: list[dict[str, Any]] = []
+    for row in raw[:200]:
+        if not isinstance(row, dict):
+            continue
+        cid = str(row.get("id") or row.get("ref") or "").strip()[:120]
+        title = str(row.get("title") or row.get("name") or "").strip()[:300]
+        if not cid or not title:
+            continue
+        try:
+            qty = int(row.get("quantity", row.get("qty", 1)))
+        except (TypeError, ValueError):
+            qty = 1
+        try:
+            price_byn = float(row.get("priceByn", row.get("price", 0)) or 0)
+        except (TypeError, ValueError):
+            price_byn = 0.0
+        try:
+            price_rub = int(round(float(row.get("priceRub", row.get("price_rub", 0)) or 0)))
+        except (TypeError, ValueError):
+            price_rub = 0
+        out.append(
+            {
+                "id": cid,
+                "title": title,
+                "quantity": max(1, min(99, qty)),
+                "priceByn": price_byn,
+                "priceRub": price_rub,
+            }
+        )
+    return out
 
 
 def persist_telegram_site_user(user_id: int, username: str) -> None:
@@ -260,6 +313,57 @@ def _record_site_order_in_bot(
     BOT_ORDERS[order_id] = rec
     _persist_bot_orders()
     return rec
+
+
+async def _sync_cart_http(request: web.Request) -> web.Response:
+    if not _sync_secret_ok(request):
+        return web.json_response({"error": "Unauthorized"}, status=401)
+    try:
+        body = await request.json()
+    except Exception:
+        return web.json_response({"error": "Invalid JSON"}, status=400)
+    if not isinstance(body, dict):
+        return web.json_response({"error": "Expected object"}, status=400)
+    user_id = _parse_sync_user_id(body.get("user_id") or body.get("telegram_user_id"))
+    if user_id is None:
+        return web.json_response({"error": "Invalid user_id"}, status=400)
+    cart = _parse_sync_cart(body.get("cart"))
+    order = body.get("order")
+    order_id = str(body.get("order_id") or "").strip()
+    if isinstance(order, dict):
+        order_id = str(order.get("order_id") or order.get("id") or order_id).strip()
+    if order_id and isinstance(order, dict):
+        normalized_order = dict(order)
+        normalized_order["user_id"] = user_id
+        if "items" not in normalized_order:
+            normalized_order["items"] = cart
+        if "status" not in normalized_order:
+            normalized_order["status"] = "new"
+        _record_site_order_in_bot(order_id, normalized_order, user_id)
+    return web.json_response({"ok": True, "user_id": user_id, "cart_count": len(cart), "order_id": order_id})
+
+
+async def _health_http(_request: web.Request) -> web.Response:
+    return web.json_response({"ok": True})
+
+
+async def _start_http_server(_app: Any) -> None:
+    port_raw = os.getenv("PORT", "").strip()
+    if not port_raw:
+        return
+    try:
+        port = int(port_raw)
+    except ValueError:
+        return
+    http_app = web.Application()
+    http_app.router.add_get("/", _health_http)
+    http_app.router.add_get("/health", _health_http)
+    http_app.router.add_post("/api/sync/cart", _sync_cart_http)
+    runner = web.AppRunner(http_app)
+    await runner.setup()
+    site = web.TCPSite(runner, "0.0.0.0", port)
+    await site.start()
+    logger.info("HTTP sync server started on port %s", port)
 
 
 def _format_order_admin(
@@ -1305,6 +1409,8 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     oid = _order_id_from_start_args(args)
     if oid:
         order = await fetch_site_order(oid)
+        if not order and oid in BOT_ORDERS:
+            order = BOT_ORDERS.get(oid)
         if not order:
             await _reply_text_with_main_menu_and_site(
                 update.message,
@@ -2226,7 +2332,7 @@ if __name__ == "__main__":
 
     _load_bot_orders()
 
-    app = ApplicationBuilder().token(token).build()
+    app = ApplicationBuilder().token(token).post_init(_start_http_server).build()
 
     app.add_handler(CommandHandler("start", start))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, text_handler))

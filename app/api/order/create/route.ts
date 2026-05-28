@@ -8,6 +8,7 @@ import {
   parseOptionalUsername,
   persistOrder,
 } from "@/app/lib/orderCreateShared";
+import { syncOrderToTelegramBot } from "@/app/lib/telegramCartBotSync";
 import { recordAndNotifyTelegramOrder } from "@/app/lib/telegramOrderNotify";
 
 /**
@@ -77,6 +78,16 @@ export async function POST(request: NextRequest) {
     items,
     total: result.totalByn,
     delivery,
+    bonusPointsSpent: result.bonusPointsSpent,
+  });
+
+  void syncOrderToTelegramBot({
+    orderId: result.orderId,
+    userId,
+    items,
+    total: result.totalByn,
+    delivery,
+    username: username ?? null,
     bonusPointsSpent: result.bonusPointsSpent,
   });
 

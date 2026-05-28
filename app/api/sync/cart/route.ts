@@ -1,15 +1,11 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-
-const DEFAULT_TELEGRAM_BOT_SYNC_BASE = "https://illucards-telegram-bot.onrender.com";
-
-function botSyncBase(): string {
-  return (
-    process.env.TELEGRAM_BOT_SYNC_URL?.trim() ||
-    process.env.TELEGRAM_SYNC_API_URL?.trim() ||
-    DEFAULT_TELEGRAM_BOT_SYNC_BASE
-  ).replace(/\/+$/, "");
-}
+import {
+  normalizeOrderItems,
+  parseDeliveryCountry,
+  parseOptionalTelegramUserId,
+} from "@/app/lib/orderCreateShared";
+import { syncOrderToTelegramBot } from "@/app/lib/telegramCartBotSync";
 
 export async function POST(request: NextRequest) {
   let body: unknown;
@@ -19,29 +15,63 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Некорректный JSON" }, { status: 400 });
   }
 
-  const secret = process.env.TELEGRAM_SYNC_API_SECRET?.trim();
-  const res = await fetch(`${botSyncBase()}/api/sync/cart`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      ...(secret ? { "X-Sync-Secret": secret } : {}),
-    },
-    body: JSON.stringify(body),
-    cache: "no-store",
-  }).catch((error: unknown) => ({
-    ok: false as const,
-    status: 502,
-    json: async () => ({
-      error: error instanceof Error ? error.message : "Telegram bot sync unavailable",
-    }),
-  }));
-
-  const data = await res.json().catch(() => null);
-  if (!res.ok) {
-    return NextResponse.json(
-      data && typeof data === "object" ? data : { error: "Telegram bot sync failed" },
-      { status: res.status || 502 },
-    );
+  if (!body || typeof body !== "object") {
+    return NextResponse.json({ error: "Ожидается объект" }, { status: 400 });
   }
-  return NextResponse.json(data && typeof data === "object" ? data : { ok: true });
+
+  const o = body as Record<string, unknown>;
+  const userId = parseOptionalTelegramUserId(
+    o.user_id ?? o.telegram_user_id,
+  );
+  if (userId == null) {
+    return NextResponse.json({ error: "Invalid user_id" }, { status: 400 });
+  }
+
+  const items = normalizeOrderItems(o.cart) ?? [];
+  const orderRaw = o.order;
+  const orderId =
+    typeof o.order_id === "string"
+      ? o.order_id.trim()
+      : orderRaw &&
+          typeof orderRaw === "object" &&
+          orderRaw !== null &&
+          typeof (orderRaw as { order_id?: unknown }).order_id === "string"
+        ? (orderRaw as { order_id: string }).order_id.trim()
+        : "";
+
+  const delivery = parseDeliveryCountry(
+    orderRaw && typeof orderRaw === "object" && orderRaw !== null
+      ? (orderRaw as Record<string, unknown>).delivery
+      : undefined,
+  ) ?? "BY";
+  let total = 0;
+  let bonusPointsSpent: number | undefined;
+  let username: string | null | undefined;
+
+  if (orderRaw && typeof orderRaw === "object" && orderRaw !== null) {
+    const ord = orderRaw as Record<string, unknown>;
+    total = typeof ord.total === "number" ? ord.total : Number(ord.total) || 0;
+    if (typeof ord.bonus_points_spent === "number") {
+      bonusPointsSpent = Math.floor(ord.bonus_points_spent);
+    }
+    if (typeof ord.username === "string") {
+      username = ord.username.trim() || null;
+    }
+  }
+
+  if (!orderId) {
+    return NextResponse.json({ error: "order_id required" }, { status: 400 });
+  }
+
+  await syncOrderToTelegramBot({
+    orderId,
+    userId,
+    items,
+    total,
+    delivery,
+    username,
+    bonusPointsSpent,
+  });
+
+  return NextResponse.json({ ok: true, order_id: orderId });
 }

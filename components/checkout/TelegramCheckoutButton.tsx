@@ -110,41 +110,6 @@ export function TelegramCheckoutButton({
         return;
       }
 
-      const syncRes = await fetch("/api/sync/cart", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          cart: items,
-          user_id: primaryTelegramUserId,
-          telegram_user_id: primaryTelegramUserId,
-          order_id: orderId,
-          order: {
-            id: orderId,
-            order_id: orderId,
-            items,
-            total: checkoutTotalByn,
-            delivery: deliveryCountry,
-            user_id: primaryTelegramUserId,
-            ...(bonusSpendPoints > 0 ? { bonus_points_to_spend: bonusSpendPoints } : {}),
-            ...(user?.telegramUsername ? { username: user.telegramUsername } : {}),
-          },
-          session: {
-            source: "vercel_checkout",
-            created_at: Date.now(),
-          },
-        }),
-      });
-      if (!syncRes.ok) {
-        const syncData = (await syncRes.json().catch(() => null)) as { error?: unknown } | null;
-        setError(
-          typeof syncData?.error === "string"
-            ? syncData.error
-            : "Не удалось передать корзину в Telegram-бот",
-        );
-        setSubmitting(false);
-        return;
-      }
-
       const bot = getTelegramOrderBotUsername();
       const startParam = `order_${orderId}`;
       onBeforeNavigate?.();

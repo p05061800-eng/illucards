@@ -106,7 +106,7 @@ function buildTelegramOrderMessage(orderId: string, record: BotOrderRecord): str
           )}`,
         ]
       : []),
-    `� Итого: ${formatByn(record.total)}`,
+    `💰 Итого: ${formatByn(record.total)}`,
   ];
 
   return lines.join("\n");

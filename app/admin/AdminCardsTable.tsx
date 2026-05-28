@@ -90,9 +90,16 @@ function AdminCardVisualTile({
           Удалить
         </button>
       </div>
-      <button
-        type="button"
+      <div
+        role="button"
+        tabIndex={0}
         onClick={() => onEdit(card)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            onEdit(card);
+          }
+        }}
         className="relative block w-full min-w-0 cursor-pointer rounded-xl pt-5 text-left ring-1 ring-white/10 transition hover:ring-violet-400/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/60"
         title={card.title}
         aria-label={`Редактировать: ${card.title}`}
@@ -104,7 +111,7 @@ function AdminCardVisualTile({
           hideUltraLayer
           rootClassName="relative mx-auto max-w-full rounded-xl"
         />
-      </button>
+      </div>
     </div>
   );
 }

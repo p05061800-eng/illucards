@@ -1,12 +1,11 @@
 import type { Metadata, Viewport } from "next";
 import { Bebas_Neue, Geist_Mono, Inter } from "next/font/google";
-import Script from "next/script";
 import { SiteFooter } from "@/components/SiteFooter";
 import Header from "@/components/Header";
 import { RefreshToHome } from "@/components/RefreshToHome";
 import { FloatingCartFab } from "@/components/FloatingCartFab";
 import { ScrollToTopButton } from "@/components/ScrollToTopButton";
-import { clientStorageMigrationInlineScript } from "@/app/lib/clientBuildMigration";
+import { ClientStorageBuildMigration } from "@/app/components/ClientStorageBuildMigration";
 import { Providers } from "./providers";
 import "./globals.css";
 
@@ -65,13 +64,7 @@ export default function RootLayout({
       data-telegram-order-bot={telegramOrderBot}
     >
       <body className="flex flex-col overflow-x-hidden bg-[var(--background)] text-zinc-100 antialiased [color-scheme:dark]">
-        <Script
-          id="illucards-client-storage-build"
-          strategy="beforeInteractive"
-          dangerouslySetInnerHTML={{
-            __html: clientStorageMigrationInlineScript(appBuildId),
-          }}
-        />
+        <ClientStorageBuildMigration buildId={appBuildId} />
         <Providers>
           <RefreshToHome />
           <Header />

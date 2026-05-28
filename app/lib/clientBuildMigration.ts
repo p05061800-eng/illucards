@@ -21,6 +21,41 @@ export const SESSION_STORAGE_KEYS_VOLATILE_ON_NEW_BUILD = [
 ] as const;
 
 /**
+ * Клиентская версия миграции без вставки `<script>` в React-дерево.
+ */
+export function runClientStorageMigration(buildId: string): void {
+  try {
+    const marker = CLIENT_BUILD_MARKER_KEY;
+    if (typeof localStorage !== "undefined" && localStorage.getItem(marker) === buildId) return;
+    if (typeof localStorage !== "undefined") {
+      for (const key of LOCAL_STORAGE_KEYS_VOLATILE_ON_NEW_BUILD) {
+        try {
+          localStorage.removeItem(key);
+        } catch {
+          /* ignore */
+        }
+      }
+      try {
+        localStorage.setItem(marker, buildId);
+      } catch {
+        /* ignore */
+      }
+    }
+    if (typeof sessionStorage !== "undefined") {
+      for (const key of SESSION_STORAGE_KEYS_VOLATILE_ON_NEW_BUILD) {
+        try {
+          sessionStorage.removeItem(key);
+        } catch {
+          /* ignore */
+        }
+      }
+    }
+  } catch {
+    /* ignore */
+  }
+}
+
+/**
  * Минифицированный IIFE для `next/script` strategy=beforeInteractive.
  * `buildId` подставляется только из серверного layout (уже экранирован JSON.stringify).
  */

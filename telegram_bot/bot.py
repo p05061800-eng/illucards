@@ -41,6 +41,8 @@ LOGIN_CODES_PATH = REPO_ROOT / "data" / "telegram-login-codes.json"
 # Подтверждённые в боте заказы: order_id → { user_id, items, total, status }
 BOT_ORDERS: dict[str, dict[str, Any]] = {}
 LOGIN_CODE_TTL_SEC = 5 * 60
+# Telegram Application (post_init) — для push-уведомлений из HTTP sync.
+_TG_APP: Any = None
 
 
 def _sync_secret_ok(request: web.Request) -> bool:
@@ -339,7 +341,12 @@ async def _sync_cart_http(request: web.Request) -> web.Response:
             normalized_order["items"] = cart
         if "status" not in normalized_order:
             normalized_order["status"] = "new"
-        _record_site_order_in_bot(order_id, normalized_order, user_id)
+        rec = _record_site_order_in_bot(order_id, normalized_order, user_id)
+        st = str(normalized_order.get("status") or "new").strip().lower()
+        if st == "new":
+            await _push_site_order_notifications(
+                order_id, normalized_order, user_id, rec
+            )
     return web.json_response({"ok": True, "user_id": user_id, "cart_count": len(cart), "order_id": order_id})
 
 
@@ -347,7 +354,60 @@ async def _health_http(_request: web.Request) -> web.Response:
     return web.json_response({"ok": True})
 
 
+async def _push_site_order_notifications(
+    order_id: str,
+    order: dict[str, Any],
+    telegram_user_id: int,
+    record: dict[str, Any],
+) -> None:
+    """После оформления на сайте: сообщение покупателю и (опционально) админу."""
+    if _TG_APP is None:
+        return
+    uid = int(telegram_user_id)
+    intro = (
+        "Заказ с сайта уже записан в боте. Проверьте состав и сумму:\n\n"
+    )
+    text = intro + _format_order_text(order)
+    try:
+        await _TG_APP.bot.send_message(
+            chat_id=uid,
+            text=text,
+            reply_markup=_order_confirm_keyboard(order_id, uid, "new"),
+        )
+    except Exception as e:
+        logger.warning("site order notify user %s: %s", uid, e)
+
+    admin_chat_id = _resolve_admin_chat_id()
+    if not admin_chat_id:
+        return
+    uname = str(order.get("username") or "").strip().lstrip("@") or None
+    admin_text = _format_order_admin(
+        order_id,
+        order,
+        uid,
+        uname,
+        record,
+        header="🆕 Новый заказ (сайт)",
+    )
+    try:
+        admin_msg = await _TG_APP.bot.send_message(
+            chat_id=int(admin_chat_id),
+            text=admin_text,
+        )
+    except Exception as e:
+        logger.warning("site order notify admin: %s", e)
+        return
+    mid = getattr(admin_msg, "message_id", None)
+    if isinstance(mid, int) and mid > 0:
+        if not await post_site_admin_message_id(order_id, mid):
+            logger.warning(
+                "сайт: не удалось сохранить admin_message_id для %s", order_id
+            )
+
+
 async def _start_http_server(_app: Any) -> None:
+    global _TG_APP
+    _TG_APP = _app
     port_raw = os.getenv("PORT", "").strip()
     if not port_raw:
         return
@@ -372,10 +432,12 @@ def _format_order_admin(
     telegram_user_id: int,
     username: str | None,
     record: dict[str, Any],
+    *,
+    header: str = "✅ Подтверждение заказа (бот)",
 ) -> str:
     u = f"@{username}" if username else f"id {telegram_user_id}"
     lines = [
-        "✅ Подтверждение заказа (бот)",
+        header,
         f"ID заказа: `{order_id}`",
         f"Пользователь: {u} (tg {telegram_user_id})",
         "",

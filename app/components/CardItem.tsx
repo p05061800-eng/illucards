@@ -72,10 +72,6 @@ export function CardItem({ card, hideUltraLayer = false }: Props) {
     }
   }
 
-  function goToCardPage() {
-    openCardNav(cardHref);
-  }
-
   return (
     <div className="card flex h-full min-h-0 min-w-0 w-full flex-col overflow-visible text-left">
       <AgeConfirmDialog
@@ -171,15 +167,21 @@ export function CardItem({ card, hideUltraLayer = false }: Props) {
 
       <div className="card-content catalog-card-content flex min-h-0 min-w-0 flex-1 flex-col gap-2 rounded-b-2xl border-t border-white/[0.06] bg-zinc-950/70 p-3 pt-2.5">
         <div className="min-h-0 w-full shrink-0">
-          <button
-            type="button"
-            onClick={goToCardPage}
-            className="w-full text-left transition hover:text-purple-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-500/50"
+          <Link
+            href={cardHref}
+            onClick={(e) => {
+              if (adultBlockedNav) {
+                e.preventDefault();
+                pendingNavRef.current = cardHref;
+                setAgeOpen(true);
+              }
+            }}
+            className="block w-full text-left transition hover:text-purple-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-500/50"
           >
             <h3 className="card-title text-sm font-semibold leading-snug text-white sm:text-base">
               {card.title}
             </h3>
-          </button>
+          </Link>
         </div>
 
         <div className="card-bottom catalog-card-bottom flex w-full min-w-0 shrink-0 flex-col gap-2 border-t border-white/[0.06] pt-2.5">

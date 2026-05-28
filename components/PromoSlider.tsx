@@ -80,6 +80,7 @@ export default function PromoSlider({ initialSlides = [] }: Props) {
   if (slides.length === 0) return null;
 
   const single = slides.length === 1;
+  const loopEnabled = slides.length > 3;
   const autoplayEnabled = !single && !reduceMotion;
 
   return (
@@ -88,7 +89,7 @@ export default function PromoSlider({ initialSlides = [] }: Props) {
         <Swiper
           modules={[Autoplay]}
           slidesPerView={1}
-          loop={!single}
+          loop={loopEnabled}
           speed={520}
           simulateTouch
           threshold={12}

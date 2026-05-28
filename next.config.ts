@@ -22,22 +22,34 @@ const nextConfig: NextConfig = {
    */
   webpack: (config, { dev }) => {
     if (dev) {
+      const pollMsRaw = process.env.NEXT_DEV_WATCH_POLL_MS?.trim();
+      const woBase =
+        config.watchOptions &&
+        typeof config.watchOptions === "object" &&
+        !Array.isArray(config.watchOptions)
+          ? (config.watchOptions as Record<string, unknown>)
+          : {};
       const extraIgnored = [
         "**/public/uploads/**",
         "**/.next/cache/**",
       ];
-      const wo = config.watchOptions ?? {};
-      const prev = wo.ignored;
+      const prev = woBase.ignored;
       /** Next может задавать `ignored` как RegExp — в общий массив их смешивать нельзя (падает схема Webpack). */
       const stringPrev: string[] = Array.isArray(prev)
         ? prev.filter(
-            (x): x is string => typeof x === "string" && x.trim().length > 0
+            (x): x is string => typeof x === "string" && x.trim().length > 0,
           )
         : typeof prev === "string" && prev.trim().length > 0
           ? [prev.trim()]
           : [];
       const ignored = [...stringPrev, ...extraIgnored];
-      config.watchOptions = { ...wo, ignored: [...new Set(ignored)] };
+      const poll =
+        pollMsRaw && /^\d+$/.test(pollMsRaw) ? Number(pollMsRaw) : undefined;
+      config.watchOptions = {
+        ...woBase,
+        ...(poll != null ? { poll } : {}),
+        ignored: [...new Set(ignored)],
+      };
     }
     return config;
   },

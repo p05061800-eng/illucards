@@ -56,6 +56,23 @@ if [ -z "$LAN_IP" ] && command -v hostname >/dev/null 2>&1; then
   LAN_IP=$(hostname -I 2>/dev/null | awk '{print $1}')
 fi
 
+# Если ulimit так и остался низким, native file watcher сыпется в EMFILE → маршруты не
+# компилируются и браузер видит 404 на / и /api/*. Polling тяжелее по CPU, но стабилен.
+NFILES=$(ulimit -n 2>/dev/null || echo 0)
+case "${NFILES}" in
+  '' | *[!0-9]*) ;;
+  *)
+    if [ "${NFILES}" -lt 10240 ]; then
+      export WATCHPACK_POLLING="${WATCHPACK_POLLING:-1000}"
+      export NEXT_DEV_WATCH_POLL_MS="${NEXT_DEV_WATCH_POLL_MS:-1000}"
+      echo ""
+      echo "  Внимание: ulimit -n = ${NFILES} (низко). Включён polling watcher (WATCHPACK_POLLING=${WATCHPACK_POLLING})."
+      echo "  Иначе возможны 404: см. next.config.ts. Постоянно: ulimit -n 10240 в ~/.zshrc или launchctl limit maxfiles."
+      echo ""
+    fi
+    ;;
+esac
+
 echo ""
 echo "  Открыть на этом компьютере:  http://localhost:$PORT"
 echo "  Админка:                       http://localhost:$PORT/admin"

@@ -8,7 +8,11 @@ import { OrderLineRow } from "@/app/components/orders/OrderLineRow";
 import { useAuth } from "@/app/context/AuthContext";
 import { CART_STORAGE_KEY, useCart } from "@/app/context/CartContext";
 import type { OrderListSummary } from "@/app/lib/ordersStore";
-import { bonusBalanceDescriptionRu } from "@/app/lib/bonusProgram";
+import {
+  bonusBalanceDescriptionRu,
+  BYN_PER_100_BONUS_POINTS,
+  RUB_PER_100_BONUS_POINTS,
+} from "@/app/lib/bonusProgram";
 import {
   formatOrderCardRef,
   orderAccountFlowBadgeClass,
@@ -528,8 +532,13 @@ export default function AccountPageClient() {
         )}
         <p className="mt-3 text-xs leading-relaxed text-zinc-500">
           За каждую единицу товара — 100 баллов один раз после «Принят», отметки чека («Чек получен»)
-          или при «Отправлен» / «Доставлен». Списание в корзине: 100 баллов = 4 BYN (BY) или 100 RUB
-          (другие страны), шаг 100.
+          или при «Отправлен» / «Доставлен». Списание в корзине: 100 баллов ={" "}
+          {BYN_PER_100_BONUS_POINTS.toLocaleString("ru-RU", {
+            minimumFractionDigits: 0,
+            maximumFractionDigits: 2,
+          })}{" "}
+          BYN (BY) или {RUB_PER_100_BONUS_POINTS.toLocaleString("ru-RU")} RUB (другие страны), шаг
+          100.
         </p>
       </div>
 

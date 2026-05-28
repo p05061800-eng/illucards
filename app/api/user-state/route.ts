@@ -217,6 +217,11 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(await stateWithTelegramUsername(userId, state));
   }
 
+  /** Если Bearer передан, но не совпал — это действительно Unauthorized. */
+  if (secret && token && token !== secret) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   if (cookieUid != null) {
     await reconcileBonusPointsForUser(cookieUid);
     const state = await getTelegramUserState(cookieUid);
@@ -224,10 +229,19 @@ export async function GET(request: NextRequest) {
   }
 
   if (!secret) {
+    /** Локально без секрета поллер без куки не должен засыпать 503 — пустое состояние. */
+    if (process.env.NODE_ENV === "development") {
+      return NextResponse.json(EMPTY_STATE);
+    }
     return NextResponse.json(
       { error: "Сервер: не настроен ILLUCARDS_USER_STATE_SYNC_SECRET" },
       { status: 503 },
     );
   }
-  return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  /**
+   * Гостевой запрос без cookie и без валидного Bearer:
+   * возвращаем пустой state (а не 401), чтобы не спамить ошибками в логах/консоли.
+   */
+  return NextResponse.json(EMPTY_STATE);
 }

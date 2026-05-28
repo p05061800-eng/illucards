@@ -80,7 +80,9 @@ export function CardPriceDualRow({
           className
         )}
       >
-        <span className={spanClass}>{label}</span>
+        <span className={spanClass} suppressHydrationWarning>
+          {label}
+        </span>
       </div>
     );
   }
@@ -93,7 +95,9 @@ export function CardPriceDualRow({
           className
         )}
       >
-        <span className={spanClass}>{label}</span>
+        <span className={spanClass} suppressHydrationWarning>
+          {label}
+        </span>
       </div>
     );
   }
@@ -106,7 +110,9 @@ export function CardPriceDualRow({
           className
         )}
       >
-        <span className={spanClass}>{label}</span>
+        <span className={spanClass} suppressHydrationWarning>
+          {label}
+        </span>
       </div>
     );
   }
@@ -118,7 +124,9 @@ export function CardPriceDualRow({
         className
       )}
     >
-      <span className={spanClass}>{label}</span>
+      <span className={spanClass} suppressHydrationWarning>
+        {label}
+      </span>
     </div>
   );
 }

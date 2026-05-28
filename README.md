@@ -8,6 +8,7 @@
 
 ```bash
 npm install
+cp -n .env.example .env.local 2>/dev/null || true
 npm run dev
 ```
 
@@ -15,6 +16,7 @@ npm run dev
 - Открой в браузере: **http://localhost:3010** (или порт из вывода в терминале).
 - Админка: **http://localhost:3010/admin**
 - Если маршруты «пропали» или Turbopack падает — в `scripts/dev.sh` есть подсказки; по умолчанию dev идёт с **webpack** (`--webpack`).
+- Если в терминале **`EMFILE: too many open files`** и в браузере **404** на главной — лимит дескрипторов macOS; `scripts/dev.sh` при низком `ulimit -n` включает **polling** watcher. Вручную: `ulimit -n 10240` перед `npm run dev` или `NEXT_DEV_WATCH_POLL_MS=1000 npm run dev`.
 
 Сборка и локальный прод:
 

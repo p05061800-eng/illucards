@@ -1,8 +1,8 @@
 "use client";
 
 import { Heart, ShoppingBag } from "lucide-react";
-import { useRouter } from "next/navigation";
 import { useCallback, useState, type MouseEvent, type RefObject } from "react";
+import Link from "next/link";
 import type { StoredCard } from "@/app/api/cards/route";
 import { FavoritePopup } from "@/app/components/FavoritePopup";
 import { useFavorites } from "@/app/context/FavoritesContext";
@@ -20,7 +20,6 @@ export function HeroCatalogCardFooter({
   flySourceRef,
   size = "default",
 }: Props) {
-  const router = useRouter();
   const { isFavorite, toggleFavorite } = useFavorites();
   const addToCartWithFeedback = useAddToCartWithFeedback();
   const [showPopup, setShowPopup] = useState(false);
@@ -35,10 +34,6 @@ export function HeroCatalogCardFooter({
     if (!wasLiked) setShowPopup(true);
   }
 
-  function goToCardPage() {
-    router.push(`/card/${card.id}`);
-  }
-
   return (
     <div
       className={`hero-limited-card-footer w-full min-w-0 ${
@@ -49,9 +44,8 @@ export function HeroCatalogCardFooter({
     >
       <FavoritePopup show={showPopup} onClose={closePopup} />
       <div className="hero-limited-card-titlebar">
-        <button
-          type="button"
-          onClick={goToCardPage}
+        <Link
+          href={`/card/${card.id}`}
           className="min-w-0 flex-1 text-left transition hover:text-amber-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300/60"
         >
           <h3
@@ -61,7 +55,7 @@ export function HeroCatalogCardFooter({
           >
             {card.title}
           </h3>
-        </button>
+        </Link>
 
         <div className="flex shrink-0 items-center gap-2">
           <button

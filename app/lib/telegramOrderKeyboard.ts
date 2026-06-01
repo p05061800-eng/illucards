@@ -10,23 +10,14 @@ export type TelegramOrderKeyboardStatus =
   | "cancelled"
   | "canceled";
 
-function siteLoginOrigin(): string {
-  return (
-    process.env.NEXT_PUBLIC_SITE_ORIGIN?.trim() ||
-    process.env.ILLUCARDS_SITE_LOGIN_ORIGIN?.trim() ||
-    "https://www.illucards.by"
-  ).replace(/\/+$/, "");
-}
-
 /** Клавиатура для Telegram Bot API `reply_markup.inline_keyboard`. */
 export function buildTelegramOrderInlineKeyboard(
   orderId: string,
-  telegramUserId: number,
+  _telegramUserId: number,
   siteStatus: TelegramOrderKeyboardStatus = "new",
-): { inline_keyboard: Array<Array<{ text: string; callback_data?: string; url?: string }>> } {
+): { inline_keyboard: Array<Array<{ text: string; callback_data?: string }>> } {
   const st = siteStatus.trim().toLowerCase() as TelegramOrderKeyboardStatus;
-  const uid = Math.floor(telegramUserId);
-  const rows: Array<Array<{ text: string; callback_data?: string; url?: string }>> = [];
+  const rows: Array<Array<{ text: string; callback_data?: string }>> = [];
 
   if (st === "new") {
     rows.push([
@@ -35,28 +26,22 @@ export function buildTelegramOrderInlineKeyboard(
   }
   rows.push([{ text: "❌ Отменить", callback_data: `ordercx:${orderId}` }]);
 
-  if (
-    st !== "paid" &&
-    st !== "shipped" &&
-    st !== "sent" &&
-    st !== "delivered" &&
-    st !== "cancelled" &&
-    st !== "canceled"
-  ) {
-    rows.push([
-      {
-        text: "💳 Чек оплаты отправил",
-        callback_data: `orderpaid:${orderId}`,
-      },
-    ]);
-  }
-
-  rows.push([
-    {
-      text: "Открыть сайт",
-      url: `${siteLoginOrigin()}/?user_id=${uid}`,
-    },
-  ]);
-
   return { inline_keyboard: rows };
+}
+
+export function buildTelegramPaymentMethodKeyboard(orderId: string): {
+  inline_keyboard: Array<Array<{ text: string; callback_data: string }>>;
+} {
+  return {
+    inline_keyboard: [
+      [{ text: "💳 Карта", callback_data: `orderpay:card:${orderId}` }],
+      [{ text: "🪙 Криптовалюта", callback_data: `orderpay:crypto:${orderId}` }],
+      [
+        {
+          text: "📱 По номеру телефона",
+          callback_data: `orderpay:phone:${orderId}`,
+        },
+      ],
+    ],
+  };
 }

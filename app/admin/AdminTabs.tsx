@@ -6,6 +6,8 @@ import type { StoredCard } from "../api/cards/route";
 import { AdminCardForm } from "./AdminCardForm";
 import { AdminCardsTable } from "./AdminCardsTable";
 import { AdminCategoriesEditor } from "./AdminCategoriesEditor";
+import { AdminOrdersPanel } from "./AdminOrdersPanel";
+import type { AdminOrderRow } from "@/app/lib/ordersStore";
 import { apiUrl } from "../lib/apiUrl";
 
 const TABS = [
@@ -30,9 +32,10 @@ function SectionPlaceholder({ title }: { title: string }) {
 
 type AdminTabsProps = {
   initialCards: StoredCard[];
+  initialOrders: AdminOrderRow[];
 };
 
-export function AdminTabs({ initialCards }: AdminTabsProps) {
+export function AdminTabs({ initialCards, initialOrders }: AdminTabsProps) {
   const refreshCategoryFrames = useCategoryFramesRefresh();
   const [active, setActive] = useState<TabId>("cards");
   const [cards, setCards] = useState<StoredCard[]>(initialCards);
@@ -136,7 +139,7 @@ export function AdminTabs({ initialCards }: AdminTabsProps) {
           <AdminCategoriesEditor variant="embedded" />
         </div>
       ) : null}
-      {active === "orders" ? <SectionPlaceholder title="Заказы" /> : null}
+      {active === "orders" ? <AdminOrdersPanel initialOrders={initialOrders} /> : null}
       {active === "reviews" ? <SectionPlaceholder title="Отзывы" /> : null}
     </>
   );

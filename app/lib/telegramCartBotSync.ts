@@ -22,6 +22,36 @@ export type SyncOrderToTelegramBotInput = {
 };
 
 /** Best-effort: синхронизация заказа с HTTP API бота (не блокирует UX). */
+/** Пометить в боте: следующее сообщение покупателя — данные доставки по заказу. */
+export async function notifyBotAwaitOrderDetails(
+  userId: number,
+  orderId: string,
+): Promise<void> {
+  const secret = process.env.TELEGRAM_SYNC_API_SECRET?.trim();
+  try {
+    const res = await fetch(`${botSyncBase()}/api/await-order-details`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...(secret ? { "X-Sync-Secret": secret } : {}),
+      },
+      body: JSON.stringify({
+        user_id: userId,
+        order_id: orderId,
+      }),
+      cache: "no-store",
+    });
+    if (!res.ok) {
+      console.warn("bot await-order-details failed:", res.status);
+    }
+  } catch (error: unknown) {
+    console.warn(
+      "bot await-order-details unavailable:",
+      error instanceof Error ? error.message : error,
+    );
+  }
+}
+
 export async function syncOrderToTelegramBot(
   input: SyncOrderToTelegramBotInput,
 ): Promise<void> {

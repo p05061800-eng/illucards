@@ -5,6 +5,8 @@ import { parseCardRarity, type CardRarity } from "@/app/lib/cardRarityTags";
 import { normalizeDeliveryCountry, type DeliveryCountry } from "@/app/lib/delivery";
 import { orderStatusFromStorage } from "@/app/lib/orderStatus";
 import { ORDERS_DIR } from "@/app/lib/orderPaths";
+import type { OrderPaymentMethod } from "@/app/lib/orderPayment";
+import { parseOrderPaymentMethod } from "@/app/lib/orderPayment";
 import type { OrderLineIn, OrderRecord, OrderStatus } from "@/app/lib/orderTypes";
 import {
   bonusPointsToEarnForOrderItems,
@@ -230,6 +232,8 @@ function fileToOrderRecord(raw: unknown): OrderRecord | null {
       ? Math.floor(bpsRaw)
       : undefined;
 
+  const payment_method = parseOrderPaymentMethod(o.payment_method) ?? undefined;
+
   return {
     ...(user_id != null && Number.isFinite(user_id) && user_id > 0
       ? { user_id: Math.floor(user_id) }
@@ -247,6 +251,7 @@ function fileToOrderRecord(raw: unknown): OrderRecord | null {
     ...(bonus_points_spent != null && bonus_points_spent > 0
       ? { bonus_points_spent }
       : {}),
+    ...(payment_method ? { payment_method } : {}),
   };
 }
 
@@ -303,6 +308,134 @@ function sanitizeOrderIdForPath(orderId: string): string | null {
  * Обновить статус заказа в памяти ORDERS и по возможности в `data/orders/*.json`.
  * На serverless без записи на диск остаётся хотя бы in-memory (до рестарта).
  */
+export async function updateOrderPaymentMethod(
+  orderId: string,
+  paymentMethod: OrderPaymentMethod,
+): Promise<{ ok: true } | { ok: false; error: string; status: number }> {
+  const id = sanitizeOrderIdForPath(orderId);
+  if (!id) {
+    return { ok: false, error: "Некорректный order_id", status: 400 };
+  }
+  const existing = await getOrder(id);
+  if (!existing) {
+    return { ok: false, error: "Заказ не найден", status: 404 };
+  }
+  const updated: OrderRecord = { ...existing, payment_method: paymentMethod };
+  ORDERS[id] = updated;
+  await persistOrderRecordToRedis(id, updated);
+  const filePath = path.join(ORDERS_DIR, `${id}.json`);
+  try {
+    const text = await fs.readFile(filePath, "utf-8");
+    const parsed: unknown = JSON.parse(text);
+    if (typeof parsed === "object" && parsed !== null) {
+      await fs.writeFile(
+        filePath,
+        JSON.stringify({ ...(parsed as Record<string, unknown>), payment_method: paymentMethod }, null, 2),
+        "utf-8",
+      );
+    }
+  } catch {
+    /* ignore */
+  }
+  return { ok: true };
+}
+
+export type AdminOrderRow = {
+  id: string;
+  total: number;
+  status: OrderStatus;
+  delivery: OrderRecord["delivery"];
+  user_id?: number;
+  username: string | null;
+  payment_method?: OrderPaymentMethod;
+  createdAt?: string;
+};
+
+export async function listRecentOrders(limit = 40): Promise<AdminOrderRow[]> {
+  const cap = Math.min(200, Math.max(1, Math.floor(limit)));
+  const rows: Array<AdminOrderRow & { sortKey: number }> = [];
+  const seen = new Set<string>();
+
+  const cred = redisRestCredentials();
+  if (cred) {
+    try {
+      const res = await fetch(cred.url, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${cred.token}` },
+        body: JSON.stringify(["KEYS", "illucards:order:*"]),
+        cache: "no-store",
+      });
+      const j = (await res.json()) as { result?: unknown };
+      const keys = Array.isArray(j.result)
+        ? j.result.filter((k): k is string => typeof k === "string")
+        : [];
+      for (const key of keys) {
+        const id = key.replace(/^illucards:order:/, "").trim();
+        if (!id || seen.has(id)) continue;
+        const record = await getOrder(id);
+        if (!record) continue;
+        seen.add(id);
+        rows.push({
+          id,
+          total: record.total,
+          status: record.status,
+          delivery: record.delivery,
+          ...(record.user_id != null ? { user_id: record.user_id } : {}),
+          username: record.username,
+          ...(record.payment_method ? { payment_method: record.payment_method } : {}),
+          sortKey: Date.now(),
+        });
+      }
+    } catch {
+      /* fallback below */
+    }
+  }
+
+  let files: string[] = [];
+  try {
+    files = await fs.readdir(ORDERS_DIR);
+  } catch {
+    files = [];
+  }
+  for (const f of files) {
+    if (!f.toLowerCase().endsWith(".json")) continue;
+    const id = f.replace(/\.json$/i, "");
+    if (!id || seen.has(id)) continue;
+    const record = await getOrder(id);
+    if (!record) continue;
+    seen.add(id);
+    let sortKey = 0;
+    try {
+      const st = await fs.stat(path.join(ORDERS_DIR, f));
+      sortKey = st.mtimeMs;
+    } catch {
+      sortKey = 0;
+    }
+    let createdAt: string | undefined;
+    try {
+      const text = await fs.readFile(path.join(ORDERS_DIR, f), "utf-8");
+      const parsed = JSON.parse(text) as { createdAt?: unknown };
+      if (typeof parsed.createdAt === "string") createdAt = parsed.createdAt;
+    } catch {
+      /* ignore */
+    }
+    rows.push({
+      id,
+      total: record.total,
+      status: record.status,
+      delivery: record.delivery,
+      ...(record.user_id != null ? { user_id: record.user_id } : {}),
+      username: record.username,
+      ...(record.payment_method ? { payment_method: record.payment_method } : {}),
+      ...(createdAt ? { createdAt } : {}),
+      sortKey,
+    });
+  }
+
+  rows.sort((a, b) => b.sortKey - a.sortKey);
+  return rows.slice(0, cap).map(({ sortKey: _sortKey, ...row }) => row);
+}
+
 export async function updateOrderStatus(
   orderId: string,
   status: OrderStatus,

@@ -1,7 +1,12 @@
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
+import { parseOrderPaymentMethod } from "@/app/lib/orderPayment";
 import { parseOrderStatusInput } from "@/app/lib/orderStatus";
-import { getOrder, updateOrderStatus } from "@/app/lib/ordersStore";
+import {
+  getOrder,
+  updateOrderPaymentMethod,
+  updateOrderStatus,
+} from "@/app/lib/ordersStore";
 import { notifyTelegramWebhookUserState } from "@/app/lib/telegramStateBotSync";
 import {
   clearSyncedCartForTelegramUser,
@@ -16,8 +21,8 @@ import {
 } from "@/app/lib/orderCreateShared";
 
 /**
- * Обновление статуса заказа (в т.ч. из Telegram-бота).
- * Body: { order_id: string, status: string }
+ * Обновление заказа (статус и/или способ оплаты) — в т.ч. из Telegram-бота.
+ * Body: { order_id: string, status?: string, payment_method?: "card"|"crypto"|"phone" }
  *
  * Если задан ILLUCARDS_ORDER_UPDATE_SECRET — требуется заголовок
  * Authorization: Bearer <secret>
@@ -45,11 +50,15 @@ export async function POST(request: NextRequest) {
   const o = body as Record<string, unknown>;
   const orderId = typeof o.order_id === "string" ? o.order_id.trim() : "";
   const status = parseOrderStatusInput(o.status);
+  const paymentMethod = parseOrderPaymentMethod(o.payment_method);
   if (!orderId) {
     return NextResponse.json({ error: "Укажите order_id" }, { status: 400 });
   }
-  if (!status) {
-    return NextResponse.json({ error: "Некорректный status" }, { status: 400 });
+  if (!status && !paymentMethod) {
+    return NextResponse.json(
+      { error: "Укажите status и/или payment_method" },
+      { status: 400 },
+    );
   }
 
   let existing = await getOrder(orderId);
@@ -74,34 +83,40 @@ export async function POST(request: NextRequest) {
     }
   }
 
-  const result = await updateOrderStatus(orderId, status);
-  if (!result.ok) {
-    return NextResponse.json({ error: result.error }, { status: result.status });
+  if (paymentMethod) {
+    const pm = await updateOrderPaymentMethod(orderId, paymentMethod);
+    if (!pm.ok) {
+      return NextResponse.json({ error: pm.error }, { status: pm.status });
+    }
+    existing = await getOrder(orderId);
   }
 
-  /**
-   * После «Принят» (`confirmed`, в т.ч. админ/бот) и после «чек отправил» (`paid`):
-   * очищаем синхронизированную корзину и шлём актуальный user-state (бонусы + пустая корзина) в бот и на клиент.
-   * Повторный вызов для того же пользователя безопасен.
-   */
-  if (
-    (status === "confirmed" || status === "paid") &&
-    existing?.user_id != null
-  ) {
-    const uid = Math.floor(existing.user_id);
-    if (uid > 0) {
-      try {
-        const st = await clearSyncedCartForTelegramUser(uid);
-        await notifyTelegramWebhookUserState({
-          userId: uid,
-          cart: st.cart,
-          favorites: st.favorites,
-          deliveryCountry: st.deliveryCountry,
-          bonus_points: st.bonus_points,
-          cartClearedAt: st.cartClearedAt,
-        });
-      } catch {
-        /* очистка/синк не должны ломать смену статуса */
+  if (status) {
+    const result = await updateOrderStatus(orderId, status);
+    if (!result.ok) {
+      return NextResponse.json({ error: result.error }, { status: result.status });
+    }
+    existing = await getOrder(orderId);
+
+    if (
+      (status === "confirmed" || status === "paid") &&
+      existing?.user_id != null
+    ) {
+      const uid = Math.floor(existing.user_id);
+      if (uid > 0) {
+        try {
+          const st = await clearSyncedCartForTelegramUser(uid);
+          await notifyTelegramWebhookUserState({
+            userId: uid,
+            cart: st.cart,
+            favorites: st.favorites,
+            deliveryCountry: st.deliveryCountry,
+            bonus_points: st.bonus_points,
+            cartClearedAt: st.cartClearedAt,
+          });
+        } catch {
+          /* очистка/синк не должны ломать смену статуса */
+        }
       }
     }
   }

@@ -1,5 +1,6 @@
 import type { DeliveryCountry } from "@/app/lib/delivery";
 import type { CardRarity } from "@/app/lib/cardRarityTags";
+import type { OrderPaymentMethod } from "@/app/lib/orderPayment";
 
 export type OrderLineIn = {
   id: string;
@@ -39,4 +40,6 @@ export type OrderRecord = {
   bonus_points_spent?: number;
   /** Бонусы за скидку уже фактически списаны с баланса пользователя. */
   bonus_points_deducted?: boolean;
+  /** Способ оплаты, выбранный покупателем в Telegram после подтверждения заказа. */
+  payment_method?: OrderPaymentMethod;
 };

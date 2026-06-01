@@ -1,0 +1,18 @@
+export type OrderPaymentMethod = "card" | "crypto" | "phone";
+
+const LABELS: Record<OrderPaymentMethod, string> = {
+  card: "💳 Карта",
+  crypto: "🪙 Криптовалюта",
+  phone: "📱 По номеру телефона",
+};
+
+export function orderPaymentMethodLabel(method: OrderPaymentMethod): string {
+  return LABELS[method];
+}
+
+export function parseOrderPaymentMethod(v: unknown): OrderPaymentMethod | null {
+  if (typeof v !== "string") return null;
+  const s = v.trim().toLowerCase();
+  if (s === "card" || s === "crypto" || s === "phone") return s;
+  return null;
+}

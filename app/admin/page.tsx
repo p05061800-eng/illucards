@@ -4,6 +4,7 @@ import Link from "next/link";
 import path from "path";
 import type { StoredCard } from "../api/cards/route";
 import { parseCardsJson } from "../lib/cardsJson";
+import { listRecentOrders } from "@/app/lib/ordersStore";
 import { AdminTabs } from "./AdminTabs";
 
 export const metadata: Metadata = {
@@ -21,8 +22,9 @@ function loadCards(): StoredCard[] {
   }
 }
 
-export default function AdminPage() {
+export default async function AdminPage() {
   const initialCards = loadCards();
+  const initialOrders = await listRecentOrders(50);
 
   return (
     <main className="main relative overflow-x-hidden bg-black text-white">
@@ -81,7 +83,7 @@ export default function AdminPage() {
             </div>
           </div>
 
-          <AdminTabs initialCards={initialCards} />
+          <AdminTabs initialCards={initialCards} initialOrders={initialOrders} />
         </div>
       </div>
     </main>

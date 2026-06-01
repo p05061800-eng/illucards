@@ -40,6 +40,8 @@ KNOWN_START_IDS_PATH = REPO_ROOT / "data" / "bot-known-start-user-ids.json"
 LOGIN_CODES_PATH = REPO_ROOT / "data" / "telegram-login-codes.json"
 # Подтверждённые в боте заказы: order_id → { user_id, items, total, status }
 BOT_ORDERS: dict[str, dict[str, Any]] = {}
+# tg user_id → order_id: ждём текст с данными доставки после подтверждения админом
+_AWAIT_ORDER_DETAILS: dict[int, str] = {}
 LOGIN_CODE_TTL_SEC = 5 * 60
 # Telegram Application (post_init) — для push-уведомлений из HTTP sync.
 _TG_APP: Any = None
@@ -360,38 +362,29 @@ async def _push_site_order_notifications(
     telegram_user_id: int,
     record: dict[str, Any],
 ) -> None:
-    """После оформления на сайте: сообщение покупателю и (опционально) админу."""
-    if _TG_APP is None:
-        return
-    uid = int(telegram_user_id)
-    # Покупателю уведомление с кнопками отправляет сайт (recordAndNotifyTelegramOrder).
+    """Синк заказа с сайта: уведомление админу — после выбора способа оплаты в боте."""
+    del order_id, order, telegram_user_id, record
 
-    admin_chat_id = _resolve_admin_chat_id()
-    if not admin_chat_id:
-        return
-    uname = str(order.get("username") or "").strip().lstrip("@") or None
-    admin_text = _format_order_admin(
-        order_id,
-        order,
-        uid,
-        uname,
-        record,
-        header="🆕 Новый заказ (сайт)",
-    )
+
+async def _await_details_http(request: web.Request) -> web.Response:
+    """Сайт/админка: пометить, что ждём от покупателя текст с данными доставки."""
+    if not _sync_secret_ok(request):
+        return web.json_response({"error": "Unauthorized"}, status=401)
     try:
-        admin_msg = await _TG_APP.bot.send_message(
-            chat_id=int(admin_chat_id),
-            text=admin_text,
-        )
-    except Exception as e:
-        logger.warning("site order notify admin: %s", e)
-        return
-    mid = getattr(admin_msg, "message_id", None)
-    if isinstance(mid, int) and mid > 0:
-        if not await post_site_admin_message_id(order_id, mid):
-            logger.warning(
-                "сайт: не удалось сохранить admin_message_id для %s", order_id
-            )
+        body = await request.json()
+    except Exception:
+        return web.json_response({"error": "Invalid JSON"}, status=400)
+    if not isinstance(body, dict):
+        return web.json_response({"error": "Expected object"}, status=400)
+    try:
+        uid = int(body.get("user_id"))
+        oid = str(body.get("order_id") or "").strip()
+    except (TypeError, ValueError):
+        return web.json_response({"error": "Invalid user_id"}, status=400)
+    if uid <= 0 or not oid:
+        return web.json_response({"error": "Invalid payload"}, status=400)
+    _AWAIT_ORDER_DETAILS[uid] = oid
+    return web.json_response({"ok": True})
 
 
 async def _start_http_server(_app: Any) -> None:
@@ -408,6 +401,7 @@ async def _start_http_server(_app: Any) -> None:
     http_app.router.add_get("/", _health_http)
     http_app.router.add_get("/health", _health_http)
     http_app.router.add_post("/api/sync/cart", _sync_cart_http)
+    http_app.router.add_post("/api/await-order-details", _await_details_http)
     runner = web.AppRunner(http_app)
     await runner.setup()
     site = web.TCPSite(runner, "0.0.0.0", port)
@@ -461,6 +455,9 @@ def _format_order_admin(
         total = 0.0
     lines.append("")
     lines.append(_format_delivery_line_order(dcode))
+    pm = str(order.get("payment_method") or record.get("payment_method") or "").strip().lower()
+    if pm:
+        lines.append(f"💳 Способ оплаты: {_payment_method_label(pm)}")
     if use_byn:
         lines.append(f"💰 Итого: {total:g} BYN · статус: {record.get('status', '—')}")
     else:
@@ -1022,6 +1019,52 @@ async def post_site_order_bot_delete(order_id: str, telegram_user_id: int) -> bo
         return False
 
 
+async def post_site_order_payment_method(
+    order_id: str,
+    payment_method: str,
+    order: dict[str, Any] | None = None,
+    owner_id: int | None = None,
+) -> bool:
+    """POST /api/order/update — сохранить способ оплаты."""
+    base = os.getenv("ILLUCARDS_SITE_ORIGIN", DEFAULT_SITE_ORIGIN).rstrip("/")
+    url = f"{base}/api/order/update"
+    secret = os.getenv("ILLUCARDS_ORDER_UPDATE_SECRET", "").strip()
+    headers: dict[str, str] = {
+        "Accept": "application/json",
+        "Content-Type": "application/json",
+    }
+    if secret:
+        headers["Authorization"] = f"Bearer {secret}"
+    payload: dict[str, Any] = {
+        "order_id": order_id,
+        "payment_method": payment_method,
+    }
+    if isinstance(order, dict):
+        oid = owner_id if owner_id is not None else _order_owner_user_id(order_id, order)
+        if oid is not None:
+            payload["user_id"] = int(oid)
+        payload["items"] = _order_items_list(order)
+        payload["total"] = _order_total_byn(order)
+        payload["delivery"] = _delivery_price_code(str(order.get("delivery") or "BY"))
+        username = str(order.get("username") or "").strip().lstrip("@")
+        if username:
+            payload["username"] = username
+    timeout = aiohttp.ClientTimeout(total=20)
+    try:
+        async with aiohttp.ClientSession(timeout=timeout) as session:
+            async with session.post(url, headers=headers, json=payload) as resp:
+                if resp.status != 200:
+                    text = (await resp.text())[:300]
+                    logger.warning(
+                        "POST order/update (payment) HTTP %s: %s", resp.status, text
+                    )
+                    return False
+                return True
+    except (aiohttp.ClientError, asyncio.TimeoutError, OSError) as e:
+        logger.warning("POST order/update (payment): %s", e)
+        return False
+
+
 async def post_site_order_status(
     order_id: str,
     status: str,
@@ -1215,11 +1258,49 @@ def _format_order_text(order: dict[str, Any]) -> str:
     return "\n".join(lines)
 
 
+def _payment_method_label(method: str) -> str:
+    m = (method or "").strip().lower()
+    if m == "card":
+        return "💳 Карта"
+    if m == "crypto":
+        return "🪙 Криптовалюта"
+    if m == "phone":
+        return "📱 По номеру телефона"
+    return method or "—"
+
+
+def _payment_method_instruction(method: str) -> str:
+    m = (method or "").strip().lower()
+    env_key = {
+        "card": "ILLUCARDS_PAYMENT_CARD_TEXT",
+        "crypto": "ILLUCARDS_PAYMENT_CRYPTO_TEXT",
+        "phone": "ILLUCARDS_PAYMENT_PHONE_TEXT",
+    }.get(m, "")
+    custom = (os.getenv(env_key) or "").strip() if env_key else ""
+    if custom:
+        return custom
+    if m == "card":
+        return (
+            "Оплата банковской картой. Реквизиты и инструкцию пришлёт менеджер "
+            "после подтверждения заказа."
+        )
+    if m == "crypto":
+        return (
+            "Оплата криптовалютой. Адрес кошелька и сеть уточнит менеджер "
+            "после подтверждения заказа."
+        )
+    if m == "phone":
+        return (
+            "Перевод по номеру телефона. Номер для оплаты пришлёт менеджер "
+            "после подтверждения заказа."
+        )
+    return "Способ оплаты сохранён."
+
+
 def _order_confirm_keyboard(
     order_id: str, telegram_user_id: int, site_status: str
 ) -> InlineKeyboardMarkup:
-    # callback_data ≤ 64 байт: orderok:/ordercx:/orderpaid: + uuid (36)
-    uid = int(telegram_user_id)
+    del telegram_user_id
     st = (site_status or "new").strip().lower()
     rows: list[list[InlineKeyboardButton]] = []
     if st == "new":
@@ -1233,24 +1314,52 @@ def _order_confirm_keyboard(
     rows.append(
         [InlineKeyboardButton("❌ Отменить", callback_data=f"ordercx:{order_id}")]
     )
-    if st not in ("paid", "shipped", "sent", "delivered", "cancelled", "canceled"):
-        rows.append(
+    return InlineKeyboardMarkup(rows)
+
+
+def _payment_method_keyboard(order_id: str) -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup(
+        [
             [
                 InlineKeyboardButton(
-                    "💳 Чек оплаты отправил",
-                    callback_data=f"orderpaid:{order_id}",
+                    "💳 Карта", callback_data=f"orderpay:card:{order_id}"
                 )
-            ]
-        )
-    rows.append(
-        [
-            InlineKeyboardButton(
-                "Открыть сайт",
-                url=f"{SITE_LOGIN_ORIGIN}/?user_id={uid}",
-            )
+            ],
+            [
+                InlineKeyboardButton(
+                    "🪙 Криптовалюта", callback_data=f"orderpay:crypto:{order_id}"
+                )
+            ],
+            [
+                InlineKeyboardButton(
+                    "📱 По номеру телефона",
+                    callback_data=f"orderpay:phone:{order_id}",
+                )
+            ],
         ]
     )
-    return InlineKeyboardMarkup(rows)
+
+
+def _order_admin_confirm_keyboard(order_id: str) -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup(
+        [
+            [
+                InlineKeyboardButton(
+                    "✅ Подтвердить заказ (админ)",
+                    callback_data=f"orderadmok:{order_id}",
+                )
+            ]
+        ]
+    )
+
+
+ORDER_DETAILS_REQUEST_TEXT = (
+    "✅ Заказ подтверждён менеджером.\n\n"
+    "Напишите ваши данные для доставки одним сообщением:\n"
+    "• ФИО\n"
+    "• адрес\n"
+    "• телефон"
+)
 
 
 def _order_saved_keyboard(telegram_user_id: int) -> InlineKeyboardMarkup:
@@ -1696,6 +1805,30 @@ async def text_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
     if not update.message or not update.message.text:
         return
     t = update.message.text.strip()
+
+    user = update.effective_user
+    if user:
+        order_id = _AWAIT_ORDER_DETAILS.pop(int(user.id), None)
+        if order_id:
+            admin_chat_id = _resolve_admin_chat_id()
+            if admin_chat_id:
+                uname = (user.username or "").strip()
+                who = f"@{uname}" if uname else f"id {user.id}"
+                try:
+                    await context.bot.send_message(
+                        chat_id=int(admin_chat_id),
+                        text=(
+                            f"📋 Данные доставки по заказу `{order_id}`\n"
+                            f"От: {who} (tg {user.id})\n\n{t}"
+                        ),
+                    )
+                except Exception as e:
+                    logger.warning("forward order details: %s", e)
+            await update.message.reply_text(
+                "Спасибо! Данные переданы менеджеру. При необходимости мы уточним детали в этом чате."
+            )
+            return
+
     if t in ("🛒 Корзина", "💚 Корзина"):
         await show_cart_text(update, context)
         return
@@ -1895,28 +2028,13 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
             if not order:
                 existing = BOT_ORDERS.get(order_id)
                 if isinstance(existing, dict):
-                    owner_id = _order_owner_user_id(order_id)
-                    if owner_id is None:
-                        await q.answer("Не найден владелец заказа", show_alert=True)
-                        return
-                    items = _order_items_list(existing)
-                    delivery = _delivery_price_code(str(existing.get("delivery") or "BY"))
-                    restored = await post_site_order_from_bot(
-                        owner_id,
-                        None,
-                        items,
-                        delivery,
-                        order_id,
-                    )
-                    if isinstance(restored, dict):
-                        _delete_bot_order(order_id)
-                        await q.answer("Принято")
-                        await q.message.reply_text(
-                            "Заказ подтверждён. Корзина на сайте очищена. Бонусы начислены."
-                        )
-                        return
-                await q.answer("Заказ не найден", show_alert=True)
-                return
+                    order = dict(existing)
+                    order.setdefault("items", _order_items_list(existing))
+                    order.setdefault("total", _order_total_byn(existing))
+                    order.setdefault("delivery", existing.get("delivery") or "BY")
+                else:
+                    await q.answer("Заказ не найден", show_alert=True)
+                    return
             owner_id = _order_owner_user_id(order_id, order)
             admin_chat_id = _resolve_admin_chat_id()
             if owner_id is None:
@@ -1935,11 +2053,159 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
                     pass
                 return
 
-            existing = BOT_ORDERS.get(order_id)
-            if isinstance(existing, dict) and str(existing.get("status") or "").strip().lower() == "confirmed":
-                if not await post_site_order_status(order_id, "confirmed", existing, owner_id):
-                    logger.warning("Сайт: не удалось повторно синхронизировать заказ %s", order_id)
-                _delete_bot_order(order_id)
+            if site_st == "confirmed":
+                await q.answer("Заказ уже подтверждён менеджером")
+                try:
+                    await q.edit_message_reply_markup(reply_markup=None)
+                except Exception:
+                    pass
+                return
+
+            pm_existing = str(order.get("payment_method") or "").strip().lower()
+            if pm_existing in ("card", "crypto", "phone"):
+                await q.answer("Способ оплаты уже выбран")
+                await q.message.reply_text(
+                    "Ожидайте подтверждения заказа менеджером. "
+                    "После подтверждения мы попросим данные для доставки."
+                )
+                return
+
+            _record_site_order_in_bot(order_id, order, owner_id)
+
+            await q.answer("Выберите способ оплаты")
+            try:
+                await q.edit_message_reply_markup(reply_markup=None)
+            except Exception:
+                pass
+            await q.message.reply_text(
+                "Выберите удобный способ оплаты:",
+                reply_markup=_payment_method_keyboard(order_id),
+            )
+            return
+        except Exception as e:
+            logger.exception("order confirm failed: %s", e)
+            await q.answer("Не удалось подтвердить заказ. Повторите через минуту.", show_alert=True)
+            return
+
+    if data.startswith("orderpay:"):
+        try:
+            parts = data.split(":", 2)
+            if len(parts) < 3:
+                await q.answer("Некорректный запрос", show_alert=True)
+                return
+            method = parts[1].strip().lower()
+            order_id = parts[2].strip()
+            if method not in ("card", "crypto", "phone") or not order_id:
+                await q.answer("Некорректный способ оплаты", show_alert=True)
+                return
+            user = q.from_user
+            if not user:
+                await q.answer("Ошибка", show_alert=True)
+                return
+
+            order = await fetch_site_order(order_id)
+            if not order:
+                await q.answer("Заказ не найден", show_alert=True)
+                return
+            owner_id = _order_owner_user_id(order_id, order)
+            if owner_id is None:
+                await q.answer("Не найден владелец заказа", show_alert=True)
+                return
+            if int(user.id) != int(owner_id):
+                await q.answer("Это не ваш заказ", show_alert=True)
+                return
+
+            site_st = str(order.get("status") or "").strip().lower()
+            if site_st in ("cancelled", "canceled"):
+                await q.answer("Заказ отменён", show_alert=True)
+                return
+            if site_st == "confirmed":
+                await q.answer("Заказ уже подтверждён")
+                return
+
+            order["payment_method"] = method
+            rec = _record_site_order_in_bot(order_id, order, owner_id)
+            rec["payment_method"] = method
+            BOT_ORDERS[order_id] = rec
+            _persist_bot_orders()
+
+            if not await post_site_order_payment_method(
+                order_id, method, order, owner_id
+            ):
+                await q.answer("Не удалось сохранить на сайте", show_alert=True)
+                return
+
+            admin_chat_id = _resolve_admin_chat_id()
+            if admin_chat_id:
+                uname = str(order.get("username") or "").strip().lstrip("@") or None
+                admin_text = _format_order_admin(
+                    order_id,
+                    order,
+                    owner_id,
+                    uname,
+                    rec,
+                    header="🆕 Заказ: выбран способ оплаты",
+                )
+                try:
+                    admin_msg = await context.bot.send_message(
+                        chat_id=int(admin_chat_id),
+                        text=admin_text,
+                        reply_markup=_order_admin_confirm_keyboard(order_id),
+                    )
+                    mid = getattr(admin_msg, "message_id", None)
+                    if isinstance(mid, int) and mid > 0:
+                        await post_site_admin_message_id(order_id, mid)
+                except Exception as e:
+                    logger.warning("admin notify payment: %s", e)
+
+            await q.answer("Сохранено")
+            try:
+                await q.edit_message_reply_markup(reply_markup=None)
+            except Exception:
+                pass
+            await q.message.reply_text(
+                f"Вы выбрали: {_payment_method_label(method)}\n\n"
+                f"{_payment_method_instruction(method)}\n\n"
+                "Ожидайте подтверждения заказа менеджером. "
+                "После подтверждения мы попросим данные для доставки."
+            )
+            return
+        except Exception as e:
+            logger.exception("order payment method failed: %s", e)
+            await q.answer("Не удалось сохранить. Повторите позже.", show_alert=True)
+            return
+
+    if data.startswith("orderadmok:"):
+        try:
+            order_id = data.split(":", 1)[1].strip()
+            if not order_id:
+                await q.answer("Некорректный заказ", show_alert=True)
+                return
+            user = q.from_user
+            if not user:
+                await q.answer("Ошибка", show_alert=True)
+                return
+            admin_chat_id = _resolve_admin_chat_id()
+            if not admin_chat_id or int(user.id) != int(admin_chat_id):
+                await q.answer("Только для администратора", show_alert=True)
+                return
+
+            order = await fetch_site_order(order_id)
+            if not order:
+                await q.answer("Заказ не найден", show_alert=True)
+                return
+            owner_id = _order_owner_user_id(order_id, order)
+            if owner_id is None:
+                await q.answer("Не найден владелец заказа", show_alert=True)
+                return
+
+            pm = str(order.get("payment_method") or "").strip().lower()
+            if pm not in ("card", "crypto", "phone"):
+                await q.answer("Покупатель ещё не выбрал способ оплаты", show_alert=True)
+                return
+
+            site_st = str(order.get("status") or "").strip().lower()
+            if site_st == "confirmed":
                 await q.answer("Уже подтверждён")
                 try:
                     await q.edit_message_reply_markup(reply_markup=None)
@@ -1953,103 +2219,30 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
             _persist_bot_orders()
 
             if not await post_site_order_status(order_id, "confirmed", order, owner_id):
-                logger.warning("Сайт: не удалось обновить статус заказа %s", order_id)
-            else:
-                _delete_bot_order(order_id)
+                await q.answer("Не удалось обновить на сайте", show_alert=True)
+                return
 
-            # Ошибка уведомления админа не должна ломать подтверждение заказа пользователю.
-            if admin_chat_id:
-                uname = str(order.get("username") or "").strip().lstrip("@") or None
-                admin_text = _format_order_admin(order_id, order, owner_id, uname, rec)
-                admin_msg = None
-                try:
-                    admin_msg = await context.bot.send_message(
-                        chat_id=admin_chat_id, text=admin_text
-                    )
-                except Exception as e:
-                    logger.warning("admin notify: %s", e)
-                mid = getattr(admin_msg, "message_id", None) if admin_msg else None
-                if isinstance(mid, int) and mid > 0:
-                    if not await post_site_admin_message_id(order_id, mid):
-                        logger.warning(
-                            "сайт: не удалось сохранить admin_message_id для %s", order_id
-                        )
-            else:
-                logger.warning("TELEGRAM_ADMIN_CHAT_ID не задан/некорректен — админу не отправлено")
+            _delete_bot_order(order_id)
 
-            await q.answer("Принято")
+            try:
+                await context.bot.send_message(
+                    chat_id=int(owner_id),
+                    text=ORDER_DETAILS_REQUEST_TEXT,
+                )
+                _AWAIT_ORDER_DETAILS[int(owner_id)] = order_id
+            except Exception as e:
+                logger.warning("customer details prompt: %s", e)
+
+            await q.answer("Заказ подтверждён")
             try:
                 await q.edit_message_reply_markup(reply_markup=None)
             except Exception:
                 pass
-            await q.message.reply_text("Заказ подтверждён. Спасибо!")
+            await q.message.reply_text(f"Заказ `{order_id}` подтверждён. Покупателю отправлен запрос данных.")
             return
         except Exception as e:
-            logger.exception("order confirm failed: %s", e)
-            await q.answer("Не удалось подтвердить заказ. Повторите через минуту.", show_alert=True)
-            return
-
-    if data.startswith("orderpaid:"):
-        try:
-            order_id = data.split(":", 1)[1].strip()
-            if not order_id:
-                await q.answer("Некорректный заказ", show_alert=True)
-                return
-            user = q.from_user
-            if not user:
-                await q.answer("Ошибка", show_alert=True)
-                return
-
-            order = await fetch_site_order(order_id)
-            if not order:
-                await q.answer("Заказ не найден", show_alert=True)
-                return
-            owner_id = _order_owner_user_id(order_id, order)
-            admin_chat_id = _resolve_admin_chat_id()
-            if owner_id is None:
-                await q.answer("Не найден владелец заказа", show_alert=True)
-                return
-            if int(user.id) != int(owner_id) and int(user.id) != int(admin_chat_id or 0):
-                await q.answer("Это не ваш заказ", show_alert=True)
-                return
-
-            site_st = str(order.get("status") or "").strip().lower()
-            if site_st in ("cancelled", "canceled"):
-                await q.answer("Заказ отменён", show_alert=True)
-                return
-            if site_st == "paid":
-                await q.answer("Чек уже отмечен")
-                try:
-                    await q.edit_message_reply_markup(reply_markup=None)
-                except Exception:
-                    pass
-                return
-            if site_st in ("shipped", "sent", "delivered"):
-                await q.answer("Заказ уже отправлен", show_alert=True)
-                return
-
-            rec = _record_site_order_in_bot(order_id, order, owner_id)
-            rec["status"] = "paid"
-            BOT_ORDERS[order_id] = rec
-            _persist_bot_orders()
-
-            if not await post_site_order_status(order_id, "paid", order, owner_id):
-                logger.warning("Сайт: не удалось выставить paid для %s", order_id)
-                await q.answer("Не удалось связаться с сайтом.", show_alert=True)
-                return
-
-            await q.answer("Сохранено")
-            try:
-                await q.edit_message_reply_markup(reply_markup=None)
-            except Exception:
-                pass
-            await q.message.reply_text(
-                "💳 Принято. Корзина на сайте очищена. Спасибо!"
-            )
-            return
-        except Exception as e:
-            logger.exception("order paid failed: %s", e)
-            await q.answer("Не удалось сохранить. Повторите позже.", show_alert=True)
+            logger.exception("order admin confirm failed: %s", e)
+            await q.answer("Ошибка подтверждения", show_alert=True)
             return
 
     if data.startswith("ordercx:"):

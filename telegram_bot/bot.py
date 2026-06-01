@@ -364,18 +364,7 @@ async def _push_site_order_notifications(
     if _TG_APP is None:
         return
     uid = int(telegram_user_id)
-    intro = (
-        "Заказ с сайта уже записан в боте. Проверьте состав и сумму:\n\n"
-    )
-    text = intro + _format_order_text(order)
-    try:
-        await _TG_APP.bot.send_message(
-            chat_id=uid,
-            text=text,
-            reply_markup=_order_confirm_keyboard(order_id, uid, "new"),
-        )
-    except Exception as e:
-        logger.warning("site order notify user %s: %s", uid, e)
+    # Покупателю уведомление с кнопками отправляет сайт (recordAndNotifyTelegramOrder).
 
     admin_chat_id = _resolve_admin_chat_id()
     if not admin_chat_id:
@@ -1235,10 +1224,14 @@ def _order_confirm_keyboard(
     rows: list[list[InlineKeyboardButton]] = []
     if st == "new":
         rows.append(
-            [InlineKeyboardButton("Подтвердить заказ", callback_data=f"orderok:{order_id}")]
+            [
+                InlineKeyboardButton(
+                    "✅ Подтвердить заказ", callback_data=f"orderok:{order_id}"
+                )
+            ]
         )
     rows.append(
-        [InlineKeyboardButton("Отменить заказ", callback_data=f"ordercx:{order_id}")]
+        [InlineKeyboardButton("❌ Отменить", callback_data=f"ordercx:{order_id}")]
     )
     if st not in ("paid", "shipped", "sent", "delivered", "cancelled", "canceled"):
         rows.append(
@@ -1488,9 +1481,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
             )
             return
         _record_site_order_in_bot(oid, order, user.id)
-        intro = (
-            "Заказ с сайта уже записан в боте. Проверьте состав и сумму:\n\n"
-        )
+        intro = "Проверьте состав и сумму:\n\n"
         text = intro + _format_order_text(order)
         st = str(order.get("status") or "new").strip().lower()
         if st in ("cancelled", "canceled"):

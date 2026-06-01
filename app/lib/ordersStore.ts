@@ -433,7 +433,11 @@ export async function listRecentOrders(limit = 40): Promise<AdminOrderRow[]> {
   }
 
   rows.sort((a, b) => b.sortKey - a.sortKey);
-  return rows.slice(0, cap).map(({ sortKey: _sortKey, ...row }) => row);
+  return rows.slice(0, cap).map((row) => {
+    const { sortKey: _discard, ...rest } = row;
+    void _discard;
+    return rest;
+  });
 }
 
 export async function updateOrderStatus(

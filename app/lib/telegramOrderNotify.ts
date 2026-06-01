@@ -103,6 +103,8 @@ export async function recordAndNotifyTelegramOrder(input: {
   total: number;
   delivery: DeliveryCountry;
   bonusPointsSpent?: number;
+  /** false — только запись; сообщение в чат отправит бот по deep link после редиректа с сайта */
+  sendTelegramMessage?: boolean;
 }): Promise<{ recorded: boolean; sent: boolean; error?: string }> {
   const record: BotOrderRecord = {
     user_id: input.userId,
@@ -120,6 +122,10 @@ export async function recordAndNotifyTelegramOrder(input: {
     await recordOrderForBot(input.orderId, record);
   } catch {
     recorded = false;
+  }
+
+  if (input.sendTelegramMessage === false) {
+    return { recorded, sent: false };
   }
 
   const token = process.env.TELEGRAM_BOT_TOKEN?.trim();

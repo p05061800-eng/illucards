@@ -205,9 +205,7 @@ def _record_first_start_and_is_new(telegram_user_id: int) -> bool:
 def _default_start_welcome_text(is_first: bool) -> str:
     base = (
         "Полная коллекция, цены и оформление заказа — на сайте IlluCards. "
-        "Нажмите «Открыть сайт» — вход на сайте привяжется к этому Telegram.\n\n"
-        "Если вы уже оформили заказ на сайте, он уже продублирован здесь: "
-        "перейдите по ссылке из оформления — останется только подтвердить заказ в этом чате."
+        "Нажмите «Открыть сайт» — вход на сайте привяжется к этому Telegram."
     )
     if is_first:
         return "Привет! Спасибо за авторизацию.\n\n" + base
@@ -1590,13 +1588,11 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
             )
             return
         _record_site_order_in_bot(oid, order, user.id)
-        intro = "Проверьте состав и сумму:\n\n"
-        text = intro + _format_order_text(order)
+        text = "📦 Заказ с сайта IlluCards.\n\n" + _format_order_text(order)
         st = str(order.get("status") or "new").strip().lower()
         if st in ("cancelled", "canceled"):
             await update.message.reply_text(
                 text + "\n\n❌ Заказ отменён.",
-                reply_markup=_order_saved_keyboard(user.id),
             )
         elif st in ("new", "confirmed"):
             await update.message.reply_text(
@@ -1606,17 +1602,9 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         elif st == "paid":
             await update.message.reply_text(
                 text + "\n\n💳 Чек оплаты отмечен. Спасибо!",
-                reply_markup=_order_saved_keyboard(user.id),
             )
         else:
-            await update.message.reply_text(
-                text,
-                reply_markup=_order_saved_keyboard(user.id),
-            )
-        await update.message.reply_text(
-            "Каталог, акции на главной и заказы — кнопками ниже.",
-            reply_markup=_main_keyboard(),
-        )
+            await update.message.reply_text(text)
         return
 
     if not user or getattr(user, "id", None) is None:

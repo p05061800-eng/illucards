@@ -234,6 +234,9 @@ function fileToOrderRecord(raw: unknown): OrderRecord | null {
 
   const payment_method = parseOrderPaymentMethod(o.payment_method) ?? undefined;
 
+  const telegram_buyer_notified =
+    o.telegram_buyer_notified === true || o.telegram_buyer_notified === "true";
+
   return {
     ...(user_id != null && Number.isFinite(user_id) && user_id > 0
       ? { user_id: Math.floor(user_id) }
@@ -252,7 +255,46 @@ function fileToOrderRecord(raw: unknown): OrderRecord | null {
       ? { bonus_points_spent }
       : {}),
     ...(payment_method ? { payment_method } : {}),
+    ...(telegram_buyer_notified ? { telegram_buyer_notified: true as const } : {}),
   };
+}
+
+export async function markOrderTelegramBuyerNotified(
+  orderId: string,
+): Promise<{ ok: true } | { ok: false; error: string; status: number }> {
+  const id = sanitizeOrderIdForPath(orderId);
+  if (!id) {
+    return { ok: false, error: "Некорректный order_id", status: 400 };
+  }
+  const existing = await getOrder(id);
+  if (!existing) {
+    return { ok: false, error: "Заказ не найден", status: 404 };
+  }
+  if (existing.telegram_buyer_notified) {
+    return { ok: true };
+  }
+  const updated: OrderRecord = { ...existing, telegram_buyer_notified: true };
+  ORDERS[id] = updated;
+  await persistOrderRecordToRedis(id, updated);
+  const filePath = path.join(ORDERS_DIR, `${id}.json`);
+  try {
+    const text = await fs.readFile(filePath, "utf-8");
+    const parsed: unknown = JSON.parse(text);
+    if (typeof parsed === "object" && parsed !== null) {
+      await fs.writeFile(
+        filePath,
+        JSON.stringify(
+          { ...(parsed as Record<string, unknown>), telegram_buyer_notified: true },
+          null,
+          2,
+        ),
+        "utf-8",
+      );
+    }
+  } catch {
+    /* ignore */
+  }
+  return { ok: true };
 }
 
 /** Вернуть заказ: сначала память, иначе файл. */

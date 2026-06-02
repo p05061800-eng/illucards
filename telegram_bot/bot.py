@@ -343,7 +343,7 @@ async def _sync_cart_http(request: web.Request) -> web.Response:
             normalized_order["status"] = "new"
         rec = _record_site_order_in_bot(order_id, normalized_order, user_id)
         st = str(normalized_order.get("status") or "new").strip().lower()
-        if st == "new":
+        if st == "new" and not body.get("skip_buyer_notify"):
             await _push_site_order_notifications(
                 order_id, normalized_order, user_id, rec
             )
@@ -360,8 +360,21 @@ async def _push_site_order_notifications(
     telegram_user_id: int,
     record: dict[str, Any],
 ) -> None:
-    """Синк заказа с сайта: уведомление админу — после выбора способа оплаты в боте."""
-    del order_id, order, telegram_user_id, record
+    """Резерв: сообщение покупателю, если с Vercel не ушло (sync после order/create)."""
+    if _TG_APP is None:
+        return
+    uid = int(telegram_user_id)
+    text = "📦 Заказ с сайта IlluCards.\n\n" + _format_order_text(order)
+    try:
+        await _TG_APP.bot.send_message(
+            chat_id=uid,
+            text=text,
+            reply_markup=_order_confirm_keyboard(order_id, uid, "new"),
+        )
+    except Exception as e:
+        logger.warning("site order notify user (sync backup) %s: %s", uid, e)
+        return
+    await post_site_mark_buyer_notified(order_id, order, uid)
 
 
 async def _await_details_http(request: web.Request) -> web.Response:
@@ -1017,6 +1030,46 @@ async def post_site_order_bot_delete(order_id: str, telegram_user_id: int) -> bo
         return False
 
 
+async def post_site_mark_buyer_notified(
+    order_id: str,
+    order: dict[str, Any] | None = None,
+    owner_id: int | None = None,
+) -> bool:
+    base = os.getenv("ILLUCARDS_SITE_ORIGIN", DEFAULT_SITE_ORIGIN).rstrip("/")
+    url = f"{base}/api/order/update"
+    secret = os.getenv("ILLUCARDS_ORDER_UPDATE_SECRET", "").strip()
+    headers: dict[str, str] = {
+        "Accept": "application/json",
+        "Content-Type": "application/json",
+    }
+    if secret:
+        headers["Authorization"] = f"Bearer {secret}"
+    payload: dict[str, Any] = {
+        "order_id": order_id,
+        "telegram_buyer_notified": True,
+    }
+    if isinstance(order, dict):
+        oid = owner_id if owner_id is not None else _order_owner_user_id(order_id, order)
+        if oid is not None:
+            payload["user_id"] = int(oid)
+    timeout = aiohttp.ClientTimeout(total=20)
+    try:
+        async with aiohttp.ClientSession(timeout=timeout) as session:
+            async with session.post(url, headers=headers, json=payload) as resp:
+                if resp.status != 200:
+                    text = (await resp.text())[:300]
+                    logger.warning(
+                        "POST order/update (buyer notified) HTTP %s: %s",
+                        resp.status,
+                        text,
+                    )
+                    return False
+                return True
+    except (aiohttp.ClientError, asyncio.TimeoutError, OSError) as e:
+        logger.warning("POST order/update (buyer notified): %s", e)
+        return False
+
+
 async def post_site_order_payment_method(
     order_id: str,
     payment_method: str,
@@ -1588,22 +1641,32 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
             )
             return
         _record_site_order_in_bot(oid, order, user.id)
-        text = "📦 Заказ с сайта IlluCards.\n\n" + _format_order_text(order)
         st = str(order.get("status") or "new").strip().lower()
-        if st in ("cancelled", "canceled"):
-            await update.message.reply_text(
-                text + "\n\n❌ Заказ отменён.",
-            )
-        elif st in ("new", "confirmed"):
+        already_notified = order.get("telegram_buyer_notified") is True
+
+        if st in ("new", "confirmed") and not already_notified:
+            text = "📦 Заказ с сайта IlluCards.\n\n" + _format_order_text(order)
             await update.message.reply_text(
                 text,
                 reply_markup=_order_confirm_keyboard(oid, user.id, st),
             )
+            await post_site_mark_buyer_notified(oid, order, user.id)
+        elif already_notified and st in ("new", "confirmed"):
+            await update.message.reply_text(
+                "Заказ уже в этом чате выше 👆\n"
+                "Нажмите «✅ Подтвердить заказ» под сообщением с заказом.",
+                reply_markup=_main_keyboard(),
+            )
+        elif st in ("cancelled", "canceled"):
+            text = "📦 Заказ с сайта IlluCards.\n\n" + _format_order_text(order)
+            await update.message.reply_text(text + "\n\n❌ Заказ отменён.")
         elif st == "paid":
+            text = "📦 Заказ с сайта IlluCards.\n\n" + _format_order_text(order)
             await update.message.reply_text(
                 text + "\n\n💳 Чек оплаты отмечен. Спасибо!",
             )
         else:
+            text = "📦 Заказ с сайта IlluCards.\n\n" + _format_order_text(order)
             await update.message.reply_text(text)
         return
 

@@ -4,6 +4,7 @@ import { parseOrderPaymentMethod } from "@/app/lib/orderPayment";
 import { parseOrderStatusInput } from "@/app/lib/orderStatus";
 import {
   getOrder,
+  markOrderTelegramBuyerNotified,
   updateOrderPaymentMethod,
   updateOrderStatus,
 } from "@/app/lib/ordersStore";
@@ -22,7 +23,7 @@ import {
 
 /**
  * Обновление заказа (статус и/или способ оплаты) — в т.ч. из Telegram-бота.
- * Body: { order_id: string, status?: string, payment_method?: "card"|"crypto"|"phone" }
+ * Body: { order_id, status?, payment_method?, telegram_buyer_notified?: true }
  *
  * Если задан ILLUCARDS_ORDER_UPDATE_SECRET — требуется заголовок
  * Authorization: Bearer <secret>
@@ -51,12 +52,14 @@ export async function POST(request: NextRequest) {
   const orderId = typeof o.order_id === "string" ? o.order_id.trim() : "";
   const status = parseOrderStatusInput(o.status);
   const paymentMethod = parseOrderPaymentMethod(o.payment_method);
+  const markBuyerNotified =
+    o.telegram_buyer_notified === true || o.telegram_buyer_notified === "true";
   if (!orderId) {
     return NextResponse.json({ error: "Укажите order_id" }, { status: 400 });
   }
-  if (!status && !paymentMethod) {
+  if (!status && !paymentMethod && !markBuyerNotified) {
     return NextResponse.json(
-      { error: "Укажите status и/или payment_method" },
+      { error: "Укажите status, payment_method и/или telegram_buyer_notified" },
       { status: 400 },
     );
   }
@@ -81,6 +84,14 @@ export async function POST(request: NextRequest) {
       }
       existing = await getOrder(orderId);
     }
+  }
+
+  if (markBuyerNotified) {
+    const marked = await markOrderTelegramBuyerNotified(orderId);
+    if (!marked.ok) {
+      return NextResponse.json({ error: marked.error }, { status: marked.status });
+    }
+    existing = await getOrder(orderId);
   }
 
   if (paymentMethod) {

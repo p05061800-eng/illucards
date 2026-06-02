@@ -42,4 +42,6 @@ export type OrderRecord = {
   bonus_points_deducted?: boolean;
   /** Способ оплаты, выбранный покупателем в Telegram после подтверждения заказа. */
   payment_method?: OrderPaymentMethod;
+  /** Покупателю уже отправлено сообщение с заказом в Telegram (с сайта). */
+  telegram_buyer_notified?: boolean;
 };

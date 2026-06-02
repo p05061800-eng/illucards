@@ -19,6 +19,8 @@ export type SyncOrderToTelegramBotInput = {
   delivery: DeliveryCountry;
   username?: string | null;
   bonusPointsSpent?: number;
+  /** Сайт уже отправил сообщение покупателю — бот не дублирует. */
+  skipBuyerNotify?: boolean;
 };
 
 /** Best-effort: синхронизация заказа с HTTP API бота (не блокирует UX). */
@@ -87,6 +89,7 @@ export async function syncOrderToTelegramBot(
           source: "vercel_order_create",
           created_at: Date.now(),
         },
+        ...(input.skipBuyerNotify ? { skip_buyer_notify: true } : {}),
       }),
       cache: "no-store",
     });

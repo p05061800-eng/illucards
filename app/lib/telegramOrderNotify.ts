@@ -6,6 +6,7 @@ import type { OrderLineIn } from "@/app/lib/orderTypes";
 import { telegramSendMessage } from "@/app/lib/telegramBotApi";
 import { buildTelegramOrderInlineKeyboard } from "@/app/lib/telegramOrderKeyboard";
 import { bonusDiscountByn } from "@/app/lib/bonusProgram";
+import { markOrderTelegramBuyerNotified } from "@/app/lib/ordersStore";
 
 const BOT_ORDERS_PATH = path.join(process.cwd(), "data", "bot-orders.json");
 
@@ -155,6 +156,8 @@ export async function recordAndNotifyTelegramOrder(input: {
   if (!sent.ok) {
     return { recorded, sent: false, error: sent.description };
   }
+
+  await markOrderTelegramBuyerNotified(input.orderId);
 
   return { recorded, sent: true };
 }

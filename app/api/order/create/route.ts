@@ -79,7 +79,6 @@ export async function POST(request: NextRequest) {
     total: result.totalByn,
     delivery,
     bonusPointsSpent: result.bonusPointsSpent,
-    sendTelegramMessage: false,
   });
 
   void syncOrderToTelegramBot({
@@ -90,6 +89,7 @@ export async function POST(request: NextRequest) {
     delivery,
     username: username ?? null,
     bonusPointsSpent: result.bonusPointsSpent,
+    skipBuyerNotify: telegram.sent,
   });
 
   return NextResponse.json({

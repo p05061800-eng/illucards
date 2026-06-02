@@ -75,6 +75,32 @@ npm run vercel:deploy  # прод: npx vercel deploy --prod
 
 Каталог **`telegram_bot/`** — отдельный Python-сервис (`requirements.txt`). Деплой на свой хостинг (например Render); URL и секреты должны совпадать с тем, что настроено в Next (синк заказов, коды входа и т.д.).
 
+#### Checkout → Telegram (для разработчика сайта)
+
+Два поддерживаемых варианта — **выберите один**, не смешивайте в одном потоке:
+
+| | **B — рекомендуется (текущий checkout)** | **A — сообщение с сайта** |
+|---|------------------------------------------|---------------------------|
+| Сайт после `POST /api/order/create` | Синк заказа в бот + редирект | Отправка сообщения через Bot API + синк |
+| Сообщение покупателю | Бот по deep link | Сайт (Vercel, `TELEGRAM_BOT_TOKEN`) |
+| Кнопки | `orderok:<id>` / `ordercx:<id>` (бот) | `confirm_order` / `cancel_order` |
+| Синк | `POST /api/sync/cart` с `skip_buyer_notify: true` | `POST /api/sync/cart` с `order_id` **до** отправки |
+
+**Вариант B (deep link):**
+
+1. `POST /api/order/create` — сохранить заказ, `POST` на бот `/api/sync/cart` (запись заказа, без push в чат).
+2. Редирект: `https://t.me/IlluCardsBot?start=order_<order_id>`.
+3. Бот по `/start order_<id>` шлёт «📦 Ваш заказ:» и кнопки ✅/❌. Обычное приветствие `/start` — только при первом заходе без заказа.
+
+**Вариант A (сообщение с сайта):**
+
+1. `POST /api/order/create`.
+2. `POST /api/sync/cart` с `order_id`, `order`, `user_id` (бот запоминает активный заказ).
+3. Отправить в Telegram через Bot API текст заказа и клавиатуру `buildTelegramOrderSiteDirectKeyboard()` (`confirm_order` / `cancel_order`).
+4. Открыть `https://t.me/IlluCardsBot` без `?start=order_…`.
+
+Секрет синка: заголовок `X-Sync-Secret: TELEGRAM_SYNC_API_SECRET` (одинаковый на Vercel и Render).
+
 ---
 
 ## Переменные окружения

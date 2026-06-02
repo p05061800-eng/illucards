@@ -111,10 +111,9 @@ export function TelegramCheckoutButton({
       }
 
       const bot = getTelegramOrderBotUsername();
-      const startParam = `order_${orderId}`;
       onBeforeNavigate?.();
       window.location.assign(
-        `https://t.me/${encodeURIComponent(bot)}?start=${encodeURIComponent(startParam)}`,
+        `https://t.me/${encodeURIComponent(bot)}?start=${encodeURIComponent(`order_${orderId}`)}`,
       );
     } catch {
       setError("Сеть недоступна. Попробуйте ещё раз.");

@@ -42,6 +42,8 @@ LOGIN_CODES_PATH = REPO_ROOT / "data" / "telegram-login-codes.json"
 BOT_ORDERS: dict[str, dict[str, Any]] = {}
 # tg user_id → order_id: ждём текст с данными доставки после подтверждения админом
 _AWAIT_ORDER_DETAILS: dict[int, str] = {}
+# Последний заказ с сайта по sync (для callback_data confirm_order / cancel_order).
+_PENDING_ORDER_BY_USER: dict[int, str] = {}
 LOGIN_CODE_TTL_SEC = 5 * 60
 # Telegram Application (post_init) — для push-уведомлений из HTTP sync.
 _TG_APP: Any = None
@@ -317,6 +319,43 @@ def _record_site_order_in_bot(
     return rec
 
 
+def _remember_pending_order_for_user(telegram_user_id: int, order_id: str) -> None:
+    oid = str(order_id or "").strip()
+    if oid:
+        _PENDING_ORDER_BY_USER[int(telegram_user_id)] = oid
+
+
+def _resolve_order_id_for_site_callback(
+    telegram_user_id: int, *, prefer_status: str = "new"
+) -> str | None:
+    """order_id для confirm_order / cancel_order: sync → последний new у пользователя."""
+    uid = int(telegram_user_id)
+    pending = _PENDING_ORDER_BY_USER.get(uid)
+    if pending and pending in BOT_ORDERS:
+        rec = BOT_ORDERS.get(pending)
+        if isinstance(rec, dict):
+            st = str(rec.get("status") or "new").strip().lower()
+            if prefer_status == "new" and st in ("new", "confirmed"):
+                return pending
+            if prefer_status == "any":
+                return pending
+    _load_bot_orders()
+    found: str | None = None
+    for oid, rec in BOT_ORDERS.items():
+        if not isinstance(rec, dict):
+            continue
+        try:
+            if int(rec.get("user_id", 0)) != uid:
+                continue
+        except (TypeError, ValueError):
+            continue
+        st = str(rec.get("status") or "new").strip().lower()
+        if prefer_status == "new" and st not in ("new", "confirmed"):
+            continue
+        found = oid
+    return found
+
+
 async def _sync_cart_http(request: web.Request) -> web.Response:
     if not _sync_secret_ok(request):
         return web.json_response({"error": "Unauthorized"}, status=401)
@@ -342,6 +381,7 @@ async def _sync_cart_http(request: web.Request) -> web.Response:
         if "status" not in normalized_order:
             normalized_order["status"] = "new"
         rec = _record_site_order_in_bot(order_id, normalized_order, user_id)
+        _remember_pending_order_for_user(user_id, order_id)
         st = str(normalized_order.get("status") or "new").strip().lower()
         if st == "new" and not body.get("skip_buyer_notify"):
             await _push_site_order_notifications(
@@ -364,7 +404,7 @@ async def _push_site_order_notifications(
     if _TG_APP is None:
         return
     uid = int(telegram_user_id)
-    text = "📦 Заказ с сайта IlluCards.\n\n" + _format_order_text(order)
+    text = _format_order_text(order, order_id)
     try:
         await _TG_APP.bot.send_message(
             chat_id=uid,
@@ -1267,13 +1307,17 @@ async def post_site_order_from_bot(
         return None
 
 
-def _format_order_text(order: dict[str, Any]) -> str:
+def _format_order_text(order: dict[str, Any], order_id: str | None = None) -> str:
     items = order.get("items")
     if not isinstance(items, list):
         items = []
     dcode = _delivery_price_code(str(order.get("delivery") or "BY"))
     use_byn = _use_byn_for_delivery(dcode)
-    lines: list[str] = ["📦 Ваш заказ:", ""]
+    oid = (order_id or str(order.get("order_id") or order.get("id") or "")).strip()
+    lines: list[str] = ["📦 Ваш заказ:"]
+    if oid:
+        lines.append(f"ID заказа: `{oid}`")
+    lines.append("")
     for it in items:
         if not isinstance(it, dict):
             continue
@@ -1623,6 +1667,8 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 
     oid = _order_id_from_start_args(args)
     if oid:
+        if user and getattr(user, "id", None) is not None:
+            _record_first_start_and_is_new(int(user.id))
         order = await fetch_site_order(oid)
         if not order and oid in BOT_ORDERS:
             order = BOT_ORDERS.get(oid)
@@ -1644,30 +1690,24 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         st = str(order.get("status") or "new").strip().lower()
         already_notified = order.get("telegram_buyer_notified") is True
 
+        if st in ("new", "confirmed") and already_notified:
+            return
         if st in ("new", "confirmed") and not already_notified:
-            text = "📦 Заказ с сайта IlluCards.\n\n" + _format_order_text(order)
             await update.message.reply_text(
-                text,
+                _format_order_text(order, oid),
                 reply_markup=_order_confirm_keyboard(oid, user.id, st),
             )
             await post_site_mark_buyer_notified(oid, order, user.id)
-        elif already_notified and st in ("new", "confirmed"):
-            await update.message.reply_text(
-                "Заказ уже в этом чате выше 👆\n"
-                "Нажмите «✅ Подтвердить заказ» под сообщением с заказом.",
-                reply_markup=_main_keyboard(),
-            )
         elif st in ("cancelled", "canceled"):
-            text = "📦 Заказ с сайта IlluCards.\n\n" + _format_order_text(order)
-            await update.message.reply_text(text + "\n\n❌ Заказ отменён.")
-        elif st == "paid":
-            text = "📦 Заказ с сайта IlluCards.\n\n" + _format_order_text(order)
             await update.message.reply_text(
-                text + "\n\n💳 Чек оплаты отмечен. Спасибо!",
+                _format_order_text(order, oid) + "\n\n❌ Заказ отменён.",
+            )
+        elif st == "paid":
+            await update.message.reply_text(
+                _format_order_text(order, oid) + "\n\n💳 Чек оплаты отмечен. Спасибо!",
             )
         else:
-            text = "📦 Заказ с сайта IlluCards.\n\n" + _format_order_text(order)
-            await update.message.reply_text(text)
+            await update.message.reply_text(_format_order_text(order, oid))
         return
 
     if not user or getattr(user, "id", None) is None:
@@ -1675,15 +1715,21 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         return
 
     is_new_here = _record_first_start_and_is_new(int(user.id))
-    welcome = _default_start_welcome_text(is_new_here)
-    await update.message.reply_text(
-        welcome,
-        reply_markup=_site_open_markup(int(user.id)),
-    )
-    await update.message.reply_text(
-        "Каталог, акции на главной и корзина — кнопками ниже.",
-        reply_markup=_main_keyboard(),
-    )
+    if is_new_here:
+        welcome = _default_start_welcome_text(True)
+        await update.message.reply_text(
+            welcome,
+            reply_markup=_site_open_markup(int(user.id)),
+        )
+        await update.message.reply_text(
+            "Каталог, акции на главной и корзина — кнопками ниже.",
+            reply_markup=_main_keyboard(),
+        )
+    else:
+        await update.message.reply_text(
+            "Меню — кнопками ниже.",
+            reply_markup=_main_keyboard(),
+        )
 
 
 async def show_my_orders(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -2063,6 +2109,26 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
     if not q or not q.data or not q.message:
         return
     data = q.data
+    user = q.from_user
+
+    if data == "confirm_order":
+        if not user:
+            await q.answer("Ошибка", show_alert=True)
+            return
+        oid = _resolve_order_id_for_site_callback(int(user.id))
+        if not oid:
+            await q.answer("Нет активного заказа", show_alert=True)
+            return
+        data = f"orderok:{oid}"
+    elif data == "cancel_order":
+        if not user:
+            await q.answer("Ошибка", show_alert=True)
+            return
+        oid = _resolve_order_id_for_site_callback(int(user.id))
+        if not oid:
+            await q.answer("Нет активного заказа", show_alert=True)
+            return
+        data = f"ordercx:{oid}"
 
     if data.startswith("orderok:"):
         try:

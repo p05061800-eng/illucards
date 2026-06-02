@@ -79,6 +79,8 @@ export async function POST(request: NextRequest) {
     total: result.totalByn,
     delivery,
     bonusPointsSpent: result.bonusPointsSpent,
+    /** Превью и кнопки — в боте по deep link `?start=order_<id>`. */
+    sendTelegramMessage: false,
   });
 
   void syncOrderToTelegramBot({
@@ -89,7 +91,7 @@ export async function POST(request: NextRequest) {
     delivery,
     username: username ?? null,
     bonusPointsSpent: result.bonusPointsSpent,
-    skipBuyerNotify: telegram.sent,
+    skipBuyerNotify: true,
   });
 
   return NextResponse.json({
@@ -97,6 +99,7 @@ export async function POST(request: NextRequest) {
     total: result.totalByn,
     bonus_points_spent: result.bonusPointsSpent,
     telegram_recorded: telegram.recorded,
-    telegram_sent: telegram.sent,
+    /** Открыть бота: https://t.me/<bot>?start=order_<order_id> */
+    telegram_bot_start: `order_${result.orderId}`,
   });
 }

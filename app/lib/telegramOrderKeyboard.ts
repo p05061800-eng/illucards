@@ -1,4 +1,12 @@
-/** Inline-клавиатура заказа (callback_data обрабатывает telegram_bot/bot.py). */
+/**
+ * Inline-клавиатура заказа (callback_data обрабатывает telegram_bot/bot.py).
+ *
+ * Вариант A (сообщение с сайта через Bot API): `confirm_order` / `cancel_order`
+ * + POST /api/sync/cart с order_id (бот привязывает заказ к пользователю).
+ *
+ * Вариант B (рекомендуется для checkout): deep link `?start=order_<id>` —
+ * превью и кнопки `orderok:` / `ordercx:` полностью от бота.
+ */
 
 export type TelegramOrderKeyboardStatus =
   | "new"
@@ -27,6 +35,18 @@ export function buildTelegramOrderInlineKeyboard(
   rows.push([{ text: "❌ Отменить", callback_data: `ordercx:${orderId}` }]);
 
   return { inline_keyboard: rows };
+}
+
+/** Вариант A: сайт шлёт сообщение сам; order_id передаётся через POST /api/sync/cart. */
+export function buildTelegramOrderSiteDirectKeyboard(): {
+  inline_keyboard: Array<Array<{ text: string; callback_data: string }>>;
+} {
+  return {
+    inline_keyboard: [
+      [{ text: "✅ Подтвердить заказ", callback_data: "confirm_order" }],
+      [{ text: "❌ Отменить", callback_data: "cancel_order" }],
+    ],
+  };
 }
 
 export function buildTelegramPaymentMethodKeyboard(orderId: string): {

@@ -11,10 +11,8 @@ const DELIVERY_FLAGS: Record<DeliveryCountry, string> = {
   OTHER: "🌍",
 };
 
-const SITE_LOGIN_ORIGIN =
-  process.env.ILLUCARDS_SITE_LOGIN_ORIGIN?.trim() ||
-  process.env.NEXT_PUBLIC_SITE_URL?.trim() ||
-  "https://www.illucards.by";
+export const TELEGRAM_ORDER_SITE_INTRO =
+  "Вы перешли с сайта IlluCards в Telegram. Сейчас продолжим здесь.";
 
 function formatByn(n: number): string {
   const x = Number.isFinite(n) ? n : 0;
@@ -52,8 +50,6 @@ export function buildTelegramOrderDraftMessage(input: {
   );
 
   const lines = [
-    "Вы перешли с сайта с черновиком заказа.",
-    "",
     "Проверьте состав и доставку. Нажмите «Подтвердить заказ» — откроются шаги оплаты. Заказ уходит админу только после подтверждения оплаты со скрином чека.",
     "",
     "📦 Ваш заказ",
@@ -77,19 +73,11 @@ export function buildTelegramOrderDraftMessage(input: {
   return lines.join("\n");
 }
 
-export function buildTelegramOrderDraftKeyboard(
-  orderId: string,
-  telegramUserId: number,
-): {
-  inline_keyboard: Array<
-    Array<{ text: string; url?: string; callback_data?: string }>
-  >;
+export function buildTelegramOrderDraftKeyboard(orderId: string): {
+  inline_keyboard: Array<Array<{ text: string; callback_data: string }>>;
 } {
-  const uid = Math.floor(telegramUserId);
-  const siteUrl = `${SITE_LOGIN_ORIGIN.replace(/\/+$/, "")}/?user_id=${uid}`;
   return {
     inline_keyboard: [
-      [{ text: "Открыть сайт", url: siteUrl }],
       [{ text: "✅ Подтвердить заказ", callback_data: `orderok:${orderId}` }],
       [{ text: "❌ Отменить", callback_data: `ordercx:${orderId}` }],
     ],

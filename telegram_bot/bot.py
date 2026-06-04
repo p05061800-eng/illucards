@@ -404,12 +404,16 @@ async def _push_site_order_notifications(
     if _TG_APP is None:
         return
     uid = int(telegram_user_id)
-    text = _build_order_draft_message(order, order_id)
     try:
         await _TG_APP.bot.send_message(
             chat_id=uid,
-            text=text,
-            reply_markup=_order_draft_keyboard(order_id, uid),
+            text=SITE_ORDER_INTRO,
+            reply_markup=_main_keyboard(),
+        )
+        await _TG_APP.bot.send_message(
+            chat_id=uid,
+            text=_build_order_draft_message(order, order_id),
+            reply_markup=_order_draft_keyboard(order_id),
         )
     except Exception as e:
         logger.warning("site order notify user (sync backup) %s: %s", uid, e)
@@ -1369,14 +1373,17 @@ def _order_total_display(order: dict[str, Any]) -> str:
     return f"{int(round(total * BYN_TO_RUB))} RUB (~{total:g} BYN)"
 
 
+SITE_ORDER_INTRO = (
+    "Вы перешли с сайта IlluCards в Telegram. Сейчас продолжим здесь."
+)
+
+
 def _build_order_draft_message(
     order: dict[str, Any], _order_id: str | None = None
 ) -> str:
     dcode = _delivery_price_code(str(order.get("delivery") or "BY"))
     bonus_earn = _bonus_points_to_earn(order)
     lines = [
-        "Вы перешли с сайта с черновиком заказа.",
-        "",
         "Проверьте состав и доставку. Нажмите «Подтвердить заказ» — откроются шаги оплаты. "
         "Заказ уходит админу только после подтверждения оплаты со скрином чека.",
         "",
@@ -1455,18 +1462,16 @@ def _payment_method_instruction(method: str) -> str:
     return "Способ оплаты сохранён."
 
 
-def _order_draft_keyboard(order_id: str, telegram_user_id: int) -> InlineKeyboardMarkup:
-    uid = int(telegram_user_id)
-    site_url = f"{SITE_LOGIN_ORIGIN}/?user_id={uid}"
+def _order_draft_keyboard(order_id: str) -> InlineKeyboardMarkup:
+    oid = str(order_id or "").strip()
     return InlineKeyboardMarkup(
         [
-            [InlineKeyboardButton("Открыть сайт", url=site_url)],
             [
                 InlineKeyboardButton(
-                    "✅ Подтвердить заказ", callback_data=f"orderok:{order_id}"
+                    "✅ Подтвердить заказ", callback_data=f"orderok:{oid}"
                 )
             ],
-            [InlineKeyboardButton("❌ Отменить", callback_data=f"ordercx:{order_id}")],
+            [InlineKeyboardButton("❌ Отменить", callback_data=f"ordercx:{oid}")],
         ]
     )
 
@@ -1474,7 +1479,22 @@ def _order_draft_keyboard(order_id: str, telegram_user_id: int) -> InlineKeyboar
 def _order_confirm_keyboard(
     order_id: str, telegram_user_id: int, site_status: str
 ) -> InlineKeyboardMarkup:
-    return _order_draft_keyboard(order_id, telegram_user_id)
+    del telegram_user_id, site_status
+    return _order_draft_keyboard(order_id)
+
+
+async def _send_order_intro_and_draft(
+    message,
+    order: dict[str, Any],
+    order_id: str,
+    telegram_user_id: int,
+) -> None:
+    """Сначала приветствие с сайта, затем карточка заказа с кнопками."""
+    await message.reply_text(SITE_ORDER_INTRO, reply_markup=_main_keyboard())
+    await message.reply_text(
+        _build_order_draft_message(order, order_id),
+        reply_markup=_order_draft_keyboard(order_id),
+    )
 
 
 def _payment_method_keyboard(order_id: str) -> InlineKeyboardMarkup:
@@ -1766,9 +1786,8 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
             )
             return
         if st in ("new", "confirmed") and not already_notified:
-            await update.message.reply_text(
-                _build_order_draft_message(order, oid),
-                reply_markup=_order_draft_keyboard(oid, user.id),
+            await _send_order_intro_and_draft(
+                update.message, order, oid, int(user.id)
             )
             await post_site_mark_buyer_notified(oid, order, user.id)
         elif st in ("cancelled", "canceled"):
@@ -2198,8 +2217,9 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
     q = update.callback_query
     if not q or not q.data or not q.message:
         return
-    data = q.data
+    data = (q.data or "").strip()
     user = q.from_user
+    logger.info("callback_data=%s user=%s", data, getattr(user, "id", None))
 
     if data == "confirm_order":
         if not user:
@@ -2322,7 +2342,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
                 pass
             await q.message.reply_text(
                 _build_order_draft_message(order, order_id),
-                reply_markup=_order_draft_keyboard(order_id, int(user.id)),
+                reply_markup=_order_draft_keyboard(order_id),
             )
             return
         except Exception as e:
@@ -2739,7 +2759,22 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
         context.user_data["product_message_id"] = mid
         return
 
+    if (
+        data in ("confirm_order", "cancel_order")
+        or data.startswith(
+            ("orderok:", "ordercx:", "orderpay:", "orderback:", "orderadmok:")
+        )
+    ):
+        logger.warning("unhandled order callback: %s", data)
+        await q.answer()
+        await q.message.reply_text(
+            "Нажмите кнопки под последним сообщением с заказом. "
+            "Если не сработало — оформите заказ снова на сайте."
+        )
+        return
+
     if not data.startswith("nav:"):
+        await q.answer()
         return
 
     action = data.split(":", 1)[1]

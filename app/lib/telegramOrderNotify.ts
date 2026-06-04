@@ -6,6 +6,7 @@ import { telegramSendMessage } from "@/app/lib/telegramBotApi";
 import {
   buildTelegramOrderDraftKeyboard,
   buildTelegramOrderDraftMessage,
+  TELEGRAM_ORDER_SITE_INTRO,
 } from "@/app/lib/telegramOrderDraftMessage";
 import { markOrderTelegramBuyerNotified } from "@/app/lib/ordersStore";
 
@@ -110,12 +111,17 @@ export async function recordAndNotifyTelegramOrder(input: {
     };
   }
 
+  const intro = await telegramSendMessage(token, input.userId, TELEGRAM_ORDER_SITE_INTRO);
+  if (!intro.ok) {
+    return { recorded, sent: false, error: intro.description };
+  }
+
   const sent = await telegramSendMessage(
     token,
     input.userId,
     buildTelegramOrderMessage(input.orderId, record),
     {
-      replyMarkup: buildTelegramOrderDraftKeyboard(input.orderId, input.userId),
+      replyMarkup: buildTelegramOrderDraftKeyboard(input.orderId),
     },
   );
 

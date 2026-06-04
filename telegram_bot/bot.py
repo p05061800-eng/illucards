@@ -404,12 +404,12 @@ async def _push_site_order_notifications(
     if _TG_APP is None:
         return
     uid = int(telegram_user_id)
-    text = _format_order_text(order, order_id)
+    text = _build_order_draft_message(order, order_id)
     try:
         await _TG_APP.bot.send_message(
             chat_id=uid,
             text=text,
-            reply_markup=_order_confirm_keyboard(order_id, uid, "new"),
+            reply_markup=_order_draft_keyboard(order_id, uid),
         )
     except Exception as e:
         logger.warning("site order notify user (sync backup) %s: %s", uid, e)
@@ -546,6 +546,15 @@ DELIVERY_LABELS: dict[str, str] = {
     "OTHER": "Другие страны",
 }
 
+DELIVERY_FLAGS: dict[str, str] = {
+    "BY": "🇧🇾",
+    "RU": "🇷🇺",
+    "UA": "🇺🇦",
+    "OTHER": "🌍",
+}
+
+BONUS_POINTS_PER_CARD_UNIT = 100
+
 BYN_TO_RUB = 30.0
 
 
@@ -590,10 +599,8 @@ def _unit_rub_from_item(it: dict[str, Any]) -> float:
 
 def _format_delivery_line_order(dcode: str) -> str:
     label = DELIVERY_LABELS.get(dcode, dcode)
-    if _use_byn_for_delivery(dcode):
-        return f"🚚 Доставка: {label} — 6 BYN"
-    rub = _delivery_charge_rub(dcode)
-    return f"🚚 Доставка: {label} — {rub} RUB"
+    flag = DELIVERY_FLAGS.get(dcode, "🌍")
+    return f"🚚 Доставка: {flag} {label}"
 
 
 CACHE_TTL_SEC = 60.0
@@ -841,13 +848,10 @@ def _categories_from_products(products: list[dict[str, Any]]) -> list[str]:
 
 
 def _main_keyboard() -> ReplyKeyboardMarkup:
-    """Кнопки как на витрине: каталог, акции (баннеры с главной), заказы, корзина, связь, доставка."""
     return ReplyKeyboardMarkup(
         [
-            ["📦 Каталог", "🔥 Акции"],
-            ["📜 Мои заказы", "💚 Корзина"],
-            ["💬 Связь", "🚚 Доставка"],
-            ["❤️ Избранное"],
+            ["💬 Связь", "📜 Мои заказы"],
+            ["🚚 Доставка", "⭐ Бонусы"],
         ],
         resize_keyboard=True,
     )
@@ -1307,17 +1311,28 @@ async def post_site_order_from_bot(
         return None
 
 
-def _format_order_text(order: dict[str, Any], order_id: str | None = None) -> str:
+def _bonus_points_to_earn(order: dict[str, Any]) -> int:
+    items = order.get("items")
+    if not isinstance(items, list):
+        return 0
+    qty = 0
+    for it in items:
+        if not isinstance(it, dict):
+            continue
+        try:
+            qty += max(0, int(it.get("quantity", 1)))
+        except (TypeError, ValueError):
+            qty += 1
+    return qty * BONUS_POINTS_PER_CARD_UNIT
+
+
+def _order_item_lines(order: dict[str, Any]) -> list[str]:
     items = order.get("items")
     if not isinstance(items, list):
         items = []
     dcode = _delivery_price_code(str(order.get("delivery") or "BY"))
     use_byn = _use_byn_for_delivery(dcode)
-    oid = (order_id or str(order.get("order_id") or order.get("id") or "")).strip()
-    lines: list[str] = ["📦 Ваш заказ:"]
-    if oid:
-        lines.append(f"ID заказа: `{oid}`")
-    lines.append("")
+    lines: list[str] = []
     for it in items:
         if not isinstance(it, dict):
             continue
@@ -1333,24 +1348,72 @@ def _format_order_text(order: dict[str, Any], order_id: str | None = None) -> st
             except (TypeError, ValueError):
                 p = 0.0
             sub = p * q
-            lines.append(f"• {title} ×{qty} — {sub:g} BYN")
+            lines.append(f"• {title} — {q} шт. × {p:g} BYN = {sub:g} BYN")
         else:
             ur = _unit_rub_from_item(it)
             sub_r = ur * q
-            lines.append(f"• {title} ×{qty} — {int(round(sub_r))} RUB")
-    if len(lines) <= 2:
+            lines.append(f"• {title} — {q} шт. × {int(round(ur))} RUB = {int(round(sub_r))} RUB")
+    if not lines:
         lines.append("—")
+    return lines
+
+
+def _order_total_display(order: dict[str, Any]) -> str:
+    dcode = _delivery_price_code(str(order.get("delivery") or "BY"))
     try:
         total = float(order.get("total", 0) or 0)
     except (TypeError, ValueError):
         total = 0.0
+    if _use_byn_for_delivery(dcode):
+        return f"{total:g} BYN"
+    return f"{int(round(total * BYN_TO_RUB))} RUB (~{total:g} BYN)"
+
+
+def _build_order_draft_message(
+    order: dict[str, Any], _order_id: str | None = None
+) -> str:
+    dcode = _delivery_price_code(str(order.get("delivery") or "BY"))
+    bonus_earn = _bonus_points_to_earn(order)
+    lines = [
+        "Вы перешли с сайта с черновиком заказа.",
+        "",
+        "Проверьте состав и доставку. Нажмите «Подтвердить заказ» — откроются шаги оплаты. "
+        "Заказ уходит админу только после подтверждения оплаты со скрином чека.",
+        "",
+        "📦 Ваш заказ",
+        "",
+        *_order_item_lines(order),
+        "",
+        _format_delivery_line_order(dcode),
+    ]
+    try:
+        spent = int(order.get("bonus_points_spent") or 0)
+    except (TypeError, ValueError):
+        spent = 0
+    if spent > 0:
+        lines.append(f"Списано бонусов: {spent:,}".replace(",", " "))
+    lines.append(f"💰 Итого: {_order_total_display(order)}")
     lines.append("")
-    lines.append(_format_delivery_line_order(dcode))
-    if use_byn:
-        lines.append(f"💰 Итого: {total:g} BYN")
-    else:
-        lines.append(f"💰 Итого: {int(round(total * BYN_TO_RUB))} RUB (~{total:g} BYN)")
+    lines.append(
+        f"⭐ Ориентировочно начислится бонусов с заказа: ~{bonus_earn:,}".replace(",", " ")
+    )
     return "\n".join(lines)
+
+
+def _format_order_text(order: dict[str, Any], order_id: str | None = None) -> str:
+    return _build_order_draft_message(order, order_id)
+
+
+def _payment_selection_message(order: dict[str, Any]) -> str:
+    bonus_earn = _bonus_points_to_earn(order)
+    return (
+        "Выбери действие в меню ниже 👇\n\n"
+        f"💰 Итого: {_order_total_display(order)}\n\n"
+        "Выберите способ оплаты:\n\n"
+        "💳 Карта -> 💵 Перевод -> ₿ Крипта\n"
+        "💻 Оплата -> 📸 Скрин -> 🔎 Проверка -> ✅ Готово\n\n"
+        f"⭐ Ориентировочно начислится бонусов с заказа: ~{bonus_earn:,}".replace(",", " ")
+    )
 
 
 def _payment_method_label(method: str) -> str:
@@ -1358,9 +1421,9 @@ def _payment_method_label(method: str) -> str:
     if m == "card":
         return "💳 Карта"
     if m == "crypto":
-        return "🪙 Криптовалюта"
+        return "₿ Крипта"
     if m == "phone":
-        return "📱 По номеру телефона"
+        return "💵 Перевод"
     return method or "—"
 
 
@@ -1392,24 +1455,26 @@ def _payment_method_instruction(method: str) -> str:
     return "Способ оплаты сохранён."
 
 
-def _order_confirm_keyboard(
-    order_id: str, telegram_user_id: int, site_status: str
-) -> InlineKeyboardMarkup:
-    del telegram_user_id
-    st = (site_status or "new").strip().lower()
-    rows: list[list[InlineKeyboardButton]] = []
-    if st == "new":
-        rows.append(
+def _order_draft_keyboard(order_id: str, telegram_user_id: int) -> InlineKeyboardMarkup:
+    uid = int(telegram_user_id)
+    site_url = f"{SITE_LOGIN_ORIGIN}/?user_id={uid}"
+    return InlineKeyboardMarkup(
+        [
+            [InlineKeyboardButton("Открыть сайт", url=site_url)],
             [
                 InlineKeyboardButton(
                     "✅ Подтвердить заказ", callback_data=f"orderok:{order_id}"
                 )
-            ]
-        )
-    rows.append(
-        [InlineKeyboardButton("❌ Отменить", callback_data=f"ordercx:{order_id}")]
+            ],
+            [InlineKeyboardButton("❌ Отменить", callback_data=f"ordercx:{order_id}")],
+        ]
     )
-    return InlineKeyboardMarkup(rows)
+
+
+def _order_confirm_keyboard(
+    order_id: str, telegram_user_id: int, site_status: str
+) -> InlineKeyboardMarkup:
+    return _order_draft_keyboard(order_id, telegram_user_id)
 
 
 def _payment_method_keyboard(order_id: str) -> InlineKeyboardMarkup:
@@ -1418,17 +1483,20 @@ def _payment_method_keyboard(order_id: str) -> InlineKeyboardMarkup:
             [
                 InlineKeyboardButton(
                     "💳 Карта", callback_data=f"orderpay:card:{order_id}"
+                ),
+                InlineKeyboardButton(
+                    "💵 Перевод", callback_data=f"orderpay:phone:{order_id}"
+                ),
+            ],
+            [
+                InlineKeyboardButton(
+                    "₿ Крипта", callback_data=f"orderpay:crypto:{order_id}"
                 )
             ],
             [
                 InlineKeyboardButton(
-                    "🪙 Криптовалюта", callback_data=f"orderpay:crypto:{order_id}"
-                )
-            ],
-            [
-                InlineKeyboardButton(
-                    "📱 По номеру телефона",
-                    callback_data=f"orderpay:phone:{order_id}",
+                    "◀️ К подтверждению заказа",
+                    callback_data=f"orderback:{order_id}",
                 )
             ],
         ]
@@ -1699,8 +1767,8 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
             return
         if st in ("new", "confirmed") and not already_notified:
             await update.message.reply_text(
-                _format_order_text(order, oid),
-                reply_markup=_order_confirm_keyboard(oid, user.id, st),
+                _build_order_draft_message(order, oid),
+                reply_markup=_order_draft_keyboard(oid, user.id),
             )
             await post_site_mark_buyer_notified(oid, order, user.id)
         elif st in ("cancelled", "canceled"):
@@ -1955,7 +2023,24 @@ async def text_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
     if t == "🚚 Доставка":
         await update.message.reply_text(
             "Условия и сроки доставки — на сайте при оформлении заказа.\n"
-            "Нажмите «Открыть сайт» в приветствии или выберите страну доставки в корзине на сайте."
+            "Нажмите «Открыть сайт» в сообщении с заказом или выберите страну доставки в корзине на сайте."
+        )
+        return
+    if t == "⭐ Бонусы":
+        if not user:
+            await update.message.reply_text("Не удалось определить пользователя.")
+            return
+        st = await fetch_site_user_state(int(user.id))
+        pts = 0
+        if isinstance(st, dict):
+            try:
+                pts = int(st.get("bonus_points") or 0)
+            except (TypeError, ValueError):
+                pts = 0
+        await update.message.reply_text(
+            f"⭐ Ваши бонусные баллы: {pts:,}".replace(",", " ")
+            + "\n\nБаллы можно тратить в корзине на сайте. "
+            "Начисляются после подтверждения и отправки заказа."
         )
         return
     if t not in ("📦 Каталог", "📦 Категории"):
@@ -2200,13 +2285,49 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
             except Exception:
                 pass
             await q.message.reply_text(
-                "Выберите удобный способ оплаты:",
+                _payment_selection_message(order),
                 reply_markup=_payment_method_keyboard(order_id),
             )
             return
         except Exception as e:
             logger.exception("order confirm failed: %s", e)
             await q.answer("Не удалось подтвердить заказ. Повторите через минуту.", show_alert=True)
+            return
+
+    if data.startswith("orderback:"):
+        try:
+            order_id = data.split(":", 1)[1].strip()
+            if not order_id or not user:
+                await q.answer("Некорректный заказ", show_alert=True)
+                return
+            order = await fetch_site_order(order_id)
+            if not order:
+                existing = BOT_ORDERS.get(order_id)
+                if isinstance(existing, dict):
+                    order = dict(existing)
+                    order.setdefault("items", _order_items_list(existing))
+                    order.setdefault("total", _order_total_byn(existing))
+                    order.setdefault("delivery", existing.get("delivery") or "BY")
+                else:
+                    await q.answer("Заказ не найден", show_alert=True)
+                    return
+            owner_id = _order_owner_user_id(order_id, order)
+            if owner_id is None or int(user.id) != int(owner_id):
+                await q.answer("Это не ваш заказ", show_alert=True)
+                return
+            await q.answer()
+            try:
+                await q.edit_message_reply_markup(reply_markup=None)
+            except Exception:
+                pass
+            await q.message.reply_text(
+                _build_order_draft_message(order, order_id),
+                reply_markup=_order_draft_keyboard(order_id, int(user.id)),
+            )
+            return
+        except Exception as e:
+            logger.exception("order back failed: %s", e)
+            await q.answer("Не удалось вернуться к заказу", show_alert=True)
             return
 
     if data.startswith("orderpay:"):
@@ -2288,8 +2409,8 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
             await q.message.reply_text(
                 f"Вы выбрали: {_payment_method_label(method)}\n\n"
                 f"{_payment_method_instruction(method)}\n\n"
-                "Ожидайте подтверждения заказа менеджером. "
-                "После подтверждения мы попросим данные для доставки."
+                "Оплатите и пришлите скриншот чека одним сообщением в этот чат.\n"
+                "После проверки менеджер подтвердит заказ."
             )
             return
         except Exception as e:

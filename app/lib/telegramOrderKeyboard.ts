@@ -54,12 +54,15 @@ export function buildTelegramPaymentMethodKeyboard(orderId: string): {
 } {
   return {
     inline_keyboard: [
-      [{ text: "💳 Карта", callback_data: `orderpay:card:${orderId}` }],
-      [{ text: "🪙 Криптовалюта", callback_data: `orderpay:crypto:${orderId}` }],
+      [
+        { text: "💳 Карта", callback_data: `orderpay:card:${orderId}` },
+        { text: "💵 Перевод", callback_data: `orderpay:phone:${orderId}` },
+      ],
+      [{ text: "₿ Крипта", callback_data: `orderpay:crypto:${orderId}` }],
       [
         {
-          text: "📱 По номеру телефона",
-          callback_data: `orderpay:phone:${orderId}`,
+          text: "◀️ К подтверждению заказа",
+          callback_data: `orderback:${orderId}`,
         },
       ],
     ],

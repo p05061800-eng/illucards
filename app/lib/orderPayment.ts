@@ -2,8 +2,8 @@ export type OrderPaymentMethod = "card" | "crypto" | "phone";
 
 const LABELS: Record<OrderPaymentMethod, string> = {
   card: "💳 Карта",
-  crypto: "🪙 Криптовалюта",
-  phone: "📱 По номеру телефона",
+  crypto: "₿ Крипта",
+  phone: "💵 Перевод",
 };
 
 export function orderPaymentMethodLabel(method: OrderPaymentMethod): string {

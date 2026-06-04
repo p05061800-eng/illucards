@@ -1,11 +1,12 @@
 import { promises as fs } from "fs";
 import path from "path";
 import type { DeliveryCountry } from "@/app/lib/delivery";
-import { DELIVERY_COUNTRY_LABELS } from "@/app/lib/delivery";
 import type { OrderLineIn } from "@/app/lib/orderTypes";
 import { telegramSendMessage } from "@/app/lib/telegramBotApi";
-import { buildTelegramOrderInlineKeyboard } from "@/app/lib/telegramOrderKeyboard";
-import { bonusDiscountByn } from "@/app/lib/bonusProgram";
+import {
+  buildTelegramOrderDraftKeyboard,
+  buildTelegramOrderDraftMessage,
+} from "@/app/lib/telegramOrderDraftMessage";
 import { markOrderTelegramBuyerNotified } from "@/app/lib/ordersStore";
 
 const BOT_ORDERS_PATH = path.join(process.cwd(), "data", "bot-orders.json");
@@ -18,21 +19,6 @@ type BotOrderRecord = {
   status: string;
   bonus_points_spent?: number;
 };
-
-function escapeTelegramHtml(s: string): string {
-  return s
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;");
-}
-
-function formatByn(n: number): string {
-  const x = Number.isFinite(n) ? n : 0;
-  return `${(Math.round(x * 100) / 100).toLocaleString("ru-RU", {
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 2,
-  })} BYN`;
-}
 
 async function readBotOrders(): Promise<Record<string, BotOrderRecord>> {
   try {
@@ -72,29 +58,13 @@ async function recordOrderForBot(
 }
 
 function buildTelegramOrderMessage(orderId: string, record: BotOrderRecord): string {
-  const lines = [
-    "📦 Ваш заказ:",
-    `ID заказа: <code>${escapeTelegramHtml(orderId)}</code>`,
-    "",
-    ...record.items.map((item) => {
-      const qty = Math.max(1, Math.floor(item.quantity));
-      const subtotal = item.priceByn * qty;
-      return `• ${escapeTelegramHtml(item.title)} ×${qty} — ${formatByn(subtotal)}`;
-    }),
-    "",
-    `🚚 Доставка: ${DELIVERY_COUNTRY_LABELS[record.delivery]}`,
-    ...(record.bonus_points_spent && record.bonus_points_spent > 0
-      ? [
-          `Списано бонусов: ${record.bonus_points_spent.toLocaleString("ru-RU")}`,
-          `Скидка бонусами: ${formatByn(
-            bonusDiscountByn(record.bonus_points_spent, record.delivery),
-          )}`,
-        ]
-      : []),
-    `💰 Итого: ${formatByn(record.total)}`,
-  ];
-
-  return lines.join("\n");
+  return buildTelegramOrderDraftMessage({
+    orderId,
+    items: record.items,
+    total: record.total,
+    delivery: record.delivery,
+    bonusPointsSpent: record.bonus_points_spent,
+  });
 }
 
 export async function recordAndNotifyTelegramOrder(input: {
@@ -145,11 +115,7 @@ export async function recordAndNotifyTelegramOrder(input: {
     input.userId,
     buildTelegramOrderMessage(input.orderId, record),
     {
-      replyMarkup: buildTelegramOrderInlineKeyboard(
-        input.orderId,
-        input.userId,
-        "new",
-      ),
+      replyMarkup: buildTelegramOrderDraftKeyboard(input.orderId, input.userId),
     },
   );
 

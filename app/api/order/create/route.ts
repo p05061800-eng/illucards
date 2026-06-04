@@ -72,15 +72,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: result.error }, { status: result.status });
   }
 
-  const telegram = await recordAndNotifyTelegramOrder({
-    orderId: result.orderId,
-    userId,
-    items,
-    total: result.totalByn,
-    delivery,
-    bonusPointsSpent: result.bonusPointsSpent,
-  });
-
   const syncInput = {
     orderId: result.orderId,
     userId,
@@ -89,14 +80,20 @@ export async function POST(request: NextRequest) {
     delivery,
     username: username ?? null,
     bonusPointsSpent: result.bonusPointsSpent,
-    skipBuyerNotify: telegram.sent,
+    skipBuyerNotify: true,
   };
 
-  if (telegram.sent) {
-    void syncOrderToTelegramBot(syncInput);
-  } else {
-    await syncOrderToTelegramBot(syncInput);
-  }
+  // Сначала sync в бот — иначе кнопки под сообщением с сайта не находят заказ.
+  await syncOrderToTelegramBot(syncInput);
+
+  const telegram = await recordAndNotifyTelegramOrder({
+    orderId: result.orderId,
+    userId,
+    items,
+    total: result.totalByn,
+    delivery,
+    bonusPointsSpent: result.bonusPointsSpent,
+  });
 
   return NextResponse.json({
     order_id: result.orderId,

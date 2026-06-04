@@ -44,6 +44,8 @@ BOT_ORDERS: dict[str, dict[str, Any]] = {}
 _AWAIT_ORDER_DETAILS: dict[int, str] = {}
 # Последний заказ с сайта по sync (для callback_data confirm_order / cancel_order).
 _PENDING_ORDER_BY_USER: dict[int, str] = {}
+# Снимок заказа с сайта (sync / уведомление) — если GET /api/order временно недоступен.
+_ORDER_SNAPSHOTS: dict[str, dict[str, Any]] = {}
 LOGIN_CODE_TTL_SEC = 5 * 60
 # Telegram Application (post_init) — для push-уведомлений из HTTP sync.
 _TG_APP: Any = None
@@ -325,6 +327,77 @@ def _remember_pending_order_for_user(telegram_user_id: int, order_id: str) -> No
         _PENDING_ORDER_BY_USER[int(telegram_user_id)] = oid
 
 
+def _cache_order_snapshot(
+    order_id: str, order: dict[str, Any], telegram_user_id: int
+) -> None:
+    oid = str(order_id or "").strip()
+    if not oid:
+        return
+    snap = dict(order)
+    snap["user_id"] = int(telegram_user_id)
+    if "status" not in snap or not str(snap.get("status") or "").strip():
+        snap["status"] = "new"
+    if "items" not in snap or not isinstance(snap.get("items"), list):
+        snap["items"] = _order_items_list(snap)
+    _ORDER_SNAPSHOTS[oid] = snap
+    _remember_pending_order_for_user(telegram_user_id, oid)
+
+
+def _order_dict_from_bot_record(rec: dict[str, Any], uid: int) -> dict[str, Any]:
+    order = dict(rec)
+    order["items"] = _order_items_list(order)
+    order.setdefault("total", _order_total_byn(order))
+    order.setdefault("delivery", order.get("delivery") or "BY")
+    order["user_id"] = int(rec.get("user_id") or uid)
+    return order
+
+
+async def _load_order_for_callback(
+    order_id: str, telegram_user_id: int
+) -> dict[str, Any] | None:
+    """Заказ для inline-кнопок: снимок sync → память бота → API сайта → файл bot-orders."""
+    oid = str(order_id or "").strip()
+    if not oid:
+        return None
+    uid = int(telegram_user_id)
+
+    snap = _ORDER_SNAPSHOTS.get(oid)
+    if isinstance(snap, dict):
+        order = dict(snap)
+        order["items"] = _order_items_list(order)
+        order.setdefault("total", _order_total_byn(order))
+        order.setdefault("delivery", order.get("delivery") or "BY")
+        order["user_id"] = uid
+        _record_site_order_in_bot(oid, order, uid)
+        return order
+
+    existing = BOT_ORDERS.get(oid)
+    if isinstance(existing, dict):
+        order = _order_dict_from_bot_record(existing, uid)
+        _cache_order_snapshot(oid, order, uid)
+        return order
+
+    body = await fetch_site_order(oid)
+    if isinstance(body, dict):
+        order = dict(body)
+        order["items"] = _order_items_list(order)
+        order.setdefault("total", _order_total_byn(order))
+        order.setdefault("delivery", order.get("delivery") or "BY")
+        order["user_id"] = uid
+        _cache_order_snapshot(oid, order, uid)
+        _record_site_order_in_bot(oid, order, uid)
+        return order
+
+    _load_bot_orders()
+    existing = BOT_ORDERS.get(oid)
+    if isinstance(existing, dict):
+        order = _order_dict_from_bot_record(existing, uid)
+        _cache_order_snapshot(oid, order, uid)
+        return order
+
+    return None
+
+
 def _resolve_order_id_for_site_callback(
     telegram_user_id: int, *, prefer_status: str = "new"
 ) -> str | None:
@@ -381,7 +454,7 @@ async def _sync_cart_http(request: web.Request) -> web.Response:
         if "status" not in normalized_order:
             normalized_order["status"] = "new"
         rec = _record_site_order_in_bot(order_id, normalized_order, user_id)
-        _remember_pending_order_for_user(user_id, order_id)
+        _cache_order_snapshot(order_id, normalized_order, user_id)
         st = str(normalized_order.get("status") or "new").strip().lower()
         if st == "new" and not body.get("skip_buyer_notify"):
             await _push_site_order_notifications(
@@ -404,6 +477,7 @@ async def _push_site_order_notifications(
     if _TG_APP is None:
         return
     uid = int(telegram_user_id)
+    _cache_order_snapshot(order_id, order, uid)
     try:
         await _TG_APP.bot.send_message(
             chat_id=uid,
@@ -1542,6 +1616,7 @@ async def _send_order_intro_and_draft(
     telegram_user_id: int,
 ) -> None:
     """Сначала приветствие с сайта, затем карточка заказа с кнопками."""
+    _cache_order_snapshot(order_id, order, telegram_user_id)
     await message.reply_text(SITE_ORDER_INTRO, reply_markup=_main_keyboard())
     await message.reply_text(
         _build_order_draft_message(order, order_id),
@@ -1622,7 +1697,12 @@ def _order_belongs_to_telegram_user(order: dict[str, Any], telegram_user_id: int
         return False
 
 
-def _order_owner_user_id(order_id: str, order: dict[str, Any] | None = None) -> int | None:
+def _order_owner_user_id(
+    order_id: str,
+    order: dict[str, Any] | None = None,
+    *,
+    fallback_uid: int | None = None,
+) -> int | None:
     raw = order.get("user_id") if isinstance(order, dict) else None
     if raw is None:
         existing = BOT_ORDERS.get(order_id)
@@ -1631,8 +1711,17 @@ def _order_owner_user_id(order_id: str, order: dict[str, Any] | None = None) -> 
     try:
         uid = int(raw)
     except (TypeError, ValueError):
-        return None
-    return uid if uid > 0 else None
+        uid = 0
+    if uid > 0:
+        return uid
+    if fallback_uid is not None:
+        try:
+            fb = int(fallback_uid)
+        except (TypeError, ValueError):
+            fb = 0
+        if fb > 0:
+            return fb
+    return None
 
 
 def _load_login_codes() -> dict[str, dict[str, Any]]:
@@ -2303,18 +2392,16 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
                 await q.answer("Ошибка", show_alert=True)
                 return
 
-            order = await fetch_site_order(order_id)
+            order = await _load_order_for_callback(order_id, int(user.id))
             if not order:
-                existing = BOT_ORDERS.get(order_id)
-                if isinstance(existing, dict):
-                    order = dict(existing)
-                    order.setdefault("items", _order_items_list(existing))
-                    order.setdefault("total", _order_total_byn(existing))
-                    order.setdefault("delivery", existing.get("delivery") or "BY")
-                else:
-                    await q.answer("Заказ не найден", show_alert=True)
-                    return
-            owner_id = _order_owner_user_id(order_id, order)
+                await q.answer()
+                await q.message.reply_text(
+                    "Не удалось обработать кнопку. Откройте заказ снова с сайта или отправьте /start."
+                )
+                return
+            owner_id = _order_owner_user_id(
+                order_id, order, fallback_uid=int(user.id)
+            )
             admin_chat_id = _resolve_admin_chat_id()
             if owner_id is None:
                 await q.answer("Не найден владелец заказа", show_alert=True)
@@ -2363,7 +2450,10 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
             return
         except Exception as e:
             logger.exception("order confirm failed: %s", e)
-            await q.answer("Не удалось подтвердить заказ. Повторите через минуту.", show_alert=True)
+            await q.answer()
+            await q.message.reply_text(
+                "Не удалось обработать кнопку. Откройте заказ снова с сайта или отправьте /start."
+            )
             return
 
     if data.startswith("orderback:"):
@@ -2372,18 +2462,16 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
             if not order_id or not user:
                 await q.answer("Некорректный заказ", show_alert=True)
                 return
-            order = await fetch_site_order(order_id)
+            order = await _load_order_for_callback(order_id, int(user.id))
             if not order:
-                existing = BOT_ORDERS.get(order_id)
-                if isinstance(existing, dict):
-                    order = dict(existing)
-                    order.setdefault("items", _order_items_list(existing))
-                    order.setdefault("total", _order_total_byn(existing))
-                    order.setdefault("delivery", existing.get("delivery") or "BY")
-                else:
-                    await q.answer("Заказ не найден", show_alert=True)
-                    return
-            owner_id = _order_owner_user_id(order_id, order)
+                await q.answer()
+                await q.message.reply_text(
+                    "Не удалось обработать кнопку. Откройте заказ снова с сайта или отправьте /start."
+                )
+                return
+            owner_id = _order_owner_user_id(
+                order_id, order, fallback_uid=int(user.id)
+            )
             if owner_id is None or int(user.id) != int(owner_id):
                 await q.answer("Это не ваш заказ", show_alert=True)
                 return
@@ -2418,11 +2506,16 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
                 await q.answer("Ошибка", show_alert=True)
                 return
 
-            order = await fetch_site_order(order_id)
+            order = await _load_order_for_callback(order_id, int(user.id))
             if not order:
-                await q.answer("Заказ не найден", show_alert=True)
+                await q.answer()
+                await q.message.reply_text(
+                    "Не удалось обработать кнопку. Откройте заказ снова с сайта или отправьте /start."
+                )
                 return
-            owner_id = _order_owner_user_id(order_id, order)
+            owner_id = _order_owner_user_id(
+                order_id, order, fallback_uid=int(user.id)
+            )
             if owner_id is None:
                 await q.answer("Не найден владелец заказа", show_alert=True)
                 return
@@ -2571,11 +2664,16 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
                 await q.answer("Ошибка", show_alert=True)
                 return
 
-            order = await fetch_site_order(order_id)
+            order = await _load_order_for_callback(order_id, int(user.id))
             if not order:
-                await q.answer("Заказ не найден", show_alert=True)
+                await q.answer()
+                await q.message.reply_text(
+                    "Не удалось обработать кнопку. Откройте заказ снова с сайта или отправьте /start."
+                )
                 return
-            owner_id = _order_owner_user_id(order_id, order)
+            owner_id = _order_owner_user_id(
+                order_id, order, fallback_uid=int(user.id)
+            )
             admin_chat_id = _resolve_admin_chat_id()
             if owner_id is None:
                 await q.answer("Не найден владелец заказа", show_alert=True)
@@ -2648,7 +2746,10 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
             return
         except Exception as e:
             logger.exception("order cancel failed: %s", e)
-            await q.answer("Не удалось отменить заказ. Повторите через минуту.", show_alert=True)
+            await q.answer()
+            await q.message.reply_text(
+                "Не удалось обработать кнопку. Откройте заказ снова с сайта или отправьте /start."
+            )
             return
 
     if data == "cartcheckout":
@@ -2809,20 +2910,6 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
             context, chat_id, telegram_user_id=uid, message_id=None
         )
         context.user_data["product_message_id"] = mid
-        return
-
-    if (
-        data in ("confirm_order", "cancel_order")
-        or data.startswith(
-            ("orderok:", "ordercx:", "orderpay:", "orderback:", "orderadmok:")
-        )
-    ):
-        logger.warning("unhandled order callback: %s", data)
-        await q.answer()
-        await q.message.reply_text(
-            "Нажмите кнопки под последним сообщением с заказом. "
-            "Если не сработало — оформите заказ снова на сайте."
-        )
         return
 
     if not data.startswith("nav:"):

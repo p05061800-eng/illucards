@@ -604,7 +604,60 @@ def _unit_rub_from_item(it: dict[str, Any]) -> float:
 def _format_delivery_line_order(dcode: str) -> str:
     label = DELIVERY_LABELS.get(dcode, dcode)
     flag = DELIVERY_FLAGS.get(dcode, "🌍")
-    return f"🚚 Доставка: {flag} {label}"
+    if _use_byn_for_delivery(dcode):
+        charge = _delivery_charge_byn(dcode)
+        return f"🚚 Доставка: {flag} {label} — {charge:g} BYN"
+    rub = _delivery_charge_rub(dcode)
+    return f"🚚 Доставка: {flag} {label} — {rub:,} RUB".replace(",", " ")
+
+
+def _order_goods_total_rub(order: dict[str, Any]) -> int:
+    items = order.get("items")
+    if not isinstance(items, list):
+        return 0
+    total = 0
+    for it in items:
+        if not isinstance(it, dict):
+            continue
+        try:
+            qty = max(1, int(it.get("quantity", 1)))
+        except (TypeError, ValueError):
+            qty = 1
+        total += int(round(_unit_rub_from_item(it))) * qty
+    return total
+
+
+def _order_checkout_display_total(order: dict[str, Any]) -> tuple[float, str]:
+    """(amount, currency label fragment) — как в корзине на сайте."""
+    dcode = _delivery_price_code(str(order.get("delivery") or "BY"))
+    try:
+        total_byn = float(order.get("total", 0) or 0)
+    except (TypeError, ValueError):
+        total_byn = 0.0
+    try:
+        spent = max(0, int(order.get("bonus_points_spent") or 0))
+    except (TypeError, ValueError):
+        spent = 0
+    if _use_byn_for_delivery(dcode):
+        return total_byn, "BYN"
+    goods_rub = _order_goods_total_rub(order)
+    del_rub = _delivery_charge_rub(dcode)
+    rub_total = max(0, goods_rub + del_rub - spent)
+    return float(rub_total), "RUB"
+
+
+def _format_bonus_discount_order(order: dict[str, Any]) -> str:
+    dcode = _delivery_price_code(str(order.get("delivery") or "BY"))
+    try:
+        spent = max(0, int(order.get("bonus_points_spent") or 0))
+    except (TypeError, ValueError):
+        spent = 0
+    if spent <= 0:
+        return ""
+    if _use_byn_for_delivery(dcode):
+        disc = spent * (3.5 / 100.0)
+        return f"{disc:g} BYN"
+    return f"{spent:,} RUB".replace(",", " ")
 
 
 CACHE_TTL_SEC = 60.0
@@ -1363,14 +1416,10 @@ def _order_item_lines(order: dict[str, Any]) -> list[str]:
 
 
 def _order_total_display(order: dict[str, Any]) -> str:
-    dcode = _delivery_price_code(str(order.get("delivery") or "BY"))
-    try:
-        total = float(order.get("total", 0) or 0)
-    except (TypeError, ValueError):
-        total = 0.0
-    if _use_byn_for_delivery(dcode):
-        return f"{total:g} BYN"
-    return f"{int(round(total * BYN_TO_RUB))} RUB (~{total:g} BYN)"
+    amount, cur = _order_checkout_display_total(order)
+    if cur == "BYN":
+        return f"{amount:g} BYN"
+    return f"{int(round(amount)):,} RUB".replace(",", " ")
 
 
 SITE_ORDER_INTRO = (
@@ -1399,6 +1448,9 @@ def _build_order_draft_message(
         spent = 0
     if spent > 0:
         lines.append(f"Списано бонусов: {spent:,}".replace(",", " "))
+        disc = _format_bonus_discount_order(order)
+        if disc:
+            lines.append(f"Скидка бонусами: {disc}")
     lines.append(f"💰 Итого: {_order_total_display(order)}")
     lines.append("")
     lines.append(

@@ -1,26 +1,15 @@
-import type { DeliveryCountry } from "@/app/lib/delivery";
-import { DELIVERY_COUNTRY_LABELS } from "@/app/lib/delivery";
 import { BONUS_POINTS_PER_CARD_UNIT } from "@/app/lib/bonusProgram";
-import { bonusDiscountByn } from "@/app/lib/bonusProgram";
 import type { OrderLineIn } from "@/app/lib/orderTypes";
-
-const DELIVERY_FLAGS: Record<DeliveryCountry, string> = {
-  BY: "🇧🇾",
-  RU: "🇷🇺",
-  UA: "🇺🇦",
-  OTHER: "🌍",
-};
+import type { DeliveryCountry } from "@/app/lib/delivery";
+import {
+  formatBonusDiscountTelegram,
+  formatDeliveryLineTelegram,
+  formatOrderLineTelegram,
+  formatOrderTotalTelegram,
+} from "@/app/lib/orderTelegramDisplay";
 
 export const TELEGRAM_ORDER_SITE_INTRO =
   "Вы перешли с сайта IlluCards в Telegram. Сейчас продолжим здесь.";
-
-function formatByn(n: number): string {
-  const x = Number.isFinite(n) ? n : 0;
-  return `${(Math.round(x * 100) / 100).toLocaleString("ru-RU", {
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 2,
-  })} BYN`;
-}
 
 function escapeTelegramHtml(s: string): string {
   return s
@@ -36,18 +25,17 @@ export function buildTelegramOrderDraftMessage(input: {
   delivery: DeliveryCountry;
   bonusPointsSpent?: number;
 }): string {
-  const flag = DELIVERY_FLAGS[input.delivery] ?? "🌍";
-  const deliveryLabel = DELIVERY_COUNTRY_LABELS[input.delivery];
   const itemLines = input.items.map((item) => {
-    const qty = Math.max(1, Math.floor(item.quantity));
-    const unit = item.priceByn;
-    const sub = unit * qty;
-    return `• ${escapeTelegramHtml(item.title)} — ${qty} шт. × ${formatByn(unit)} = ${formatByn(sub)}`;
+    const raw = formatOrderLineTelegram(item, input.delivery);
+    const body = raw.startsWith("• ") ? raw.slice(2) : raw;
+    return `• ${escapeTelegramHtml(body)}`;
   });
   const bonusEarn = input.items.reduce(
     (s, it) => s + Math.max(0, Math.floor(it.quantity)) * BONUS_POINTS_PER_CARD_UNIT,
     0,
   );
+  const spent = Math.max(0, Math.floor(input.bonusPointsSpent ?? 0));
+  const discountLabel = spent > 0 ? formatBonusDiscountTelegram(spent, input.delivery) : "";
 
   const lines = [
     "Проверьте состав и доставку. Нажмите «Подтвердить заказ» — откроются шаги оплаты. Заказ уходит админу только после подтверждения оплаты со скрином чека.",
@@ -56,16 +44,19 @@ export function buildTelegramOrderDraftMessage(input: {
     "",
     ...itemLines,
     "",
-    `🚚 Доставка: ${flag} ${deliveryLabel}`,
-    ...(input.bonusPointsSpent && input.bonusPointsSpent > 0
+    formatDeliveryLineTelegram(input.delivery),
+    ...(spent > 0
       ? [
-          `Списано бонусов: ${input.bonusPointsSpent.toLocaleString("ru-RU")}`,
-          `Скидка бонусами: ${formatByn(
-            bonusDiscountByn(input.bonusPointsSpent, input.delivery),
-          )}`,
+          `Списано бонусов: ${spent.toLocaleString("ru-RU")}`,
+          `Скидка бонусами: ${discountLabel}`,
         ]
       : []),
-    `💰 Итого: ${formatByn(input.total)}`,
+    `💰 Итого: ${formatOrderTotalTelegram({
+      items: input.items,
+      delivery: input.delivery,
+      totalByn: input.total,
+      bonusPointsSpent: spent,
+    })}`,
     "",
     `⭐ Ориентировочно начислится бонусов с заказа: ~${bonusEarn.toLocaleString("ru-RU")}`,
   ];
@@ -84,9 +75,19 @@ export function buildTelegramOrderDraftKeyboard(orderId: string): {
   };
 }
 
-export function buildTelegramPaymentSelectionMessage(totalByn: number, bonusEarn: number): string {
-  const total = formatByn(totalByn);
-  const bonus = bonusEarn.toLocaleString("ru-RU");
+export function buildTelegramPaymentSelectionMessage(input: {
+  items: OrderLineIn[];
+  delivery: DeliveryCountry;
+  totalByn: number;
+  bonusPointsSpent?: number;
+  bonusEarn: number;
+}): string {
+  const total = formatOrderTotalTelegram({
+    items: input.items,
+    delivery: input.delivery,
+    totalByn: input.totalByn,
+    bonusPointsSpent: input.bonusPointsSpent,
+  });
   return [
     "Выбери действие в меню ниже 👇",
     "",
@@ -97,7 +98,7 @@ export function buildTelegramPaymentSelectionMessage(totalByn: number, bonusEarn
     "💳 Карта -> 💵 Перевод -> ₿ Крипта",
     "💻 Оплата -> 📸 Скрин -> 🔎 Проверка -> ✅ Готово",
     "",
-    `⭐ Ориентировочно начислится бонусов с заказа: ~${bonus}`,
+    `⭐ Ориентировочно начислится бонусов с заказа: ~${input.bonusEarn.toLocaleString("ru-RU")}`,
   ].join("\n");
 }
 

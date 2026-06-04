@@ -1691,6 +1691,11 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         already_notified = order.get("telegram_buyer_notified") is True
 
         if st in ("new", "confirmed") and already_notified:
+            await update.message.reply_text(
+                "Заказ уже в этом чате выше 👆\n"
+                "Нажмите «✅ Подтвердить заказ» под сообщением с заказом.",
+                reply_markup=_main_keyboard(),
+            )
             return
         if st in ("new", "confirmed") and not already_notified:
             await update.message.reply_text(

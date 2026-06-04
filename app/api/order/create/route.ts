@@ -79,11 +79,9 @@ export async function POST(request: NextRequest) {
     total: result.totalByn,
     delivery,
     bonusPointsSpent: result.bonusPointsSpent,
-    /** Превью и кнопки — в боте по deep link `?start=order_<id>`. */
-    sendTelegramMessage: false,
   });
 
-  void syncOrderToTelegramBot({
+  const syncInput = {
     orderId: result.orderId,
     userId,
     items,
@@ -91,15 +89,22 @@ export async function POST(request: NextRequest) {
     delivery,
     username: username ?? null,
     bonusPointsSpent: result.bonusPointsSpent,
-    skipBuyerNotify: true,
-  });
+    skipBuyerNotify: telegram.sent,
+  };
+
+  if (telegram.sent) {
+    void syncOrderToTelegramBot(syncInput);
+  } else {
+    await syncOrderToTelegramBot(syncInput);
+  }
 
   return NextResponse.json({
     order_id: result.orderId,
     total: result.totalByn,
     bonus_points_spent: result.bonusPointsSpent,
     telegram_recorded: telegram.recorded,
-    /** Открыть бота: https://t.me/<bot>?start=order_<order_id> */
+    telegram_sent: telegram.sent,
+    ...(telegram.error ? { telegram_error: telegram.error } : {}),
     telegram_bot_start: `order_${result.orderId}`,
   });
 }

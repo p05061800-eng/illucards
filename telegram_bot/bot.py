@@ -775,22 +775,23 @@ async def _push_site_order_notifications(
     if _TG_APP is None:
         return
     uid = int(telegram_user_id)
-    _cache_order_snapshot(order_id, order, uid)
+    oid = str(order_id or "").strip()
+    _cache_order_snapshot(oid, order, uid)
+    body = (
+        SITE_ORDER_INTRO
+        + "\n\n"
+        + _build_order_draft_message(order, oid)
+    )
     try:
         await _TG_APP.bot.send_message(
             chat_id=uid,
-            text=SITE_ORDER_INTRO,
-            reply_markup=_main_keyboard(),
-        )
-        await _TG_APP.bot.send_message(
-            chat_id=uid,
-            text=_build_order_draft_message(order, order_id),
-            reply_markup=_order_draft_keyboard(order_id),
+            text=body,
+            reply_markup=_order_draft_keyboard(oid),
         )
     except Exception as e:
         logger.warning("site order notify user (sync backup) %s: %s", uid, e)
         return
-    await post_site_mark_buyer_notified(order_id, order, uid)
+    await post_site_mark_buyer_notified(oid, order, uid)
 
 
 async def _await_details_http(request: web.Request) -> web.Response:
@@ -856,7 +857,7 @@ def _format_order_admin(
         f"Пользователь: {u} (tg {telegram_user_id})",
         "",
     ]
-    dcode = _delivery_price_code(str(order.get("delivery") or "BY"))
+    dcode = _delivery_price_code(order.get("delivery") or "BY")
     use_byn = _use_byn_for_delivery(dcode)
     for it in record.get("items") or []:
         if not isinstance(it, dict):
@@ -938,8 +939,23 @@ BONUS_POINTS_PER_CARD_UNIT = 100
 BYN_TO_RUB = 30.0
 
 
-def _delivery_price_code(raw: str | None) -> str:
-    u = (raw or "").strip().upper()
+def _delivery_price_code(raw: Any) -> str:
+    if isinstance(raw, dict):
+        raw = (
+            raw.get("country")
+            or raw.get("code")
+            or raw.get("deliveryCountry")
+            or raw.get("delivery_country")
+        )
+    u = (str(raw or "")).strip().upper()
+    if u in ("BY", "BYN", "BELARUS"):
+        return "BY"
+    if u in ("RU", "RUB", "RUSSIA"):
+        return "RU"
+    if u in ("UA", "UKRAINE"):
+        return "UA"
+    if u in ("OT", "OTHER"):
+        return "OTHER"
     return u if u in ("BY", "RU", "UA", "OTHER") else "BY"
 
 
@@ -1005,7 +1021,7 @@ def _order_goods_total_rub(order: dict[str, Any]) -> int:
 
 def _order_checkout_display_total(order: dict[str, Any]) -> tuple[float, str]:
     """(amount, currency label fragment) — как в корзине на сайте."""
-    dcode = _delivery_price_code(str(order.get("delivery") or "BY"))
+    dcode = _delivery_price_code(order.get("delivery") or "BY")
     try:
         total_byn = float(order.get("total", 0) or 0)
     except (TypeError, ValueError):
@@ -1023,7 +1039,7 @@ def _order_checkout_display_total(order: dict[str, Any]) -> tuple[float, str]:
 
 
 def _format_bonus_discount_order(order: dict[str, Any]) -> str:
-    dcode = _delivery_price_code(str(order.get("delivery") or "BY"))
+    dcode = _delivery_price_code(order.get("delivery") or "BY")
     try:
         spent = max(0, int(order.get("bonus_points_spent") or 0))
     except (TypeError, ValueError):
@@ -1767,13 +1783,13 @@ def _order_item_lines(order: dict[str, Any]) -> list[str]:
     items = order.get("items")
     if not isinstance(items, list):
         items = []
-    dcode = _delivery_price_code(str(order.get("delivery") or "BY"))
+    dcode = _delivery_price_code(order.get("delivery") or "BY")
     use_byn = _use_byn_for_delivery(dcode)
     lines: list[str] = []
     for it in items:
         if not isinstance(it, dict):
             continue
-        title = str(it.get("title") or "—").strip()
+        title = str(it.get("title") or it.get("name") or "—").strip()
         try:
             qty = int(it.get("quantity", 1))
         except (TypeError, ValueError):
@@ -1810,7 +1826,7 @@ SITE_ORDER_INTRO = (
 def _build_order_draft_message(
     order: dict[str, Any], _order_id: str | None = None
 ) -> str:
-    dcode = _delivery_price_code(str(order.get("delivery") or "BY"))
+    dcode = _delivery_price_code(order.get("delivery") or "BY")
     bonus_earn = _bonus_points_to_earn(order)
     lines = [
         "Проверьте состав и доставку. Нажмите «Подтвердить заказ» — откроются шаги оплаты. "
@@ -1900,10 +1916,10 @@ def _order_draft_keyboard(order_id: str) -> InlineKeyboardMarkup:
         [
             [
                 InlineKeyboardButton(
-                    "✅ Подтвердить заказ", callback_data=f"confirm_order:{oid}"
+                    "✅ Подтвердить заказ", callback_data=f"orderok:{oid}"
                 )
             ],
-            [InlineKeyboardButton("❌ Отменить", callback_data=f"cancel_order:{oid}")],
+            [InlineKeyboardButton("❌ Отменить", callback_data=f"ordercx:{oid}")],
         ]
     )
 
@@ -1920,14 +1936,37 @@ async def _send_order_intro_and_draft(
     order: dict[str, Any],
     order_id: str,
     telegram_user_id: int,
-) -> None:
-    """Сначала приветствие с сайта, затем карточка заказа с кнопками."""
-    _cache_order_snapshot(order_id, order, telegram_user_id)
-    await message.reply_text(SITE_ORDER_INTRO, reply_markup=_main_keyboard())
-    await message.reply_text(
-        _build_order_draft_message(order, order_id),
-        reply_markup=_order_draft_keyboard(order_id),
+) -> bool:
+    """Приветствие + карточка заказа одним сообщением (не теряется при сбое 2-го send)."""
+    oid = str(order_id or "").strip()
+    if not oid:
+        return False
+    _cache_order_snapshot(oid, order, telegram_user_id)
+    body = (
+        SITE_ORDER_INTRO
+        + "\n\n"
+        + _build_order_draft_message(order, oid)
     )
+    kb = _order_draft_keyboard(oid)
+    try:
+        await message.reply_text(body, reply_markup=kb)
+    except Exception as e:
+        logger.exception("order draft send failed order=%s: %s", oid, e)
+        try:
+            await message.reply_text(
+                body + "\n\n(Кнопки временно недоступны — отправьте /start order_"
+                + oid
+                + ")",
+                reply_markup=_main_keyboard(),
+            )
+        except Exception as e2:
+            logger.exception("order draft fallback send failed order=%s: %s", oid, e2)
+            return False
+    try:
+        await message.reply_text("Меню:", reply_markup=_main_keyboard())
+    except Exception as e:
+        logger.warning("main keyboard after order draft: %s", e)
+    return True
 
 
 def _payment_method_keyboard(order_id: str) -> InlineKeyboardMarkup:
@@ -2201,16 +2240,30 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         return
 
     oid = _order_id_from_start_args(args)
+    if not oid and user and getattr(user, "id", None) is not None:
+        pending = _PENDING_ORDER_BY_USER.get(int(user.id))
+        if pending:
+            oid = str(pending).strip()
+            logger.info("start: pending order %s user=%s", oid, user.id)
     if oid:
         if user and getattr(user, "id", None) is not None:
             _record_first_start_and_is_new(int(user.id))
-        order = await fetch_site_order(oid)
-        if not order and oid in BOT_ORDERS:
-            order = BOT_ORDERS.get(oid)
+        uid = int(user.id) if user and getattr(user, "id", None) is not None else 0
+        order = await _load_order_for_callback(oid, uid) if uid > 0 else None
         if not order:
+            order = await fetch_site_order(oid)
+        if not order:
+            _load_bot_orders()
+            rec = BOT_ORDERS.get(oid)
+            if isinstance(rec, dict):
+                order = dict(rec)
+        if not order:
+            logger.warning(
+                "start order_%s: not found user=%s", oid, getattr(user, "id", None)
+            )
             await _reply_text_with_main_menu_and_site(
                 update.message,
-                "Заказ не найден или сервис недоступен. Попробуйте позже.",
+                "Заказ не найден или сервис недоступен. Попробуйте оформить заказ на сайте ещё раз.",
                 telegram_user=user,
             )
             return
@@ -2222,6 +2275,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
             )
             return
         _record_site_order_in_bot(oid, order, user.id)
+        _cache_order_snapshot(oid, order, int(user.id))
         st = str(order.get("status") or "new").strip().lower()
         already_notified = order.get("telegram_buyer_notified") is True
 
@@ -2233,10 +2287,17 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
             )
             return
         if st in ("new", "confirmed") and not already_notified:
-            await _send_order_intro_and_draft(
+            sent = await _send_order_intro_and_draft(
                 update.message, order, oid, int(user.id)
             )
-            await post_site_mark_buyer_notified(oid, order, user.id)
+            if sent:
+                await post_site_mark_buyer_notified(oid, order, user.id)
+            else:
+                await update.message.reply_text(
+                    "Не удалось показать заказ. Попробуйте ещё раз: /start "
+                    + f"order_{oid}",
+                    reply_markup=_main_keyboard(),
+                )
         elif st in ("cancelled", "canceled"):
             await update.message.reply_text(
                 _format_order_text(order, oid) + "\n\n❌ Заказ отменён.",

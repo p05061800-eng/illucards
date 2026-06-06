@@ -1,12 +1,12 @@
 /**
- * Вход по одноразовому коду из Telegram.
- * Задаётся через TELEGRAM_AUTH_CODE_MAP (JSON: код → telegram user id)
- * или TELEGRAM_AUTH_CODE_VERIFY_URL (POST { code } → { user_id }).
+ * Вход по одноразовому коду из Telegram (через Render-бот или локальный fallback).
  */
+
+import { botVerifyLoginCode } from "@/app/lib/telegramBotRenderApi";
+import { telegramBotApiUrl } from "@/app/lib/telegramBotRenderApi";
 
 export async function resolveTelegramAuthCodeToUserId(
   rawCode: string,
-  botToken: string | undefined
 ): Promise<number | null> {
   const code = rawCode.trim();
   if (!code) return null;
@@ -31,17 +31,16 @@ export async function resolveTelegramAuthCodeToUserId(
   }
 
   const verifyUrl = process.env.TELEGRAM_AUTH_CODE_VERIFY_URL?.trim();
-  if (verifyUrl) {
+  const botUrl = telegramBotApiUrl();
+  const targetUrl =
+    verifyUrl ||
+    (botUrl ? `${botUrl}/api/verify-code` : "");
+
+  if (targetUrl) {
     try {
-      const headers: Record<string, string> = {
-        "Content-Type": "application/json",
-      };
-      if (botToken) {
-        headers.Authorization = `Bearer ${botToken}`;
-      }
-      const res = await fetch(verifyUrl, {
+      const res = await fetch(targetUrl, {
         method: "POST",
-        headers,
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ code }),
         cache: "no-store",
       });
@@ -64,12 +63,18 @@ export async function resolveTelegramAuthCodeToUserId(
     }
   }
 
+  const botOnly = await botVerifyLoginCode({ code });
+  if (botOnly.ok) return botOnly.user_id;
+
   return null;
 }
 
 export function isTelegramCodeAuthConfigured(): boolean {
   return Boolean(
     process.env.TELEGRAM_AUTH_CODE_MAP?.trim() ||
-      process.env.TELEGRAM_AUTH_CODE_VERIFY_URL?.trim()
+      process.env.TELEGRAM_AUTH_CODE_VERIFY_URL?.trim() ||
+      process.env.TELEGRAM_BOT_API_URL?.trim() ||
+      process.env.TELEGRAM_SYNC_API_URL?.trim() ||
+      process.env.TELEGRAM_BOT_SYNC_URL?.trim(),
   );
 }

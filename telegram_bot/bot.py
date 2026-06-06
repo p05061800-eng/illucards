@@ -4,10 +4,13 @@
 from __future__ import annotations
 
 import asyncio
+import hashlib
+import hmac
 import json
 import logging
 import os
 import random
+import re
 import time
 from pathlib import Path
 from typing import Any
@@ -53,9 +56,302 @@ _TG_APP: Any = None
 
 def _sync_secret_ok(request: web.Request) -> bool:
     need = (os.getenv("TELEGRAM_SYNC_API_SECRET") or "").strip()
-    if not need:
+    order_secret = (os.getenv("ILLUCARDS_ORDER_UPDATE_SECRET") or "").strip()
+    if not need and not order_secret:
         return True
-    return (request.headers.get("X-Sync-Secret") or "").strip() == need
+    x = (request.headers.get("X-Sync-Secret") or "").strip()
+    if need and x == need:
+        return True
+    auth = (request.headers.get("Authorization") or "").strip()
+    bearer = auth[7:].strip() if auth.startswith("Bearer ") else ""
+    if bearer:
+        if need and bearer == need:
+            return True
+        if order_secret and bearer == order_secret:
+            return True
+    return False
+
+
+def _load_telegram_site_users() -> dict[str, dict[str, Any]]:
+    if not TELEGRAM_USERS_PATH.exists():
+        return {}
+    try:
+        with open(TELEGRAM_USERS_PATH, "r", encoding="utf-8") as f:
+            raw = json.load(f)
+        if not isinstance(raw, dict):
+            return {}
+        return {str(k).lower(): v for k, v in raw.items() if isinstance(v, dict)}
+    except (OSError, json.JSONDecodeError, ValueError):
+        return {}
+
+
+def _find_telegram_user_by_username(username: str) -> dict[str, Any] | None:
+    norm = (username or "").strip().lstrip("@").lower()
+    if not norm:
+        return None
+    row = _load_telegram_site_users().get(norm)
+    if not isinstance(row, dict):
+        return None
+    try:
+        uid = int(row.get("user_id", 0))
+    except (TypeError, ValueError):
+        return None
+    if uid <= 0:
+        return None
+    return {"user_id": uid, "username": str(row.get("username") or norm)}
+
+
+def _consume_login_code(
+    code_raw: str, username: str | None = None
+) -> dict[str, Any] | None:
+    digits = re.sub(r"\D", "", code_raw or "")
+    if len(digits) != 4:
+        return None
+    now_ms = int(time.time() * 1000)
+    data = _load_login_codes()
+    row = data.get(digits)
+    if not isinstance(row, dict):
+        return None
+    try:
+        exp = int(row.get("expires", 0))
+    except (TypeError, ValueError):
+        exp = 0
+    if exp <= now_ms:
+        del data[digits]
+        _save_login_codes(data)
+        return None
+    if username:
+        un_norm = (username or "").strip().lstrip("@").lower()
+        row_norm = str(row.get("username_norm") or "").strip().lower()
+        if un_norm and row_norm and un_norm != row_norm:
+            return None
+    del data[digits]
+    _save_login_codes(data)
+    return row
+
+
+def _verify_telegram_login_widget(data: dict[str, Any]) -> bool:
+    token = (os.getenv("TELEGRAM_BOT_TOKEN") or "").strip()
+    if not token:
+        return False
+    received = str(data.get("hash") or "").strip()
+    if not received:
+        return False
+    auth_date = data.get("auth_date")
+    try:
+        ts = int(auth_date)
+    except (TypeError, ValueError):
+        return False
+    now = int(time.time())
+    if now - ts > 86400 or ts - now > 60:
+        return False
+    pairs: list[str] = []
+    for key in sorted(data.keys()):
+        if key == "hash":
+            continue
+        val = data[key]
+        if val is None:
+            continue
+        if key in ("id", "auth_date"):
+            try:
+                pairs.append(f"{key}={int(val)}")
+            except (TypeError, ValueError):
+                pairs.append(f"{key}={val}")
+        else:
+            s = str(val).strip()
+            if s:
+                pairs.append(f"{key}={s}")
+    check_string = "\n".join(pairs)
+    secret_key = hashlib.sha256(token.encode("utf-8")).digest()
+    computed = hmac.new(
+        secret_key, check_string.encode("utf-8"), hashlib.sha256
+    ).hexdigest()
+    return hmac.compare_digest(computed, received)
+
+
+ORDER_STATUS_NOTIFY_RU: dict[str, str] = {
+    "accepted": "✅ Заказ принят",
+    "confirmed": "✅ Заказ принят",
+    "shipped": "🚚 Заказ отправлен",
+    "sent": "🚚 Заказ отправлен",
+    "done": "✅ Заказ выполнен",
+    "delivered": "✅ Заказ выполнен",
+    "cancelled": "❌ Заказ отменён",
+    "canceled": "❌ Заказ отменён",
+}
+
+
+async def _send_code_http(request: web.Request) -> web.Response:
+    try:
+        body = await request.json()
+    except Exception:
+        return web.json_response({"error": "Invalid JSON"}, status=400)
+    if not isinstance(body, dict):
+        return web.json_response({"error": "Expected object"}, status=400)
+    username = str(body.get("username") or "").strip()
+    row = _find_telegram_user_by_username(username)
+    if not row:
+        return web.json_response({"error": "Пользователь не писал боту"}, status=404)
+    uid = int(row["user_id"])
+    un = str(row.get("username") or username).strip().lstrip("@")
+    code = _issue_login_code_for_user(uid, un or None)
+    if not code:
+        return web.json_response({"error": "Не удалось создать код"}, status=500)
+    await _sync_login_code_to_site(code, uid, un or None, None)
+    if _TG_APP is None:
+        return web.json_response({"error": "Bot not ready"}, status=503)
+    text = (
+        "🔐 Ваш код для входа:\n\n"
+        f"<code>{code}</code>\n\n"
+        "⏳ Действует 5 минут"
+    )
+    try:
+        await _TG_APP.bot.send_message(
+            chat_id=uid, text=text, parse_mode="HTML"
+        )
+    except Exception as e:
+        logger.warning("send-code telegram: %s", e)
+        return web.json_response(
+            {"error": "Не удалось отправить код в Telegram"}, status=502
+        )
+    return web.json_response({"ok": True})
+
+
+async def _verify_code_http(request: web.Request) -> web.Response:
+    try:
+        body = await request.json()
+    except Exception:
+        return web.json_response({"error": "Invalid JSON"}, status=400)
+    if not isinstance(body, dict):
+        return web.json_response({"error": "Expected object"}, status=400)
+    code = str(body.get("code") or "")
+    username = str(body.get("username") or "").strip() or None
+    row = _consume_login_code(code, username)
+    if not row:
+        return web.json_response(
+            {"error": "Неверный или просроченный код"}, status=401
+        )
+    try:
+        uid = int(row.get("user_id"))
+    except (TypeError, ValueError):
+        return web.json_response({"error": "Invalid code record"}, status=500)
+    username_display = str(
+        row.get("username_display") or row.get("username_norm") or ""
+    ).strip()
+    return web.json_response(
+        {
+            "ok": True,
+            "user_id": uid,
+            "username": username_display or None,
+        }
+    )
+
+
+async def _telegram_auth_http(request: web.Request) -> web.Response:
+    try:
+        body = await request.json()
+    except Exception:
+        return web.json_response({"error": "Invalid JSON"}, status=400)
+    if not isinstance(body, dict):
+        return web.json_response({"error": "Expected object"}, status=400)
+    if not _verify_telegram_login_widget(body):
+        return web.json_response({"error": "Invalid hash"}, status=401)
+    try:
+        tid = int(body.get("id"))
+    except (TypeError, ValueError):
+        return web.json_response({"error": "Invalid id"}, status=400)
+    if tid <= 0:
+        return web.json_response({"error": "Invalid id"}, status=400)
+    first_name = str(body.get("first_name") or "Пользователь").strip()
+    last_name_raw = body.get("last_name")
+    last_name = (
+        str(last_name_raw).strip()
+        if isinstance(last_name_raw, str) and last_name_raw.strip()
+        else None
+    )
+    username_raw = body.get("username")
+    username = (
+        str(username_raw).strip()
+        if isinstance(username_raw, str) and username_raw.strip()
+        else None
+    )
+    photo_raw = body.get("photo_url")
+    photo_url = (
+        str(photo_raw).strip()
+        if isinstance(photo_raw, str) and photo_raw.strip()
+        else None
+    )
+    if username:
+        persist_telegram_site_user(tid, username)
+    return web.json_response(
+        {
+            "ok": True,
+            "profile": {
+                "telegramId": tid,
+                "firstName": first_name,
+                "lastName": last_name,
+                "username": username,
+                "photoUrl": photo_url,
+            },
+        }
+    )
+
+
+async def _notify_http(request: web.Request) -> web.Response:
+    if not _sync_secret_ok(request):
+        return web.json_response({"error": "Unauthorized"}, status=401)
+    if _TG_APP is None:
+        return web.json_response({"error": "Bot not ready"}, status=503)
+    try:
+        body = await request.json()
+    except Exception:
+        return web.json_response({"error": "Invalid JSON"}, status=400)
+    if not isinstance(body, dict):
+        return web.json_response({"error": "Expected object"}, status=400)
+    target = str(body.get("target") or "").strip().lower()
+    if target == "customer":
+        try:
+            uid = int(body.get("telegramUserId") or body.get("user_id"))
+        except (TypeError, ValueError):
+            return web.json_response({"error": "Invalid telegramUserId"}, status=400)
+        text = str(body.get("text") or "").strip()
+        if not text and body.get("event") == "order_status":
+            st = str(body.get("status") or "").strip().lower()
+            text = ORDER_STATUS_NOTIFY_RU.get(st, f"Статус заказа: {st}")
+        if not text:
+            return web.json_response({"error": "Empty text"}, status=400)
+        try:
+            await _TG_APP.bot.send_message(chat_id=uid, text=text)
+        except Exception as e:
+            logger.warning("notify customer: %s", e)
+            return web.json_response({"error": "Send failed"}, status=502)
+        return web.json_response({"ok": True})
+    if target == "admin":
+        admin_chat = _resolve_admin_chat_id()
+        if not admin_chat:
+            return web.json_response({"error": "Admin chat not configured"}, status=503)
+        if str(body.get("action") or "") == "delete_message":
+            try:
+                mid = int(body.get("messageId") or body.get("message_id"))
+            except (TypeError, ValueError):
+                return web.json_response({"error": "Invalid messageId"}, status=400)
+            try:
+                await _TG_APP.bot.delete_message(
+                    chat_id=int(admin_chat), message_id=int(mid)
+                )
+            except Exception as e:
+                logger.warning("notify admin delete: %s", e)
+            return web.json_response({"ok": True})
+        text = str(body.get("text") or "").strip()
+        if not text:
+            return web.json_response({"error": "Empty text"}, status=400)
+        try:
+            await _TG_APP.bot.send_message(chat_id=int(admin_chat), text=text)
+        except Exception as e:
+            logger.warning("notify admin: %s", e)
+            return web.json_response({"error": "Send failed"}, status=502)
+        return web.json_response({"ok": True})
+    return web.json_response({"error": "Unknown target"}, status=400)
 
 
 def _parse_sync_user_id(raw: Any) -> int | None:
@@ -442,6 +738,8 @@ async def _sync_cart_http(request: web.Request) -> web.Response:
     if user_id is None:
         return web.json_response({"error": "Invalid user_id"}, status=400)
     cart = _parse_sync_cart(body.get("cart"))
+    if not cart:
+        cart = _parse_sync_cart(body.get("items"))
     order = body.get("order")
     order_id = str(body.get("order_id") or "").strip()
     if isinstance(order, dict):
@@ -531,6 +829,10 @@ async def _start_http_server(_app: Any) -> None:
     http_app.router.add_get("/health", _health_http)
     http_app.router.add_post("/api/sync/cart", _sync_cart_http)
     http_app.router.add_post("/api/await-order-details", _await_details_http)
+    http_app.router.add_post("/api/send-code", _send_code_http)
+    http_app.router.add_post("/api/verify-code", _verify_code_http)
+    http_app.router.add_post("/api/telegram-auth", _telegram_auth_http)
+    http_app.router.add_post("/api/notify", _notify_http)
     runner = web.AppRunner(http_app)
     await runner.setup()
     site = web.TCPSite(runner, "0.0.0.0", port)
@@ -1089,12 +1391,16 @@ async def _fetch_site_order_http(order_id: str) -> tuple[dict[str, Any] | None, 
     """(body, http_status). body only on 200 + valid JSON dict. http_status from response, or None on transport error."""
     base = os.getenv("ILLUCARDS_SITE_ORIGIN", DEFAULT_SITE_ORIGIN).rstrip("/")
     url = f"{base}/api/order/{order_id}"
+    secret = (os.getenv("ILLUCARDS_ORDER_UPDATE_SECRET") or "").strip()
+    headers: dict[str, str] = {"Accept": "application/json"}
+    if secret:
+        headers["Authorization"] = f"Bearer {secret}"
     timeout = aiohttp.ClientTimeout(total=20)
     try:
         async with aiohttp.ClientSession(timeout=timeout) as session:
             async with session.get(
                 url,
-                headers={"Accept": "application/json"},
+                headers=headers,
             ) as resp:
                 code = int(resp.status)
                 if code != 200:
@@ -1594,10 +1900,10 @@ def _order_draft_keyboard(order_id: str) -> InlineKeyboardMarkup:
         [
             [
                 InlineKeyboardButton(
-                    "✅ Подтвердить заказ", callback_data=f"orderok:{oid}"
+                    "✅ Подтвердить заказ", callback_data=f"confirm_order:{oid}"
                 )
             ],
-            [InlineKeyboardButton("❌ Отменить", callback_data=f"ordercx:{oid}")],
+            [InlineKeyboardButton("❌ Отменить", callback_data=f"cancel_order:{oid}")],
         ]
     )
 
@@ -2362,13 +2668,19 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
     user = q.from_user
     logger.info("callback_data=%s user=%s", data, getattr(user, "id", None))
 
-    if data == "confirm_order":
+    if data in ("confirm_order", "site_confirm", "order_confirm"):
         if not user:
             await q.answer("Ошибка", show_alert=True)
             return
         oid = _resolve_order_id_for_site_callback(int(user.id))
         if not oid:
             await q.answer("Нет активного заказа", show_alert=True)
+            return
+        data = f"orderok:{oid}"
+    elif data.startswith("confirm_order:") or data.startswith("site_confirm:") or data.startswith("order_confirm:"):
+        oid = data.split(":", 1)[1].strip()
+        if not oid:
+            await q.answer("Некорректный заказ", show_alert=True)
             return
         data = f"orderok:{oid}"
     elif data == "cancel_order":
@@ -2378,6 +2690,12 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
         oid = _resolve_order_id_for_site_callback(int(user.id))
         if not oid:
             await q.answer("Нет активного заказа", show_alert=True)
+            return
+        data = f"ordercx:{oid}"
+    elif data.startswith("cancel_order:"):
+        oid = data.split(":", 1)[1].strip()
+        if not oid:
+            await q.answer("Некорректный заказ", show_alert=True)
             return
         data = f"ordercx:{oid}"
 

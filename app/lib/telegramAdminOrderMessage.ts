@@ -1,23 +1,14 @@
-import { telegramDeleteMessage } from "@/app/lib/telegramBotApi";
+import { botNotify } from "@/app/lib/telegramBotRenderApi";
 
-function resolveAdminChatId(): number | null {
-  const raw =
-    process.env.TELEGRAM_ADMIN_CHAT_ID?.trim() ||
-    process.env.ILLUCARDS_TELEGRAM_ADMIN_CHAT_ID?.trim() ||
-    "";
-  if (!raw) return null;
-  const n = Number(raw);
-  return Number.isFinite(n) ? Math.floor(n) : null;
-}
-
-/** Удалить у админа сообщение о заказе (если настроены токен и чат). */
+/** Удалить у админа сообщение о заказе через Render-бот. */
 export async function deleteAdminTelegramOrderMessage(
   messageId: number,
 ): Promise<void> {
-  const token = process.env.TELEGRAM_BOT_TOKEN?.trim();
-  const chatId = resolveAdminChatId();
-  if (!token || chatId == null) return;
   const mid = Math.floor(messageId);
   if (!Number.isFinite(mid) || mid <= 0) return;
-  await telegramDeleteMessage(token, chatId, mid);
+  await botNotify({
+    target: "admin",
+    action: "delete_message",
+    messageId: mid,
+  });
 }

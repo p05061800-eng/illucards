@@ -3,20 +3,15 @@ import {
   findBotUserByUsername,
   normalizeTelegramUsername,
 } from "@/app/lib/telegramBotUsersStore";
-import { issueLoginCode } from "@/app/lib/telegramLoginCodesStore";
-import { telegramSendMessage } from "@/app/lib/telegramBotApi";
+import { botSendLoginCode } from "@/app/lib/telegramBotRenderApi";
 
 const NOT_FOUND_MSG = "Пользователь не писал боту";
 
+/**
+ * POST /api/send-code — прокси на Render-бот (токен только на Render).
+ * Локальный fallback: если бот недоступен, код в Redis сайта не выдаётся без бота.
+ */
 export async function POST(request: Request) {
-  const token = process.env.TELEGRAM_BOT_TOKEN?.trim();
-  if (!token) {
-    return NextResponse.json(
-      { error: "Сервер: не настроен TELEGRAM_BOT_TOKEN" },
-      { status: 503 },
-    );
-  }
-
   let body: unknown;
   try {
     body = await request.json();
@@ -43,34 +38,24 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: NOT_FOUND_MSG }, { status: 404 });
   }
 
-  let code: string;
-  try {
-    code = await issueLoginCode(row.user_id, norm, row.username);
-  } catch {
-    return NextResponse.json(
-      { error: "Не удалось создать код. Попробуйте позже." },
-      { status: 500 },
-    );
+  const sent = await botSendLoginCode(
+    row.username ? `@${row.username.replace(/^@/, "")}` : `@${norm}`,
+  );
+  if (sent.ok) {
+    return NextResponse.json({ ok: true });
   }
 
-  const text =
-    `🔐 Ваш код для входа:\n\n` +
-    `<code>${code}</code>\n\n` +
-    `⏳ Действует 5 минут`;
-
-  const sent = await telegramSendMessage(token, row.user_id, text);
-  if (!sent.ok) {
-    return NextResponse.json(
-      {
-        error:
-          sent.description.includes("chat not found") ||
-          sent.description.includes("blocked")
-            ? "Не удалось отправить код. Напишите боту /start и попробуйте снова."
-            : sent.description,
-      },
-      { status: 502 },
-    );
+  if (sent.status === 404) {
+    return NextResponse.json({ error: NOT_FOUND_MSG }, { status: 404 });
   }
 
-  return NextResponse.json({ ok: true });
+  return NextResponse.json(
+    {
+      error:
+        sent.error.includes("chat not found") || sent.error.includes("blocked")
+          ? "Не удалось отправить код. Напишите боту /start и попробуйте снова."
+          : sent.error || "Не удалось отправить код через бота",
+    },
+    { status: sent.status >= 400 ? sent.status : 502 },
+  );
 }

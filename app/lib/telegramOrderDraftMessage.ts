@@ -69,8 +69,8 @@ export function buildTelegramOrderDraftKeyboard(orderId: string): {
 } {
   return {
     inline_keyboard: [
-      [{ text: "✅ Подтвердить заказ", callback_data: `orderok:${orderId}` }],
-      [{ text: "❌ Отменить", callback_data: `ordercx:${orderId}` }],
+      [{ text: "✅ Подтвердить заказ", callback_data: `confirm_order:${orderId}` }],
+      [{ text: "❌ Отменить", callback_data: `cancel_order:${orderId}` }],
     ],
   };
 }

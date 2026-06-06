@@ -2,13 +2,6 @@ import { promises as fs } from "fs";
 import path from "path";
 import type { DeliveryCountry } from "@/app/lib/delivery";
 import type { OrderLineIn } from "@/app/lib/orderTypes";
-import { telegramSendMessage } from "@/app/lib/telegramBotApi";
-import {
-  buildTelegramOrderDraftKeyboard,
-  buildTelegramOrderDraftMessage,
-  TELEGRAM_ORDER_SITE_INTRO,
-} from "@/app/lib/telegramOrderDraftMessage";
-import { markOrderTelegramBuyerNotified } from "@/app/lib/ordersStore";
 
 const BOT_ORDERS_PATH = path.join(process.cwd(), "data", "bot-orders.json");
 
@@ -58,16 +51,10 @@ async function recordOrderForBot(
   );
 }
 
-function buildTelegramOrderMessage(orderId: string, record: BotOrderRecord): string {
-  return buildTelegramOrderDraftMessage({
-    orderId,
-    items: record.items,
-    total: record.total,
-    delivery: record.delivery,
-    bonusPointsSpent: record.bonus_points_spent,
-  });
-}
-
+/**
+ * Локальная запись заказа для GET /api/order/{id} (fallback).
+ * Сообщения в Telegram отправляет только бот на Render (deep link).
+ */
 export async function recordAndNotifyTelegramOrder(input: {
   orderId: string;
   userId: number;
@@ -75,8 +62,6 @@ export async function recordAndNotifyTelegramOrder(input: {
   total: number;
   delivery: DeliveryCountry;
   bonusPointsSpent?: number;
-  /** false — только запись; сообщение в чат отправит бот по deep link после редиректа с сайта */
-  sendTelegramMessage?: boolean;
 }): Promise<{ recorded: boolean; sent: boolean; error?: string }> {
   const record: BotOrderRecord = {
     user_id: input.userId,
@@ -89,49 +74,12 @@ export async function recordAndNotifyTelegramOrder(input: {
       : {}),
   };
 
-  let recorded = true;
   try {
     await recordOrderForBot(input.orderId, record);
+    return { recorded: true, sent: false };
   } catch {
-    recorded = false;
+    return { recorded: false, sent: false, error: "Не удалось записать заказ локально" };
   }
-
-  if (input.sendTelegramMessage === false) {
-    return { recorded, sent: false };
-  }
-
-  const token = process.env.TELEGRAM_BOT_TOKEN?.trim();
-  if (!token) {
-    return {
-      recorded,
-      sent: false,
-      error: recorded
-        ? "TELEGRAM_BOT_TOKEN не задан"
-        : "Заказ отправлен без локальной записи (TELEGRAM_BOT_TOKEN не задан)",
-    };
-  }
-
-  const intro = await telegramSendMessage(token, input.userId, TELEGRAM_ORDER_SITE_INTRO);
-  if (!intro.ok) {
-    return { recorded, sent: false, error: intro.description };
-  }
-
-  const sent = await telegramSendMessage(
-    token,
-    input.userId,
-    buildTelegramOrderMessage(input.orderId, record),
-    {
-      replyMarkup: buildTelegramOrderDraftKeyboard(input.orderId),
-    },
-  );
-
-  if (!sent.ok) {
-    return { recorded, sent: false, error: sent.description };
-  }
-
-  await markOrderTelegramBuyerNotified(input.orderId);
-
-  return { recorded, sent: true };
 }
 
 /** Убрать заказ из `data/bot-orders.json` на сайте (после удаления из ЛК). */

@@ -95,13 +95,18 @@ export async function POST(request: NextRequest) {
     bonusPointsSpent: result.bonusPointsSpent,
   });
 
+  console.info("[checkout] order created, redirect to bot", {
+    order_id: result.orderId,
+    user_id: userId,
+    telegram_sync: true,
+  });
+
   return NextResponse.json({
     order_id: result.orderId,
     total: result.totalByn,
     bonus_points_spent: result.bonusPointsSpent,
     telegram_recorded: telegram.recorded,
-    telegram_sent: telegram.sent,
-    ...(telegram.error ? { telegram_error: telegram.error } : {}),
+    telegram_sent: false,
     telegram_bot_start: `order_${result.orderId}`,
   });
 }

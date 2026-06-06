@@ -1,8 +1,12 @@
 import type { DeliveryCountry } from "@/app/lib/delivery";
 import type { SyncedCartItem } from "@/app/lib/telegramUserStateStore";
+import {
+  telegramBotApiUrl,
+  telegramBotSyncHeaders,
+} from "@/app/lib/telegramBotRenderApi";
 
 /**
- * Пуш синхронизированного состояния на внешний сервис бота (если настроен).
+ * Пуш синхронизированного состояния на Render-бот (если настроен URL).
  */
 export async function notifyTelegramWebhookUserState(opts: {
   userId: number;
@@ -13,16 +17,12 @@ export async function notifyTelegramWebhookUserState(opts: {
   bonusEarned?: number;
   cartClearedAt?: number;
 }): Promise<void> {
-  const base = (process.env.TELEGRAM_SYNC_API_URL || "").trim().replace(/\/+$/, "");
+  const base = telegramBotApiUrl();
   if (!base) return;
-  const secret = (process.env.TELEGRAM_SYNC_API_SECRET || "").trim();
   try {
-    await fetch(`${base}/api/sync/state`, {
+    const res = await fetch(`${base}/api/sync/state`, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        ...(secret ? { "X-Sync-Secret": secret } : {}),
-      },
+      headers: telegramBotSyncHeaders(),
       body: JSON.stringify({
         user_id: opts.userId,
         delivery_country: opts.deliveryCountry,
@@ -46,6 +46,9 @@ export async function notifyTelegramWebhookUserState(opts: {
       }),
       cache: "no-store",
     });
+    if (!res.ok) {
+      console.warn("[telegram-bot] sync/state failed:", res.status);
+    }
   } catch {
     /* вторично */
   }

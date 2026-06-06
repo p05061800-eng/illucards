@@ -1,4 +1,4 @@
-import { telegramSendMessage } from "@/app/lib/telegramBotApi";
+import { botNotify } from "@/app/lib/telegramBotRenderApi";
 
 const DETAILS_PROMPT =
   "✅ Заказ подтверждён менеджером.\n\n" +
@@ -7,19 +7,18 @@ const DETAILS_PROMPT =
   "• адрес\n" +
   "• телефон";
 
-/** После подтверждения админом — попросить данные для доставки. */
+/** После подтверждения админом — попросить данные для доставки через Render-бот. */
 export async function sendOrderDetailsRequestToCustomer(
   telegramUserId: number,
 ): Promise<boolean> {
-  const token = process.env.TELEGRAM_BOT_TOKEN?.trim();
-  if (!token || !Number.isFinite(telegramUserId) || telegramUserId <= 0) {
+  if (!Number.isFinite(telegramUserId) || telegramUserId <= 0) {
     return false;
   }
-  const sent = await telegramSendMessage(
-    token,
-    Math.floor(telegramUserId),
-    DETAILS_PROMPT,
-  );
+  const sent = await botNotify({
+    target: "customer",
+    telegramUserId: Math.floor(telegramUserId),
+    text: DETAILS_PROMPT,
+  });
   return sent.ok;
 }
 

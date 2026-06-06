@@ -1,15 +1,9 @@
 import type { DeliveryCountry } from "@/app/lib/delivery";
 import type { OrderLineIn } from "@/app/lib/orderTypes";
-
-const DEFAULT_TELEGRAM_BOT_SYNC_BASE = "https://illucards-telegram-bot.onrender.com";
-
-function botSyncBase(): string {
-  return (
-    process.env.TELEGRAM_BOT_SYNC_URL?.trim() ||
-    process.env.TELEGRAM_SYNC_API_URL?.trim() ||
-    DEFAULT_TELEGRAM_BOT_SYNC_BASE
-  ).replace(/\/+$/, "");
-}
+import {
+  telegramBotApiUrl,
+  telegramBotSyncHeaders,
+} from "@/app/lib/telegramBotRenderApi";
 
 export type SyncOrderToTelegramBotInput = {
   orderId: string;
@@ -23,20 +17,103 @@ export type SyncOrderToTelegramBotInput = {
   skipBuyerNotify?: boolean;
 };
 
-/** Best-effort: синхронизация заказа с HTTP API бота (не блокирует UX). */
+export type SyncCartAfterVerifyInput = {
+  userId: number;
+  cart: unknown[];
+  deliveryCountry: string;
+  grandTotal?: number;
+  bonusPoints?: number;
+};
+
+function botBase(): string {
+  return telegramBotApiUrl();
+}
+
+async function postBotSyncCart(
+  body: Record<string, unknown>,
+  label: string,
+): Promise<void> {
+  const url = `${botBase()}/api/sync/cart`;
+  try {
+    const res = await fetch(url, {
+      method: "POST",
+      headers: telegramBotSyncHeaders(),
+      body: JSON.stringify(body),
+      cache: "no-store",
+    });
+    const data = (await res.json().catch(() => null)) as {
+      error?: unknown;
+    } | null;
+    if (!res.ok) {
+      const msg =
+        typeof data?.error === "string" ? data.error : `HTTP ${res.status}`;
+      console.warn(`[telegram-bot] ${label} sync/cart failed:`, msg, body);
+      return;
+    }
+    console.info(`[telegram-bot] ${label} sync/cart ok`, {
+      status: res.status,
+      user_id: body.user_id,
+      order_id: body.order_id,
+    });
+  } catch (error: unknown) {
+    console.warn(
+      `[telegram-bot] ${label} sync/cart unavailable:`,
+      error instanceof Error ? error.message : error,
+    );
+  }
+}
+
+/** Синхронизация корзины после verify-code (спецификация Render API). */
+export async function syncCartToTelegramBotAfterVerify(
+  input: SyncCartAfterVerifyInput,
+): Promise<void> {
+  const items = input.cart.map((row) => {
+    if (!row || typeof row !== "object") return null;
+    const o = row as Record<string, unknown>;
+    const id = typeof o.id === "string" ? o.id : "";
+    const name =
+      typeof o.title === "string"
+        ? o.title
+        : typeof o.name === "string"
+          ? o.name
+          : "";
+    const qty =
+      typeof o.quantity === "number"
+        ? o.quantity
+        : typeof o.qty === "number"
+          ? o.qty
+          : 1;
+    const price =
+      typeof o.priceByn === "number"
+        ? o.priceByn
+        : typeof o.price === "number"
+          ? o.price
+          : 0;
+    if (!id || !name) return null;
+    return { id, name, qty, price };
+  }).filter((x): x is { id: string; name: string; qty: number; price: number } => x != null);
+
+  await postBotSyncCart(
+    {
+      user_id: input.userId,
+      items,
+      deliveryCountry: input.deliveryCountry,
+      ...(input.grandTotal != null ? { grandTotal: input.grandTotal } : {}),
+      ...(input.bonusPoints != null ? { bonusPoints: input.bonusPoints } : {}),
+    },
+    "verify",
+  );
+}
+
 /** Пометить в боте: следующее сообщение покупателя — данные доставки по заказу. */
 export async function notifyBotAwaitOrderDetails(
   userId: number,
   orderId: string,
 ): Promise<void> {
-  const secret = process.env.TELEGRAM_SYNC_API_SECRET?.trim();
   try {
-    const res = await fetch(`${botSyncBase()}/api/await-order-details`, {
+    const res = await fetch(`${botBase()}/api/await-order-details`, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        ...(secret ? { "X-Sync-Secret": secret } : {}),
-      },
+      headers: telegramBotSyncHeaders(),
       body: JSON.stringify({
         user_id: userId,
         order_id: orderId,
@@ -44,11 +121,11 @@ export async function notifyBotAwaitOrderDetails(
       cache: "no-store",
     });
     if (!res.ok) {
-      console.warn("bot await-order-details failed:", res.status);
+      console.warn("[telegram-bot] await-order-details failed:", res.status);
     }
   } catch (error: unknown) {
     console.warn(
-      "bot await-order-details unavailable:",
+      "[telegram-bot] await-order-details unavailable:",
       error instanceof Error ? error.message : error,
     );
   }
@@ -57,7 +134,6 @@ export async function notifyBotAwaitOrderDetails(
 export async function syncOrderToTelegramBot(
   input: SyncOrderToTelegramBotInput,
 ): Promise<void> {
-  const secret = process.env.TELEGRAM_SYNC_API_SECRET?.trim();
   const order = {
     id: input.orderId,
     order_id: input.orderId,
@@ -72,37 +148,19 @@ export async function syncOrderToTelegramBot(
     ...(input.username ? { username: input.username } : {}),
   };
 
-  try {
-    const res = await fetch(`${botSyncBase()}/api/sync/cart`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        ...(secret ? { "X-Sync-Secret": secret } : {}),
+  await postBotSyncCart(
+    {
+      cart: input.items,
+      user_id: input.userId,
+      telegram_user_id: input.userId,
+      order_id: input.orderId,
+      order,
+      session: {
+        source: "vercel_order_create",
+        created_at: Date.now(),
       },
-      body: JSON.stringify({
-        cart: input.items,
-        user_id: input.userId,
-        telegram_user_id: input.userId,
-        order_id: input.orderId,
-        order,
-        session: {
-          source: "vercel_order_create",
-          created_at: Date.now(),
-        },
-        ...(input.skipBuyerNotify ? { skip_buyer_notify: true } : {}),
-      }),
-      cache: "no-store",
-    });
-    if (!res.ok) {
-      const data = (await res.json().catch(() => null)) as { error?: unknown } | null;
-      const msg =
-        typeof data?.error === "string" ? data.error : `HTTP ${res.status}`;
-      console.warn("telegram cart sync failed:", msg);
-    }
-  } catch (error: unknown) {
-    console.warn(
-      "telegram cart sync unavailable:",
-      error instanceof Error ? error.message : error,
-    );
-  }
+      ...(input.skipBuyerNotify ? { skip_buyer_notify: true } : {}),
+    },
+    "order",
+  );
 }

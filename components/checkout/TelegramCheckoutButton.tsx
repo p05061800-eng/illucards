@@ -111,14 +111,8 @@ export function TelegramCheckoutButton({
       }
 
       const bot = getTelegramOrderBotUsername();
-      const telegramSent =
-        data &&
-        typeof data === "object" &&
-        "telegram_sent" in data &&
-        (data as { telegram_sent: unknown }).telegram_sent === true;
-      const botUrl = telegramSent
-        ? `https://t.me/${encodeURIComponent(bot)}`
-        : `https://t.me/${encodeURIComponent(bot)}?start=${encodeURIComponent(`order_${orderId}`)}`;
+      const botUrl = `https://t.me/${encodeURIComponent(bot)}?start=${encodeURIComponent(`order_${orderId}`)}`;
+      console.info("[checkout] redirect telegram", { order_id: orderId, botUrl });
       onBeforeNavigate?.();
       window.location.assign(botUrl);
     } catch {

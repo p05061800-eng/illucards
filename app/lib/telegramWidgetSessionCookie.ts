@@ -4,16 +4,20 @@ import type { TelegramVerifiedProfile } from "@/app/lib/telegramAuth";
 export const TELEGRAM_WIDGET_SESSION_COOKIE = "illucards_tg_widget";
 
 function signingSecret(): string {
-  return (
+  const secret =
     process.env.TELEGRAM_WIDGET_COOKIE_SECRET?.trim() ||
-    process.env.TELEGRAM_BOT_TOKEN?.trim() ||
-    ""
-  );
+    process.env.ILLUCARDS_ORDER_UPDATE_SECRET?.trim() ||
+    "";
+  return secret;
 }
 
 export function sealTelegramWidgetProfile(profile: TelegramVerifiedProfile): string {
   const secret = signingSecret();
-  if (!secret) throw new Error("No TELEGRAM_BOT_TOKEN or TELEGRAM_WIDGET_COOKIE_SECRET");
+  if (!secret) {
+    throw new Error(
+      "No TELEGRAM_WIDGET_COOKIE_SECRET or ILLUCARDS_ORDER_UPDATE_SECRET",
+    );
+  }
   const body = Buffer.from(JSON.stringify(profile), "utf8").toString("base64url");
   const sig = crypto.createHmac("sha256", secret).update(body).digest("base64url");
   return `${body}.${sig}`;

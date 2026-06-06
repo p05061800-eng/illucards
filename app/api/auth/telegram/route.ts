@@ -3,8 +3,6 @@ import { NextResponse } from "next/server";
 import {
   profileFromVerifiedWidgetData,
   telegramWidgetParamsFromSearchParams,
-  verifyTelegramWidgetFromSearchParams,
-  verifyTelegramWidgetHash,
 } from "@/app/lib/telegramLoginVerify";
 import {
   isTelegramCodeAuthConfigured,
@@ -15,6 +13,7 @@ import {
   sealTelegramWidgetProfile,
   TELEGRAM_WIDGET_SESSION_COOKIE,
 } from "@/app/lib/telegramWidgetSessionCookie";
+import { botVerifyTelegramWidget } from "@/app/lib/telegramBotRenderApi";
 
 function loginRedirect(request: NextRequest, tg: "widget" | "err"): NextResponse {
   const u = new URL("/", request.url);
@@ -28,27 +27,37 @@ function isHttps(request: NextRequest): boolean {
   return fwd === "https";
 }
 
+function searchParamsToWidgetObject(
+  params: URLSearchParams,
+): Record<string, unknown> {
+  const o: Record<string, unknown> = {};
+  params.forEach((value, key) => {
+    if (key === "id" || key === "auth_date") {
+      const n = Number(value);
+      if (Number.isFinite(n)) o[key] = n;
+    } else {
+      o[key] = value;
+    }
+  });
+  return o;
+}
+
 /**
  * GET — редирект с официального Telegram Login Widget (`data-auth-url`).
- * Query: id, first_name, username?, auth_date, hash, …
  */
 export async function GET(request: NextRequest) {
-  const token = process.env.TELEGRAM_BOT_TOKEN?.trim();
-  if (!token) {
-    return loginRedirect(request, "err");
-  }
-
   const params = request.nextUrl.searchParams;
   if (!params.get("hash")) {
     return loginRedirect(request, "err");
   }
 
-  if (!verifyTelegramWidgetFromSearchParams(token, params)) {
+  const widgetData = searchParamsToWidgetObject(params);
+  const verified = await botVerifyTelegramWidget(widgetData);
+  if (!verified.ok) {
     return loginRedirect(request, "err");
   }
 
   const data = telegramWidgetParamsFromSearchParams(params);
-
   const profile = profileFromVerifiedWidgetData(data);
   if (!profile) {
     return loginRedirect(request, "err");
@@ -84,8 +93,6 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-  const token = process.env.TELEGRAM_BOT_TOKEN?.trim();
-
   let body: unknown;
   try {
     body = await request.json();
@@ -115,16 +122,16 @@ export async function POST(request: NextRequest) {
         {
           ok: false,
           error:
-            "Сервер: не настроен вход по коду (TELEGRAM_AUTH_CODE_MAP или TELEGRAM_AUTH_CODE_VERIFY_URL).",
+            "Сервер: не настроен вход по коду (TELEGRAM_BOT_API_URL или TELEGRAM_AUTH_CODE_MAP).",
         },
-        { status: 503 }
+        { status: 503 },
       );
     }
-    const uid = await resolveTelegramAuthCodeToUserId(trimmedCode, token);
+    const uid = await resolveTelegramAuthCodeToUserId(trimmedCode);
     if (uid === null) {
       return NextResponse.json(
         { ok: false, error: "Неверный или устаревший код" },
-        { status: 401 }
+        { status: 401 },
       );
     }
     const uidFloor = Math.floor(uid);
@@ -141,19 +148,13 @@ export async function POST(request: NextRequest) {
     return out;
   }
 
-  if (!token) {
-    return NextResponse.json(
-      { ok: false, error: "Сервер: не задан TELEGRAM_BOT_TOKEN." },
-      { status: 503 }
-    );
-  }
-
   const id = data.id;
   if (typeof id !== "number" || !Number.isFinite(id) || id <= 0) {
     return NextResponse.json({ ok: false, error: "Нет корректного id Telegram." }, { status: 400 });
   }
 
-  if (!verifyTelegramWidgetHash(token, data)) {
+  const verified = await botVerifyTelegramWidget(data);
+  if (!verified.ok) {
     return NextResponse.json({ ok: false, error: "Подпись Telegram недействительна." }, { status: 401 });
   }
 

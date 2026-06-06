@@ -818,6 +818,11 @@ async def _await_details_http(request: web.Request) -> web.Response:
 async def _start_http_server(_app: Any) -> None:
     global _TG_APP
     _TG_APP = _app
+    try:
+        await _app.bot.delete_webhook(drop_pending_updates=True)
+        logger.info("Telegram delete_webhook ok (polling mode)")
+    except Exception as e:
+        logger.warning("Telegram delete_webhook: %s", e)
     port_raw = os.getenv("PORT", "").strip()
     if not port_raw:
         return
@@ -3382,4 +3387,7 @@ if __name__ == "__main__":
 
     print("🚀 Bot started")
 
-    app.run_polling()
+    app.run_polling(
+        drop_pending_updates=True,
+        allowed_updates=Update.ALL_TYPES,
+    )

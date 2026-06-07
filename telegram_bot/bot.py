@@ -34,10 +34,13 @@ from telegram.ext import (
     filters,
 )
 
+import admin_panel
+from db import init_db, recompute_user_order_stats, sync_all_users_order_stats, upsert_user
+
 logging.basicConfig(format="%(asctime)s %(levelname)s %(message)s", level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-BOT_BUILD_ID = "2026-06-08-full-menu-v1"
+BOT_BUILD_ID = "2026-06-08-admin-crm-v1"
 
 REPLY_MENU_TEXTS = frozenset(
     {"💬 Связь", "📦 Мои заказы", "📜 Мои заказы", "🚚 Доставка", "⭐ Бонусы"}
@@ -471,6 +474,17 @@ def _load_bot_orders() -> None:
         logger.warning("bot-orders read: %s", e)
 
 
+def _get_bot_orders_snapshot() -> dict[str, dict[str, Any]]:
+    return BOT_ORDERS
+
+
+def _sync_crm_order_stats_for_user(telegram_user_id: int) -> None:
+    try:
+        recompute_user_order_stats(int(telegram_user_id), BOT_ORDERS)
+    except Exception as e:
+        logger.warning("CRM order stats sync uid=%s: %s", telegram_user_id, e)
+
+
 def _persist_bot_orders() -> None:
     try:
         BOT_ORDERS_PATH.parent.mkdir(parents=True, exist_ok=True)
@@ -648,6 +662,7 @@ def _record_site_order_in_bot(
             rec["payment_method"] = prev_pm
     BOT_ORDERS[order_id] = rec
     _persist_bot_orders()
+    _sync_crm_order_stats_for_user(int(telegram_user_id))
     return rec
 
 
@@ -2178,6 +2193,10 @@ def _order_admin_actions_keyboard(order_id: str) -> InlineKeyboardMarkup:
                     "🗑 Удалить", callback_data=f"orderadmdel:{oid}"
                 ),
             ],
+            [
+                InlineKeyboardButton("👥 Клиенты", callback_data="adm:clients:0"),
+                InlineKeyboardButton("📊 Статистика", callback_data="adm:stats"),
+            ],
         ]
     )
 
@@ -2430,6 +2449,12 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     if not update.message:
         return
     user = update.effective_user
+    if user:
+        upsert_user(
+            int(user.id),
+            username=user.username,
+            full_name=user.full_name or user.first_name,
+        )
     if user and user.username:
         persist_telegram_site_user(user.id, user.username)
     context.user_data.setdefault("cart", [])
@@ -2850,10 +2875,26 @@ async def payment_proof_handler(
     await msg.reply_text(MSG_PROOF_OK)
 
 
+async def incoming_message_logger(
+    update: Update, context: ContextTypes.DEFAULT_TYPE
+) -> None:
+    admin_panel.log_incoming_user_message(update)
+
+
 async def text_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     if not update.message or not update.message.text:
         return
     t = update.message.text.strip()
+
+    user = update.effective_user
+    if user and admin_panel.is_admin_user(int(user.id)):
+        if await admin_panel.handle_admin_text(
+            update,
+            context,
+            t,
+            get_bot_orders=_get_bot_orders_snapshot,
+        ):
+            return
 
     user = update.effective_user
     if user:
@@ -2894,6 +2935,7 @@ async def text_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
                     text=f"💬 Сообщение от менеджера ({who}):\n\n{t}",
                     reply_markup=_main_keyboard(),
                 )
+                admin_panel.log_admin_outbound_message(int(cust_id), t)
             except Exception as e:
                 logger.warning("admin reply to customer: %s", e)
                 await update.message.reply_text("Не удалось доставить сообщение клиенту.")
@@ -3140,6 +3182,15 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
     data = (q.data or "").strip()
     user = q.from_user
     logger.info("callback_data=%s user=%s", data, getattr(user, "id", None))
+
+    if data.startswith("adm:"):
+        if await admin_panel.handle_admin_callback(
+            update,
+            context,
+            data,
+            get_bot_orders=_get_bot_orders_snapshot,
+        ):
+            return
 
     if data in ("confirm_order", "site_confirm", "order_confirm"):
         if not user:
@@ -4031,7 +4082,12 @@ def _main() -> None:
         sys.exit(1)
 
     logger.info("Python %s", sys.version.split()[0])
+    init_db()
     _load_bot_orders()
+    try:
+        sync_all_users_order_stats(BOT_ORDERS)
+    except Exception as e:
+        logger.warning("CRM initial stats sync: %s", e)
 
     app = (
         ApplicationBuilder()
@@ -4042,6 +4098,14 @@ def _main() -> None:
     )
 
     app.add_handler(CommandHandler("start", start))
+    app.add_handler(CommandHandler("admin", admin_panel.cmd_admin))
+    app.add_handler(
+        MessageHandler(
+            filters.ALL & ~filters.COMMAND,
+            incoming_message_logger,
+        ),
+        group=-2,
+    )
     app.add_handler(
         MessageHandler(
             filters.PHOTO | filters.Document.IMAGE,

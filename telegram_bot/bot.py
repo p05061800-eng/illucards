@@ -37,7 +37,25 @@ from telegram.ext import (
 logging.basicConfig(format="%(asctime)s %(levelname)s %(message)s", level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-BOT_BUILD_ID = "2026-06-08-paid-button-v1"
+BOT_BUILD_ID = "2026-06-08-full-menu-v1"
+
+REPLY_MENU_TEXTS = frozenset(
+    {"💬 Связь", "📦 Мои заказы", "📜 Мои заказы", "🚚 Доставка", "⭐ Бонусы"}
+)
+
+SUPPORT_INTRO_TEXT = (
+    "💬 Связь с нами\n\n"
+    "Напишите сюда или пришлите фото, если:\n\n"
+    "— есть вопросы по карточкам\n"
+    "— нужна помощь с заказом\n"
+    "— хотите уточнить наличие\n\n"
+    "Администратор ответит вам прямо здесь 👇"
+)
+MSG_SUPPORT_THANKS = "Сообщение принято, мы ответим в этом чате."
+MSG_LOYALTY_MENU = (
+    "100 бонусов = 100 RUB или 3,5 BYN\n"
+    "Потратить бонусы можно на последующие заказы"
+)
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 TELEGRAM_USERS_PATH = REPO_ROOT / "data" / "telegram-bot-users.json"
@@ -50,6 +68,10 @@ BOT_ORDERS: dict[str, dict[str, Any]] = {}
 _AWAIT_ORDER_DETAILS: dict[int, str] = {}
 # tg user_id → order_id: ждём скрин оплаты после выбора способа оплаты
 _AWAIT_PAYMENT_PROOF: dict[int, str] = {}
+# admin tg id → (customer tg id, order_id): режим «Ответить клиенту»
+_AWAIT_ADMIN_REPLY: dict[int, tuple[int, str]] = {}
+# tg user_id: режим «Связь» — следующее сообщение уходит админу
+_USER_SUPPORT: set[int] = set()
 # Последний заказ с сайта по sync (для callback_data confirm_order / cancel_order).
 _PENDING_ORDER_BY_USER: dict[int, str] = {}
 # Снимок заказа с сайта (sync / уведомление) — если GET /api/order временно недоступен.
@@ -1031,6 +1053,47 @@ def _delivery_charge_rub(dcode: str) -> int:
 def _delivery_charge_byn(dcode: str) -> float:
     d = _delivery_price_code(dcode)
     return round(_delivery_charge_rub(d) / BYN_TO_RUB, 2)
+
+
+def _delivery_info_text() -> str:
+    parts: list[str] = [
+        "🚚 Доставка IlluCards",
+        "",
+        "Отправляем заказы по всему миру ✨",
+        "",
+    ]
+    for code in ("BY", "RU", "UA", "OTHER"):
+        label = DELIVERY_LABELS.get(code, code)
+        flag = DELIVERY_FLAGS.get(code, "🌍")
+        if code == "BY":
+            charge = f"{_delivery_charge_byn(code):g} BYN"
+        else:
+            charge = f"{_delivery_charge_rub(code):,} RUB".replace(",", " ")
+        parts.append(f"📍 {flag} {label}")
+        parts.append(f"   💰 от {charge}")
+        parts.append("")
+    parts.append("Точную сумму увидите при оформлении заказа 👇")
+    return "\n".join(parts).rstrip()
+
+
+def _loyalty_menu_text(bonus_points: int) -> str:
+    pts = max(0, int(bonus_points))
+    return (
+        f"⭐ Текущий баланс: {pts:,} бонусов\n".replace(",", " ")
+        + f"{pts} бонусов можно потратить в корзине на сайте.\n\n"
+        + MSG_LOYALTY_MENU
+        + "\n\nНачисляются после отправки заказа."
+    )
+
+
+def _is_admin_user(telegram_user_id: int | None) -> bool:
+    admin_chat_id = _resolve_admin_chat_id()
+    if not admin_chat_id or telegram_user_id is None:
+        return False
+    try:
+        return int(telegram_user_id) == int(admin_chat_id)
+    except (TypeError, ValueError):
+        return False
 
 
 def _unit_rub_from_item(it: dict[str, Any]) -> float:
@@ -2087,17 +2150,66 @@ PAYMENT_CANCELLED_TEXT = (
 )
 
 
-def _order_admin_confirm_keyboard(order_id: str) -> InlineKeyboardMarkup:
+def _order_admin_actions_keyboard(order_id: str) -> InlineKeyboardMarkup:
+    oid = str(order_id or "").strip()
     return InlineKeyboardMarkup(
         [
             [
                 InlineKeyboardButton(
-                    "✅ Подтвердить заказ (админ)",
-                    callback_data=f"orderadmok:{order_id}",
-                )
-            ]
+                    "💬 Ответить", callback_data=f"orderadmrep:{oid}"
+                ),
+                InlineKeyboardButton(
+                    "✅ Принять", callback_data=f"orderadmok:{oid}"
+                ),
+            ],
+            [
+                InlineKeyboardButton(
+                    "🚚 Отправлен", callback_data=f"orderadmsent:{oid}"
+                ),
+                InlineKeyboardButton(
+                    "🏁 Завершён", callback_data=f"orderadmdone:{oid}"
+                ),
+            ],
+            [
+                InlineKeyboardButton(
+                    "❌ Отменить", callback_data=f"orderadmcx:{oid}"
+                ),
+                InlineKeyboardButton(
+                    "🗑 Удалить", callback_data=f"orderadmdel:{oid}"
+                ),
+            ],
         ]
     )
+
+
+def _order_admin_confirm_keyboard(order_id: str) -> InlineKeyboardMarkup:
+    return _order_admin_actions_keyboard(order_id)
+
+
+async def _notify_customer_order_message(
+    context: ContextTypes.DEFAULT_TYPE,
+    customer_id: int,
+    text: str,
+) -> None:
+    try:
+        await context.bot.send_message(
+            chat_id=int(customer_id),
+            text=text,
+            reply_markup=_main_keyboard(),
+        )
+    except Exception as e:
+        logger.warning("customer notify uid=%s: %s", customer_id, e)
+
+
+async def _refresh_admin_message_keyboard(
+    q: Any, order_id: str
+) -> None:
+    try:
+        await q.edit_message_reply_markup(
+            reply_markup=_order_admin_actions_keyboard(order_id)
+        )
+    except Exception:
+        pass
 
 
 ORDER_DETAILS_REQUEST_TEXT = (
@@ -2518,9 +2630,10 @@ async def show_my_orders(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
         await update.message.reply_text(
             "Пока нет заказов в боте.\n"
             "После оформления на сайте заказ появится здесь автоматически.",
+            reply_markup=_main_keyboard(),
         )
         return
-    await update.message.reply_text("\n".join(lines))
+    await update.message.reply_text("\n".join(lines), reply_markup=_main_keyboard())
 
 
 async def show_cart_text(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -2761,9 +2874,71 @@ async def text_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
                 except Exception as e:
                     logger.warning("forward order details: %s", e)
             await update.message.reply_text(
-                "Спасибо! Данные переданы менеджеру. При необходимости мы уточним детали в этом чате."
+                "Спасибо! Данные переданы менеджеру. При необходимости мы уточним детали в этом чате.",
+                reply_markup=_main_keyboard(),
             )
             return
+
+    if user and _is_admin_user(int(user.id)):
+        admin_reply = _AWAIT_ADMIN_REPLY.pop(int(user.id), None)
+        if admin_reply:
+            cust_id, oid = admin_reply
+            who = (
+                f"заказ #{_order_short_ref(oid)}"
+                if oid
+                else "поддержка"
+            )
+            try:
+                await context.bot.send_message(
+                    chat_id=int(cust_id),
+                    text=f"💬 Сообщение от менеджера ({who}):\n\n{t}",
+                    reply_markup=_main_keyboard(),
+                )
+            except Exception as e:
+                logger.warning("admin reply to customer: %s", e)
+                await update.message.reply_text("Не удалось доставить сообщение клиенту.")
+                return
+            await update.message.reply_text("✅ Сообщение отправлено клиенту.")
+            return
+
+    if user and t in REPLY_MENU_TEXTS:
+        _USER_SUPPORT.discard(int(user.id))
+
+    if user and int(user.id) in _USER_SUPPORT and t not in REPLY_MENU_TEXTS:
+        admin_chat_id = _resolve_admin_chat_id()
+        if admin_chat_id:
+            uname = (user.username or "").strip()
+            tail = f"id {user.id}"
+            if uname:
+                tail = f"@{uname} · {tail}"
+            body = f"💬 Сообщение от клиента ({tail}):\n\n{t}"[:4096]
+            rep_kb = InlineKeyboardMarkup(
+                [
+                    [
+                        InlineKeyboardButton(
+                            "💬 Ответить",
+                            callback_data=f"suprep:{int(user.id)}",
+                        )
+                    ]
+                ]
+            )
+            try:
+                await context.bot.send_message(
+                    chat_id=int(admin_chat_id),
+                    text=body,
+                    reply_markup=rep_kb,
+                )
+            except Exception as e:
+                logger.warning("support forward: %s", e)
+                await update.message.reply_text(
+                    "Не удалось отправить сообщение. Попробуйте позже."
+                )
+                return
+        _USER_SUPPORT.discard(int(user.id))
+        await update.message.reply_text(
+            MSG_SUPPORT_THANKS, reply_markup=_main_keyboard()
+        )
+        return
 
     if t in ("🛒 Корзина", "💚 Корзина"):
         await show_cart_text(update, context)
@@ -2778,18 +2953,17 @@ async def text_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
         await show_promo_slides(update, context)
         return
     if t == "💬 Связь":
-        support = (os.getenv("ILLUCARDS_SUPPORT_TEXT") or "").strip()
-        if support:
-            await update.message.reply_text(support)
-        else:
-            await update.message.reply_text(
-                "Напишите нам через форму на сайте или в соцсетях — ссылки внизу главной страницы IlluCards."
-            )
+        if not user:
+            await update.message.reply_text("Не удалось определить пользователя.")
+            return
+        _USER_SUPPORT.add(int(user.id))
+        await update.message.reply_text(
+            SUPPORT_INTRO_TEXT, reply_markup=_main_keyboard()
+        )
         return
     if t == "🚚 Доставка":
         await update.message.reply_text(
-            "Условия и сроки доставки — на сайте при оформлении заказа.\n"
-            "Нажмите «Открыть сайт» в сообщении с заказом или выберите страну доставки в корзине на сайте."
+            _delivery_info_text(), reply_markup=_main_keyboard()
         )
         return
     if t == "⭐ Бонусы":
@@ -2800,13 +2974,12 @@ async def text_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
         pts = 0
         if isinstance(st, dict):
             try:
-                pts = int(st.get("bonus_points") or 0)
+                pts = int(st.get("bonus_points") or st.get("bonusPoints") or 0)
             except (TypeError, ValueError):
                 pts = 0
         await update.message.reply_text(
-            f"⭐ Ваши бонусные баллы: {pts:,}".replace(",", " ")
-            + "\n\nБаллы можно тратить в корзине на сайте. "
-            "Начисляются после подтверждения и отправки заказа."
+            _loyalty_menu_text(pts),
+            reply_markup=_main_keyboard(),
         )
         return
     if t not in ("📦 Каталог", "📦 Категории"):
@@ -3288,16 +3461,18 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
 
             pm = str(order.get("payment_method") or "").strip().lower()
             if pm not in ("card", "crypto", "phone"):
+                _load_bot_orders()
+                bot_rec = BOT_ORDERS.get(order_id)
+                if isinstance(bot_rec, dict):
+                    pm = str(bot_rec.get("payment_method") or "").strip().lower()
+            if pm not in ("card", "crypto", "phone"):
                 await q.answer("Покупатель ещё не выбрал способ оплаты", show_alert=True)
                 return
 
             site_st = str(order.get("status") or "").strip().lower()
             if site_st == "confirmed":
                 await q.answer("Уже подтверждён")
-                try:
-                    await q.edit_message_reply_markup(reply_markup=None)
-                except Exception:
-                    pass
+                await _refresh_admin_message_keyboard(q, order_id)
                 return
 
             rec = _record_site_order_in_bot(order_id, order, owner_id)
@@ -3315,21 +3490,189 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
                 await context.bot.send_message(
                     chat_id=int(owner_id),
                     text=ORDER_DETAILS_REQUEST_TEXT,
+                    reply_markup=_main_keyboard(),
                 )
                 _AWAIT_ORDER_DETAILS[int(owner_id)] = order_id
             except Exception as e:
                 logger.warning("customer details prompt: %s", e)
 
             await q.answer("Заказ подтверждён")
-            try:
-                await q.edit_message_reply_markup(reply_markup=None)
-            except Exception:
-                pass
-            await q.message.reply_text(f"Заказ `{order_id}` подтверждён. Покупателю отправлен запрос данных.")
+            await _refresh_admin_message_keyboard(q, order_id)
+            await q.message.reply_text(
+                f"Заказ `{order_id}` подтверждён. Покупателю отправлен запрос данных."
+            )
             return
         except Exception as e:
             logger.exception("order admin confirm failed: %s", e)
             await q.answer("Ошибка подтверждения", show_alert=True)
+            return
+
+    if data.startswith("orderadmrep:"):
+        try:
+            order_id = data.split(":", 1)[1].strip()
+            if not order_id or not user:
+                await q.answer("Некорректный заказ", show_alert=True)
+                return
+            if not _is_admin_user(int(user.id)):
+                await q.answer("Только для администратора", show_alert=True)
+                return
+            order = await fetch_site_order(order_id)
+            if not order:
+                order = await _load_order_for_callback(order_id, int(user.id))
+            owner_id = _order_owner_user_id(order_id, order)
+            if owner_id is None:
+                await q.answer("Не найден клиент", show_alert=True)
+                return
+            _AWAIT_ADMIN_REPLY[int(user.id)] = (int(owner_id), order_id)
+            await q.answer()
+            await q.message.reply_text(
+                f"💬 Режим ответа клиенту по заказу #{_order_short_ref(order_id)}.\n"
+                "Напишите одним сообщением — оно уйдёт покупателю."
+            )
+            return
+        except Exception as e:
+            logger.exception("orderadmrep failed: %s", e)
+            await q.answer("Ошибка", show_alert=True)
+            return
+
+    if data.startswith("suprep:"):
+        try:
+            if not user or not _is_admin_user(int(user.id)):
+                await q.answer("Только для администратора", show_alert=True)
+                return
+            cust_raw = data.split(":", 1)[1].strip()
+            cust_id = int(cust_raw)
+            _AWAIT_ADMIN_REPLY[int(user.id)] = (cust_id, "")
+            await q.answer()
+            await q.message.reply_text(
+                f"💬 Режим ответа клиенту (tg {cust_id}).\n"
+                "Напишите одним сообщением — оно уйдёт в чат покупателя."
+            )
+            return
+        except Exception as e:
+            logger.exception("suprep failed: %s", e)
+            await q.answer("Ошибка", show_alert=True)
+            return
+
+    if data.startswith("orderadmsent:"):
+        try:
+            order_id = data.split(":", 1)[1].strip()
+            if not order_id or not user or not _is_admin_user(int(user.id)):
+                await q.answer("Только для администратора", show_alert=True)
+                return
+            order = await fetch_site_order(order_id)
+            if not order:
+                await q.answer("Заказ не найден", show_alert=True)
+                return
+            owner_id = _order_owner_user_id(order_id, order)
+            if owner_id is None:
+                await q.answer("Не найден клиент", show_alert=True)
+                return
+            if not await post_site_order_status(order_id, "shipped", order, owner_id):
+                await q.answer("Не удалось обновить на сайте", show_alert=True)
+                return
+            rec = _record_site_order_in_bot(order_id, order, owner_id)
+            rec["status"] = "shipped"
+            BOT_ORDERS[order_id] = rec
+            _persist_bot_orders()
+            await _notify_customer_order_message(
+                context,
+                int(owner_id),
+                f"🚚 Заказ #{_order_short_ref(order_id)} отправлен!",
+            )
+            await q.answer("Статус: отправлен")
+            await _refresh_admin_message_keyboard(q, order_id)
+            return
+        except Exception as e:
+            logger.exception("orderadmsent failed: %s", e)
+            await q.answer("Ошибка", show_alert=True)
+            return
+
+    if data.startswith("orderadmdone:"):
+        try:
+            order_id = data.split(":", 1)[1].strip()
+            if not order_id or not user or not _is_admin_user(int(user.id)):
+                await q.answer("Только для администратора", show_alert=True)
+                return
+            order = await fetch_site_order(order_id)
+            if not order:
+                await q.answer("Заказ не найден", show_alert=True)
+                return
+            owner_id = _order_owner_user_id(order_id, order)
+            if owner_id is None:
+                await q.answer("Не найден клиент", show_alert=True)
+                return
+            if not await post_site_order_status(order_id, "delivered", order, owner_id):
+                await q.answer("Не удалось обновить на сайте", show_alert=True)
+                return
+            rec = _record_site_order_in_bot(order_id, order, owner_id)
+            rec["status"] = "delivered"
+            BOT_ORDERS[order_id] = rec
+            _persist_bot_orders()
+            _AWAIT_ORDER_DETAILS.pop(int(owner_id), None)
+            await _notify_customer_order_message(
+                context,
+                int(owner_id),
+                f"✅ Заказ #{_order_short_ref(order_id)} доставлен. Спасибо за покупку!",
+            )
+            await q.answer("Статус: завершён")
+            await _refresh_admin_message_keyboard(q, order_id)
+            return
+        except Exception as e:
+            logger.exception("orderadmdone failed: %s", e)
+            await q.answer("Ошибка", show_alert=True)
+            return
+
+    if data.startswith("orderadmcx:"):
+        try:
+            order_id = data.split(":", 1)[1].strip()
+            if not order_id or not user or not _is_admin_user(int(user.id)):
+                await q.answer("Только для администратора", show_alert=True)
+                return
+            order = await fetch_site_order(order_id)
+            if not order:
+                await q.answer("Заказ не найден", show_alert=True)
+                return
+            owner_id = _order_owner_user_id(order_id, order)
+            if owner_id is None:
+                await q.answer("Не найден клиент", show_alert=True)
+                return
+            if not await post_site_order_status(order_id, "cancelled", order, owner_id):
+                await q.answer("Не удалось обновить на сайте", show_alert=True)
+                return
+            rec = _record_site_order_in_bot(order_id, order, owner_id)
+            rec["status"] = "cancelled"
+            BOT_ORDERS[order_id] = rec
+            _persist_bot_orders()
+            _AWAIT_PAYMENT_PROOF.pop(int(owner_id), None)
+            _AWAIT_ORDER_DETAILS.pop(int(owner_id), None)
+            await _notify_customer_order_message(
+                context,
+                int(owner_id),
+                f"❌ Заказ #{_order_short_ref(order_id)} отменён менеджером.",
+            )
+            await q.answer("Заказ отменён")
+            await _refresh_admin_message_keyboard(q, order_id)
+            return
+        except Exception as e:
+            logger.exception("orderadmcx failed: %s", e)
+            await q.answer("Ошибка", show_alert=True)
+            return
+
+    if data.startswith("orderadmdel:"):
+        try:
+            if not user or not _is_admin_user(int(user.id)):
+                await q.answer("Только для администратора", show_alert=True)
+                return
+            await q.answer("Удалено")
+            try:
+                await q.message.delete()
+            except Exception as e:
+                logger.warning("admin delete message: %s", e)
+            return
+        except Exception as e:
+            logger.exception("orderadmdel failed: %s", e)
+            await q.answer("Ошибка", show_alert=True)
             return
 
     if data.startswith("ordercx:"):

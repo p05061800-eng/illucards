@@ -37,6 +37,8 @@ from telegram.ext import (
 logging.basicConfig(format="%(asctime)s %(levelname)s %(message)s", level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+BOT_BUILD_ID = "2026-06-07-proof-v1"
+
 REPO_ROOT = Path(__file__).resolve().parent.parent
 TELEGRAM_USERS_PATH = REPO_ROOT / "data" / "telegram-bot-users.json"
 BOT_ORDERS_PATH = REPO_ROOT / "data" / "bot-orders.json"
@@ -46,6 +48,8 @@ LOGIN_CODES_PATH = REPO_ROOT / "data" / "telegram-login-codes.json"
 BOT_ORDERS: dict[str, dict[str, Any]] = {}
 # tg user_id → order_id: ждём текст с данными доставки после подтверждения админом
 _AWAIT_ORDER_DETAILS: dict[int, str] = {}
+# tg user_id → order_id: ждём скрин оплаты после выбора способа оплаты
+_AWAIT_PAYMENT_PROOF: dict[int, str] = {}
 # Последний заказ с сайта по sync (для callback_data confirm_order / cancel_order).
 _PENDING_ORDER_BY_USER: dict[int, str] = {}
 # Снимок заказа с сайта (sync / уведомление) — если GET /api/order временно недоступен.
@@ -844,8 +848,9 @@ async def _start_http_server(_app: Any) -> None:
             await _app.bot.delete_webhook(drop_pending_updates=True)
         me = await _app.bot.get_me()
         logger.info(
-            "Telegram bot @%s ready (polling, webhook cleared)",
+            "Telegram bot @%s ready (polling, webhook cleared) build=%s",
             getattr(me, "username", "?"),
+            BOT_BUILD_ID,
         )
     except Exception as e:
         logger.warning("Telegram startup check: %s", e)
@@ -931,16 +936,22 @@ def _format_order_admin(
 
 
 def _resolve_admin_chat_id() -> int:
-    raw = (
-        (os.getenv("TELEGRAM_ADMIN_CHAT_ID") or "").strip()
-        or (os.getenv("ILLUCARDS_TELEGRAM_ADMIN_CHAT_ID") or "").strip()
-    )
-    if not raw:
-        return 0
-    try:
-        return int(raw)
-    except (TypeError, ValueError):
-        return 0
+    for key in (
+        "TELEGRAM_ADMIN_CHAT_ID",
+        "ILLUCARDS_TELEGRAM_ADMIN_CHAT_ID",
+        "TELEGRAM_ADMIN_ID",
+        "TELEGRAM_ORDER_NOTIFY_ID",
+    ):
+        raw = (os.getenv(key) or "").strip()
+        if not raw:
+            continue
+        try:
+            val = int(raw)
+        except (TypeError, ValueError):
+            continue
+        if val > 0:
+            return val
+    return 0
 
 
 PRODUCTS_API = "https://www.illucards.by/api/products"
@@ -2053,6 +2064,50 @@ ORDER_DETAILS_REQUEST_TEXT = (
     "• телефон"
 )
 
+MSG_PROOF_RECEIVED = "⏳ Получили скрин, передаём администратору…"
+MSG_PROOF_OK = (
+    "✅ Чек передан администратору. Ожидайте подтверждения заказа."
+)
+
+
+def _payment_proof_file_id(message: Any) -> str | None:
+    photos = getattr(message, "photo", None)
+    if photos:
+        return str(photos[-1].file_id)
+    doc = getattr(message, "document", None)
+    if doc is not None:
+        mime = str(getattr(doc, "mime_type", "") or "").strip().lower()
+        if mime.startswith("image/"):
+            return str(doc.file_id)
+    return None
+
+
+def _resolve_payment_proof_order_id(uid: int) -> str | None:
+    pending = _AWAIT_PAYMENT_PROOF.get(int(uid))
+    if pending:
+        oid = str(pending).strip()
+        if oid:
+            return oid
+    _load_bot_orders()
+    found: str | None = None
+    for oid, rec in BOT_ORDERS.items():
+        if not isinstance(rec, dict):
+            continue
+        try:
+            owner = int(rec.get("user_id") or 0)
+        except (TypeError, ValueError):
+            continue
+        if owner != int(uid):
+            continue
+        pm = str(rec.get("payment_method") or "").strip().lower()
+        if pm not in ("card", "crypto", "phone"):
+            continue
+        st = str(rec.get("status") or "new").strip().lower()
+        if st in ("cancelled", "canceled", "confirmed"):
+            continue
+        found = str(oid).strip()
+    return found or None
+
 
 def _order_saved_keyboard(telegram_user_id: int) -> InlineKeyboardMarkup:
     uid = int(telegram_user_id)
@@ -2535,6 +2590,102 @@ async def show_promo_slides(update: Update, context: ContextTypes.DEFAULT_TYPE) 
     context.user_data["promo_message_id"] = mid
 
 
+async def payment_proof_handler(
+    update: Update, context: ContextTypes.DEFAULT_TYPE
+) -> None:
+    msg = update.message
+    if not msg:
+        return
+    file_id = _payment_proof_file_id(msg)
+    if not file_id:
+        return
+    user = update.effective_user
+    if not user:
+        return
+    uid = int(user.id)
+    order_id = _resolve_payment_proof_order_id(uid)
+    if not order_id:
+        await msg.reply_text(
+            "Не найден заказ для чека. Сначала подтвердите заказ и выберите способ оплаты."
+        )
+        return
+
+    order = await _load_order_for_callback(order_id, uid)
+    if not order:
+        _load_bot_orders()
+        rec = BOT_ORDERS.get(order_id)
+        if isinstance(rec, dict):
+            order = dict(rec)
+    if not order or not _order_belongs_to_telegram_user(order, uid):
+        await msg.reply_text("Это не ваш заказ.")
+        return
+
+    site_st = str(order.get("status") or "").strip().lower()
+    if site_st in ("cancelled", "canceled"):
+        await msg.reply_text("Заказ отменён — чек не принимается.")
+        return
+    if site_st == "confirmed":
+        await msg.reply_text("Заказ уже подтверждён менеджером.")
+        return
+    if site_st == "paid":
+        await msg.reply_text("Чек по этому заказу уже получен. Ожидайте подтверждения.")
+        return
+
+    pm = str(order.get("payment_method") or "").strip().lower()
+    if pm not in ("card", "crypto", "phone"):
+        await msg.reply_text("Сначала выберите способ оплаты под сообщением с заказом.")
+        return
+
+    await msg.reply_text(MSG_PROOF_RECEIVED)
+
+    rec = _record_site_order_in_bot(order_id, order, uid)
+    rec["status"] = "paid"
+    rec["payment_method"] = pm
+    BOT_ORDERS[order_id] = rec
+    _persist_bot_orders()
+    _AWAIT_PAYMENT_PROOF.pop(uid, None)
+
+    site_ok = await post_site_order_status(order_id, "paid", order, uid)
+    if not site_ok:
+        logger.warning("payment proof: site status paid failed order=%s", order_id)
+
+    admin_chat_id = _resolve_admin_chat_id()
+    if admin_chat_id:
+        uname = str(order.get("username") or user.username or "").strip().lstrip("@") or None
+        caption = _format_order_admin(
+            order_id,
+            order,
+            uid,
+            uname,
+            rec,
+            header=f"💳 Чек оплаты · #{_order_short_ref(order_id)}",
+        )
+        try:
+            admin_msg = await context.bot.send_photo(
+                chat_id=int(admin_chat_id),
+                photo=file_id,
+                caption=caption,
+                reply_markup=_order_admin_confirm_keyboard(order_id),
+            )
+            mid = getattr(admin_msg, "message_id", None)
+            if isinstance(mid, int) and mid > 0:
+                await post_site_admin_message_id(order_id, mid)
+        except Exception as e:
+            logger.warning("admin payment proof notify: %s", e)
+            try:
+                await context.bot.send_message(
+                    chat_id=int(admin_chat_id),
+                    text=caption,
+                    reply_markup=_order_admin_confirm_keyboard(order_id),
+                )
+            except Exception as e2:
+                logger.warning("admin payment proof fallback text: %s", e2)
+    else:
+        logger.warning("payment proof: TELEGRAM_ADMIN_ID not set, admin not notified")
+
+    await msg.reply_text(MSG_PROOF_OK)
+
+
 async def text_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     if not update.message or not update.message.text:
         return
@@ -2891,6 +3042,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
             if owner_id is None or int(user.id) != int(owner_id):
                 await q.answer("Это не ваш заказ", show_alert=True)
                 return
+            _AWAIT_PAYMENT_PROOF.pop(int(user.id), None)
             await q.answer()
             try:
                 await q.edit_message_reply_markup(reply_markup=None)
@@ -2995,6 +3147,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
                 "Оплатите и пришлите скриншот чека одним сообщением в этот чат.\n"
                 "После проверки менеджер подтвердит заказ."
             )
+            _AWAIT_PAYMENT_PROOF[int(owner_id)] = order_id
             return
         except Exception as e:
             logger.exception("order payment method failed: %s", e)
@@ -3425,9 +3578,22 @@ def _main() -> None:
     logger.info("Python %s", sys.version.split()[0])
     _load_bot_orders()
 
-    app = ApplicationBuilder().token(token).post_init(_start_http_server).build()
+    app = (
+        ApplicationBuilder()
+        .token(token)
+        .concurrent_updates(False)
+        .post_init(_start_http_server)
+        .build()
+    )
 
     app.add_handler(CommandHandler("start", start))
+    app.add_handler(
+        MessageHandler(
+            filters.PHOTO | filters.Document.IMAGE,
+            payment_proof_handler,
+        ),
+        group=-1,
+    )
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, text_handler))
     app.add_handler(CallbackQueryHandler(button_handler))
     app.add_error_handler(_telegram_error_handler)

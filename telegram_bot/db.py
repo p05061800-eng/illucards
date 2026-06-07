@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""SQLite-хранилище пользователей и истории сообщений бота."""
+"""SQLite-хранилище пользователей и истории сообщений бота (только добавление, без удаления)."""
 
 from __future__ import annotations
 
@@ -213,15 +213,6 @@ def list_messages(
             (int(telegram_id), int(limit), int(offset)),
         ).fetchall()
     return [dict(r) for r in rows]
-
-
-def clear_messages(telegram_id: int) -> int:
-    with _connect() as conn:
-        cur = conn.execute(
-            "DELETE FROM messages WHERE telegram_id = ?",
-            (int(telegram_id),),
-        )
-        return int(cur.rowcount or 0)
 
 
 def get_stats() -> dict[str, Any]:

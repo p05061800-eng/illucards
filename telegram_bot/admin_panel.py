@@ -15,7 +15,6 @@ from telegram.ext import ContextTypes
 from db import (
     CLIENTS_PAGE_SIZE,
     MESSAGES_PAGE_SIZE,
-    clear_messages,
     count_messages,
     count_users,
     get_stats,
@@ -123,12 +122,6 @@ def _client_card_keyboard(telegram_id: int) -> InlineKeyboardMarkup:
                     callback_data=f"adm:write:{tid}",
                 )
             ],
-            [
-                InlineKeyboardButton(
-                    "🗑 Очистить историю",
-                    callback_data=f"adm:clear:{tid}",
-                )
-            ],
             [InlineKeyboardButton("⬅️ Назад", callback_data="adm:clients:0")],
         ]
     )
@@ -152,18 +145,6 @@ def _messages_keyboard(telegram_id: int, page: int, total_pages: int) -> InlineK
         [InlineKeyboardButton("⬅️ Назад", callback_data=f"adm:client:{tid}")]
     )
     return InlineKeyboardMarkup(rows)
-
-
-def _clear_confirm_keyboard(telegram_id: int) -> InlineKeyboardMarkup:
-    tid = int(telegram_id)
-    return InlineKeyboardMarkup(
-        [
-            [
-                InlineKeyboardButton("✅ Да, удалить", callback_data=f"adm:clearok:{tid}"),
-                InlineKeyboardButton("❌ Нет", callback_data=f"adm:client:{tid}"),
-            ]
-        ]
-    )
 
 
 def _clients_list_text(page: int, users: list[dict[str, Any]], total: int) -> str:
@@ -409,29 +390,6 @@ async def handle_admin_callback(
             f"✉️ Напишите сообщение для клиента {tid}.\n"
             "Оно будет отправлено одним сообщением."
         )
-        return True
-
-    if action == "clear" and len(parts) > 2:
-        tid = int(parts[2])
-        await q.answer()
-        await q.message.reply_text(
-            f"🗑 Удалить всю историю сообщений клиента {tid}?",
-            reply_markup=_clear_confirm_keyboard(tid),
-        )
-        return True
-
-    if action == "clearok" and len(parts) > 2:
-        tid = int(parts[2])
-        deleted = clear_messages(tid)
-        await q.answer("История очищена")
-        row = get_user(tid)
-        if row:
-            await q.message.reply_text(
-                f"🗑 Удалено сообщений: {deleted}\n\n{_format_client_card(row)}",
-                reply_markup=_client_card_keyboard(tid),
-            )
-        else:
-            await q.message.reply_text(f"🗑 Удалено сообщений: {deleted}")
         return True
 
     await q.answer()

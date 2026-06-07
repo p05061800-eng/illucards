@@ -40,7 +40,7 @@ from db import init_db, recompute_user_order_stats, sync_all_users_order_stats, 
 logging.basicConfig(format="%(asctime)s %(levelname)s %(message)s", level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-BOT_BUILD_ID = "2026-06-08-admin-crm-v1"
+BOT_BUILD_ID = "2026-06-08-no-delete-v1"
 
 REPLY_MENU_TEXTS = frozenset(
     {"💬 Связь", "📦 Мои заказы", "📜 Мои заказы", "🚚 Доставка", "⭐ Бонусы"}
@@ -361,17 +361,10 @@ async def _notify_http(request: web.Request) -> web.Response:
         if not admin_chat:
             return web.json_response({"error": "Admin chat not configured"}, status=503)
         if str(body.get("action") or "") == "delete_message":
-            try:
-                mid = int(body.get("messageId") or body.get("message_id"))
-            except (TypeError, ValueError):
-                return web.json_response({"error": "Invalid messageId"}, status=400)
-            try:
-                await _TG_APP.bot.delete_message(
-                    chat_id=int(admin_chat), message_id=int(mid)
-                )
-            except Exception as e:
-                logger.warning("notify admin delete: %s", e)
-            return web.json_response({"ok": True})
+            logger.info(
+                "notify admin delete_message ignored (history retention policy)"
+            )
+            return web.json_response({"ok": True, "skipped": True})
         text = str(body.get("text") or "").strip()
         if not text:
             return web.json_response({"error": "Empty text"}, status=400)
@@ -492,15 +485,6 @@ def _persist_bot_orders() -> None:
             json.dump(BOT_ORDERS, f, ensure_ascii=False, indent=2)
     except OSError as e:
         logger.warning("bot-orders write: %s", e)
-
-
-def _delete_bot_order(order_id: str) -> None:
-    oid = str(order_id or "").strip()
-    if not oid:
-        return
-    if oid in BOT_ORDERS:
-        del BOT_ORDERS[oid]
-        _persist_bot_orders()
 
 
 def _load_known_start_user_ids() -> set[int]:
@@ -2189,9 +2173,6 @@ def _order_admin_actions_keyboard(order_id: str) -> InlineKeyboardMarkup:
                 InlineKeyboardButton(
                     "❌ Отменить", callback_data=f"orderadmcx:{oid}"
                 ),
-                InlineKeyboardButton(
-                    "🗑 Удалить", callback_data=f"orderadmdel:{oid}"
-                ),
             ],
             [
                 InlineKeyboardButton("👥 Клиенты", callback_data="adm:clients:0"),
@@ -3535,8 +3516,6 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
                 await q.answer("Не удалось обновить на сайте", show_alert=True)
                 return
 
-            _delete_bot_order(order_id)
-
             try:
                 await context.bot.send_message(
                     chat_id=int(owner_id),
@@ -3710,22 +3689,6 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
             await q.answer("Ошибка", show_alert=True)
             return
 
-    if data.startswith("orderadmdel:"):
-        try:
-            if not user or not _is_admin_user(int(user.id)):
-                await q.answer("Только для администратора", show_alert=True)
-                return
-            await q.answer("Удалено")
-            try:
-                await q.message.delete()
-            except Exception as e:
-                logger.warning("admin delete message: %s", e)
-            return
-        except Exception as e:
-            logger.exception("orderadmdel failed: %s", e)
-            await q.answer("Ошибка", show_alert=True)
-            return
-
     if data.startswith("ordercx:"):
         try:
             order_id = data.split(":", 1)[1].strip()
@@ -3791,28 +3754,10 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
                 await q.answer("Не удалось связаться с сайтом. Попробуйте позже.", show_alert=True)
                 return
 
-            admin_mid = order.get("telegram_admin_message_id")
-            admin_chat_id = _resolve_admin_chat_id()
-            if admin_mid is not None and admin_chat_id:
-                try:
-                    await context.bot.delete_message(
-                        chat_id=int(admin_chat_id), message_id=int(admin_mid)
-                    )
-                except Exception as e:
-                    logger.warning("admin message delete: %s", e)
-
-            if site_st == "new":
-                try:
-                    if order_id in BOT_ORDERS:
-                        del BOT_ORDERS[order_id]
-                        _persist_bot_orders()
-                except Exception:
-                    pass
-            else:
-                rec = _record_site_order_in_bot(order_id, order, owner_id)
-                rec["status"] = "cancelled"
-                BOT_ORDERS[order_id] = rec
-                _persist_bot_orders()
+            rec = _record_site_order_in_bot(order_id, order, owner_id or int(user.id))
+            rec["status"] = "cancelled"
+            BOT_ORDERS[order_id] = rec
+            _persist_bot_orders()
 
             await q.answer("Заказ отменён")
             try:
@@ -3893,7 +3838,6 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
                 if isinstance(mid, int) and mid > 0:
                     await post_site_admin_message_id(order_id, mid)
 
-            _delete_bot_order(order_id)
             earned = int(result.get("bonus_earned") or 0)
             balance = int(result.get("bonus_points") or 0)
             bonus_note = ""

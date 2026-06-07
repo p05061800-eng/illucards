@@ -24,7 +24,7 @@ from telegram import (
     ReplyKeyboardMarkup,
     Update,
 )
-from telegram.error import InvalidToken
+from telegram.error import Conflict, InvalidToken
 from telegram.ext import (
     ApplicationBuilder,
     CallbackQueryHandler,
@@ -817,14 +817,38 @@ async def _await_details_http(request: web.Request) -> web.Response:
     return web.json_response({"ok": True})
 
 
+async def _telegram_error_handler(
+    _update: object, context: ContextTypes.DEFAULT_TYPE
+) -> None:
+    err = context.error
+    if isinstance(err, Conflict):
+        logger.error(
+            "409 Conflict: другой процесс уже делает getUpdates с TELEGRAM_BOT_TOKEN. "
+            "Остановите все другие инстансы бота (старый Render-сервис, локальный bot.py, "
+            "репозиторий telegram-bot). На Vercel не должно быть TELEGRAM_BOT_TOKEN. "
+            "Если не помогает — BotFather → Revoke token → новый токен только на Render."
+        )
+        return
+    logger.exception("Telegram handler error: %s", err)
+
+
 async def _start_http_server(_app: Any) -> None:
     global _TG_APP
     _TG_APP = _app
     try:
         await _app.bot.delete_webhook(drop_pending_updates=True)
-        logger.info("Telegram delete_webhook ok (polling mode)")
+        wh = await _app.bot.get_webhook_info()
+        url = str(getattr(wh, "url", "") or "").strip()
+        if url:
+            logger.warning("Webhook still set (%s), retry delete", url)
+            await _app.bot.delete_webhook(drop_pending_updates=True)
+        me = await _app.bot.get_me()
+        logger.info(
+            "Telegram bot @%s ready (polling, webhook cleared)",
+            getattr(me, "username", "?"),
+        )
     except Exception as e:
-        logger.warning("Telegram delete_webhook: %s", e)
+        logger.warning("Telegram startup check: %s", e)
     port_raw = os.getenv("PORT", "").strip()
     if not port_raw:
         return
@@ -3406,6 +3430,7 @@ def _main() -> None:
     app.add_handler(CommandHandler("start", start))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, text_handler))
     app.add_handler(CallbackQueryHandler(button_handler))
+    app.add_error_handler(_telegram_error_handler)
 
     logger.info("Starting Telegram polling + HTTP on PORT=%s", os.getenv("PORT", "(none)"))
 

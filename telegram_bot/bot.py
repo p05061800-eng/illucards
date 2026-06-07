@@ -37,7 +37,7 @@ from telegram.ext import (
 logging.basicConfig(format="%(asctime)s %(levelname)s %(message)s", level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-BOT_BUILD_ID = "2026-06-08-payment-details-v1"
+BOT_BUILD_ID = "2026-06-08-cancel-buttons-v1"
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 TELEGRAM_USERS_PATH = REPO_ROOT / "data" / "telegram-bot-users.json"
@@ -1970,7 +1970,24 @@ def _order_draft_keyboard(order_id: str) -> InlineKeyboardMarkup:
                 InlineKeyboardButton(
                     "✅ Подтвердить заказ", callback_data=f"orderok:{oid}"
                 ),
-                InlineKeyboardButton("❌ Отменить", callback_data=f"ordercx:{oid}"),
+                InlineKeyboardButton("❌ Отменить заказ", callback_data=f"ordercx:{oid}"),
+            ],
+        ]
+    )
+
+
+def _payment_active_keyboard(order_id: str) -> InlineKeyboardMarkup:
+    """После выбора способа оплаты: сменить метод или отменить заказ."""
+    oid = str(order_id or "").strip()
+    return InlineKeyboardMarkup(
+        [
+            [
+                InlineKeyboardButton(
+                    "◀️ Другой способ", callback_data=f"orderpaycancel:{oid}"
+                ),
+                InlineKeyboardButton(
+                    "❌ Отменить заказ", callback_data=f"ordercx:{oid}"
+                ),
             ],
         ]
     )
@@ -2037,7 +2054,10 @@ def _payment_method_keyboard(order_id: str) -> InlineKeyboardMarkup:
             ],
             [
                 InlineKeyboardButton(
-                    "❌ Отменить оплату", callback_data=f"orderpaycancel:{oid}"
+                    "◀️ Назад к заказу", callback_data=f"orderpaycancel:{oid}"
+                ),
+                InlineKeyboardButton(
+                    "❌ Отменить заказ", callback_data=f"ordercx:{oid}"
                 ),
             ],
         ]
@@ -3151,7 +3171,8 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
                 f"{_payment_method_instruction(method)}\n\n"
                 f"💳 Оплата по заказу #{_order_short_ref(order_id)}\n\n"
                 "Оплатите и пришлите скриншот чека одним сообщением в этот чат.\n"
-                "После проверки менеджер подтвердит заказ."
+                "После проверки менеджер подтвердит заказ.",
+                reply_markup=_payment_active_keyboard(order_id),
             )
             _AWAIT_PAYMENT_PROOF[int(owner_id)] = order_id
             return
@@ -3258,6 +3279,10 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
             if int(user.id) != int(owner_id) and int(user.id) != int(admin_chat_id or 0):
                 await q.answer("Это не ваш заказ", show_alert=True)
                 return
+
+            _AWAIT_PAYMENT_PROOF.pop(int(user.id), None)
+            if owner_id is not None:
+                _AWAIT_PAYMENT_PROOF.pop(int(owner_id), None)
 
             site_st = str(order.get("status") or "").strip().lower()
             if site_st in ("cancelled", "canceled"):

@@ -37,7 +37,7 @@ from telegram.ext import (
 logging.basicConfig(format="%(asctime)s %(levelname)s %(message)s", level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-BOT_BUILD_ID = "2026-06-07-proof-v1"
+BOT_BUILD_ID = "2026-06-08-payment-details-v1"
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 TELEGRAM_USERS_PATH = REPO_ROOT / "data" / "telegram-bot-users.json"
@@ -1940,18 +1940,24 @@ def _payment_method_instruction(method: str) -> str:
         return custom
     if m == "card":
         return (
-            "Оплата банковской картой. Реквизиты и инструкцию пришлёт менеджер "
-            "после подтверждения заказа."
+            "💳 Оплата картой\n\n"
+            "Номер карты:\n"
+            "9112 3810 0954 6243\n\n"
+            "Имя на карте:\n"
+            "DANIL PARFIONAU"
         )
     if m == "crypto":
         return (
-            "Оплата криптовалютой. Адрес кошелька и сеть уточнит менеджер "
-            "после подтверждения заказа."
+            "₿ Крипто (USDT TRC20)\n\n"
+            "TBRKDLTC6QXED4pEVVm1RpZNKeB4ScJChf"
         )
     if m == "phone":
         return (
-            "Перевод по номеру телефона. Номер для оплаты пришлёт менеджер "
-            "после подтверждения заказа."
+            "📱 Перевод на номер\n\n"
+            "Телефон:\n"
+            "+375298124337\n\n"
+            "Получатель:\n"
+            "DANIL PARFIONAU"
         )
     return "Способ оплаты сохранён."
 

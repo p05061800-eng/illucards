@@ -37,7 +37,7 @@ from telegram.ext import (
 logging.basicConfig(format="%(asctime)s %(levelname)s %(message)s", level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-BOT_BUILD_ID = "2026-06-08-cancel-buttons-v1"
+BOT_BUILD_ID = "2026-06-08-paid-button-v1"
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 TELEGRAM_USERS_PATH = REPO_ROOT / "data" / "telegram-bot-users.json"
@@ -617,6 +617,13 @@ def _record_site_order_in_bot(
         "delivery": order.get("delivery"),
         "status": previous_status or str(order.get("status") or "new").strip().lower() or "new",
     }
+    pm = str(order.get("payment_method") or "").strip().lower()
+    if pm:
+        rec["payment_method"] = pm
+    elif isinstance(existing, dict):
+        prev_pm = str(existing.get("payment_method") or "").strip().lower()
+        if prev_pm:
+            rec["payment_method"] = prev_pm
     BOT_ORDERS[order_id] = rec
     _persist_bot_orders()
     return rec
@@ -669,6 +676,11 @@ async def _load_order_for_callback(
         order.setdefault("total", _order_total_byn(order))
         order.setdefault("delivery", order.get("delivery") or "BY")
         order["user_id"] = uid
+        bot_rec = BOT_ORDERS.get(oid)
+        if isinstance(bot_rec, dict):
+            pm = str(bot_rec.get("payment_method") or "").strip().lower()
+            if pm:
+                order["payment_method"] = pm
         _record_site_order_in_bot(oid, order, uid)
         return order
 
@@ -1977,13 +1989,13 @@ def _order_draft_keyboard(order_id: str) -> InlineKeyboardMarkup:
 
 
 def _payment_active_keyboard(order_id: str) -> InlineKeyboardMarkup:
-    """После выбора способа оплаты: сменить метод или отменить заказ."""
+    """После выбора способа оплаты: подтвердить оплату или отменить заказ."""
     oid = str(order_id or "").strip()
     return InlineKeyboardMarkup(
         [
             [
                 InlineKeyboardButton(
-                    "◀️ Другой способ", callback_data=f"orderpaycancel:{oid}"
+                    "✅ Оплатил", callback_data=f"orderpaid:{oid}"
                 ),
                 InlineKeyboardButton(
                     "❌ Отменить заказ", callback_data=f"ordercx:{oid}"
@@ -1991,6 +2003,12 @@ def _payment_active_keyboard(order_id: str) -> InlineKeyboardMarkup:
             ],
         ]
     )
+
+
+PAY_PROOF_REQUEST_TEXT = (
+    "📸 Отправьте скрин оплаты одним сообщением в этот чат.\n\n"
+    "⏳ Мы проверим платёж в течение нескольких минут."
+)
 
 
 def _order_confirm_keyboard(
@@ -2659,6 +2677,13 @@ async def payment_proof_handler(
 
     pm = str(order.get("payment_method") or "").strip().lower()
     if pm not in ("card", "crypto", "phone"):
+        _load_bot_orders()
+        bot_rec = BOT_ORDERS.get(order_id)
+        if isinstance(bot_rec, dict):
+            pm = str(bot_rec.get("payment_method") or "").strip().lower()
+            if pm:
+                order["payment_method"] = pm
+    if pm not in ("card", "crypto", "phone"):
         await msg.reply_text("Сначала выберите способ оплаты под сообщением с заказом.")
         return
 
@@ -3049,6 +3074,60 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
             )
             return
 
+    if data.startswith("orderpaid:"):
+        try:
+            order_id = data.split(":", 1)[1].strip()
+            if not order_id or not user:
+                await q.answer("Некорректный заказ", show_alert=True)
+                return
+            order = await _load_order_for_callback(order_id, int(user.id))
+            if not order:
+                await q.answer()
+                await q.message.reply_text(
+                    "Не удалось обработать кнопку. Откройте заказ снова с сайта или отправьте /start."
+                )
+                return
+            owner_id = _order_owner_user_id(
+                order_id, order, fallback_uid=int(user.id)
+            )
+            if owner_id is None or int(user.id) != int(owner_id):
+                await q.answer("Это не ваш заказ", show_alert=True)
+                return
+
+            pm = str(order.get("payment_method") or "").strip().lower()
+            if pm not in ("card", "crypto", "phone"):
+                _load_bot_orders()
+                bot_rec = BOT_ORDERS.get(order_id)
+                if isinstance(bot_rec, dict):
+                    pm = str(bot_rec.get("payment_method") or "").strip().lower()
+            if pm not in ("card", "crypto", "phone"):
+                await q.answer("Сначала выберите способ оплаты", show_alert=True)
+                return
+
+            site_st = str(order.get("status") or "").strip().lower()
+            if site_st in ("cancelled", "canceled"):
+                await q.answer("Заказ отменён", show_alert=True)
+                return
+            if site_st == "confirmed":
+                await q.answer("Заказ уже подтверждён")
+                return
+            if site_st == "paid":
+                await q.answer("Чек уже получен")
+                return
+
+            _AWAIT_PAYMENT_PROOF[int(owner_id)] = order_id
+            await q.answer("Ждём скрин")
+            try:
+                await q.edit_message_reply_markup(reply_markup=None)
+            except Exception:
+                pass
+            await q.message.reply_text(PAY_PROOF_REQUEST_TEXT)
+            return
+        except Exception as e:
+            logger.exception("order paid confirm failed: %s", e)
+            await q.answer("Не удалось обработать. Повторите.", show_alert=True)
+            return
+
     if data.startswith("orderpaycancel:") or data.startswith("orderback:"):
         try:
             order_id = data.split(":", 1)[1].strip()
@@ -3131,6 +3210,8 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
             rec["payment_method"] = method
             BOT_ORDERS[order_id] = rec
             _persist_bot_orders()
+            order["payment_method"] = method
+            _cache_order_snapshot(order_id, order, int(owner_id))
 
             if not await post_site_order_payment_method(
                 order_id, method, order, owner_id

@@ -24,6 +24,7 @@ from telegram import (
     ReplyKeyboardMarkup,
     Update,
 )
+from telegram.error import InvalidToken
 from telegram.ext import (
     ApplicationBuilder,
     CallbackQueryHandler,
@@ -3372,11 +3373,23 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
     context.user_data["product_message_id"] = mid
 
 
-if __name__ == "__main__":
-    token = os.getenv("TELEGRAM_BOT_TOKEN")
-    if not token:
-        raise Exception("Нет TELEGRAM_BOT_TOKEN")
+def _main() -> None:
+    import sys
 
+    token = (os.getenv("TELEGRAM_BOT_TOKEN") or "").strip()
+    if not token:
+        logger.error(
+            "FATAL: TELEGRAM_BOT_TOKEN is not set. "
+            "Render → illucards → Environment → Add TELEGRAM_BOT_TOKEN, Save, redeploy."
+        )
+        sys.exit(1)
+    if ":" not in token or len(token) < 30:
+        logger.error(
+            "FATAL: TELEGRAM_BOT_TOKEN looks invalid (expected 123456789:ABC... from @BotFather)."
+        )
+        sys.exit(1)
+
+    logger.info("Python %s", sys.version.split()[0])
     _load_bot_orders()
 
     app = ApplicationBuilder().token(token).post_init(_start_http_server).build()
@@ -3385,9 +3398,29 @@ if __name__ == "__main__":
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, text_handler))
     app.add_handler(CallbackQueryHandler(button_handler))
 
-    print("🚀 Bot started")
+    logger.info("Starting Telegram polling + HTTP on PORT=%s", os.getenv("PORT", "(none)"))
 
-    app.run_polling(
-        drop_pending_updates=True,
-        allowed_updates=Update.ALL_TYPES,
-    )
+    # Python 3.14+: asyncio.get_event_loop() no longer creates a loop in MainThread (PTB run_polling).
+    try:
+        asyncio.get_event_loop()
+    except RuntimeError:
+        asyncio.set_event_loop(asyncio.new_event_loop())
+
+    try:
+        app.run_polling(
+            drop_pending_updates=True,
+            allowed_updates=Update.ALL_TYPES,
+        )
+    except InvalidToken:
+        logger.error(
+            "FATAL: Telegram rejected TELEGRAM_BOT_TOKEN. "
+            "BotFather → /mybots → @illucards_bot → Revoke token → paste new token in Render Environment."
+        )
+        sys.exit(1)
+    except Exception as exc:
+        logger.exception("FATAL: bot crashed on startup: %s", exc)
+        sys.exit(1)
+
+
+if __name__ == "__main__":
+    _main()

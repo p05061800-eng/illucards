@@ -778,12 +778,13 @@ async def _push_site_order_notifications(
     uid = int(telegram_user_id)
     oid = str(order_id or "").strip()
     _cache_order_snapshot(oid, order, uid)
-    body = (
-        SITE_ORDER_INTRO
-        + "\n\n"
-        + _build_order_draft_message(order, oid)
-    )
+    body = _build_order_draft_message(order, oid)
     try:
+        await _TG_APP.bot.send_message(
+            chat_id=uid,
+            text=SITE_ORDER_INTRO,
+            reply_markup=_main_keyboard(),
+        )
         await _TG_APP.bot.send_message(
             chat_id=uid,
             text=body,
@@ -1305,7 +1306,7 @@ def _categories_from_products(products: list[dict[str, Any]]) -> list[str]:
 def _main_keyboard() -> ReplyKeyboardMarkup:
     return ReplyKeyboardMarkup(
         [
-            ["💬 Связь", "📜 Мои заказы"],
+            ["💬 Связь", "📦 Мои заказы"],
             ["🚚 Доставка", "⭐ Бонусы"],
         ],
         resize_keyboard=True,
@@ -1829,15 +1830,21 @@ SITE_ORDER_INTRO = (
 )
 
 
+def _order_short_ref(order_id: str) -> str:
+    oid = str(order_id or "").strip()
+    if not oid:
+        return "—"
+    if len(oid) <= 8:
+        return oid
+    return oid[-8:].upper()
+
+
 def _build_order_draft_message(
     order: dict[str, Any], _order_id: str | None = None
 ) -> str:
     dcode = _delivery_price_code(order.get("delivery") or "BY")
     bonus_earn = _bonus_points_to_earn(order)
     lines = [
-        "Проверьте состав и доставку. Нажмите «Подтвердить заказ» — откроются шаги оплаты. "
-        "Заказ уходит админу только после подтверждения оплаты со скрином чека.",
-        "",
         "📦 Ваш заказ",
         "",
         *_order_item_lines(order),
@@ -1865,26 +1872,24 @@ def _format_order_text(order: dict[str, Any], order_id: str | None = None) -> st
     return _build_order_draft_message(order, order_id)
 
 
-def _payment_selection_message(order: dict[str, Any]) -> str:
-    bonus_earn = _bonus_points_to_earn(order)
+def _payment_selection_message(order: dict[str, Any], order_id: str) -> str:
+    ref = _order_short_ref(order_id)
     return (
-        "Выбери действие в меню ниже 👇\n\n"
-        f"💰 Итого: {_order_total_display(order)}\n\n"
         "Выберите способ оплаты:\n\n"
         "💳 Карта -> 💵 Перевод -> ₿ Крипта\n"
-        "💻 Оплата -> 📸 Скрин -> 🔎 Проверка -> ✅ Готово\n\n"
-        f"⭐ Ориентировочно начислится бонусов с заказа: ~{bonus_earn:,}".replace(",", " ")
+        "💳 Оплата -> 📸 Скрин -> 🔎 Проверка -> ✅ Готово\n\n"
+        f"💳 Оплата по заказу #{ref}"
     )
 
 
 def _payment_method_label(method: str) -> str:
     m = (method or "").strip().lower()
     if m == "card":
-        return "💳 Карта"
+        return "💳 Оплата картой"
     if m == "crypto":
-        return "₿ Крипта"
+        return "₿ Оплата криптой"
     if m == "phone":
-        return "💵 Перевод"
+        return "💵 Оплата переводом"
     return method or "—"
 
 
@@ -1923,9 +1928,9 @@ def _order_draft_keyboard(order_id: str) -> InlineKeyboardMarkup:
             [
                 InlineKeyboardButton(
                     "✅ Подтвердить заказ", callback_data=f"orderok:{oid}"
-                )
+                ),
+                InlineKeyboardButton("❌ Отменить", callback_data=f"ordercx:{oid}"),
             ],
-            [InlineKeyboardButton("❌ Отменить", callback_data=f"ordercx:{oid}")],
         ]
     )
 
@@ -1943,24 +1948,23 @@ async def _send_order_intro_and_draft(
     order_id: str,
     telegram_user_id: int,
 ) -> bool:
-    """Приветствие + карточка заказа одним сообщением (не теряется при сбое 2-го send)."""
+    """Приветствие отдельно, карточка заказа с inline-кнопками — как в UI IlluCards."""
     oid = str(order_id or "").strip()
     if not oid:
         return False
     _cache_order_snapshot(oid, order, telegram_user_id)
-    body = (
-        SITE_ORDER_INTRO
-        + "\n\n"
-        + _build_order_draft_message(order, oid)
-    )
+    body = _build_order_draft_message(order, oid)
     kb = _order_draft_keyboard(oid)
     try:
+        await message.reply_text(SITE_ORDER_INTRO, reply_markup=_main_keyboard())
         await message.reply_text(body, reply_markup=kb)
     except Exception as e:
         logger.exception("order draft send failed order=%s: %s", oid, e)
         try:
+            combined = SITE_ORDER_INTRO + "\n\n" + body
             await message.reply_text(
-                body + "\n\n(Кнопки временно недоступны — отправьте /start order_"
+                combined
+                + "\n\n(Кнопки временно недоступны — отправьте /start order_"
                 + oid
                 + ")",
                 reply_markup=_main_keyboard(),
@@ -1968,37 +1972,40 @@ async def _send_order_intro_and_draft(
         except Exception as e2:
             logger.exception("order draft fallback send failed order=%s: %s", oid, e2)
             return False
-    try:
-        await message.reply_text("Меню:", reply_markup=_main_keyboard())
-    except Exception as e:
-        logger.warning("main keyboard after order draft: %s", e)
     return True
 
 
 def _payment_method_keyboard(order_id: str) -> InlineKeyboardMarkup:
+    oid = str(order_id or "").strip()
     return InlineKeyboardMarkup(
         [
             [
                 InlineKeyboardButton(
-                    "💳 Карта", callback_data=f"orderpay:card:{order_id}"
-                ),
-                InlineKeyboardButton(
-                    "💵 Перевод", callback_data=f"orderpay:phone:{order_id}"
+                    "💳 Оплата картой", callback_data=f"orderpay:card:{oid}"
                 ),
             ],
             [
                 InlineKeyboardButton(
-                    "₿ Крипта", callback_data=f"orderpay:crypto:{order_id}"
-                )
+                    "💵 Оплата переводом", callback_data=f"orderpay:phone:{oid}"
+                ),
             ],
             [
                 InlineKeyboardButton(
-                    "◀️ К подтверждению заказа",
-                    callback_data=f"orderback:{order_id}",
-                )
+                    "₿ Оплата криптой", callback_data=f"orderpay:crypto:{oid}"
+                ),
+            ],
+            [
+                InlineKeyboardButton(
+                    "❌ Отменить оплату", callback_data=f"orderpaycancel:{oid}"
+                ),
             ],
         ]
     )
+
+
+PAYMENT_CANCELLED_TEXT = (
+    "Оплата отменена. Можете снова подтвердить заказ или изменить корзину на сайте."
+)
 
 
 def _order_admin_confirm_keyboard(order_id: str) -> InlineKeyboardMarkup:
@@ -2829,7 +2836,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
             except Exception:
                 pass
             await q.message.reply_text(
-                _payment_selection_message(order),
+                _payment_selection_message(order, order_id),
                 reply_markup=_payment_method_keyboard(order_id),
             )
             return
@@ -2841,7 +2848,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
             )
             return
 
-    if data.startswith("orderback:"):
+    if data.startswith("orderpaycancel:") or data.startswith("orderback:"):
         try:
             order_id = data.split(":", 1)[1].strip()
             if not order_id or not user:
@@ -2865,13 +2872,14 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
                 await q.edit_message_reply_markup(reply_markup=None)
             except Exception:
                 pass
+            await q.message.reply_text(PAYMENT_CANCELLED_TEXT)
             await q.message.reply_text(
                 _build_order_draft_message(order, order_id),
                 reply_markup=_order_draft_keyboard(order_id),
             )
             return
         except Exception as e:
-            logger.exception("order back failed: %s", e)
+            logger.exception("order payment cancel failed: %s", e)
             await q.answer("Не удалось вернуться к заказу", show_alert=True)
             return
 
@@ -2959,6 +2967,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
             await q.message.reply_text(
                 f"Вы выбрали: {_payment_method_label(method)}\n\n"
                 f"{_payment_method_instruction(method)}\n\n"
+                f"💳 Оплата по заказу #{_order_short_ref(order_id)}\n\n"
                 "Оплатите и пришлите скриншот чека одним сообщением в этот чат.\n"
                 "После проверки менеджер подтвердит заказ."
             )

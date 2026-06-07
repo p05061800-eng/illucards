@@ -9,6 +9,7 @@ services:
     buildCommand: pip install -r requirements.txt
     startCommand: python bot.py
     healthCheckPath: /health
+    pythonVersion: "3.11.11"
     envVars:
       - key: TELEGRAM_BOT_TOKEN
         sync: false

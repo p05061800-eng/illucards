@@ -40,7 +40,7 @@ from db import init_db, recompute_user_order_stats, sync_all_users_order_stats, 
 logging.basicConfig(format="%(asctime)s %(levelname)s %(message)s", level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-BOT_BUILD_ID = "2026-06-08-delivery-prices-v1"
+BOT_BUILD_ID = "2026-06-08-my-orders-confirmed-v1"
 
 REPLY_MENU_TEXTS = frozenset(
     {"💬 Связь", "📦 Мои заказы", "📜 Мои заказы", "🚚 Доставка", "⭐ Бонусы"}
@@ -551,6 +551,20 @@ ORDER_STATUS_RU: dict[str, str] = {
     "canceled": "❌ Отменён",
 }
 
+# В «Мои заказы» — только после подтверждения менеджером и дальше по цепочке.
+MY_ORDERS_VISIBLE_STATUSES = frozenset(
+    {
+        "confirmed",
+        "accepted",
+        "paid",
+        "shipped",
+        "sent",
+        "delivered",
+        "cancelled",
+        "canceled",
+    }
+)
+
 
 def _order_status_display(status: str) -> str:
     key = (status or "").strip().lower()
@@ -598,8 +612,50 @@ def _orders_for_telegram_user(telegram_user_id: int) -> list[tuple[str, dict[str
             continue
         if uid == int(telegram_user_id):
             out.append((str(oid), rec))
-    out.sort(key=lambda x: x[0])
+    out.sort(key=lambda x: x[0], reverse=True)
     return out
+
+
+def _order_visible_in_my_orders(status: str) -> bool:
+    key = (status or "").strip().lower()
+    if key == "canceled":
+        key = "cancelled"
+    return key in MY_ORDERS_VISIBLE_STATUSES
+
+
+def _ingest_site_order_summary(
+    raw: dict[str, Any], telegram_user_id: int
+) -> str | None:
+    oid = str(raw.get("id") or raw.get("order_id") or "").strip()
+    if not oid:
+        return None
+    status = str(raw.get("status") or "new").strip().lower()
+    existing = BOT_ORDERS.get(oid)
+    prev_items: list[dict[str, Any]] = []
+    if isinstance(existing, dict):
+        prev_items = _order_items_list(existing)
+    try:
+        total = float(raw.get("total") or 0)
+    except (TypeError, ValueError):
+        total = 0.0
+    if total <= 0 and isinstance(existing, dict):
+        total = _order_total_byn(existing)
+    rec: dict[str, Any] = {
+        "user_id": int(telegram_user_id),
+        "items": prev_items,
+        "total": total,
+        "delivery": raw.get("delivery")
+        or (existing.get("delivery") if isinstance(existing, dict) else "BY"),
+        "status": status,
+    }
+    if isinstance(existing, dict):
+        pm = str(existing.get("payment_method") or "").strip().lower()
+        if pm:
+            rec["payment_method"] = pm
+        if existing.get("delivery_details"):
+            rec["delivery_details"] = existing.get("delivery_details")
+    BOT_ORDERS[oid] = rec
+    return oid
 
 
 def _order_total_byn(order: dict[str, Any]) -> float:
@@ -645,6 +701,8 @@ def _record_site_order_in_bot(
         prev_pm = str(existing.get("payment_method") or "").strip().lower()
         if prev_pm:
             rec["payment_method"] = prev_pm
+        if existing.get("delivery_details"):
+            rec["delivery_details"] = existing.get("delivery_details")
     BOT_ORDERS[order_id] = rec
     _persist_bot_orders()
     _sync_crm_order_stats_for_user(int(telegram_user_id))
@@ -1571,6 +1629,62 @@ async def fetch_site_order(order_id: str) -> dict[str, Any] | None:
     return body
 
 
+async def fetch_site_user_orders_list(telegram_user_id: int) -> list[dict[str, Any]]:
+    """GET /api/orders?user_id= — список заказов пользователя с сайта."""
+    uid = int(telegram_user_id)
+    if uid <= 0:
+        return []
+    base = os.getenv("ILLUCARDS_SITE_ORIGIN", DEFAULT_SITE_ORIGIN).rstrip("/")
+    url = f"{base}/api/orders?user_id={uid}"
+    secret = (os.getenv("ILLUCARDS_ORDER_UPDATE_SECRET") or "").strip()
+    headers: dict[str, str] = {"Accept": "application/json"}
+    if secret:
+        headers["Authorization"] = f"Bearer {secret}"
+    timeout = aiohttp.ClientTimeout(total=20)
+    try:
+        async with aiohttp.ClientSession(timeout=timeout) as session:
+            async with session.get(url, headers=headers) as resp:
+                if resp.status != 200:
+                    body = await resp.text()
+                    logger.warning(
+                        "GET user orders HTTP %s uid=%s: %s",
+                        resp.status,
+                        uid,
+                        body[:300],
+                    )
+                    return []
+                data = await resp.json(content_type=None)
+    except (aiohttp.ClientError, asyncio.TimeoutError, OSError, json.JSONDecodeError, ValueError) as e:
+        logger.warning("GET user orders uid=%s: %s", uid, e)
+        return []
+    if not isinstance(data, dict):
+        return []
+    raw_orders = data.get("orders")
+    if not isinstance(raw_orders, list):
+        return []
+    out: list[dict[str, Any]] = []
+    for row in raw_orders:
+        if isinstance(row, dict):
+            out.append(row)
+    return out
+
+
+async def _sync_user_orders_from_site(telegram_user_id: int) -> int:
+    """Подтянуть заказы с сайта в BOT_ORDERS перед показом «Мои заказы»."""
+    summaries = await fetch_site_user_orders_list(telegram_user_id)
+    if not summaries:
+        return 0
+    _load_bot_orders()
+    changed = False
+    for raw in summaries:
+        if _ingest_site_order_summary(raw, telegram_user_id):
+            changed = True
+    if changed:
+        _persist_bot_orders()
+        _sync_crm_order_stats_for_user(int(telegram_user_id))
+    return len(summaries)
+
+
 async def fetch_site_user_state(telegram_user_id: int) -> dict[str, Any] | None:
     """Получить синхронизированные с сайта корзину и избранное пользователя."""
     base = os.getenv("ILLUCARDS_SITE_ORIGIN", DEFAULT_SITE_ORIGIN).rstrip("/")
@@ -2240,7 +2354,8 @@ async def _refresh_admin_message_keyboard(
 
 
 ORDER_CONFIRMED_CUSTOMER_TEXT = (
-    "✅ Заказ подтверждён менеджером. При необходимости мы уточним детали в этом чате."
+    "✅ Заказ подтверждён менеджером.\n\n"
+    "Он появился в «📦 Мои заказы». При необходимости мы уточним детали в этом чате."
 )
 
 MSG_PROOF_RECEIVED = "⏳ Получили данные, передаём администратору…"
@@ -2647,12 +2762,14 @@ async def show_my_orders(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
     if not user:
         await update.message.reply_text("Не удалось определить пользователя.")
         return
+    await _sync_user_orders_from_site(int(user.id))
     _load_bot_orders()
     rows = _orders_for_telegram_user(user.id)
     if not rows:
         await update.message.reply_text(
-            "Пока нет заказов в боте.\n"
-            "После оформления на сайте заказ появится здесь автоматически.",
+            "Пока нет подтверждённых заказов.\n"
+            "После проверки оплаты менеджером заказ появится здесь автоматически.",
+            reply_markup=_main_keyboard(),
         )
         return
     oids = [oid for oid, _ in rows]
@@ -2661,35 +2778,26 @@ async def show_my_orders(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
         return_exceptions=True,
     )
     lines: list[str] = ["📦 Мои заказы", ""]
-    changed = False
     for (oid, rec), site in zip(rows, sites):
         if isinstance(site, BaseException):
             order_site: dict[str, Any] | None = None
         else:
-            body, http_st = site
-            if http_st == 404:
-                if oid in BOT_ORDERS:
-                    try:
-                        del BOT_ORDERS[oid]
-                        changed = True
-                    except Exception:
-                        pass
-                continue
+            body, _http_st = site
             order_site = body if isinstance(body, dict) else None
         if order_site is None:
             st = _merge_order_status_for_display(rec, None)
         else:
             st = _merge_order_status_for_display(rec, order_site)
+        if not _order_visible_in_my_orders(st):
+            continue
         label = _order_status_display(st)
         total = _merge_total_byn(rec, order_site)
         ref = _order_id_short(oid)
         lines.append(f"#{ref} — {total:g} BYN — {label}")
-    if changed:
-        _persist_bot_orders()
     if len(lines) <= 2:
         await update.message.reply_text(
-            "Пока нет заказов в боте.\n"
-            "После оформления на сайте заказ появится здесь автоматически.",
+            "Пока нет подтверждённых заказов.\n"
+            "После проверки оплаты менеджером заказ появится здесь автоматически.",
             reply_markup=_main_keyboard(),
         )
         return
@@ -3553,8 +3661,12 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
                 await _refresh_admin_message_keyboard(q, order_id)
                 return
 
+            _load_bot_orders()
+            prev_rec = BOT_ORDERS.get(order_id)
             rec = _record_site_order_in_bot(order_id, order, owner_id)
             rec["status"] = "confirmed"
+            if isinstance(prev_rec, dict) and prev_rec.get("delivery_details"):
+                rec["delivery_details"] = prev_rec.get("delivery_details")
             BOT_ORDERS[order_id] = rec
             _persist_bot_orders()
 
@@ -3563,6 +3675,8 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
             if not await post_site_order_status(order_id, "confirmed", order, owner_id):
                 await q.answer("Не удалось обновить на сайте", show_alert=True)
                 return
+
+            await _sync_user_orders_from_site(int(owner_id))
 
             try:
                 await context.bot.send_message(

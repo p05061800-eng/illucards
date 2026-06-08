@@ -54,7 +54,7 @@ export function FloatingCartFab() {
             : `Корзина: ${count} ${count === 1 ? "товар" : count < 5 ? "товара" : "товаров"}`
         }
         title="Корзина"
-        className="flex h-14 w-14 touch-manipulation items-center justify-center rounded-full border-2 border-white/45 bg-green-500 text-white shadow-[0_4px_0_rgba(0,0,0,0.28),0_10px_32px_rgba(0,0,0,0.45)] transition hover:border-white/70 hover:brightness-110 focus:outline-none focus-visible:ring-2 focus-visible:ring-green-300 focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-950 sm:h-16 sm:w-16"
+        className="relative flex h-14 w-14 touch-manipulation items-center justify-center rounded-full border-2 border-white/45 bg-green-500 text-white shadow-[0_4px_0_rgba(0,0,0,0.28),0_10px_32px_rgba(0,0,0,0.45)] transition hover:border-white/70 hover:brightness-110 focus:outline-none focus-visible:ring-2 focus-visible:ring-green-300 focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-950 sm:h-16 sm:w-16"
       >
         <ShoppingBag className="h-6 w-6 text-white sm:h-7 sm:w-7" aria-hidden />
         <span

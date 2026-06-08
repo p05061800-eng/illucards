@@ -143,12 +143,21 @@ export async function saveTelegramUserState(
       "bonus_points" in nextState
         ? Math.max(0, Math.floor(Number(nextState.bonus_points) || 0))
         : Math.max(0, Math.floor(prev?.bonus_points ?? 0)),
-    cartClearedAt:
-      "cartClearedAt" in nextState
-        ? nextState.cartClearedAt
-        : prev?.cartClearedAt,
   };
+  if ("cartClearedAt" in nextState) {
+    if (
+      typeof nextState.cartClearedAt === "number" &&
+      Number.isFinite(nextState.cartClearedAt)
+    ) {
+      merged.cartClearedAt = nextState.cartClearedAt;
+    }
+  } else if (prev?.cartClearedAt != null) {
+    merged.cartClearedAt = prev.cartClearedAt;
+  }
   const state = sanitize(merged);
+  if (state.cart.length > 0) {
+    delete state.cartClearedAt;
+  }
   MEMORY_STORE[String(userId)] = state;
 
   const j = await redisCommand([

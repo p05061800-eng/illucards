@@ -372,6 +372,28 @@ export default function Header() {
             </div>
 
             <div className="flex flex-col gap-2 border-b border-white/10 pb-4">
+              <button
+                type="button"
+                onClick={() => {
+                  setMobileNavOpen(false);
+                  openCart();
+                }}
+                className="flex items-center justify-between rounded-xl px-3 py-3 text-sm font-medium text-zinc-200 transition hover:bg-white/[0.06]"
+              >
+                <span>Корзина</span>
+                {count > 0 ? (
+                  <span className="rounded-full bg-green-500 px-2 py-0.5 text-xs font-bold tabular-nums text-white">
+                    {count > 99 ? "99+" : count}
+                  </span>
+                ) : null}
+              </button>
+              <Link
+                href="/cart"
+                className="rounded-xl px-3 py-3 text-sm font-medium text-zinc-400 transition hover:bg-white/[0.06] hover:text-zinc-200"
+                onClick={() => setMobileNavOpen(false)}
+              >
+                Открыть страницу корзины
+              </Link>
               <Link
                 href="/favorites"
                 className="rounded-xl px-3 py-3 text-sm font-medium text-zinc-200 transition hover:bg-white/[0.06]"

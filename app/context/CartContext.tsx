@@ -369,9 +369,12 @@ export function CartProvider({ children }: { children: ReactNode }) {
       setBonusBalance(bp);
       if (cartClearedAt > readClientSeenCartClearedAt()) {
         writeClientSeenCartClearedAt(cartClearedAt);
-        setCartItems([]);
-        setBonusSpendPointsState(0);
-        return;
+        const localCart = loadFromStorage();
+        // Не затираем новую локальную корзину после заказа (cartClearedAt с прошлого checkout).
+        if (localCart.length === 0) {
+          setCartItems([]);
+          setBonusSpendPointsState(0);
+        }
       }
       if (serverCart.length > 0) {
         setCartItems((prev) => (prev.length === 0 ? serverCart : prev));

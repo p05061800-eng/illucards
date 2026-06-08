@@ -3,13 +3,13 @@
 import { useEffect, useRef } from "react";
 import { apiUrl } from "@/app/lib/apiUrl";
 import {
+  TG_LOGIN_FOCUS_CODE_KEY,
   TG_LOGIN_WAIT_STORAGE_KEY,
   isValidLoginWaitId,
 } from "@/app/lib/telegramLoginWaitKeys";
 
 const POLL_MS = 1500;
 const MAX_MS = 8 * 60 * 1000;
-const ACCOUNT_REDIRECT_URL = "https://www.illucards.by/account";
 
 declare global {
   interface Window {
@@ -75,7 +75,13 @@ export function TelegramLoginWaitPoller() {
           window.setTimeout(closePopup, 350);
           window.__illucardsTgLoginPopup = null;
           startedAt.current = null;
-          window.location.assign(ACCOUNT_REDIRECT_URL);
+          try {
+            sessionStorage.setItem(TG_LOGIN_FOCUS_CODE_KEY, "1");
+          } catch {
+            /* ignore */
+          }
+          const accountUrl = `${window.location.origin}/account?login_code=1`;
+          window.location.assign(accountUrl);
         }
       } catch {
         /* ignore */

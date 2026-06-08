@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ChevronDown, ChevronRight, Package } from "lucide-react";
 import { OrderLineRow } from "@/app/components/orders/OrderLineRow";
@@ -32,6 +32,7 @@ import {
   rubFromByn,
 } from "@/app/lib/formatPrice";
 import { startTelegramWebLoginWithWait } from "@/app/lib/startTelegramWebLoginClient";
+import { TG_LOGIN_FOCUS_CODE_KEY } from "@/app/lib/telegramLoginWaitKeys";
 import { telegramWebLoginDeepLink } from "@/app/lib/telegramWebLoginUrl";
 
 type LsGate = "pending" | "ok" | "no_telegram";
@@ -110,13 +111,16 @@ function readCartPayloadForVerifyFromStorage(): {
 
 export default function AccountPageClient() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { user, hydrated, logout, establishSessionFromTelegramUserId } = useAuth();
   const {
     cartItems,
     hydrated: cartHydrated,
     deliveryCountry,
+    closeCart,
   } = useCart();
   const [lsGate, setLsGate] = useState<LsGate>("pending");
+  const [focusCodeEntry, setFocusCodeEntry] = useState(false);
   const [orders, setOrders] = useState<OrderListSummary[] | null>(null);
   const [ordersError, setOrdersError] = useState<string | null>(null);
   const [bonusPointsBalance, setBonusPointsBalance] = useState(0);
@@ -128,6 +132,8 @@ export default function AccountPageClient() {
   const [verifyCodePending, setVerifyCodePending] = useState(false);
   const prevCodeDigitsLen = useRef(0);
   const verifyInFlight = useRef(false);
+  const codeInputRef = useRef<HTMLInputElement | null>(null);
+  const codeSectionRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     const id = readTelegramPrimaryUserId();
@@ -137,6 +143,32 @@ export default function AccountPageClient() {
     }
     setLsGate("ok");
   }, []);
+
+  useEffect(() => {
+    if (lsGate !== "no_telegram" || typeof window === "undefined") return;
+    const fromQuery = searchParams.get("login_code") === "1";
+    let fromSession = false;
+    try {
+      fromSession = sessionStorage.getItem(TG_LOGIN_FOCUS_CODE_KEY) === "1";
+    } catch {
+      fromSession = false;
+    }
+    if (!fromQuery && !fromSession) return;
+
+    setFocusCodeEntry(true);
+    closeCart();
+    try {
+      sessionStorage.removeItem(TG_LOGIN_FOCUS_CODE_KEY);
+    } catch {
+      /* ignore */
+    }
+
+    const t = window.setTimeout(() => {
+      codeSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      codeInputRef.current?.focus({ preventScroll: true });
+    }, 80);
+    return () => window.clearTimeout(t);
+  }, [lsGate, searchParams, closeCart]);
 
   const loadOrders = useCallback(async () => {
     setOrdersError(null);
@@ -355,6 +387,91 @@ export default function AccountPageClient() {
   }
 
   if (lsGate === "no_telegram") {
+    const codeEntryBlock = (
+      <div
+        ref={codeSectionRef}
+        id="tg-login-code"
+        className={`rounded-2xl bg-zinc-50 p-5 text-zinc-900 shadow-[0_2px_12px_rgba(0,0,0,0.12)] ring-1 sm:rounded-3xl sm:p-6 ${
+          focusCodeEntry
+            ? "ring-violet-400/70 ring-2"
+            : "ring-zinc-200/90"
+        }`}
+      >
+        <h3 className="text-base font-bold tracking-tight text-zinc-950">
+          {focusCodeEntry ? "Введите код из Telegram" : "Вход по коду из бота"}
+        </h3>
+        <p className="mt-1 text-sm text-zinc-600">
+          {focusCodeEntry
+            ? "Код уже в боте — введите 4 цифры ниже."
+            : "Нажмите «Войти через Telegram», получите код в боте и введите 4 цифры."}
+        </p>
+        <div className="mt-3 grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto]">
+          <label className="block">
+            <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-zinc-500">
+              Код из бота
+            </span>
+            <input
+              ref={codeInputRef}
+              type="text"
+              inputMode="numeric"
+              pattern="[0-9]*"
+              maxLength={4}
+              placeholder="0000"
+              value={tgCode}
+              onChange={(e) => setTgCode(e.target.value.replace(/\D/g, "").slice(0, 4))}
+              className="h-11 w-full rounded-xl border border-zinc-300 bg-white px-3 text-sm tracking-[0.3em] text-zinc-900 outline-none transition focus:border-violet-400 focus:ring-2 focus:ring-violet-500/20"
+              autoComplete="one-time-code"
+            />
+          </label>
+          <button
+            type="button"
+            onClick={handleVerifyTelegramCode}
+            disabled={verifyCodePending}
+            className="inline-flex min-h-11 items-center justify-center rounded-xl bg-[#5D6BF3] px-4 text-sm font-semibold text-white transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {verifyCodePending ? "Проверка..." : "Войти"}
+          </button>
+        </div>
+
+        {tgError ? (
+          <p className="mt-3 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+            {tgError}
+          </p>
+        ) : null}
+        {tgInfo ? (
+          <p className="mt-3 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-700">
+            {tgInfo}
+          </p>
+        ) : null}
+      </div>
+    );
+
+    const telegramButtonBlock = (
+      <div className="rounded-2xl bg-zinc-50 p-5 text-center text-zinc-900 shadow-[0_2px_12px_rgba(0,0,0,0.12)] ring-1 ring-zinc-200/90 sm:rounded-3xl sm:p-6">
+        <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-zinc-100 text-zinc-500 ring-1 ring-zinc-200">
+          <Package className="h-6 w-6" strokeWidth={1.5} aria-hidden />
+        </div>
+        <h2 className="text-lg font-bold tracking-tight text-zinc-950">
+          Войдите, чтобы увидеть заказы
+        </h2>
+        <p className="mx-auto mt-2 max-w-md text-sm leading-relaxed text-zinc-600">
+          После авторизации через Telegram в кабинете появятся ваши заказы и
+          текущие статусы доставки.
+        </p>
+        <button
+          type="button"
+          onClick={() => void handleOpenTelegramForLogin()}
+          className="mt-5 inline-flex min-h-11 w-full items-center justify-center rounded-xl bg-[#5D6BF3] px-6 text-sm font-semibold text-white shadow-md transition hover:brightness-110 sm:w-auto"
+        >
+          Войти через Telegram
+        </button>
+        <p className="mx-auto mt-2 max-w-md text-xs text-zinc-500">
+          Когда код придёт в боте, эта вкладка сама откроет поле для ввода — оставьте
+          сайт открытым.
+        </p>
+      </div>
+    );
+
     return (
       <div
         className="mx-auto w-full max-w-2xl px-4 pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-4 sm:px-5 sm:pt-6 md:max-w-3xl md:px-6"
@@ -367,73 +484,18 @@ export default function AccountPageClient() {
           Здесь будут профиль, заказы и статусы после входа через Telegram
         </p>
 
-        <div className="mt-6 rounded-2xl bg-zinc-50 p-5 text-center text-zinc-900 shadow-[0_2px_12px_rgba(0,0,0,0.12)] ring-1 ring-zinc-200/90 sm:rounded-3xl sm:p-6">
-          <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-zinc-100 text-zinc-500 ring-1 ring-zinc-200">
-            <Package className="h-6 w-6" strokeWidth={1.5} aria-hidden />
-          </div>
-          <h2 className="text-lg font-bold tracking-tight text-zinc-950">
-            Войдите, чтобы увидеть заказы
-          </h2>
-          <p className="mx-auto mt-2 max-w-md text-sm leading-relaxed text-zinc-600">
-            После авторизации через Telegram в кабинете появятся ваши заказы и
-            текущие статусы доставки.
-          </p>
-          <button
-            type="button"
-            onClick={() => void handleOpenTelegramForLogin()}
-            className="mt-5 inline-flex min-h-11 w-full items-center justify-center rounded-xl bg-[#5D6BF3] px-6 text-sm font-semibold text-white shadow-md transition hover:brightness-110 sm:w-auto"
-          >
-            Войти через Telegram
-          </button>
-          <p className="mx-auto mt-2 max-w-md text-xs text-zinc-500">
-            Когда код придёт в боте, эта вкладка сама откроет личный кабинет — оставьте сайт
-            открытым.
-          </p>
-        </div>
-
-        <div className="mt-4 rounded-2xl bg-zinc-50 p-5 text-zinc-900 shadow-[0_2px_12px_rgba(0,0,0,0.12)] ring-1 ring-zinc-200/90 sm:rounded-3xl sm:p-6">
-          <h3 className="text-base font-bold tracking-tight text-zinc-950">
-            Вход по коду из бота
-          </h3>
-          <p className="mt-1 text-sm text-zinc-600">
-            Нажмите «Войти через Telegram», получите код в боте и введите 4 цифры.
-          </p>
-          <div className="mt-3 grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto]">
-            <label className="block">
-              <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-zinc-500">
-                Код из бота
-              </span>
-              <input
-                type="text"
-                inputMode="numeric"
-                pattern="[0-9]*"
-                maxLength={4}
-                placeholder="0000"
-                value={tgCode}
-                onChange={(e) => setTgCode(e.target.value.replace(/\D/g, "").slice(0, 4))}
-                className="h-11 w-full rounded-xl border border-zinc-300 bg-white px-3 text-sm tracking-[0.3em] text-zinc-900 outline-none transition focus:border-violet-400 focus:ring-2 focus:ring-violet-500/20"
-              />
-            </label>
-            <button
-              type="button"
-              onClick={handleVerifyTelegramCode}
-              disabled={verifyCodePending}
-              className="inline-flex min-h-11 items-center justify-center rounded-xl bg-[#5D6BF3] px-4 text-sm font-semibold text-white transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              {verifyCodePending ? "Проверка..." : "Войти"}
-            </button>
-          </div>
-
-          {tgError ? (
-            <p className="mt-3 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
-              {tgError}
-            </p>
-          ) : null}
-          {tgInfo ? (
-            <p className="mt-3 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-700">
-              {tgInfo}
-            </p>
-          ) : null}
+        <div className="mt-6 flex flex-col gap-4">
+          {focusCodeEntry ? (
+            <>
+              {codeEntryBlock}
+              {telegramButtonBlock}
+            </>
+          ) : (
+            <>
+              {telegramButtonBlock}
+              {codeEntryBlock}
+            </>
+          )}
         </div>
 
         <section className="mt-8" aria-labelledby="account-orders-heading">

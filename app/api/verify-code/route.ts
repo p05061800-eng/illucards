@@ -30,72 +30,63 @@ export async function POST(request: Request) {
       ? o.username.trim()
       : undefined;
 
-  const botResult = await botVerifyLoginCode({
-    code: digits,
-    ...(username ? { username } : {}),
-    ...(Array.isArray(o.cart) ? { cart: o.cart } : {}),
-    ...(typeof o.deliveryCountry === "string"
-      ? { deliveryCountry: o.deliveryCountry }
-      : {}),
-    ...(typeof o.grandTotal === "number" ? { grandTotal: o.grandTotal } : {}),
-    ...(typeof o.bonusPoints === "number"
-      ? { bonusPoints: o.bonusPoints }
-      : {}),
-  });
+  const cartPayload =
+    Array.isArray(o.cart) && o.cart.length > 0
+      ? {
+          cart: o.cart,
+          deliveryCountry:
+            typeof o.deliveryCountry === "string" ? o.deliveryCountry : "BY",
+          grandTotal:
+            typeof o.grandTotal === "number" ? o.grandTotal : undefined,
+          bonusPoints:
+            typeof o.bonusPoints === "number" ? o.bonusPoints : undefined,
+        }
+      : null;
 
-  if (botResult.ok) {
-    if (Array.isArray(o.cart) && o.cart.length > 0) {
+  const finishVerify = (userId: number, uname?: string) => {
+    if (cartPayload) {
       void syncCartToTelegramBotAfterVerify({
-        userId: botResult.user_id,
-        cart: o.cart,
-        deliveryCountry:
-          typeof o.deliveryCountry === "string" ? o.deliveryCountry : "BY",
-        grandTotal:
-          typeof o.grandTotal === "number" ? o.grandTotal : undefined,
-        bonusPoints:
-          typeof o.bonusPoints === "number" ? o.bonusPoints : undefined,
+        userId,
+        cart: cartPayload.cart,
+        deliveryCountry: cartPayload.deliveryCountry,
+        grandTotal: cartPayload.grandTotal,
+        bonusPoints: cartPayload.bonusPoints,
       });
     }
     return NextResponse.json({
       ok: true,
       success: true,
-      user_id: botResult.user_id,
-      username: botResult.username,
+      user_id: userId,
+      username: uname,
     });
-  }
+  };
 
-  if (botResult.status !== 0 && botResult.status !== 503) {
-    return NextResponse.json(
-      { error: botResult.error || "Неверный или просроченный код" },
-      { status: botResult.status === 401 ? 401 : botResult.status || 502 },
-    );
-  }
-
+  // Сначала Redis сайта (бот синхронизирует код сюда через sync-login-code).
   const local = await consumeLoginCodeByCode(digits);
-  if (!local) {
-    return NextResponse.json(
-      { error: "Неверный или просроченный код" },
-      { status: 401 },
-    );
+  if (local) {
+    return finishVerify(local.user_id, local.username);
   }
 
-  if (Array.isArray(o.cart) && o.cart.length > 0) {
-    void syncCartToTelegramBotAfterVerify({
-      userId: local.user_id,
-      cart: o.cart,
-      deliveryCountry:
-        typeof o.deliveryCountry === "string" ? o.deliveryCountry : "BY",
-      grandTotal:
-        typeof o.grandTotal === "number" ? o.grandTotal : undefined,
-      bonusPoints:
-        typeof o.bonusPoints === "number" ? o.bonusPoints : undefined,
-    });
-  }
-
-  return NextResponse.json({
-    ok: true,
-    success: true,
-    user_id: local.user_id,
-    username: local.username,
+  // Fallback: локальный файл на Render или другой инстанс бота без sync.
+  const botResult = await botVerifyLoginCode({
+    code: digits,
+    ...(username ? { username } : {}),
+    ...(cartPayload ? { cart: cartPayload.cart } : {}),
+    ...(cartPayload ? { deliveryCountry: cartPayload.deliveryCountry } : {}),
+    ...(cartPayload?.grandTotal != null
+      ? { grandTotal: cartPayload.grandTotal }
+      : {}),
+    ...(cartPayload?.bonusPoints != null
+      ? { bonusPoints: cartPayload.bonusPoints }
+      : {}),
   });
+
+  if (botResult.ok) {
+    return finishVerify(botResult.user_id, botResult.username);
+  }
+
+  return NextResponse.json(
+    { error: botResult.error || "Неверный или просроченный код" },
+    { status: botResult.status === 401 ? 401 : botResult.status || 502 },
+  );
 }

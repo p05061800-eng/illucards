@@ -12,6 +12,7 @@ import {
   type PointerEvent,
 } from "react";
 import { createPortal } from "react-dom";
+import { usePathname } from "next/navigation";
 import { AdultContentBlurGate } from "./AdultContentBlurGate";
 import { cardRequiresAgeConfirmation } from "../lib/cardRequiresAgeConfirmation";
 import { useAuth } from "../context/AuthContext";
@@ -23,8 +24,10 @@ import { bonusPointsToEarnForOrderItems, bonusSpendRateHintRu } from "../lib/bon
 import { displayCurrencyForDelivery, formatCardPrice, rubFromByn } from "../lib/formatPrice";
 import { TelegramCheckoutButton } from "@/components/checkout/TelegramCheckoutButton";
 import { DeliveryCountryField } from "./DeliveryCountryField";
+import { TG_LOGIN_FOCUS_CODE_KEY } from "@/app/lib/telegramLoginWaitKeys";
 
 export function CartDrawer() {
+  const pathname = usePathname();
   const {
     cartItems,
     totalPriceByn,
@@ -71,6 +74,20 @@ export function CartDrawer() {
   }>({ active: false, startX: 0, startY: 0, locked: "none" });
 
   useEffect(() => setMounted(true), []);
+
+  useEffect(() => {
+    if (pathname !== "/account" || typeof window === "undefined") return;
+    const sp = new URLSearchParams(window.location.search);
+    let focus = sp.get("login_code") === "1";
+    if (!focus) {
+      try {
+        focus = sessionStorage.getItem(TG_LOGIN_FOCUS_CODE_KEY) === "1";
+      } catch {
+        focus = false;
+      }
+    }
+    if (focus) closeCart();
+  }, [pathname, closeCart]);
 
   useEffect(() => {
     if (!cartOpen) return;

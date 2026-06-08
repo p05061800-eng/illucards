@@ -40,7 +40,7 @@ from db import init_db, recompute_user_order_stats, sync_all_users_order_stats, 
 logging.basicConfig(format="%(asctime)s %(levelname)s %(message)s", level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-BOT_BUILD_ID = "2026-06-09-saved-delivery-v1"
+BOT_BUILD_ID = "2026-06-09-login-code-fix-v1"
 
 REPLY_MENU_TEXTS = frozenset(
     {"💬 Связь", "📦 Мои заказы", "📜 Мои заказы", "🚚 Доставка", "⭐ Бонусы"}
@@ -232,7 +232,12 @@ async def _send_code_http(request: web.Request) -> web.Response:
     code = _issue_login_code_for_user(uid, un or None)
     if not code:
         return web.json_response({"error": "Не удалось создать код"}, status=500)
-    await _sync_login_code_to_site(code, uid, un or None, None)
+    synced = await _sync_login_code_to_site(code, uid, un or None, None)
+    if _login_sync_required() and not synced:
+        return web.json_response(
+            {"error": "Сервис входа временно недоступен. Попробуйте позже."},
+            status=503,
+        )
     if _TG_APP is None:
         return web.json_response({"error": "Bot not ready"}, status=503)
     text = (
@@ -1666,7 +1671,7 @@ def _site_open_markup(telegram_user_id: int) -> InlineKeyboardMarkup:
 
 def _account_open_markup() -> InlineKeyboardMarkup:
     """Личный кабинет — ввод кода из бота после web_login."""
-    url = f"{SITE_LOGIN_ORIGIN}/account"
+    url = f"{SITE_LOGIN_ORIGIN}/account?login_code=1"
     return InlineKeyboardMarkup(
         [[InlineKeyboardButton("Открыть личный кабинет", url=url)]]
     )
@@ -2936,11 +2941,12 @@ async def _sync_login_code_to_site(
     wait_id: str | None = None,
 ) -> bool:
     """Продакшен (Vercel): код хранится в Redis на сайте, не в файле на машине бота."""
-    url = (os.getenv("ILLUCARDS_LOGIN_CODE_SYNC_URL") or "").strip()
     secret = (os.getenv("ILLUCARDS_LOGIN_CODE_SYNC_SECRET") or "").strip()
-    if not url or not secret:
-        # Локальный режим: сайт и бот используют общий файл кодов.
+    if not secret:
         return True
+    url = (os.getenv("ILLUCARDS_LOGIN_CODE_SYNC_URL") or "").strip()
+    if not url:
+        url = f"{SITE_LOGIN_ORIGIN}/api/internal/sync-login-code"
     un = (username or "").strip().lstrip("@")
     payload: dict[str, Any] = {
         "code": code,
@@ -2969,6 +2975,10 @@ async def _sync_login_code_to_site(
     except Exception as e:
         logger.warning("sync-login-code: %s", e)
         return False
+
+
+def _login_sync_required() -> bool:
+    return bool((os.getenv("ILLUCARDS_LOGIN_CODE_SYNC_SECRET") or "").strip())
 
 
 def _issue_login_code_for_user(telegram_user_id: int, username: str | None) -> str | None:

@@ -40,7 +40,7 @@ from db import init_db, recompute_user_order_stats, sync_all_users_order_stats, 
 logging.basicConfig(format="%(asctime)s %(levelname)s %(message)s", level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-BOT_BUILD_ID = "2026-06-08-order-name-slug-v1"
+BOT_BUILD_ID = "2026-06-08-delivery-template-v1"
 
 REPLY_MENU_TEXTS = frozenset(
     {"💬 Связь", "📦 Мои заказы", "📜 Мои заказы", "🚚 Доставка", "⭐ Бонусы"}
@@ -2384,10 +2384,31 @@ def _payment_active_keyboard(
 
 PAY_SCREENSHOT_REQUEST_TEXT = "Пришлите скриншот чека."
 
-PAY_DELIVERY_REQUEST_TEXT = (
-    "Пришлите ваш адрес СДЭК, ФИО и номер телефона одним сообщением в этот чат.\n"
-    "После проверки менеджер подтвердит заказ."
+PAY_DELIVERY_BLANK_TEMPLATE = (
+    "Адрес СДЭК:\n"
+    "\n"
+    "ФИО:\n"
+    "\n"
+    "Телефон:"
 )
+
+
+def _pay_delivery_request_text() -> str:
+    return (
+        "Пришлите ваш адрес СДЭК, ФИО и номер телефона одним сообщением в этот чат.\n"
+        "После проверки менеджер подтвердит заказ.\n\n"
+        "Скопируйте шаблон ниже, заполните своими данными и отправьте:\n\n"
+        + PAY_DELIVERY_BLANK_TEMPLATE
+    )
+
+
+def _pay_delivery_reminder_text() -> str:
+    return (
+        "Заполните все поля и отправьте одним сообщением.\n\n"
+        "Скопируйте шаблон, вставьте свои данные:\n\n"
+        + PAY_DELIVERY_BLANK_TEMPLATE
+    )
+
 
 PAY_PROOF_NEED_SCREENSHOT_TEXT = (
     "Пришлите скриншот чека (фото). Данные доставки попросим следующим сообщением."
@@ -2397,11 +2418,6 @@ PAY_PROOF_NEED_PAID_BUTTON_TEXT = (
     "Сначала нажмите кнопку «✅ Оплатил …» под реквизитами, "
     "затем пришлите скриншот чека."
 )
-
-PAY_DELIVERY_TOO_SHORT_TEXT = (
-    "Напишите адрес СДЭК, ФИО и телефон одним сообщением."
-)
-
 
 def _order_confirm_keyboard(
     order_id: str, telegram_user_id: int, site_status: str
@@ -3175,9 +3191,7 @@ async def payment_proof_handler(
     uid = int(user.id)
 
     if _AWAIT_ORDER_DETAILS.get(uid):
-        await msg.reply_text(
-            "Скрин уже получен. Пришлите адрес СДЭК, ФИО и телефон одним сообщением."
-        )
+        await msg.reply_text(_pay_delivery_reminder_text())
         return
 
     order_id = _AWAIT_PAYMENT_PROOF.get(uid)
@@ -3215,9 +3229,7 @@ async def payment_proof_handler(
             await msg.reply_text("Заказ уже передан администратору. Ожидайте подтверждения.")
             return
         if bot_rec.get("proof_file_id"):
-            await msg.reply_text(
-                "Скрин уже получен. Пришлите адрес СДЭК, ФИО и телефон одним сообщением."
-            )
+            await msg.reply_text(_pay_delivery_request_text())
             return
 
     pm = str(order.get("payment_method") or "").strip().lower()
@@ -3243,7 +3255,7 @@ async def payment_proof_handler(
     _AWAIT_ORDER_DETAILS[uid] = order_id
 
     await msg.reply_text(
-        PAY_DELIVERY_REQUEST_TEXT, reply_markup=_main_keyboard()
+        _pay_delivery_request_text(), reply_markup=_main_keyboard()
     )
 
 
@@ -3287,7 +3299,7 @@ async def text_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
         if order_id:
             if len(t) < 10:
                 _AWAIT_ORDER_DETAILS[int(user.id)] = order_id
-                await update.message.reply_text(PAY_DELIVERY_TOO_SHORT_TEXT)
+                await update.message.reply_text(_pay_delivery_reminder_text())
                 return
 
             uid = int(user.id)
@@ -3768,7 +3780,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
                 if bot_rec.get("proof_file_id"):
                     await q.answer("Ждём данные доставки")
                     _AWAIT_ORDER_DETAILS[int(owner_id)] = order_id
-                    await q.message.reply_text(PAY_DELIVERY_REQUEST_TEXT)
+                    await q.message.reply_text(_pay_delivery_request_text())
                     return
 
             _AWAIT_PAYMENT_PROOF[int(owner_id)] = order_id

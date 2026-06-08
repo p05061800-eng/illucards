@@ -40,7 +40,7 @@ from db import init_db, recompute_user_order_stats, sync_all_users_order_stats, 
 logging.basicConfig(format="%(asctime)s %(levelname)s %(message)s", level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-BOT_BUILD_ID = "2026-06-08-proof-only-admin-v1"
+BOT_BUILD_ID = "2026-06-08-delivery-prices-v1"
 
 REPLY_MENU_TEXTS = frozenset(
     {"💬 Связь", "📦 Мои заказы", "📜 Мои заказы", "🚚 Доставка", "⭐ Бонусы"}
@@ -1010,6 +1010,14 @@ DELIVERY_FLAGS: dict[str, str] = {
     "OTHER": "🌍",
 }
 
+# Тарифы как на сайте: app/lib/delivery.ts → deliveryCharge()
+DELIVERY_CARRIER_HINTS: dict[str, str] = {
+    "BY": "Европочта",
+    "RU": "СДЭК",
+    "UA": "СДЭК",
+    "OTHER": "СДЭК",
+}
+
 BONUS_POINTS_PER_CARD_UNIT = 100
 
 BYN_TO_RUB = 30.0
@@ -1055,25 +1063,34 @@ def _delivery_charge_byn(dcode: str) -> float:
     return round(_delivery_charge_rub(d) / BYN_TO_RUB, 2)
 
 
+def _format_delivery_menu_line(code: str) -> str:
+    """Строка тарифа для кнопки «Доставка» (как formatDeliveryLineTelegram на сайте)."""
+    dcode = _delivery_price_code(code)
+    label = DELIVERY_LABELS.get(dcode, dcode)
+    flag = DELIVERY_FLAGS.get(dcode, "🌍")
+    carrier = DELIVERY_CARRIER_HINTS.get(dcode, "")
+    if dcode == "BY":
+        price = f"{_delivery_charge_byn(dcode):g} BYN"
+    else:
+        price = f"{_delivery_charge_rub(dcode):,} RUB".replace(",", " ")
+    carrier_part = f" · {carrier}" if carrier else ""
+    return f"{flag} {label} — {price}{carrier_part}"
+
+
 def _delivery_info_text() -> str:
-    parts: list[str] = [
+    lines = [
         "🚚 Доставка IlluCards",
         "",
-        "Отправляем заказы по всему миру ✨",
+        "Стоимость доставки:",
         "",
+        f"• {_format_delivery_menu_line('BY')}",
+        f"• {_format_delivery_menu_line('RU')}",
+        f"• {_format_delivery_menu_line('UA')}",
+        f"• {_format_delivery_menu_line('OTHER')}",
+        "",
+        "В корзине на сайте выберите страну — сумма добавится к заказу автоматически.",
     ]
-    for code in ("BY", "RU", "UA", "OTHER"):
-        label = DELIVERY_LABELS.get(code, code)
-        flag = DELIVERY_FLAGS.get(code, "🌍")
-        if code == "BY":
-            charge = f"{_delivery_charge_byn(code):g} BYN"
-        else:
-            charge = f"{_delivery_charge_rub(code):,} RUB".replace(",", " ")
-        parts.append(f"📍 {flag} {label}")
-        parts.append(f"   💰 от {charge}")
-        parts.append("")
-    parts.append("Точную сумму увидите при оформлении заказа 👇")
-    return "\n".join(parts).rstrip()
+    return "\n".join(lines)
 
 
 def _loyalty_menu_text(bonus_points: int) -> str:
@@ -2068,9 +2085,18 @@ def _payment_active_keyboard(order_id: str) -> InlineKeyboardMarkup:
     )
 
 
-PAY_PROOF_REQUEST_TEXT = (
-    "📸 Отправьте скрин оплаты одним сообщением в этот чат.\n\n"
-    "⏳ Мы проверим платёж в течение нескольких минут."
+PAYMENT_SUBMIT_INSTRUCTION = (
+    "Оплатите и пришлите скриншот чека, ваш адрес СДЭК, ФИО и номер телефона "
+    "одним сообщением в этот чат.\n"
+    "После проверки менеджер подтвердит заказ."
+)
+
+PAY_PROOF_REQUEST_TEXT = PAYMENT_SUBMIT_INSTRUCTION
+
+PAY_PROOF_MISSING_CAPTION_TEXT = (
+    "Нужно отправить скрин оплаты и данные доставки в одном сообщении: "
+    "фото чека и в подписи к нему — адрес СДЭК, ФИО и телефон.\n\n"
+    + PAYMENT_SUBMIT_INSTRUCTION
 )
 
 
@@ -2213,17 +2239,13 @@ async def _refresh_admin_message_keyboard(
         pass
 
 
-ORDER_DETAILS_REQUEST_TEXT = (
-    "✅ Заказ подтверждён менеджером.\n\n"
-    "Напишите ваши данные для доставки одним сообщением:\n"
-    "• ФИО\n"
-    "• адрес\n"
-    "• телефон"
+ORDER_CONFIRMED_CUSTOMER_TEXT = (
+    "✅ Заказ подтверждён менеджером. При необходимости мы уточним детали в этом чате."
 )
 
-MSG_PROOF_RECEIVED = "⏳ Получили скрин, передаём администратору…"
+MSG_PROOF_RECEIVED = "⏳ Получили данные, передаём администратору…"
 MSG_PROOF_OK = (
-    "✅ Чек передан администратору. Ожидайте подтверждения заказа."
+    "✅ Заказ передан администратору. Ожидайте подтверждения."
 )
 
 
@@ -2237,6 +2259,37 @@ def _payment_proof_file_id(message: Any) -> str | None:
         if mime.startswith("image/"):
             return str(doc.file_id)
     return None
+
+
+def _payment_proof_caption(message: Any) -> str:
+    return str(getattr(message, "caption", "") or "").strip()
+
+
+def _format_admin_proof_caption(
+    order_id: str,
+    order: dict[str, Any],
+    telegram_user_id: int,
+    username: str | None,
+    record: dict[str, Any],
+    delivery_text: str,
+) -> str:
+    base = _format_order_admin(
+        order_id,
+        order,
+        telegram_user_id,
+        username,
+        record,
+        header=f"💳 Оплата · #{_order_short_ref(order_id)}",
+    )
+    delivery_block = f"\n\n📋 Данные от клиента:\n{delivery_text}"
+    full = base + delivery_block
+    if len(full) <= 1024:
+        return full
+    max_delivery = 1024 - len(base) - len("\n\n📋 Данные от клиента:\n")
+    if max_delivery > 40:
+        trimmed = delivery_text[: max_delivery - 1] + "…"
+        return base + f"\n\n📋 Данные от клиента:\n{trimmed}"
+    return base[:1020] + "…"
 
 
 def _resolve_payment_proof_order_id(uid: int) -> str | None:
@@ -2810,11 +2863,17 @@ async def payment_proof_handler(
         await msg.reply_text("Сначала выберите способ оплаты под сообщением с заказом.")
         return
 
+    delivery_text = _payment_proof_caption(msg)
+    if len(delivery_text) < 10:
+        await msg.reply_text(PAY_PROOF_MISSING_CAPTION_TEXT)
+        return
+
     await msg.reply_text(MSG_PROOF_RECEIVED)
 
     rec = _record_site_order_in_bot(order_id, order, uid)
     rec["status"] = "proof_submitted"
     rec["payment_method"] = pm
+    rec["delivery_details"] = delivery_text
     BOT_ORDERS[order_id] = rec
     _persist_bot_orders()
     _AWAIT_PAYMENT_PROOF.pop(uid, None)
@@ -2825,13 +2884,13 @@ async def payment_proof_handler(
     admin_chat_id = _resolve_admin_chat_id()
     if admin_chat_id:
         uname = str(order.get("username") or user.username or "").strip().lstrip("@") or None
-        caption = _format_order_admin(
+        caption = _format_admin_proof_caption(
             order_id,
             order,
             uid,
             uname,
             rec,
-            header=f"💳 Чек оплаты · #{_order_short_ref(order_id)}",
+            delivery_text,
         )
         try:
             admin_msg = await context.bot.send_photo(
@@ -2880,8 +2939,21 @@ async def text_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
         ):
             return
 
+    if t == "🚚 Доставка":
+        await update.message.reply_text(
+            _delivery_info_text(), reply_markup=_main_keyboard()
+        )
+        return
+
     user = update.effective_user
     if user:
+        if (
+            _AWAIT_PAYMENT_PROOF.get(int(user.id))
+            and t not in REPLY_MENU_TEXTS
+        ):
+            await update.message.reply_text(PAY_PROOF_MISSING_CAPTION_TEXT)
+            return
+
         order_id = _AWAIT_ORDER_DETAILS.pop(int(user.id), None)
         if order_id:
             admin_chat_id = _resolve_admin_chat_id()
@@ -2985,11 +3057,6 @@ async def text_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
         _USER_SUPPORT.add(int(user.id))
         await update.message.reply_text(
             SUPPORT_INTRO_TEXT, reply_markup=_main_keyboard()
-        )
-        return
-    if t == "🚚 Доставка":
-        await update.message.reply_text(
-            _delivery_info_text(), reply_markup=_main_keyboard()
         )
         return
     if t == "⭐ Бонусы":
@@ -3436,8 +3503,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
                 f"Вы выбрали: {_payment_method_label(method)}\n\n"
                 f"{_payment_method_instruction(method)}\n\n"
                 f"💳 Оплата по заказу #{_order_short_ref(order_id)}\n\n"
-                "Оплатите и пришлите скриншот чека одним сообщением в этот чат.\n"
-                "После проверки менеджер подтвердит заказ.",
+                f"{PAYMENT_SUBMIT_INSTRUCTION}",
                 reply_markup=_payment_active_keyboard(order_id),
             )
             _AWAIT_PAYMENT_PROOF[int(owner_id)] = order_id
@@ -3501,17 +3567,16 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
             try:
                 await context.bot.send_message(
                     chat_id=int(owner_id),
-                    text=ORDER_DETAILS_REQUEST_TEXT,
+                    text=ORDER_CONFIRMED_CUSTOMER_TEXT,
                     reply_markup=_main_keyboard(),
                 )
-                _AWAIT_ORDER_DETAILS[int(owner_id)] = order_id
             except Exception as e:
-                logger.warning("customer details prompt: %s", e)
+                logger.warning("customer confirm notify: %s", e)
 
             await q.answer("Заказ подтверждён")
             await _refresh_admin_message_keyboard(q, order_id)
             await q.message.reply_text(
-                f"Заказ `{order_id}` подтверждён. Покупателю отправлен запрос данных."
+                f"Заказ `{order_id}` подтверждён. Покупателю отправлено уведомление."
             )
             return
         except Exception as e:

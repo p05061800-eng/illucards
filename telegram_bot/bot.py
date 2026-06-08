@@ -40,7 +40,7 @@ from db import init_db, recompute_user_order_stats, sync_all_users_order_stats, 
 logging.basicConfig(format="%(asctime)s %(levelname)s %(message)s", level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-BOT_BUILD_ID = "2026-06-08-keep-cart-v1"
+BOT_BUILD_ID = "2026-06-08-proof-only-admin-v1"
 
 REPLY_MENU_TEXTS = frozenset(
     {"💬 Связь", "📦 Мои заказы", "📜 Мои заказы", "🚚 Доставка", "⭐ Бонусы"}
@@ -3426,29 +3426,6 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
             ):
                 await q.answer("Не удалось сохранить на сайте", show_alert=True)
                 return
-
-            admin_chat_id = _resolve_admin_chat_id()
-            if admin_chat_id:
-                uname = str(order.get("username") or "").strip().lstrip("@") or None
-                admin_text = _format_order_admin(
-                    order_id,
-                    order,
-                    owner_id,
-                    uname,
-                    rec,
-                    header="🆕 Заказ: выбран способ оплаты",
-                )
-                try:
-                    admin_msg = await context.bot.send_message(
-                        chat_id=int(admin_chat_id),
-                        text=admin_text,
-                        reply_markup=_order_admin_confirm_keyboard(order_id),
-                    )
-                    mid = getattr(admin_msg, "message_id", None)
-                    if isinstance(mid, int) and mid > 0:
-                        await post_site_admin_message_id(order_id, mid)
-                except Exception as e:
-                    logger.warning("admin notify payment: %s", e)
 
             await q.answer("Сохранено")
             try:

@@ -40,7 +40,7 @@ from db import init_db, recompute_user_order_stats, sync_all_users_order_stats, 
 logging.basicConfig(format="%(asctime)s %(levelname)s %(message)s", level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-BOT_BUILD_ID = "2026-06-08-delivery-template-v1"
+BOT_BUILD_ID = "2026-06-09-saved-delivery-v1"
 
 REPLY_MENU_TEXTS = frozenset(
     {"💬 Связь", "📦 Мои заказы", "📜 Мои заказы", "🚚 Доставка", "⭐ Бонусы"}
@@ -63,6 +63,7 @@ MSG_LOYALTY_MENU = (
 REPO_ROOT = Path(__file__).resolve().parent.parent
 TELEGRAM_USERS_PATH = REPO_ROOT / "data" / "telegram-bot-users.json"
 BOT_ORDERS_PATH = REPO_ROOT / "data" / "bot-orders.json"
+SAVED_DELIVERY_PATH = REPO_ROOT / "data" / "saved-delivery-profiles.json"
 KNOWN_START_IDS_PATH = REPO_ROOT / "data" / "bot-known-start-user-ids.json"
 LOGIN_CODES_PATH = REPO_ROOT / "data" / "telegram-login-codes.json"
 # Подтверждённые в боте заказы: order_id → { user_id, items, total, status }
@@ -71,6 +72,10 @@ BOT_ORDERS: dict[str, dict[str, Any]] = {}
 _AWAIT_ORDER_DETAILS: dict[int, str] = {}
 # tg user_id → order_id: ждём скрин чека после нажатия «Оплатил»
 _AWAIT_PAYMENT_PROOF: dict[int, str] = {}
+# tg user_id → order_id: ждём кнопку «Верно» / «Изменить» для сохранённых данных
+_AWAIT_DELIVERY_CONFIRM: dict[int, str] = {}
+# tg user_id → текст последних данных доставки (между заказами)
+_SAVED_DELIVERY: dict[int, str] = {}
 # admin tg id → (customer tg id, order_id): режим «Ответить клиенту»
 _AWAIT_ADMIN_REPLY: dict[int, tuple[int, str]] = {}
 # tg user_id: режим «Связь» — следующее сообщение уходит админу
@@ -447,6 +452,60 @@ def persist_telegram_site_user(user_id: int, username: str) -> None:
             json.dump(data, f, ensure_ascii=False, indent=2)
     except OSError as e:
         logger.warning("telegram-bot-users write: %s", e)
+
+
+def _load_saved_delivery_profiles() -> None:
+    global _SAVED_DELIVERY
+    if not SAVED_DELIVERY_PATH.exists():
+        _SAVED_DELIVERY = {}
+        return
+    try:
+        with open(SAVED_DELIVERY_PATH, "r", encoding="utf-8") as f:
+            raw = json.load(f)
+    except (OSError, json.JSONDecodeError, ValueError) as e:
+        logger.warning("load saved delivery: %s", e)
+        _SAVED_DELIVERY = {}
+        return
+    out: dict[int, str] = {}
+    if isinstance(raw, dict):
+        for key, val in raw.items():
+            try:
+                uid = int(key)
+            except (TypeError, ValueError):
+                continue
+            if uid <= 0:
+                continue
+            text = str(val or "").strip() if not isinstance(val, dict) else str(
+                val.get("text") or ""
+            ).strip()
+            if text:
+                out[uid] = text
+    _SAVED_DELIVERY = out
+
+
+def _persist_saved_delivery_profiles() -> None:
+    try:
+        SAVED_DELIVERY_PATH.parent.mkdir(parents=True, exist_ok=True)
+        payload = {str(k): v for k, v in _SAVED_DELIVERY.items()}
+        with open(SAVED_DELIVERY_PATH, "w", encoding="utf-8") as f:
+            json.dump(payload, f, ensure_ascii=False, indent=2)
+    except OSError as e:
+        logger.warning("persist saved delivery: %s", e)
+
+
+def _get_saved_delivery_text(uid: int) -> str | None:
+    _load_saved_delivery_profiles()
+    text = str(_SAVED_DELIVERY.get(int(uid)) or "").strip()
+    return text or None
+
+
+def _save_delivery_profile(uid: int, text: str) -> None:
+    t = (text or "").strip()
+    if not t or not _delivery_text_acceptable(t):
+        return
+    _load_saved_delivery_profiles()
+    _SAVED_DELIVERY[int(uid)] = t
+    _persist_saved_delivery_profiles()
 
 
 def _load_bot_orders() -> None:
@@ -2410,6 +2469,111 @@ def _pay_delivery_reminder_text() -> str:
     )
 
 
+def _delivery_text_acceptable(text: str) -> bool:
+    t = (text or "").strip()
+    if len(t) < 12:
+        return False
+    cleaned = t
+    for label in (
+        "Адрес СДЭК:",
+        "адрес сдэк:",
+        "ФИО:",
+        "фио:",
+        "Телефон:",
+        "телефон:",
+    ):
+        cleaned = cleaned.replace(label, " ")
+    if len("".join(cleaned.split())) < 8:
+        return False
+    return True
+
+
+def _set_awaiting_delivery_input(uid: int, order_id: str) -> None:
+    oid = str(order_id or "").strip()
+    if not oid:
+        return
+    _AWAIT_PAYMENT_PROOF.pop(int(uid), None)
+    _AWAIT_DELIVERY_CONFIRM.pop(int(uid), None)
+    _AWAIT_ORDER_DETAILS[int(uid)] = oid
+
+
+def _set_awaiting_delivery_confirm(uid: int, order_id: str) -> None:
+    oid = str(order_id or "").strip()
+    if not oid:
+        return
+    _AWAIT_PAYMENT_PROOF.pop(int(uid), None)
+    _AWAIT_ORDER_DETAILS.pop(int(uid), None)
+    _AWAIT_DELIVERY_CONFIRM[int(uid)] = oid
+
+
+def _set_awaiting_delivery(uid: int, order_id: str) -> None:
+    """После скрина: подтверждение сохранённых данных или ввод новых."""
+    saved = _get_saved_delivery_text(int(uid))
+    if saved and _delivery_text_acceptable(saved):
+        _set_awaiting_delivery_confirm(int(uid), order_id)
+    else:
+        _set_awaiting_delivery_input(int(uid), order_id)
+
+
+def _clear_awaiting_checkout(uid: int) -> None:
+    _AWAIT_PAYMENT_PROOF.pop(int(uid), None)
+    _AWAIT_ORDER_DETAILS.pop(int(uid), None)
+    _AWAIT_DELIVERY_CONFIRM.pop(int(uid), None)
+
+
+def _find_proof_received_order_id(uid: int) -> str | None:
+    _load_bot_orders()
+    for order_id, rec in BOT_ORDERS.items():
+        if not isinstance(rec, dict):
+            continue
+        try:
+            if int(rec.get("user_id")) != int(uid):
+                continue
+        except (TypeError, ValueError):
+            continue
+        if str(rec.get("status") or "").strip().lower() != "proof_received":
+            continue
+        if rec.get("proof_file_id"):
+            return str(order_id).strip()
+    return None
+
+
+def _resolve_awaiting_delivery_order_id(uid: int) -> str | None:
+    pending = _AWAIT_ORDER_DETAILS.get(int(uid))
+    if pending:
+        oid = str(pending).strip()
+        if oid:
+            return oid
+    return None
+
+
+def _resolve_awaiting_screenshot_order_id(uid: int) -> str | None:
+    """Ждём скрин чека — только если чек ещё не сохранён."""
+    pending = _AWAIT_PAYMENT_PROOF.get(int(uid))
+    if not pending:
+        return None
+    oid = str(pending).strip()
+    if not oid:
+        _AWAIT_PAYMENT_PROOF.pop(int(uid), None)
+        return None
+    _load_bot_orders()
+    rec = BOT_ORDERS.get(oid)
+    if isinstance(rec, dict):
+        if rec.get("proof_file_id"):
+            _AWAIT_PAYMENT_PROOF.pop(int(uid), None)
+            if str(rec.get("status") or "").lower() == "proof_received":
+                if int(uid) not in _AWAIT_DELIVERY_CONFIRM and int(uid) not in _AWAIT_ORDER_DETAILS:
+                    _set_awaiting_delivery(int(uid), oid)
+            return None
+        if str(rec.get("status") or "").strip().lower() in (
+            "proof_received",
+            "proof_submitted",
+        ):
+            _AWAIT_PAYMENT_PROOF.pop(int(uid), None)
+            return None
+    return oid
+
+
 PAY_PROOF_NEED_SCREENSHOT_TEXT = (
     "Пришлите скриншот чека (фото). Данные доставки попросим следующим сообщением."
 )
@@ -2418,6 +2582,53 @@ PAY_PROOF_NEED_PAID_BUTTON_TEXT = (
     "Сначала нажмите кнопку «✅ Оплатил …» под реквизитами, "
     "затем пришлите скриншот чека."
 )
+
+PAY_DELIVERY_CONFIRM_HINT_TEXT = (
+    "Подтвердите данные кнопкой «✅ Верно» или «✏️ Изменить» под сообщением выше."
+)
+
+
+def _saved_delivery_confirm_keyboard(order_id: str) -> InlineKeyboardMarkup:
+    oid = str(order_id or "").strip()
+    return InlineKeyboardMarkup(
+        [
+            [
+                InlineKeyboardButton("✅ Верно", callback_data=f"delvok:{oid}"),
+                InlineKeyboardButton("✏️ Изменить", callback_data=f"delvchg:{oid}"),
+            ],
+        ]
+    )
+
+
+def _saved_delivery_confirm_message(saved_text: str) -> str:
+    return (
+        "Ваши сохранённые данные доставки:\n\n"
+        f"{saved_text}\n\n"
+        "Данные верны?"
+    )
+
+
+async def _send_delivery_prompt_after_proof(
+    context: ContextTypes.DEFAULT_TYPE,
+    *,
+    chat_id: int,
+    uid: int,
+    order_id: str,
+) -> None:
+    saved = _get_saved_delivery_text(int(uid))
+    if saved and _delivery_text_acceptable(saved) and int(uid) in _AWAIT_DELIVERY_CONFIRM:
+        await context.bot.send_message(
+            chat_id=int(chat_id),
+            text=_saved_delivery_confirm_message(saved),
+            reply_markup=_saved_delivery_confirm_keyboard(order_id),
+        )
+        return
+    await context.bot.send_message(
+        chat_id=int(chat_id),
+        text=_pay_delivery_request_text(),
+        reply_markup=_main_keyboard(),
+    )
+
 
 def _order_confirm_keyboard(
     order_id: str, telegram_user_id: int, site_status: str
@@ -3125,6 +3336,103 @@ async def show_promo_slides(update: Update, context: ContextTypes.DEFAULT_TYPE) 
     context.user_data["promo_message_id"] = mid
 
 
+async def _reply_checkout_message(
+    context: ContextTypes.DEFAULT_TYPE,
+    chat_id: int,
+    text: str,
+    *,
+    reply_markup: Any = None,
+) -> None:
+    await context.bot.send_message(
+        chat_id=int(chat_id),
+        text=text,
+        reply_markup=reply_markup,
+    )
+
+
+async def _finalize_delivery_submission(
+    context: ContextTypes.DEFAULT_TYPE,
+    *,
+    order_id: str,
+    delivery_text: str,
+    user: Any,
+    reply_chat_id: int,
+) -> bool:
+    uid = int(getattr(user, "id", 0) or 0)
+    oid = str(order_id or "").strip()
+    if not uid or not oid:
+        return False
+
+    _load_bot_orders()
+    bot_rec = BOT_ORDERS.get(oid)
+    if isinstance(bot_rec, dict) and str(bot_rec.get("status") or "").lower() == "proof_submitted":
+        await _reply_checkout_message(
+            context,
+            reply_chat_id,
+            "Заказ уже передан администратору. Ожидайте подтверждения.",
+        )
+        _clear_awaiting_checkout(uid)
+        return True
+
+    order = await _load_order_for_callback(oid, uid)
+    if not order:
+        if isinstance(bot_rec, dict):
+            order = dict(bot_rec)
+    if not order:
+        await _reply_checkout_message(
+            context,
+            reply_chat_id,
+            "Не найден заказ. Начните оформление с сайта заново.",
+        )
+        _clear_awaiting_checkout(uid)
+        return True
+
+    file_id = (
+        str(bot_rec.get("proof_file_id") or "").strip()
+        if isinstance(bot_rec, dict)
+        else ""
+    )
+    if not file_id:
+        _AWAIT_PAYMENT_PROOF[uid] = oid
+        _AWAIT_ORDER_DETAILS.pop(uid, None)
+        _AWAIT_DELIVERY_CONFIRM.pop(uid, None)
+        await _reply_checkout_message(
+            context, reply_chat_id, PAY_PROOF_NEED_SCREENSHOT_TEXT
+        )
+        return True
+
+    pm = str(order.get("payment_method") or "").strip().lower()
+    if pm not in ("card", "crypto", "phone") and isinstance(bot_rec, dict):
+        pm = str(bot_rec.get("payment_method") or "").strip().lower()
+
+    await _reply_checkout_message(context, reply_chat_id, MSG_PROOF_RECEIVED)
+
+    rec = _record_site_order_in_bot(oid, order, uid)
+    rec["status"] = "proof_submitted"
+    rec["payment_method"] = pm
+    rec["proof_file_id"] = file_id
+    rec["delivery_details"] = delivery_text
+    BOT_ORDERS[oid] = rec
+    _persist_bot_orders()
+    _clear_awaiting_checkout(uid)
+    _save_delivery_profile(uid, delivery_text)
+
+    await _notify_admin_payment_proof(
+        context,
+        order_id=oid,
+        order=order,
+        uid=uid,
+        user=user,
+        file_id=file_id,
+        delivery_text=delivery_text,
+        rec=rec,
+    )
+    await _reply_checkout_message(
+        context, reply_chat_id, MSG_PROOF_OK, reply_markup=_main_keyboard()
+    )
+    return True
+
+
 async def _notify_admin_payment_proof(
     context: ContextTypes.DEFAULT_TYPE,
     *,
@@ -3190,6 +3498,10 @@ async def payment_proof_handler(
         return
     uid = int(user.id)
 
+    if _AWAIT_DELIVERY_CONFIRM.get(uid):
+        await msg.reply_text(PAY_DELIVERY_CONFIRM_HINT_TEXT)
+        return
+
     if _AWAIT_ORDER_DETAILS.get(uid):
         await msg.reply_text(_pay_delivery_reminder_text())
         return
@@ -3229,7 +3541,13 @@ async def payment_proof_handler(
             await msg.reply_text("Заказ уже передан администратору. Ожидайте подтверждения.")
             return
         if bot_rec.get("proof_file_id"):
-            await msg.reply_text(_pay_delivery_request_text())
+            _set_awaiting_delivery(uid, order_id)
+            await _send_delivery_prompt_after_proof(
+                context,
+                chat_id=int(msg.chat_id),
+                uid=uid,
+                order_id=order_id,
+            )
             return
 
     pm = str(order.get("payment_method") or "").strip().lower()
@@ -3251,11 +3569,13 @@ async def payment_proof_handler(
     BOT_ORDERS[order_id] = rec
     _persist_bot_orders()
 
-    _AWAIT_PAYMENT_PROOF.pop(uid, None)
-    _AWAIT_ORDER_DETAILS[uid] = order_id
+    _set_awaiting_delivery(uid, order_id)
 
-    await msg.reply_text(
-        _pay_delivery_request_text(), reply_markup=_main_keyboard()
+    await _send_delivery_prompt_after_proof(
+        context,
+        chat_id=int(msg.chat_id),
+        uid=uid,
+        order_id=order_id,
     )
 
 
@@ -3287,73 +3607,34 @@ async def text_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
         return
 
     user = update.effective_user
-    if user:
-        if (
-            _AWAIT_PAYMENT_PROOF.get(int(user.id))
-            and t not in REPLY_MENU_TEXTS
-        ):
-            await update.message.reply_text(PAY_PROOF_NEED_SCREENSHOT_TEXT)
+    if user and t not in REPLY_MENU_TEXTS:
+        confirm_oid = _AWAIT_DELIVERY_CONFIRM.get(int(user.id))
+        if confirm_oid:
+            await update.message.reply_text(PAY_DELIVERY_CONFIRM_HINT_TEXT)
             return
 
-        order_id = _AWAIT_ORDER_DETAILS.pop(int(user.id), None)
-        if order_id:
-            if len(t) < 10:
-                _AWAIT_ORDER_DETAILS[int(user.id)] = order_id
+        delivery_oid = _resolve_awaiting_delivery_order_id(int(user.id))
+        if not delivery_oid:
+            delivery_oid = _find_proof_received_order_id(int(user.id))
+            if delivery_oid:
+                _set_awaiting_delivery_input(int(user.id), delivery_oid)
+        if delivery_oid:
+            if not _delivery_text_acceptable(t):
+                _set_awaiting_delivery_input(int(user.id), delivery_oid)
                 await update.message.reply_text(_pay_delivery_reminder_text())
                 return
-
-            uid = int(user.id)
-            order = await _load_order_for_callback(order_id, uid)
-            if not order:
-                _load_bot_orders()
-                bot_rec = BOT_ORDERS.get(order_id)
-                if isinstance(bot_rec, dict):
-                    order = dict(bot_rec)
-            if not order:
-                await update.message.reply_text(
-                    "Не найден заказ. Начните оформление с сайта заново."
-                )
-                return
-
-            _load_bot_orders()
-            bot_rec = BOT_ORDERS.get(order_id)
-            file_id = (
-                str(bot_rec.get("proof_file_id") or "").strip()
-                if isinstance(bot_rec, dict)
-                else ""
-            )
-            if not file_id:
-                _AWAIT_PAYMENT_PROOF[uid] = order_id
-                await update.message.reply_text(PAY_PROOF_NEED_SCREENSHOT_TEXT)
-                return
-
-            pm = str(order.get("payment_method") or "").strip().lower()
-            if pm not in ("card", "crypto", "phone") and isinstance(bot_rec, dict):
-                pm = str(bot_rec.get("payment_method") or "").strip().lower()
-
-            await update.message.reply_text(MSG_PROOF_RECEIVED)
-
-            rec = _record_site_order_in_bot(order_id, order, uid)
-            rec["status"] = "proof_submitted"
-            rec["payment_method"] = pm
-            rec["proof_file_id"] = file_id
-            rec["delivery_details"] = t
-            BOT_ORDERS[order_id] = rec
-            _persist_bot_orders()
-
-            await _notify_admin_payment_proof(
+            if await _finalize_delivery_submission(
                 context,
-                order_id=order_id,
-                order=order,
-                uid=uid,
-                user=user,
-                file_id=file_id,
+                order_id=delivery_oid,
                 delivery_text=t,
-                rec=rec,
-            )
-            await update.message.reply_text(
-                MSG_PROOF_OK, reply_markup=_main_keyboard()
-            )
+                user=user,
+                reply_chat_id=int(update.message.chat_id),
+            ):
+                return
+
+        screenshot_oid = _resolve_awaiting_screenshot_order_id(int(user.id))
+        if screenshot_oid:
+            await update.message.reply_text(PAY_PROOF_NEED_SCREENSHOT_TEXT)
             return
 
     if user and _is_admin_user(int(user.id)):
@@ -3729,6 +4010,106 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
             )
             return
 
+    if data.startswith("delvok:"):
+        try:
+            order_id = data.split(":", 1)[1].strip()
+            if not order_id or not user:
+                await q.answer("Некорректный заказ", show_alert=True)
+                return
+            uid = int(user.id)
+            pending = _AWAIT_DELIVERY_CONFIRM.get(uid)
+            if not pending or str(pending).strip() != order_id:
+                await q.answer("Сначала пришлите скриншот чека", show_alert=True)
+                return
+            saved = _get_saved_delivery_text(uid)
+            if not saved or not _delivery_text_acceptable(saved):
+                await q.answer("Нет сохранённых данных", show_alert=True)
+                _set_awaiting_delivery_input(uid, order_id)
+                await q.message.reply_text(
+                    _pay_delivery_request_text(), reply_markup=_main_keyboard()
+                )
+                return
+            order = await _load_order_for_callback(order_id, uid)
+            if not order:
+                await q.answer()
+                await q.message.reply_text(
+                    "Не удалось обработать кнопку. Откройте заказ снова с сайта или отправьте /start."
+                )
+                return
+            owner_id = _order_owner_user_id(
+                order_id, order, fallback_uid=uid
+            )
+            if owner_id is None or uid != int(owner_id):
+                await q.answer("Это не ваш заказ", show_alert=True)
+                return
+            _load_bot_orders()
+            bot_rec = BOT_ORDERS.get(order_id)
+            if isinstance(bot_rec, dict):
+                bot_st = str(bot_rec.get("status") or "").strip().lower()
+                if bot_st == "proof_submitted":
+                    await q.answer("Заказ уже передан администратору")
+                    _clear_awaiting_checkout(uid)
+                    return
+                if not bot_rec.get("proof_file_id"):
+                    await q.answer("Сначала пришлите скриншот чека", show_alert=True)
+                    return
+            await q.answer("Передаём заказ")
+            try:
+                await q.edit_message_reply_markup(reply_markup=None)
+            except Exception:
+                pass
+            await _finalize_delivery_submission(
+                context,
+                order_id=order_id,
+                delivery_text=saved,
+                user=user,
+                reply_chat_id=int(q.message.chat_id),
+            )
+            return
+        except Exception as e:
+            logger.exception("delivery confirm failed: %s", e)
+            await q.answer("Не удалось обработать. Повторите.", show_alert=True)
+            return
+
+    if data.startswith("delvchg:"):
+        try:
+            order_id = data.split(":", 1)[1].strip()
+            if not order_id or not user:
+                await q.answer("Некорректный заказ", show_alert=True)
+                return
+            uid = int(user.id)
+            pending = _AWAIT_DELIVERY_CONFIRM.get(uid)
+            if not pending or str(pending).strip() != order_id:
+                await q.answer("Сначала пришлите скриншот чека", show_alert=True)
+                return
+            order = await _load_order_for_callback(order_id, uid)
+            if not order:
+                await q.answer()
+                await q.message.reply_text(
+                    "Не удалось обработать кнопку. Откройте заказ снова с сайта или отправьте /start."
+                )
+                return
+            owner_id = _order_owner_user_id(
+                order_id, order, fallback_uid=uid
+            )
+            if owner_id is None or uid != int(owner_id):
+                await q.answer("Это не ваш заказ", show_alert=True)
+                return
+            await q.answer("Введите новые данные")
+            try:
+                await q.edit_message_reply_markup(reply_markup=None)
+            except Exception:
+                pass
+            _set_awaiting_delivery_input(uid, order_id)
+            await q.message.reply_text(
+                _pay_delivery_request_text(), reply_markup=_main_keyboard()
+            )
+            return
+        except Exception as e:
+            logger.exception("delivery change failed: %s", e)
+            await q.answer("Не удалось обработать. Повторите.", show_alert=True)
+            return
+
     if data.startswith("orderpaid:"):
         try:
             order_id = data.split(":", 1)[1].strip()
@@ -3779,8 +4160,13 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
                     return
                 if bot_rec.get("proof_file_id"):
                     await q.answer("Ждём данные доставки")
-                    _AWAIT_ORDER_DETAILS[int(owner_id)] = order_id
-                    await q.message.reply_text(_pay_delivery_request_text())
+                    _set_awaiting_delivery(int(owner_id), order_id)
+                    await _send_delivery_prompt_after_proof(
+                        context,
+                        chat_id=int(q.message.chat_id),
+                        uid=int(owner_id),
+                        order_id=order_id,
+                    )
                     return
 
             _AWAIT_PAYMENT_PROOF[int(owner_id)] = order_id
@@ -3815,7 +4201,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
             if owner_id is None or int(user.id) != int(owner_id):
                 await q.answer("Это не ваш заказ", show_alert=True)
                 return
-            _AWAIT_PAYMENT_PROOF.pop(int(user.id), None)
+            _clear_awaiting_checkout(int(user.id))
             await q.answer()
             try:
                 await q.edit_message_reply_markup(reply_markup=None)
@@ -4161,9 +4547,8 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
                 await q.answer("Это не ваш заказ", show_alert=True)
                 return
 
-            _AWAIT_PAYMENT_PROOF.pop(int(user.id), None)
-            if owner_id is not None:
-                _AWAIT_PAYMENT_PROOF.pop(int(owner_id), None)
+            cancel_uid = int(owner_id or user.id)
+            _clear_awaiting_checkout(cancel_uid)
 
             site_st = str(order.get("status") or "").strip().lower()
             if site_st in ("cancelled", "canceled"):
@@ -4471,6 +4856,7 @@ def _main() -> None:
     logger.info("Python %s", sys.version.split()[0])
     init_db()
     _load_bot_orders()
+    _load_saved_delivery_profiles()
     try:
         sync_all_users_order_stats(BOT_ORDERS)
     except Exception as e:

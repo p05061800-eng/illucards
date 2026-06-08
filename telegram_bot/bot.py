@@ -40,7 +40,7 @@ from db import init_db, recompute_user_order_stats, sync_all_users_order_stats, 
 logging.basicConfig(format="%(asctime)s %(levelname)s %(message)s", level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-BOT_BUILD_ID = "2026-06-08-my-orders-confirmed-v1"
+BOT_BUILD_ID = "2026-06-08-buyer-order-seq-v1"
 
 REPLY_MENU_TEXTS = frozenset(
     {"💬 Связь", "📦 Мои заказы", "📜 Мои заказы", "🚚 Доставка", "⭐ Бонусы"}
@@ -601,6 +601,77 @@ def _order_id_short(oid: str) -> str:
     return o[:14] + "…"
 
 
+def _normalize_order_username(raw: Any) -> str | None:
+    un = str(raw or "").strip().lstrip("@")
+    return un or None
+
+
+def _next_buyer_order_seq(
+    telegram_user_id: int, *, exclude_order_id: str | None = None
+) -> int:
+    _load_bot_orders()
+    max_seq = 0
+    ex = str(exclude_order_id or "").strip()
+    for oid, rec in BOT_ORDERS.items():
+        if ex and str(oid) == ex:
+            continue
+        if not isinstance(rec, dict):
+            continue
+        try:
+            if int(rec.get("user_id")) != int(telegram_user_id):
+                continue
+            seq = int(rec.get("buyer_seq") or 0)
+        except (TypeError, ValueError):
+            continue
+        if seq > max_seq:
+            max_seq = seq
+    return max_seq + 1
+
+
+def _ensure_buyer_seqs_for_user(telegram_user_id: int) -> None:
+    """Старым заказам без buyer_seq присваиваем номера 1, 2, 3…"""
+    uid = int(telegram_user_id)
+    _load_bot_orders()
+    missing: list[str] = []
+    for oid, rec in BOT_ORDERS.items():
+        if not isinstance(rec, dict):
+            continue
+        try:
+            if int(rec.get("user_id")) != uid:
+                continue
+            if int(rec.get("buyer_seq") or 0) > 0:
+                continue
+        except (TypeError, ValueError):
+            continue
+        missing.append(str(oid))
+    if not missing:
+        return
+    missing.sort()
+    changed = False
+    for oid in missing:
+        rec = BOT_ORDERS.get(oid)
+        if not isinstance(rec, dict):
+            continue
+        rec["buyer_seq"] = _next_buyer_order_seq(uid, exclude_order_id=oid)
+        changed = True
+    if changed:
+        _persist_bot_orders()
+
+
+def _buyer_order_seq_for(order_id: str, telegram_user_id: int) -> int:
+    oid = str(order_id or "").strip()
+    if not oid:
+        return 0
+    _load_bot_orders()
+    rec = BOT_ORDERS.get(oid)
+    if not isinstance(rec, dict):
+        return 0
+    try:
+        return max(0, int(rec.get("buyer_seq") or 0))
+    except (TypeError, ValueError):
+        return 0
+
+
 def _orders_for_telegram_user(telegram_user_id: int) -> list[tuple[str, dict[str, Any]]]:
     out: list[tuple[str, dict[str, Any]]] = []
     for oid, rec in BOT_ORDERS.items():
@@ -654,6 +725,12 @@ def _ingest_site_order_summary(
             rec["payment_method"] = pm
         if existing.get("delivery_details"):
             rec["delivery_details"] = existing.get("delivery_details")
+        try:
+            seq = int(existing.get("buyer_seq") or 0)
+        except (TypeError, ValueError):
+            seq = 0
+        if seq > 0:
+            rec["buyer_seq"] = seq
     BOT_ORDERS[oid] = rec
     return oid
 
@@ -703,6 +780,25 @@ def _record_site_order_in_bot(
             rec["payment_method"] = prev_pm
         if existing.get("delivery_details"):
             rec["delivery_details"] = existing.get("delivery_details")
+    uname = _normalize_order_username(order.get("username"))
+    if uname:
+        rec["username"] = uname
+    elif isinstance(existing, dict):
+        prev_u = _normalize_order_username(existing.get("username"))
+        if prev_u:
+            rec["username"] = prev_u
+    try:
+        prev_seq = int(
+            (existing.get("buyer_seq") if isinstance(existing, dict) else 0) or 0
+        )
+    except (TypeError, ValueError):
+        prev_seq = 0
+    if prev_seq > 0:
+        rec["buyer_seq"] = prev_seq
+    else:
+        rec["buyer_seq"] = _next_buyer_order_seq(
+            int(telegram_user_id), exclude_order_id=order_id
+        )
     BOT_ORDERS[order_id] = rec
     _persist_bot_orders()
     _sync_crm_order_stats_for_user(int(telegram_user_id))
@@ -979,10 +1075,12 @@ def _format_order_admin(
     header: str = "✅ Подтверждение заказа (бот)",
 ) -> str:
     u = f"@{username}" if username else f"id {telegram_user_id}"
+    human_ref = _order_display_ref(order_id, telegram_user_id, username)
     lines = [
         header,
-        f"ID заказа: `{order_id}`",
-        f"Пользователь: {u} (tg {telegram_user_id})",
+        f"Заказ: {human_ref}",
+        f"ID: `{order_id}`",
+        f"Покупатель: {u} (tg {telegram_user_id})",
         "",
     ]
     dcode = _delivery_price_code(order.get("delivery") or "BY")
@@ -2080,6 +2178,52 @@ def _order_short_ref(order_id: str) -> str:
     return oid[-8:].upper()
 
 
+def _order_display_ref(
+    order_id: str,
+    telegram_user_id: int | None = None,
+    username: str | None = None,
+) -> str:
+    """Человекочитаемый номер: @miheevlil 1, @miheevlil 2…"""
+    oid = str(order_id or "").strip()
+    if not oid:
+        return "—"
+    _load_bot_orders()
+    rec = BOT_ORDERS.get(oid)
+    uid = telegram_user_id
+    uname = _normalize_order_username(username)
+    if isinstance(rec, dict):
+        if uid is None:
+            try:
+                uid = int(rec.get("user_id"))
+            except (TypeError, ValueError):
+                uid = None
+        if not uname:
+            uname = _normalize_order_username(rec.get("username"))
+    if uid is not None and int(uid) > 0:
+        _ensure_buyer_seqs_for_user(int(uid))
+        seq = _buyer_order_seq_for(oid, int(uid))
+        if seq > 0:
+            if uname:
+                return f"@{uname} {seq}"
+            return f"id{int(uid)} {seq}"
+    return _order_short_ref(oid)
+
+
+def _order_display_ref_from_order(order_id: str, order: dict[str, Any]) -> str:
+    uid: int | None = None
+    try:
+        raw_uid = order.get("user_id")
+        if raw_uid is not None:
+            uid = int(raw_uid)
+    except (TypeError, ValueError):
+        uid = None
+    return _order_display_ref(
+        order_id,
+        uid,
+        _normalize_order_username(order.get("username")),
+    )
+
+
 def _build_order_draft_message(
     order: dict[str, Any], _order_id: str | None = None
 ) -> str:
@@ -2114,12 +2258,12 @@ def _format_order_text(order: dict[str, Any], order_id: str | None = None) -> st
 
 
 def _payment_selection_message(order: dict[str, Any], order_id: str) -> str:
-    ref = _order_short_ref(order_id)
+    ref = _order_display_ref_from_order(order_id, order)
     return (
         "Выберите способ оплаты:\n\n"
         "💳 Карта -> 💵 Перевод -> ₿ Крипта\n"
         "💳 Оплата -> 📸 Скрин -> 🔎 Проверка -> ✅ Готово\n\n"
-        f"💳 Оплата по заказу #{ref}"
+        f"💳 Оплата: {ref}"
     )
 
 
@@ -2134,7 +2278,8 @@ def _payment_method_label(method: str) -> str:
     return method or "—"
 
 
-def _payment_method_instruction(method: str) -> str:
+def _payment_requisites_text(method: str) -> str:
+    """Реквизиты для оплаты — без инструкции про скрин и доставку."""
     m = (method or "").strip().lower()
     env_key = {
         "card": "ILLUCARDS_PAYMENT_CARD_TEXT",
@@ -2146,26 +2291,33 @@ def _payment_method_instruction(method: str) -> str:
         return custom
     if m == "card":
         return (
-            "💳 Оплата картой\n\n"
             "Номер карты:\n"
             "9112 3810 0954 6243\n\n"
             "Имя на карте:\n"
             "DANIL PARFIONAU"
         )
     if m == "crypto":
-        return (
-            "₿ Крипто (USDT TRC20)\n\n"
-            "TBRKDLTC6QXED4pEVVm1RpZNKeB4ScJChf"
-        )
+        return "₿ USDT TRC20:\nTBRKDLTC6QXED4pEVVm1RpZNKeB4ScJChf"
     if m == "phone":
         return (
-            "📱 Перевод на номер\n\n"
             "Телефон:\n"
             "+375298124337\n\n"
             "Получатель:\n"
             "DANIL PARFIONAU"
         )
     return "Способ оплаты сохранён."
+
+
+def _payment_checkout_message(
+    order: dict[str, Any], order_id: str, method: str
+) -> str:
+    ref = _order_display_ref_from_order(order_id, order)
+    total = _order_total_display(order)
+    return (
+        f"{_payment_requisites_text(method)}\n\n"
+        f"💰 К оплате: {total}\n"
+        f"Заказ {ref}"
+    )
 
 
 def _order_draft_keyboard(order_id: str) -> InlineKeyboardMarkup:
@@ -2189,7 +2341,7 @@ def _payment_active_keyboard(order_id: str) -> InlineKeyboardMarkup:
         [
             [
                 InlineKeyboardButton(
-                    "✅ Оплатил", callback_data=f"orderpaid:{oid}"
+                    "Оплатил", callback_data=f"orderpaid:{oid}"
                 ),
                 InlineKeyboardButton(
                     "❌ Отменить заказ", callback_data=f"ordercx:{oid}"
@@ -2199,18 +2351,21 @@ def _payment_active_keyboard(order_id: str) -> InlineKeyboardMarkup:
     )
 
 
-PAYMENT_SUBMIT_INSTRUCTION = (
-    "Оплатите и пришлите скриншот чека, ваш адрес СДЭК, ФИО и номер телефона "
+PAY_PROOF_REQUEST_TEXT = (
+    "Пришлите скриншот чека, ваш адрес СДЭК, ФИО и номер телефона "
     "одним сообщением в этот чат.\n"
     "После проверки менеджер подтвердит заказ."
 )
 
-PAY_PROOF_REQUEST_TEXT = PAYMENT_SUBMIT_INSTRUCTION
-
 PAY_PROOF_MISSING_CAPTION_TEXT = (
     "Нужно отправить скрин оплаты и данные доставки в одном сообщении: "
     "фото чека и в подписи к нему — адрес СДЭК, ФИО и телефон.\n\n"
-    + PAYMENT_SUBMIT_INSTRUCTION
+    + PAY_PROOF_REQUEST_TEXT
+)
+
+PAY_PROOF_NEED_PAID_BUTTON_TEXT = (
+    "Сначала нажмите кнопку «Оплатил» под реквизитами, "
+    "затем пришлите скриншот чека с данными доставки одним сообщением."
 )
 
 
@@ -2394,7 +2549,7 @@ def _format_admin_proof_caption(
         telegram_user_id,
         username,
         record,
-        header=f"💳 Оплата · #{_order_short_ref(order_id)}",
+        header=f"💳 Оплата · {_order_display_ref(order_id, telegram_user_id, username)}",
     )
     delivery_block = f"\n\n📋 Данные от клиента:\n{delivery_text}"
     full = base + delivery_block
@@ -2697,6 +2852,8 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
                 telegram_user=user,
             )
             return
+        if user.username and not order.get("username"):
+            order["username"] = user.username
         _record_site_order_in_bot(oid, order, user.id)
         _cache_order_snapshot(oid, order, int(user.id))
         st = str(order.get("status") or "new").strip().lower()
@@ -2792,8 +2949,10 @@ async def show_my_orders(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
             continue
         label = _order_status_display(st)
         total = _merge_total_byn(rec, order_site)
-        ref = _order_id_short(oid)
-        lines.append(f"#{ref} — {total:g} BYN — {label}")
+        ref = _order_display_ref(
+            oid, int(user.id), _normalize_order_username(user.username)
+        )
+        lines.append(f"{ref} — {total:g} BYN — {label}")
     if len(lines) <= 2:
         await update.message.reply_text(
             "Пока нет подтверждённых заказов.\n"
@@ -2928,12 +3087,11 @@ async def payment_proof_handler(
     if not user:
         return
     uid = int(user.id)
-    order_id = _resolve_payment_proof_order_id(uid)
+    order_id = _AWAIT_PAYMENT_PROOF.get(uid)
     if not order_id:
-        await msg.reply_text(
-            "Не найден заказ для чека. Сначала подтвердите заказ и выберите способ оплаты."
-        )
+        await msg.reply_text(PAY_PROOF_NEED_PAID_BUTTON_TEXT)
         return
+    order_id = str(order_id).strip()
 
     order = await _load_order_for_callback(order_id, uid)
     if not order:
@@ -3089,7 +3247,7 @@ async def text_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
         if admin_reply:
             cust_id, oid = admin_reply
             who = (
-                f"заказ #{_order_short_ref(oid)}"
+                f"заказ {_order_display_ref(oid)}"
                 if oid
                 else "поддержка"
             )
@@ -3432,8 +3590,8 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
             if pm_existing in ("card", "crypto", "phone"):
                 await q.answer("Способ оплаты уже выбран")
                 await q.message.reply_text(
-                    "Ожидайте подтверждения заказа менеджером. "
-                    "После подтверждения мы попросим данные для доставки."
+                    "Способ оплаты уже выбран. Оплатите по реквизитам, "
+                    "нажмите «Оплатил» и пришлите скрин с данными доставки."
                 )
                 return
 
@@ -3608,13 +3766,9 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
             except Exception:
                 pass
             await q.message.reply_text(
-                f"Вы выбрали: {_payment_method_label(method)}\n\n"
-                f"{_payment_method_instruction(method)}\n\n"
-                f"💳 Оплата по заказу #{_order_short_ref(order_id)}\n\n"
-                f"{PAYMENT_SUBMIT_INSTRUCTION}",
+                _payment_checkout_message(order, order_id, method),
                 reply_markup=_payment_active_keyboard(order_id),
             )
-            _AWAIT_PAYMENT_PROOF[int(owner_id)] = order_id
             return
         except Exception as e:
             logger.exception("order payment method failed: %s", e)
@@ -3690,7 +3844,8 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
             await q.answer("Заказ подтверждён")
             await _refresh_admin_message_keyboard(q, order_id)
             await q.message.reply_text(
-                f"Заказ `{order_id}` подтверждён. Покупателю отправлено уведомление."
+                f"Заказ {_order_display_ref(order_id, owner_id)} подтверждён. "
+                "Покупателю отправлено уведомление."
             )
             return
         except Exception as e:
@@ -3717,7 +3872,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
             _AWAIT_ADMIN_REPLY[int(user.id)] = (int(owner_id), order_id)
             await q.answer()
             await q.message.reply_text(
-                f"💬 Режим ответа клиенту по заказу #{_order_short_ref(order_id)}.\n"
+                f"💬 Режим ответа клиенту по заказу {_order_display_ref(order_id)}.\n"
                 "Напишите одним сообщением — оно уйдёт покупателю."
             )
             return
@@ -3769,7 +3924,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
             await _notify_customer_order_message(
                 context,
                 int(owner_id),
-                f"🚚 Заказ #{_order_short_ref(order_id)} отправлен!",
+                f"🚚 Заказ {_order_display_ref(order_id)} отправлен!",
             )
             await q.answer("Статус: отправлен")
             await _refresh_admin_message_keyboard(q, order_id)
@@ -3804,7 +3959,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
             await _notify_customer_order_message(
                 context,
                 int(owner_id),
-                f"✅ Заказ #{_order_short_ref(order_id)} доставлен. Спасибо за покупку!",
+                f"✅ Заказ {_order_display_ref(order_id)} доставлен. Спасибо за покупку!",
             )
             await q.answer("Статус: завершён")
             await _refresh_admin_message_keyboard(q, order_id)
@@ -3840,7 +3995,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
             await _notify_customer_order_message(
                 context,
                 int(owner_id),
-                f"❌ Заказ #{_order_short_ref(order_id)} отменён менеджером.",
+                f"❌ Заказ {_order_display_ref(order_id)} отменён менеджером.",
             )
             await q.answer("Заказ отменён")
             await _refresh_admin_message_keyboard(q, order_id)

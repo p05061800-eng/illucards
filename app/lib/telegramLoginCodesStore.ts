@@ -38,6 +38,18 @@ function redisEnabled(): boolean {
   return redisRestCredentials() != null;
 }
 
+/** На Vercel без Redis коды из бота не сохраняются между запросами. */
+export function isLoginCodesRedisEnabled(): boolean {
+  return redisEnabled();
+}
+
+export function normalizeLoginCodeDigits(codeRaw: string): string | null {
+  const digits = String(codeRaw || "").replace(/\D/g, "");
+  if (digits.length === 0) return null;
+  if (digits.length > 4) return digits.slice(-4);
+  return digits.padStart(4, "0");
+}
+
 async function redisCommand(
   cmd: unknown[],
 ): Promise<{ result?: unknown; error?: string } | null> {
@@ -216,9 +228,8 @@ export async function consumeLoginCode(
 export async function consumeLoginCodeByCode(
   codeRaw: string,
 ): Promise<{ user_id: number; username: string } | null> {
-  const digits = codeRaw.replace(/\D/g, "");
-  if (digits.length !== 4) return null;
-  const code = digits;
+  const code = normalizeLoginCodeDigits(codeRaw);
+  if (!code) return null;
 
   if (redisEnabled()) {
     const raw = await redisGet(REDIS_KEY(code));

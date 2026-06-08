@@ -83,7 +83,10 @@ export async function POST(request: Request) {
 
   const waitRaw = typeof o.wait_id === "string" ? o.wait_id.trim() : "";
   if (waitRaw && isValidLoginWaitId(waitRaw)) {
-    await markLoginWaitReady(waitRaw);
+    await markLoginWaitReady(waitRaw, {
+      user_id: Math.floor(uid),
+      username: display,
+    });
   }
 
   return NextResponse.json({ ok: true });

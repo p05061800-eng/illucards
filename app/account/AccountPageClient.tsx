@@ -20,6 +20,7 @@ import {
   orderAccountFlowLabel,
   ruPositionCountPhrase,
 } from "@/app/lib/orderStatus";
+import { apiUrl } from "@/app/lib/apiUrl";
 import {
   persistTelegramUserIdentity,
   readTelegramPrimaryUserId,
@@ -38,9 +39,6 @@ import { telegramWebLoginDeepLink } from "@/app/lib/telegramWebLoginUrl";
 type LsGate = "pending" | "ok" | "no_telegram";
 
 const PREVIEW_LIMIT = 5;
-const TELEGRAM_CODE_VERIFY_URL =
-  process.env.NEXT_PUBLIC_TELEGRAM_CODE_VERIFY_URL?.trim() ||
-  "/api/verify-code";
 
 const LS_DELIVERY_KEY = "illucards-delivery-country";
 
@@ -297,7 +295,7 @@ export default function AccountPageClient() {
         verifyBody.deliveryCountry = deliveryForVerify;
         verifyBody.currency = displayCurrencyForDelivery(deliveryForVerify);
       }
-      const res = await fetch(TELEGRAM_CODE_VERIFY_URL, {
+      const res = await fetch(apiUrl("/api/verify-code"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(verifyBody),
@@ -314,7 +312,14 @@ export default function AccountPageClient() {
         !Number.isFinite(userId) ||
         userId <= 0
       ) {
-        setTgError(data.error || "Неверный или просроченный код");
+        if (res.status === 503 || res.status === 502) {
+          setTgError(
+            data.error ||
+              "Сервис входа временно недоступен. Запросите новый код в боте.",
+          );
+        } else {
+          setTgError(data.error || "Неверный или просроченный код");
+        }
         return;
       }
       const uidFloor = Math.floor(userId);
@@ -398,12 +403,12 @@ export default function AccountPageClient() {
         }`}
       >
         <h3 className="text-base font-bold tracking-tight text-zinc-950">
-          {focusCodeEntry ? "Введите код из Telegram" : "Вход по коду из бота"}
+          {focusCodeEntry ? "Введите код вручную" : "Резервный вход по коду"}
         </h3>
         <p className="mt-1 text-sm text-zinc-600">
           {focusCodeEntry
-            ? "Код уже в боте — введите 4 цифры ниже."
-            : "Нажмите «Войти через Telegram», получите код в боте и введите 4 цифры."}
+            ? "Автовход не сработал — введите 4 цифры из бота."
+            : "Обычно вход выполняется автоматически. Код нужен только если автоматически не получилось."}
         </p>
         <div className="mt-3 grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto]">
           <label className="block">
@@ -466,7 +471,7 @@ export default function AccountPageClient() {
           Войти через Telegram
         </button>
         <p className="mx-auto mt-2 max-w-md text-xs text-zinc-500">
-          Когда код придёт в боте, эта вкладка сама откроет поле для ввода — оставьте
+          Когда подтвердите вход в боте, эта вкладка сама откроет личный кабинет — оставьте
           сайт открытым.
         </p>
       </div>

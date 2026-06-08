@@ -1,7 +1,14 @@
 import { NextResponse } from "next/server";
-import { consumeLoginCodeByCode } from "@/app/lib/telegramLoginCodesStore";
+import {
+  consumeLoginCodeByCode,
+  isLoginCodesRedisEnabled,
+  normalizeLoginCodeDigits,
+} from "@/app/lib/telegramLoginCodesStore";
 import { botVerifyLoginCode } from "@/app/lib/telegramBotRenderApi";
 import { syncCartToTelegramBotAfterVerify } from "@/app/lib/telegramCartBotSync";
+
+const SERVICE_UNAVAILABLE_MSG =
+  "Сервис входа временно недоступен. Подождите минуту, нажмите «Войти через Telegram» и введите новый код.";
 
 export async function POST(request: Request) {
   let body: unknown;
@@ -17,8 +24,8 @@ export async function POST(request: Request) {
 
   const o = body as Record<string, unknown>;
   const codeRaw = typeof o.code === "string" ? o.code : "";
-  const digits = codeRaw.replace(/\D/g, "");
-  if (digits.length !== 4) {
+  const digits = normalizeLoginCodeDigits(codeRaw);
+  if (!digits) {
     return NextResponse.json(
       { error: "Введите 4 цифры кода" },
       { status: 400 },
@@ -67,7 +74,13 @@ export async function POST(request: Request) {
     return finishVerify(local.user_id, local.username);
   }
 
-  // Fallback: локальный файл на Render или другой инстанс бота без sync.
+  if (!isLoginCodesRedisEnabled()) {
+    console.error(
+      "[verify-code] Redis не настроен на Vercel — код из бота не сохраняется между запросами",
+    );
+  }
+
+  // Fallback: локальный файл на Render (другой инстанс без sync).
   const botResult = await botVerifyLoginCode({
     code: digits,
     ...(username ? { username } : {}),
@@ -85,8 +98,24 @@ export async function POST(request: Request) {
     return finishVerify(botResult.user_id, botResult.username);
   }
 
+  if (botResult.status === 401) {
+    return NextResponse.json(
+      { error: botResult.error || "Неверный или просроченный код" },
+      { status: 401 },
+    );
+  }
+
+  if (
+    botResult.status === 503 ||
+    botResult.status === 502 ||
+    botResult.status === 504 ||
+    botResult.status === 0
+  ) {
+    return NextResponse.json({ error: SERVICE_UNAVAILABLE_MSG }, { status: 503 });
+  }
+
   return NextResponse.json(
-    { error: botResult.error || "Неверный или просроченный код" },
-    { status: botResult.status === 401 ? 401 : botResult.status || 502 },
+    { error: botResult.error || "Не удалось проверить код" },
+    { status: botResult.status || 502 },
   );
 }

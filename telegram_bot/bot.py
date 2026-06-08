@@ -40,7 +40,7 @@ from db import init_db, recompute_user_order_stats, sync_all_users_order_stats, 
 logging.basicConfig(format="%(asctime)s %(levelname)s %(message)s", level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-BOT_BUILD_ID = "2026-06-09-login-code-fix-v1"
+BOT_BUILD_ID = "2026-06-09-auto-tg-login-v1"
 
 REPLY_MENU_TEXTS = frozenset(
     {"💬 Связь", "📦 Мои заказы", "📜 Мои заказы", "🚚 Доставка", "⭐ Бонусы"}
@@ -1670,8 +1670,8 @@ def _site_open_markup(telegram_user_id: int) -> InlineKeyboardMarkup:
 
 
 def _account_open_markup() -> InlineKeyboardMarkup:
-    """Личный кабинет — ввод кода из бота после web_login."""
-    url = f"{SITE_LOGIN_ORIGIN}/account?login_code=1"
+    """Личный кабинет после web_login (автовход или код вручную)."""
+    url = f"{SITE_LOGIN_ORIGIN}/account"
     return InlineKeyboardMarkup(
         [[InlineKeyboardButton("Открыть личный кабинет", url=url)]]
     )
@@ -3063,16 +3063,30 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
                 "Сервис входа временно недоступен. Попробуйте ещё раз через минуту."
             )
             return
-        await update.message.reply_text(
-            "🔐 Код для входа на сайт:\n\n"
-            f"<code>{code}</code>\n\n"
-            "⏳ Действует 5 минут.",
-            parse_mode="HTML",
-        )
-        await update.message.reply_text(
-            "Нажмите кнопку ниже — откроется личный кабинет, введите там 4 цифры кода.",
-            reply_markup=_account_open_markup() if user else None,
-        )
+        if web_login_wait_id:
+            await update.message.reply_text(
+                "✅ Подтверждение получено.\n\n"
+                "Вернитесь на вкладку с сайтом — вход выполнится автоматически.\n\n"
+                "Если автоматически не получилось, код для ручного ввода:\n"
+                f"<code>{code}</code>\n\n"
+                "⏳ Действует 5 минут.",
+                parse_mode="HTML",
+            )
+            await update.message.reply_text(
+                "Или нажмите кнопку ниже — откроется личный кабинет.",
+                reply_markup=_account_open_markup() if user else None,
+            )
+        else:
+            await update.message.reply_text(
+                "🔐 Код для входа на сайт:\n\n"
+                f"<code>{code}</code>\n\n"
+                "⏳ Действует 5 минут.",
+                parse_mode="HTML",
+            )
+            await update.message.reply_text(
+                "Нажмите кнопку ниже — откроется личный кабинет, введите там 4 цифры кода.",
+                reply_markup=_account_open_markup() if user else None,
+            )
         return
 
     if low0 in ("my_orders", "orders"):

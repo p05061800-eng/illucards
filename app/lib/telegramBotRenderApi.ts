@@ -2,7 +2,8 @@
  * HTTP API бота на Render (polling). На Vercel нет TELEGRAM_BOT_TOKEN — только этот клиент.
  */
 
-const DEFAULT_BOT_API = "https://illucards-telegram-bot.onrender.com";
+/** Активный сервис на Render (не старый illucards-telegram-bot). */
+const DEFAULT_BOT_API = "https://illucards.onrender.com";
 
 export function telegramBotApiUrl(): string {
   return (
@@ -140,11 +141,21 @@ export async function botVerifyLoginCode(
       status: res.status,
       error: err,
     });
-    return { ok: false, status: res.status, error: err };
+    const friendly =
+      res.status === 503 || res.status === 502 || res.status === 504
+        ? "Сервис бота временно недоступен. Подождите минуту и запросите новый код."
+        : res.status === 401
+          ? "Неверный или просроченный код"
+          : err;
+    return { ok: false, status: res.status, error: friendly };
   } catch (e: unknown) {
     const msg = e instanceof Error ? e.message : "Сеть недоступна";
     console.warn("[telegram-bot] verify-code error", { error: msg });
-    return { ok: false, status: 0, error: msg };
+    return {
+      ok: false,
+      status: 0,
+      error: "Не удалось связаться с ботом. Попробуйте через минуту.",
+    };
   }
 }
 

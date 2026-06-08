@@ -40,7 +40,7 @@ from db import init_db, recompute_user_order_stats, sync_all_users_order_stats, 
 logging.basicConfig(format="%(asctime)s %(levelname)s %(message)s", level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-BOT_BUILD_ID = "2026-06-08-buyer-order-seq-v1"
+BOT_BUILD_ID = "2026-06-08-order-name-slug-v1"
 
 REPLY_MENU_TEXTS = frozenset(
     {"💬 Связь", "📦 Мои заказы", "📜 Мои заказы", "🚚 Доставка", "⭐ Бонусы"}
@@ -67,9 +67,9 @@ KNOWN_START_IDS_PATH = REPO_ROOT / "data" / "bot-known-start-user-ids.json"
 LOGIN_CODES_PATH = REPO_ROOT / "data" / "telegram-login-codes.json"
 # Подтверждённые в боте заказы: order_id → { user_id, items, total, status }
 BOT_ORDERS: dict[str, dict[str, Any]] = {}
-# tg user_id → order_id: ждём текст с данными доставки после подтверждения админом
+# tg user_id → order_id: ждём текст с адресом СДЭК / ФИО / телефоном после скрина чека
 _AWAIT_ORDER_DETAILS: dict[int, str] = {}
-# tg user_id → order_id: ждём скрин оплаты после выбора способа оплаты
+# tg user_id → order_id: ждём скрин чека после нажатия «Оплатил»
 _AWAIT_PAYMENT_PROOF: dict[int, str] = {}
 # admin tg id → (customer tg id, order_id): режим «Ответить клиенту»
 _AWAIT_ADMIN_REPLY: dict[int, tuple[int, str]] = {}
@@ -780,6 +780,8 @@ def _record_site_order_in_bot(
             rec["payment_method"] = prev_pm
         if existing.get("delivery_details"):
             rec["delivery_details"] = existing.get("delivery_details")
+        if existing.get("proof_file_id"):
+            rec["proof_file_id"] = existing.get("proof_file_id")
     uname = _normalize_order_username(order.get("username"))
     if uname:
         rec["username"] = uname
@@ -1075,10 +1077,10 @@ def _format_order_admin(
     header: str = "✅ Подтверждение заказа (бот)",
 ) -> str:
     u = f"@{username}" if username else f"id {telegram_user_id}"
-    human_ref = _order_display_ref(order_id, telegram_user_id, username)
+    human_ref = _order_display_label(order_id, telegram_user_id, username)
     lines = [
         header,
-        f"Заказ: {human_ref}",
+        human_ref,
         f"ID: `{order_id}`",
         f"Покупатель: {u} (tg {telegram_user_id})",
         "",
@@ -2178,12 +2180,19 @@ def _order_short_ref(order_id: str) -> str:
     return oid[-8:].upper()
 
 
+def _buyer_order_slug(username: str | None, telegram_user_id: int) -> str:
+    un = _normalize_order_username(username)
+    if un:
+        return un.lower()
+    return f"id{int(telegram_user_id)}"
+
+
 def _order_display_ref(
     order_id: str,
     telegram_user_id: int | None = None,
     username: str | None = None,
 ) -> str:
-    """Человекочитаемый номер: @miheevlil 1, @miheevlil 2…"""
+    """Короткое имя заказа: miheevlil1, miheevlil2… (username + порядковый номер)."""
     oid = str(order_id or "").strip()
     if not oid:
         return "—"
@@ -2203,25 +2212,42 @@ def _order_display_ref(
         _ensure_buyer_seqs_for_user(int(uid))
         seq = _buyer_order_seq_for(oid, int(uid))
         if seq > 0:
-            if uname:
-                return f"@{uname} {seq}"
-            return f"id{int(uid)} {seq}"
+            return f"{_buyer_order_slug(uname, int(uid))}{seq}"
     return _order_short_ref(oid)
 
 
-def _order_display_ref_from_order(order_id: str, order: dict[str, Any]) -> str:
+def _order_display_label(
+    order_id: str,
+    telegram_user_id: int | None = None,
+    username: str | None = None,
+) -> str:
+    ref = _order_display_ref(order_id, telegram_user_id, username)
+    if ref == "—":
+        return ref
+    return f"Заказ {ref}"
+
+
+def _order_owner_from_order(order: dict[str, Any]) -> tuple[int | None, str | None]:
     uid: int | None = None
     try:
         raw_uid = order.get("user_id")
         if raw_uid is not None:
-            uid = int(raw_uid)
+            parsed = int(raw_uid)
+            if parsed > 0:
+                uid = parsed
     except (TypeError, ValueError):
         uid = None
-    return _order_display_ref(
-        order_id,
-        uid,
-        _normalize_order_username(order.get("username")),
-    )
+    return uid, _normalize_order_username(order.get("username"))
+
+
+def _order_display_ref_from_order(order_id: str, order: dict[str, Any]) -> str:
+    uid, uname = _order_owner_from_order(order)
+    return _order_display_ref(order_id, uid, uname)
+
+
+def _order_display_label_from_order(order_id: str, order: dict[str, Any]) -> str:
+    uid, uname = _order_owner_from_order(order)
+    return _order_display_label(order_id, uid, uname)
 
 
 def _build_order_draft_message(
@@ -2258,12 +2284,12 @@ def _format_order_text(order: dict[str, Any], order_id: str | None = None) -> st
 
 
 def _payment_selection_message(order: dict[str, Any], order_id: str) -> str:
-    ref = _order_display_ref_from_order(order_id, order)
+    label = _order_display_label_from_order(order_id, order)
     return (
         "Выберите способ оплаты:\n\n"
         "💳 Карта -> 💵 Перевод -> ₿ Крипта\n"
         "💳 Оплата -> 📸 Скрин -> 🔎 Проверка -> ✅ Готово\n\n"
-        f"💳 Оплата: {ref}"
+        f"{label}"
     )
 
 
@@ -2311,12 +2337,12 @@ def _payment_requisites_text(method: str) -> str:
 def _payment_checkout_message(
     order: dict[str, Any], order_id: str, method: str
 ) -> str:
-    ref = _order_display_ref_from_order(order_id, order)
+    label = _order_display_label_from_order(order_id, order)
     total = _order_total_display(order)
     return (
         f"{_payment_requisites_text(method)}\n\n"
         f"💰 К оплате: {total}\n"
-        f"Заказ {ref}"
+        f"{label}"
     )
 
 
@@ -2334,14 +2360,19 @@ def _order_draft_keyboard(order_id: str) -> InlineKeyboardMarkup:
     )
 
 
-def _payment_active_keyboard(order_id: str) -> InlineKeyboardMarkup:
+def _payment_active_keyboard(
+    order_id: str, order: dict[str, Any] | None = None
+) -> InlineKeyboardMarkup:
     """После выбора способа оплаты: подтвердить оплату или отменить заказ."""
     oid = str(order_id or "").strip()
+    paid_label = "✅ Оплатил"
+    if isinstance(order, dict):
+        paid_label = f"✅ Оплатил {_order_total_display(order)}"
     return InlineKeyboardMarkup(
         [
             [
                 InlineKeyboardButton(
-                    "Оплатил", callback_data=f"orderpaid:{oid}"
+                    paid_label, callback_data=f"orderpaid:{oid}"
                 ),
                 InlineKeyboardButton(
                     "❌ Отменить заказ", callback_data=f"ordercx:{oid}"
@@ -2351,21 +2382,24 @@ def _payment_active_keyboard(order_id: str) -> InlineKeyboardMarkup:
     )
 
 
-PAY_PROOF_REQUEST_TEXT = (
-    "Пришлите скриншот чека, ваш адрес СДЭК, ФИО и номер телефона "
-    "одним сообщением в этот чат.\n"
+PAY_SCREENSHOT_REQUEST_TEXT = "Пришлите скриншот чека."
+
+PAY_DELIVERY_REQUEST_TEXT = (
+    "Пришлите ваш адрес СДЭК, ФИО и номер телефона одним сообщением в этот чат.\n"
     "После проверки менеджер подтвердит заказ."
 )
 
-PAY_PROOF_MISSING_CAPTION_TEXT = (
-    "Нужно отправить скрин оплаты и данные доставки в одном сообщении: "
-    "фото чека и в подписи к нему — адрес СДЭК, ФИО и телефон.\n\n"
-    + PAY_PROOF_REQUEST_TEXT
+PAY_PROOF_NEED_SCREENSHOT_TEXT = (
+    "Пришлите скриншот чека (фото). Данные доставки попросим следующим сообщением."
 )
 
 PAY_PROOF_NEED_PAID_BUTTON_TEXT = (
-    "Сначала нажмите кнопку «Оплатил» под реквизитами, "
-    "затем пришлите скриншот чека с данными доставки одним сообщением."
+    "Сначала нажмите кнопку «✅ Оплатил …» под реквизитами, "
+    "затем пришлите скриншот чека."
+)
+
+PAY_DELIVERY_TOO_SHORT_TEXT = (
+    "Напишите адрес СДЭК, ФИО и телефон одним сообщением."
 )
 
 
@@ -2513,6 +2547,7 @@ ORDER_CONFIRMED_CUSTOMER_TEXT = (
     "Он появился в «📦 Мои заказы». При необходимости мы уточним детали в этом чате."
 )
 
+MSG_PROOF_SCREEN_OK = "✅ Чек получен."
 MSG_PROOF_RECEIVED = "⏳ Получили данные, передаём администратору…"
 MSG_PROOF_OK = (
     "✅ Заказ передан администратору. Ожидайте подтверждения."
@@ -2549,7 +2584,7 @@ def _format_admin_proof_caption(
         telegram_user_id,
         username,
         record,
-        header=f"💳 Оплата · {_order_display_ref(order_id, telegram_user_id, username)}",
+        header=f"💳 Оплата · {_order_display_label(order_id, telegram_user_id, username)}",
     )
     delivery_block = f"\n\n📋 Данные от клиента:\n{delivery_text}"
     full = base + delivery_block
@@ -2949,10 +2984,10 @@ async def show_my_orders(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
             continue
         label = _order_status_display(st)
         total = _merge_total_byn(rec, order_site)
-        ref = _order_display_ref(
+        order_label = _order_display_label(
             oid, int(user.id), _normalize_order_username(user.username)
         )
-        lines.append(f"{ref} — {total:g} BYN — {label}")
+        lines.append(f"{order_label} — {total:g} BYN — {label}")
     if len(lines) <= 2:
         await update.message.reply_text(
             "Пока нет подтверждённых заказов.\n"
@@ -3074,6 +3109,57 @@ async def show_promo_slides(update: Update, context: ContextTypes.DEFAULT_TYPE) 
     context.user_data["promo_message_id"] = mid
 
 
+async def _notify_admin_payment_proof(
+    context: ContextTypes.DEFAULT_TYPE,
+    *,
+    order_id: str,
+    order: dict[str, Any],
+    uid: int,
+    user: Any,
+    file_id: str,
+    delivery_text: str,
+    rec: dict[str, Any],
+) -> None:
+    admin_chat_id = _resolve_admin_chat_id()
+    if not admin_chat_id:
+        logger.warning("payment proof: TELEGRAM_ADMIN_ID not set, admin not notified")
+        return
+    uname = (
+        str(order.get("username") or getattr(user, "username", None) or "")
+        .strip()
+        .lstrip("@")
+        or None
+    )
+    caption = _format_admin_proof_caption(
+        order_id,
+        order,
+        uid,
+        uname,
+        rec,
+        delivery_text,
+    )
+    try:
+        admin_msg = await context.bot.send_photo(
+            chat_id=int(admin_chat_id),
+            photo=file_id,
+            caption=caption,
+            reply_markup=_order_admin_confirm_keyboard(order_id),
+        )
+        mid = getattr(admin_msg, "message_id", None)
+        if isinstance(mid, int) and mid > 0:
+            await post_site_admin_message_id(order_id, mid)
+    except Exception as e:
+        logger.warning("admin payment proof notify: %s", e)
+        try:
+            await context.bot.send_message(
+                chat_id=int(admin_chat_id),
+                text=caption,
+                reply_markup=_order_admin_confirm_keyboard(order_id),
+            )
+        except Exception as e2:
+            logger.warning("admin payment proof fallback text: %s", e2)
+
+
 async def payment_proof_handler(
     update: Update, context: ContextTypes.DEFAULT_TYPE
 ) -> None:
@@ -3087,6 +3173,13 @@ async def payment_proof_handler(
     if not user:
         return
     uid = int(user.id)
+
+    if _AWAIT_ORDER_DETAILS.get(uid):
+        await msg.reply_text(
+            "Скрин уже получен. Пришлите адрес СДЭК, ФИО и телефон одним сообщением."
+        )
+        return
+
     order_id = _AWAIT_PAYMENT_PROOF.get(uid)
     if not order_id:
         await msg.reply_text(PAY_PROOF_NEED_PAID_BUTTON_TEXT)
@@ -3113,14 +3206,22 @@ async def payment_proof_handler(
     if site_st == "paid":
         await msg.reply_text("Чек по этому заказу уже получен. Ожидайте подтверждения.")
         return
-    if site_st == "proof_submitted":
-        await msg.reply_text("Чек уже отправлен. Ожидайте подтверждения менеджера.")
-        return
+
+    _load_bot_orders()
+    bot_rec = BOT_ORDERS.get(order_id)
+    if isinstance(bot_rec, dict):
+        bot_st = str(bot_rec.get("status") or "").strip().lower()
+        if bot_st == "proof_submitted":
+            await msg.reply_text("Заказ уже передан администратору. Ожидайте подтверждения.")
+            return
+        if bot_rec.get("proof_file_id"):
+            await msg.reply_text(
+                "Скрин уже получен. Пришлите адрес СДЭК, ФИО и телефон одним сообщением."
+            )
+            return
 
     pm = str(order.get("payment_method") or "").strip().lower()
     if pm not in ("card", "crypto", "phone"):
-        _load_bot_orders()
-        bot_rec = BOT_ORDERS.get(order_id)
         if isinstance(bot_rec, dict):
             pm = str(bot_rec.get("payment_method") or "").strip().lower()
             if pm:
@@ -3129,59 +3230,21 @@ async def payment_proof_handler(
         await msg.reply_text("Сначала выберите способ оплаты под сообщением с заказом.")
         return
 
-    delivery_text = _payment_proof_caption(msg)
-    if len(delivery_text) < 10:
-        await msg.reply_text(PAY_PROOF_MISSING_CAPTION_TEXT)
-        return
-
-    await msg.reply_text(MSG_PROOF_RECEIVED)
+    await msg.reply_text(MSG_PROOF_SCREEN_OK)
 
     rec = _record_site_order_in_bot(order_id, order, uid)
-    rec["status"] = "proof_submitted"
+    rec["status"] = "proof_received"
     rec["payment_method"] = pm
-    rec["delivery_details"] = delivery_text
+    rec["proof_file_id"] = file_id
     BOT_ORDERS[order_id] = rec
     _persist_bot_orders()
+
     _AWAIT_PAYMENT_PROOF.pop(uid, None)
+    _AWAIT_ORDER_DETAILS[uid] = order_id
 
-    # Не шлём status=paid на сайт при скрине — иначе Vercel часто очищает корзину.
-    # Статус на сайте обновит админ при «Принять» (confirmed + paid).
-
-    admin_chat_id = _resolve_admin_chat_id()
-    if admin_chat_id:
-        uname = str(order.get("username") or user.username or "").strip().lstrip("@") or None
-        caption = _format_admin_proof_caption(
-            order_id,
-            order,
-            uid,
-            uname,
-            rec,
-            delivery_text,
-        )
-        try:
-            admin_msg = await context.bot.send_photo(
-                chat_id=int(admin_chat_id),
-                photo=file_id,
-                caption=caption,
-                reply_markup=_order_admin_confirm_keyboard(order_id),
-            )
-            mid = getattr(admin_msg, "message_id", None)
-            if isinstance(mid, int) and mid > 0:
-                await post_site_admin_message_id(order_id, mid)
-        except Exception as e:
-            logger.warning("admin payment proof notify: %s", e)
-            try:
-                await context.bot.send_message(
-                    chat_id=int(admin_chat_id),
-                    text=caption,
-                    reply_markup=_order_admin_confirm_keyboard(order_id),
-                )
-            except Exception as e2:
-                logger.warning("admin payment proof fallback text: %s", e2)
-    else:
-        logger.warning("payment proof: TELEGRAM_ADMIN_ID not set, admin not notified")
-
-    await msg.reply_text(MSG_PROOF_OK)
+    await msg.reply_text(
+        PAY_DELIVERY_REQUEST_TEXT, reply_markup=_main_keyboard()
+    )
 
 
 async def incoming_message_logger(
@@ -3217,28 +3280,67 @@ async def text_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
             _AWAIT_PAYMENT_PROOF.get(int(user.id))
             and t not in REPLY_MENU_TEXTS
         ):
-            await update.message.reply_text(PAY_PROOF_MISSING_CAPTION_TEXT)
+            await update.message.reply_text(PAY_PROOF_NEED_SCREENSHOT_TEXT)
             return
 
         order_id = _AWAIT_ORDER_DETAILS.pop(int(user.id), None)
         if order_id:
-            admin_chat_id = _resolve_admin_chat_id()
-            if admin_chat_id:
-                uname = (user.username or "").strip()
-                who = f"@{uname}" if uname else f"id {user.id}"
-                try:
-                    await context.bot.send_message(
-                        chat_id=int(admin_chat_id),
-                        text=(
-                            f"📋 Данные доставки по заказу `{order_id}`\n"
-                            f"От: {who} (tg {user.id})\n\n{t}"
-                        ),
-                    )
-                except Exception as e:
-                    logger.warning("forward order details: %s", e)
+            if len(t) < 10:
+                _AWAIT_ORDER_DETAILS[int(user.id)] = order_id
+                await update.message.reply_text(PAY_DELIVERY_TOO_SHORT_TEXT)
+                return
+
+            uid = int(user.id)
+            order = await _load_order_for_callback(order_id, uid)
+            if not order:
+                _load_bot_orders()
+                bot_rec = BOT_ORDERS.get(order_id)
+                if isinstance(bot_rec, dict):
+                    order = dict(bot_rec)
+            if not order:
+                await update.message.reply_text(
+                    "Не найден заказ. Начните оформление с сайта заново."
+                )
+                return
+
+            _load_bot_orders()
+            bot_rec = BOT_ORDERS.get(order_id)
+            file_id = (
+                str(bot_rec.get("proof_file_id") or "").strip()
+                if isinstance(bot_rec, dict)
+                else ""
+            )
+            if not file_id:
+                _AWAIT_PAYMENT_PROOF[uid] = order_id
+                await update.message.reply_text(PAY_PROOF_NEED_SCREENSHOT_TEXT)
+                return
+
+            pm = str(order.get("payment_method") or "").strip().lower()
+            if pm not in ("card", "crypto", "phone") and isinstance(bot_rec, dict):
+                pm = str(bot_rec.get("payment_method") or "").strip().lower()
+
+            await update.message.reply_text(MSG_PROOF_RECEIVED)
+
+            rec = _record_site_order_in_bot(order_id, order, uid)
+            rec["status"] = "proof_submitted"
+            rec["payment_method"] = pm
+            rec["proof_file_id"] = file_id
+            rec["delivery_details"] = t
+            BOT_ORDERS[order_id] = rec
+            _persist_bot_orders()
+
+            await _notify_admin_payment_proof(
+                context,
+                order_id=order_id,
+                order=order,
+                uid=uid,
+                user=user,
+                file_id=file_id,
+                delivery_text=t,
+                rec=rec,
+            )
             await update.message.reply_text(
-                "Спасибо! Данные переданы менеджеру. При необходимости мы уточним детали в этом чате.",
-                reply_markup=_main_keyboard(),
+                MSG_PROOF_OK, reply_markup=_main_keyboard()
             )
             return
 
@@ -3247,7 +3349,7 @@ async def text_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
         if admin_reply:
             cust_id, oid = admin_reply
             who = (
-                f"заказ {_order_display_ref(oid)}"
+                f"заказ {_order_display_label(oid)}"
                 if oid
                 else "поддержка"
             )
@@ -3591,7 +3693,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
                 await q.answer("Способ оплаты уже выбран")
                 await q.message.reply_text(
                     "Способ оплаты уже выбран. Оплатите по реквизитам, "
-                    "нажмите «Оплатил» и пришлите скрин с данными доставки."
+                    "нажмите «✅ Оплатил», пришлите скрин чека, затем данные доставки."
                 )
                 return
 
@@ -3656,13 +3758,26 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
                 await q.answer("Чек уже получен")
                 return
 
+            _load_bot_orders()
+            bot_rec = BOT_ORDERS.get(order_id)
+            if isinstance(bot_rec, dict):
+                bot_st = str(bot_rec.get("status") or "").strip().lower()
+                if bot_st == "proof_submitted":
+                    await q.answer("Заказ уже передан администратору")
+                    return
+                if bot_rec.get("proof_file_id"):
+                    await q.answer("Ждём данные доставки")
+                    _AWAIT_ORDER_DETAILS[int(owner_id)] = order_id
+                    await q.message.reply_text(PAY_DELIVERY_REQUEST_TEXT)
+                    return
+
             _AWAIT_PAYMENT_PROOF[int(owner_id)] = order_id
             await q.answer("Ждём скрин")
             try:
                 await q.edit_message_reply_markup(reply_markup=None)
             except Exception:
                 pass
-            await q.message.reply_text(PAY_PROOF_REQUEST_TEXT)
+            await q.message.reply_text(PAY_SCREENSHOT_REQUEST_TEXT)
             return
         except Exception as e:
             logger.exception("order paid confirm failed: %s", e)
@@ -3767,7 +3882,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
                 pass
             await q.message.reply_text(
                 _payment_checkout_message(order, order_id, method),
-                reply_markup=_payment_active_keyboard(order_id),
+                reply_markup=_payment_active_keyboard(order_id, order),
             )
             return
         except Exception as e:
@@ -3844,7 +3959,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
             await q.answer("Заказ подтверждён")
             await _refresh_admin_message_keyboard(q, order_id)
             await q.message.reply_text(
-                f"Заказ {_order_display_ref(order_id, owner_id)} подтверждён. "
+                f"{_order_display_label(order_id, owner_id)} подтверждён. "
                 "Покупателю отправлено уведомление."
             )
             return
@@ -3872,7 +3987,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
             _AWAIT_ADMIN_REPLY[int(user.id)] = (int(owner_id), order_id)
             await q.answer()
             await q.message.reply_text(
-                f"💬 Режим ответа клиенту по заказу {_order_display_ref(order_id)}.\n"
+                f"💬 Режим ответа клиенту по {_order_display_label(order_id)}.\n"
                 "Напишите одним сообщением — оно уйдёт покупателю."
             )
             return
@@ -3924,7 +4039,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
             await _notify_customer_order_message(
                 context,
                 int(owner_id),
-                f"🚚 Заказ {_order_display_ref(order_id)} отправлен!",
+                f"🚚 {_order_display_label(order_id)} отправлен!",
             )
             await q.answer("Статус: отправлен")
             await _refresh_admin_message_keyboard(q, order_id)
@@ -3959,7 +4074,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
             await _notify_customer_order_message(
                 context,
                 int(owner_id),
-                f"✅ Заказ {_order_display_ref(order_id)} доставлен. Спасибо за покупку!",
+                f"✅ {_order_display_label(order_id)} доставлен. Спасибо за покупку!",
             )
             await q.answer("Статус: завершён")
             await _refresh_admin_message_keyboard(q, order_id)
@@ -3995,7 +4110,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
             await _notify_customer_order_message(
                 context,
                 int(owner_id),
-                f"❌ Заказ {_order_display_ref(order_id)} отменён менеджером.",
+                f"❌ {_order_display_label(order_id)} отменён менеджером.",
             )
             await q.answer("Заказ отменён")
             await _refresh_admin_message_keyboard(q, order_id)

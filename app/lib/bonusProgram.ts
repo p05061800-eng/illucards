@@ -81,3 +81,29 @@ export function bonusBalanceDescriptionRu(balance: number): string {
   const rub = (p / BONUS_POINTS_PER_CARD_UNIT) * RUB_PER_100_BONUS_POINTS;
   return `${p.toLocaleString("ru-RU")} — при списании ≈ ${byn.toLocaleString("ru-RU", { maximumFractionDigits: 2 })} BYN или ${rub.toLocaleString("ru-RU")} RUB`;
 }
+
+function formatBonusBynAmount(): string {
+  return BYN_PER_100_BONUS_POINTS.toLocaleString("ru-RU", {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 2,
+  });
+}
+
+function formatBonusRubAmount(): string {
+  return RUB_PER_100_BONUS_POINTS.toLocaleString("ru-RU");
+}
+
+/**
+ * Подсказка в корзине: курс 100 баллов зависит от страны доставки.
+ */
+export function bonusSpendRateHintRu(delivery: DeliveryCountry | null): string {
+  const byn = formatBonusBynAmount();
+  const rub = formatBonusRubAmount();
+  if (!delivery) {
+    return `100 баллов = ${byn} BYN (Беларусь) или ${rub} RUB (другие страны). Выберите доставку — покажем ваш курс.`;
+  }
+  if (delivery === "BY") {
+    return `При доставке в Беларусь: 100 баллов = ${byn} BYN. За рубежом: 100 баллов = ${rub} RUB.`;
+  }
+  return `При вашей доставке: 100 баллов = ${rub} RUB. В Беларусь: 100 баллов = ${byn} BYN.`;
+}

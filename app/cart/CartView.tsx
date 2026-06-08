@@ -8,7 +8,7 @@ import { useCart } from "../context/CartContext";
 import { useCurrency } from "../context/CurrencyContext";
 import { useCategoryTiles } from "../context/CategoryFramesContext";
 import { getCardArtIntrinsicSize } from "../lib/cardArtIntrinsicSize";
-import { bonusPointsToEarnForOrderItems } from "../lib/bonusProgram";
+import { bonusPointsToEarnForOrderItems, bonusSpendRateHintRu } from "../lib/bonusProgram";
 import { displayCurrencyForDelivery, formatCardPrice, rubFromByn } from "../lib/formatPrice";
 import { TelegramCheckoutButton } from "@/components/checkout/TelegramCheckoutButton";
 import { DeliveryCountryField } from "../components/DeliveryCountryField";
@@ -246,6 +246,9 @@ export default function CartView() {
                     <div className="rounded-xl border border-amber-400/25 bg-amber-950/30 px-3 py-3 text-sm text-amber-100/95">
                       <p className="font-medium text-amber-100">
                         Бонусы: {bonusBalance.toLocaleString("ru-RU")} баллов
+                      </p>
+                      <p className="mt-2 text-xs leading-relaxed text-amber-200/85">
+                        {bonusSpendRateHintRu(deliveryCountry)}
                       </p>
                       {bonusPointsFromThisCart > 0 ? (
                         <p className="mt-1.5 text-sm font-semibold tabular-nums text-amber-50">

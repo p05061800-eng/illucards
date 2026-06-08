@@ -40,7 +40,7 @@ from db import init_db, recompute_user_order_stats, sync_all_users_order_stats, 
 logging.basicConfig(format="%(asctime)s %(levelname)s %(message)s", level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-BOT_BUILD_ID = "2026-06-08-no-delete-v1"
+BOT_BUILD_ID = "2026-06-08-keep-cart-v1"
 
 REPLY_MENU_TEXTS = frozenset(
     {"💬 Связь", "📦 Мои заказы", "📜 Мои заказы", "🚚 Доставка", "⭐ Бонусы"}
@@ -543,6 +543,7 @@ ORDER_STATUS_RU: dict[str, str] = {
     "confirmed": "✅ Принят",
     "accepted": "✅ Принят",
     "paid": "💳 Чек получен",
+    "proof_submitted": "📸 Чек отправлен",
     "shipped": "🚚 Отправлен",
     "sent": "🚚 Отправлен",
     "delivered": "✅ Доставлен",
@@ -2793,6 +2794,9 @@ async def payment_proof_handler(
     if site_st == "paid":
         await msg.reply_text("Чек по этому заказу уже получен. Ожидайте подтверждения.")
         return
+    if site_st == "proof_submitted":
+        await msg.reply_text("Чек уже отправлен. Ожидайте подтверждения менеджера.")
+        return
 
     pm = str(order.get("payment_method") or "").strip().lower()
     if pm not in ("card", "crypto", "phone"):
@@ -2809,15 +2813,14 @@ async def payment_proof_handler(
     await msg.reply_text(MSG_PROOF_RECEIVED)
 
     rec = _record_site_order_in_bot(order_id, order, uid)
-    rec["status"] = "paid"
+    rec["status"] = "proof_submitted"
     rec["payment_method"] = pm
     BOT_ORDERS[order_id] = rec
     _persist_bot_orders()
     _AWAIT_PAYMENT_PROOF.pop(uid, None)
 
-    site_ok = await post_site_order_status(order_id, "paid", order, uid)
-    if not site_ok:
-        logger.warning("payment proof: site status paid failed order=%s", order_id)
+    # Не шлём status=paid на сайт при скрине — иначе Vercel часто очищает корзину.
+    # Статус на сайте обновит админ при «Принять» (confirmed + paid).
 
     admin_chat_id = _resolve_admin_chat_id()
     if admin_chat_id:
@@ -3512,6 +3515,8 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
             BOT_ORDERS[order_id] = rec
             _persist_bot_orders()
 
+            if not await post_site_order_status(order_id, "paid", order, owner_id):
+                logger.warning("admin confirm: site paid failed order=%s", order_id)
             if not await post_site_order_status(order_id, "confirmed", order, owner_id):
                 await q.answer("Не удалось обновить на сайте", show_alert=True)
                 return
@@ -3738,17 +3743,17 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
                 )
                 return
 
-            if site_st not in ("new", "confirmed", ""):
+            if site_st not in ("new", "confirmed", "proof_submitted", ""):
                 await q.answer(
                     "На этом этапе отмена только через поддержку.",
                     show_alert=True,
                 )
                 return
 
-            if site_st == "new":
-                site_ok = await post_site_order_bot_delete(order_id, owner_id)
-            else:
-                site_ok = await post_site_order_status(order_id, "cancelled")
+            # Только cancelled — не bot-delete (на сайте bot-delete мог сносить корзину).
+            site_ok = await post_site_order_status(
+                order_id, "cancelled", order, owner_id
+            )
             if not site_ok:
                 logger.warning("Сайт: не удалось отменить/удалить заказ %s", order_id)
                 await q.answer("Не удалось связаться с сайтом. Попробуйте позже.", show_alert=True)

@@ -40,7 +40,7 @@ from db import init_db, recompute_user_order_stats, sync_all_users_order_stats, 
 logging.basicConfig(format="%(asctime)s %(levelname)s %(message)s", level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-BOT_BUILD_ID = "2026-06-09-auto-tg-login-v1"
+BOT_BUILD_ID = "2026-06-10-tg-wait-link-only-v1"
 
 REPLY_MENU_TEXTS = frozenset(
     {"💬 Связь", "📦 Мои заказы", "📜 Мои заказы", "🚚 Доставка", "⭐ Бонусы"}
@@ -1669,9 +1669,16 @@ def _site_open_markup(telegram_user_id: int) -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup([[InlineKeyboardButton("Открыть сайт", url=url)]])
 
 
-def _account_open_markup() -> InlineKeyboardMarkup:
-    """Личный кабинет после web_login (автовход или код вручную)."""
-    url = f"{SITE_LOGIN_ORIGIN}/account"
+def _account_open_markup(wait_id: str | None = None) -> InlineKeyboardMarkup:
+    """Личный кабинет — ссылка с tg_wait для автоматического входа."""
+    wid = str(wait_id or "").strip().lower()
+    if (
+        len(wid) == 32
+        and all(c in "0123456789abcdef" for c in wid)
+    ):
+        url = f"{SITE_LOGIN_ORIGIN}/account?tg_wait={wid}"
+    else:
+        url = f"{SITE_LOGIN_ORIGIN}/account"
     return InlineKeyboardMarkup(
         [[InlineKeyboardButton("Открыть личный кабинет", url=url)]]
     )
@@ -2934,13 +2941,30 @@ def _save_login_codes(data: dict[str, dict[str, Any]]) -> None:
         logger.warning("telegram-login-codes write: %s", e)
 
 
+async def _sync_login_wait_to_site(
+    telegram_user_id: int,
+    username: str | None,
+    wait_id: str,
+) -> bool:
+    """Синхронизация автовхода: wait_id + профиль на сайт (без кода)."""
+    wid = str(wait_id or "").strip().lower()
+    if len(wid) != 32 or not all(c in "0123456789abcdef" for c in wid):
+        return False
+    return await _sync_login_code_to_site(
+        "",
+        int(telegram_user_id),
+        username,
+        wid,
+    )
+
+
 async def _sync_login_code_to_site(
     code: str,
     telegram_user_id: int,
     username: str | None,
     wait_id: str | None = None,
 ) -> bool:
-    """Продакшен (Vercel): код хранится в Redis на сайте, не в файле на машине бота."""
+    """Продакшен (Vercel): код и/или wait_id на сайте (Redis)."""
     secret = (os.getenv("ILLUCARDS_LOGIN_CODE_SYNC_SECRET") or "").strip()
     if not secret:
         return True
@@ -2949,13 +2973,17 @@ async def _sync_login_code_to_site(
         url = f"{SITE_LOGIN_ORIGIN}/api/internal/sync-login-code"
     un = (username or "").strip().lstrip("@")
     payload: dict[str, Any] = {
-        "code": code,
         "user_id": int(telegram_user_id),
         "username_display": un if un else f"id{int(telegram_user_id)}",
         "username_norm": un.lower() if un else "",
     }
+    code_digits = re.sub(r"\D", "", str(code or ""))
+    if len(code_digits) == 4:
+        payload["code"] = code_digits
     if wait_id and len(wait_id) == 32 and all(c in "0123456789abcdef" for c in wait_id.lower()):
         payload["wait_id"] = wait_id.lower()
+    if "code" not in payload and "wait_id" not in payload:
+        return False
     timeout = aiohttp.ClientTimeout(total=15)
     try:
         async with aiohttp.ClientSession(timeout=timeout) as session:
@@ -3046,14 +3074,16 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
             web_login_wait_id = suf
     is_web_login = low0 == "web_login" or low0.startswith("web_login_")
     if args and is_web_login:
-        code = _issue_login_code_for_user(user.id, user.username if user else None) if user else None
-        if not code:
+        if not user:
+            await update.message.reply_text("Не удалось определить пользователя Telegram.")
+            return
+        if not web_login_wait_id:
             await update.message.reply_text(
-                "Не удалось создать код входа. Попробуйте ещё раз через минуту."
+                "Для входа на сайт нажмите «Войти через Telegram» в личном кабинете на "
+                f"{SITE_LOGIN_ORIGIN}/account"
             )
             return
-        synced = await _sync_login_code_to_site(
-            code,
+        synced = await _sync_login_wait_to_site(
             int(user.id),
             user.username if user else None,
             web_login_wait_id,
@@ -3063,30 +3093,12 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
                 "Сервис входа временно недоступен. Попробуйте ещё раз через минуту."
             )
             return
-        if web_login_wait_id:
-            await update.message.reply_text(
-                "✅ Подтверждение получено.\n\n"
-                "Вернитесь на вкладку с сайтом — вход выполнится автоматически.\n\n"
-                "Если автоматически не получилось, код для ручного ввода:\n"
-                f"<code>{code}</code>\n\n"
-                "⏳ Действует 5 минут.",
-                parse_mode="HTML",
-            )
-            await update.message.reply_text(
-                "Или нажмите кнопку ниже — откроется личный кабинет.",
-                reply_markup=_account_open_markup() if user else None,
-            )
-        else:
-            await update.message.reply_text(
-                "🔐 Код для входа на сайт:\n\n"
-                f"<code>{code}</code>\n\n"
-                "⏳ Действует 5 минут.",
-                parse_mode="HTML",
-            )
-            await update.message.reply_text(
-                "Нажмите кнопку ниже — откроется личный кабинет, введите там 4 цифры кода.",
-                reply_markup=_account_open_markup() if user else None,
-            )
+        await update.message.reply_text(
+            "✅ Вход подтверждён.\n\n"
+            "Нажмите кнопку ниже — откроется личный кабинет на сайте (вход уже выполнен).\n\n"
+            "Или вернитесь на вкладку с сайтом — вход завершится автоматически.",
+            reply_markup=_account_open_markup(web_login_wait_id),
+        )
         return
 
     if low0 in ("my_orders", "orders"):

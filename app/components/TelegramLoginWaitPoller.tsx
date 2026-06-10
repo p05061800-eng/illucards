@@ -3,9 +3,8 @@
 import { useEffect, useRef } from "react";
 import { apiUrl } from "@/app/lib/apiUrl";
 import { useAuth } from "@/app/context/AuthContext";
-import { completeTelegramWebLogin } from "@/app/lib/completeTelegramWebLoginClient";
+import { finishTelegramWebLoginOnClient } from "@/app/lib/completeTelegramWebLoginClient";
 import {
-  TG_LOGIN_FOCUS_CODE_KEY,
   TG_LOGIN_WAIT_STORAGE_KEY,
   isValidLoginWaitId,
 } from "@/app/lib/telegramLoginWaitKeys";
@@ -78,7 +77,10 @@ export function TelegramLoginWaitPoller() {
         window.setTimeout(closePopup, 350);
         window.__illucardsTgLoginPopup = null;
 
-        const result = await completeTelegramWebLogin(waitId);
+        const result = await finishTelegramWebLoginOnClient(
+          waitId,
+          establishSessionFromTelegramUserId,
+        );
         try {
           sessionStorage.removeItem(TG_LOGIN_WAIT_STORAGE_KEY);
         } catch {
@@ -87,19 +89,11 @@ export function TelegramLoginWaitPoller() {
         startedAt.current = null;
 
         if (result.ok) {
-          establishSessionFromTelegramUserId(result.user_id, {
-            telegramUsername: result.username,
-          });
           window.location.assign(`${window.location.origin}/account`);
           return;
         }
 
-        try {
-          sessionStorage.setItem(TG_LOGIN_FOCUS_CODE_KEY, "1");
-        } catch {
-          /* ignore */
-        }
-        window.location.assign(`${window.location.origin}/account?login_code=1`);
+        completing.current = false;
       } catch {
         completing.current = false;
       }

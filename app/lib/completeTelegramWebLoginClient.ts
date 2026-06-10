@@ -5,6 +5,11 @@ export type CompleteTelegramWebLoginResult =
   | { ok: true; user_id: number; username: string | null }
   | { ok: false; error: string; status: number };
 
+type EstablishSession = (
+  telegramUserId: number,
+  options?: { telegramUsername?: string | null },
+) => { ok: true } | { ok: false; error: string };
+
 /** Завершить web_login: сервер проверяет wait_id и возвращает Telegram user id. */
 export async function completeTelegramWebLogin(
   waitId: string,
@@ -50,4 +55,33 @@ export async function completeTelegramWebLogin(
   } catch {
     return { ok: false, error: "Ошибка сети", status: 0 };
   }
+}
+
+/** Автовход на клиенте: wait_id → сессия + cookie. */
+export async function finishTelegramWebLoginOnClient(
+  waitId: string,
+  establishSessionFromTelegramUserId: EstablishSession,
+): Promise<CompleteTelegramWebLoginResult> {
+  const result = await completeTelegramWebLogin(waitId);
+  if (!result.ok) return result;
+
+  const established = establishSessionFromTelegramUserId(result.user_id, {
+    telegramUsername: result.username,
+  });
+  if (!established.ok) {
+    return { ok: false, error: established.error, status: 400 };
+  }
+
+  try {
+    await fetch("/api/auth/telegram-cookie", {
+      method: "POST",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ user_id: result.user_id }),
+    });
+  } catch {
+    /* optional bridge */
+  }
+
+  return result;
 }

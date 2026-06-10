@@ -6,7 +6,6 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { ChevronDown, ChevronRight, Package } from "lucide-react";
 import { OrderLineRow } from "@/app/components/orders/OrderLineRow";
 import { useAuth } from "@/app/context/AuthContext";
-import { CART_STORAGE_KEY, useCart } from "@/app/context/CartContext";
 import type { OrderListSummary } from "@/app/lib/ordersStore";
 import {
   bonusBalanceDescriptionRu,
@@ -20,118 +19,38 @@ import {
   orderAccountFlowLabel,
   ruPositionCountPhrase,
 } from "@/app/lib/orderStatus";
-import { apiUrl } from "@/app/lib/apiUrl";
+import { finishTelegramWebLoginOnClient } from "@/app/lib/completeTelegramWebLoginClient";
 import {
   persistTelegramUserIdentity,
   readTelegramPrimaryUserId,
   readTelegramUserLink,
 } from "@/app/lib/telegramUserIdentity";
-import { type DeliveryCountry } from "@/app/lib/delivery";
-import {
-  displayCurrencyForDelivery,
-  formatOrderTotalForDisplay,
-  rubFromByn,
-} from "@/app/lib/formatPrice";
+import { formatOrderTotalForDisplay } from "@/app/lib/formatPrice";
 import { startTelegramWebLoginWithWait } from "@/app/lib/startTelegramWebLoginClient";
-import { TG_LOGIN_FOCUS_CODE_KEY } from "@/app/lib/telegramLoginWaitKeys";
+import {
+  TG_LOGIN_WAIT_QUERY_PARAM,
+  TG_LOGIN_WAIT_STORAGE_KEY,
+  isValidLoginWaitId,
+} from "@/app/lib/telegramLoginWaitKeys";
 import { telegramWebLoginDeepLink } from "@/app/lib/telegramWebLoginUrl";
 
 type LsGate = "pending" | "ok" | "no_telegram";
 
 const PREVIEW_LIMIT = 5;
 
-const LS_DELIVERY_KEY = "illucards-delivery-country";
-
-/** Корзина для verify-code: при автологине React ещё не подхватил localStorage — читаем сразу из LS. */
-function readCartPayloadForVerifyFromStorage(): {
-  cart: Array<{
-    id: string;
-    title: string;
-    quantity: number;
-    priceByn: number;
-    priceRub: number;
-  }>;
-  deliveryCountry: DeliveryCountry;
-} {
-  const empty = {
-    cart: [] as Array<{
-      id: string;
-      title: string;
-      quantity: number;
-      priceByn: number;
-      priceRub: number;
-    }>,
-    deliveryCountry: "BY" as DeliveryCountry,
-  };
-  if (typeof window === "undefined") return empty;
-  try {
-    let dc: DeliveryCountry = "BY";
-    const rd = localStorage.getItem(LS_DELIVERY_KEY);
-    if (rd === "BY" || rd === "RU" || rd === "UA" || rd === "OTHER") {
-      dc = rd;
-    }
-    const raw = localStorage.getItem(CART_STORAGE_KEY);
-    if (!raw) return { ...empty, deliveryCountry: dc };
-    const parsed = JSON.parse(raw) as unknown;
-    if (!Array.isArray(parsed)) return { ...empty, deliveryCountry: dc };
-    const cart: Array<{
-      id: string;
-      title: string;
-      quantity: number;
-      priceByn: number;
-      priceRub: number;
-    }> = [];
-    for (const item of parsed) {
-      if (!item || typeof item !== "object") continue;
-      const o = item as Record<string, unknown>;
-      const id = typeof o.id === "string" ? o.id : "";
-      const title = typeof o.title === "string" ? o.title : "";
-      const q = typeof o.quantity === "number" ? o.quantity : Number(o.quantity);
-      const quantity = Number.isFinite(q) && q >= 1 ? Math.floor(q) : 1;
-      let priceByn = 0;
-      if (typeof o.priceByn === "number" && Number.isFinite(o.priceByn)) {
-        priceByn = o.priceByn;
-      } else if (typeof o.price === "number" && Number.isFinite(o.price)) {
-        priceByn = o.price;
-      }
-      const priceRub =
-        typeof o.priceRub === "number" && Number.isFinite(o.priceRub)
-          ? Math.round(o.priceRub)
-          : rubFromByn(priceByn);
-      if (!id) continue;
-      cart.push({ id, title, quantity, priceByn, priceRub });
-    }
-    return { cart, deliveryCountry: dc };
-  } catch {
-    return empty;
-  }
-}
-
 export default function AccountPageClient() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { user, hydrated, logout, establishSessionFromTelegramUserId } = useAuth();
-  const {
-    cartItems,
-    hydrated: cartHydrated,
-    deliveryCountry,
-    closeCart,
-  } = useCart();
   const [lsGate, setLsGate] = useState<LsGate>("pending");
-  const [focusCodeEntry, setFocusCodeEntry] = useState(false);
+  const [autoLoginPending, setAutoLoginPending] = useState(false);
+  const [autoLoginError, setAutoLoginError] = useState<string | null>(null);
   const [orders, setOrders] = useState<OrderListSummary[] | null>(null);
   const [ordersError, setOrdersError] = useState<string | null>(null);
   const [bonusPointsBalance, setBonusPointsBalance] = useState(0);
   const [telegramUsernameFromServer, setTelegramUsernameFromServer] = useState("");
   const [orderLinesOpenById, setOrderLinesOpenById] = useState<Record<string, boolean>>({});
-  const [tgCode, setTgCode] = useState("");
-  const [tgInfo, setTgInfo] = useState<string | null>(null);
-  const [tgError, setTgError] = useState<string | null>(null);
-  const [verifyCodePending, setVerifyCodePending] = useState(false);
-  const prevCodeDigitsLen = useRef(0);
-  const verifyInFlight = useRef(false);
-  const codeInputRef = useRef<HTMLInputElement | null>(null);
-  const codeSectionRef = useRef<HTMLDivElement | null>(null);
+  const autoLoginStarted = useRef(false);
 
   useEffect(() => {
     const id = readTelegramPrimaryUserId();
@@ -142,31 +61,45 @@ export default function AccountPageClient() {
     setLsGate("ok");
   }, []);
 
+  const completeLoginFromWaitId = useCallback(
+    async (waitId: string) => {
+      if (autoLoginStarted.current) return;
+      autoLoginStarted.current = true;
+      setAutoLoginPending(true);
+      setAutoLoginError(null);
+      const result = await finishTelegramWebLoginOnClient(
+        waitId,
+        establishSessionFromTelegramUserId,
+      );
+      if (result.ok) {
+        try {
+          sessionStorage.removeItem(TG_LOGIN_WAIT_STORAGE_KEY);
+        } catch {
+          /* ignore */
+        }
+        setLsGate("ok");
+        setAutoLoginPending(false);
+        router.replace("/account");
+        router.refresh();
+        return;
+      }
+      setAutoLoginPending(false);
+      autoLoginStarted.current = false;
+      setAutoLoginError(
+        result.error ||
+          "Не удалось выполнить вход. Нажмите «Войти через Telegram» ещё раз.",
+      );
+    },
+    [establishSessionFromTelegramUserId, router],
+  );
+
   useEffect(() => {
-    if (lsGate !== "no_telegram" || typeof window === "undefined") return;
-    const fromQuery = searchParams.get("login_code") === "1";
-    let fromSession = false;
-    try {
-      fromSession = sessionStorage.getItem(TG_LOGIN_FOCUS_CODE_KEY) === "1";
-    } catch {
-      fromSession = false;
+    if (lsGate !== "no_telegram") return;
+    const fromUrl = searchParams.get(TG_LOGIN_WAIT_QUERY_PARAM);
+    if (fromUrl && isValidLoginWaitId(fromUrl)) {
+      void completeLoginFromWaitId(fromUrl.trim().toLowerCase());
     }
-    if (!fromQuery && !fromSession) return;
-
-    setFocusCodeEntry(true);
-    closeCart();
-    try {
-      sessionStorage.removeItem(TG_LOGIN_FOCUS_CODE_KEY);
-    } catch {
-      /* ignore */
-    }
-
-    const t = window.setTimeout(() => {
-      codeSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-      codeInputRef.current?.focus({ preventScroll: true });
-    }, 80);
-    return () => window.clearTimeout(t);
-  }, [lsGate, searchParams, closeCart]);
+  }, [lsGate, searchParams, completeLoginFromWaitId]);
 
   const loadOrders = useCallback(async () => {
     setOrdersError(null);
@@ -252,231 +185,15 @@ export default function AccountPageClient() {
     router.refresh();
   }, [logout, router]);
 
-  const handleVerifyTelegramCode = useCallback(async () => {
-    const codeDigits = tgCode.replace(/\D/g, "").slice(0, 4);
-    if (codeDigits.length !== 4) {
-      setTgError("Введите 4 цифры кода");
-      setTgInfo(null);
-      return;
-    }
-    if (verifyInFlight.current) return;
-    verifyInFlight.current = true;
-    setVerifyCodePending(true);
-    setTgError(null);
-    setTgInfo(null);
-    try {
-      const verifyBody: Record<string, unknown> = { code: codeDigits };
-      let cartForVerify: Array<{
-        id: string;
-        title: string;
-        quantity: number;
-        priceByn: number;
-        priceRub: number;
-      }> | null = null;
-      let deliveryForVerify: DeliveryCountry = "BY";
-      if (cartHydrated && cartItems.length > 0) {
-        cartForVerify = cartItems.map((l) => ({
-          id: l.id,
-          title: l.title,
-          quantity: l.quantity,
-          priceByn: l.priceByn,
-          priceRub: l.priceRub,
-        }));
-        deliveryForVerify = deliveryCountry ?? "BY";
-      } else {
-        const snap = readCartPayloadForVerifyFromStorage();
-        if (snap.cart.length > 0) {
-          cartForVerify = snap.cart;
-          deliveryForVerify = snap.deliveryCountry;
-        }
-      }
-      if (cartForVerify && cartForVerify.length > 0) {
-        verifyBody.cart = cartForVerify;
-        verifyBody.deliveryCountry = deliveryForVerify;
-        verifyBody.currency = displayCurrencyForDelivery(deliveryForVerify);
-      }
-      const res = await fetch(apiUrl("/api/verify-code"), {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(verifyBody),
-      });
-      const data = (await res.json().catch(() => ({}))) as {
-        error?: string;
-        user_id?: number;
-        username?: string;
-      };
-      const userId = data.user_id;
-      if (
-        !res.ok ||
-        typeof userId !== "number" ||
-        !Number.isFinite(userId) ||
-        userId <= 0
-      ) {
-        if (res.status === 503 || res.status === 502) {
-          setTgError(
-            data.error ||
-              "Сервис входа временно недоступен. Запросите новый код в боте.",
-          );
-        } else {
-          setTgError(data.error || "Неверный или просроченный код");
-        }
-        return;
-      }
-      const uidFloor = Math.floor(userId);
-      const established = establishSessionFromTelegramUserId(uidFloor, {
-        telegramUsername: typeof data.username === "string" ? data.username : null,
-      });
-      if (!established.ok) {
-        setTgError(established.error);
-        return;
-      }
-      try {
-        await fetch("/api/auth/telegram-cookie", {
-          method: "POST",
-          credentials: "include",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ user_id: uidFloor }),
-        });
-      } catch {
-        /* cookie bridge optional; LS + JS cookie уже выставлены в establishSession */
-      }
-      setTgInfo("Вход выполнен. Переход в личный кабинет…");
-      setTgCode("");
-      setLsGate("ok");
-      if (typeof window !== "undefined") {
-        window.location.assign("/account");
-      } else {
-        router.replace("/account");
-        router.refresh();
-      }
-    } catch {
-      setTgError("Ошибка сети. Попробуйте снова.");
-    } finally {
-      verifyInFlight.current = false;
-      setVerifyCodePending(false);
-    }
-  }, [
-    tgCode,
-    establishSessionFromTelegramUserId,
-    router,
-    cartHydrated,
-    cartItems,
-    deliveryCountry,
-  ]);
-
-  /** После ввода 4-й цифры кода — сразу проверка и переход в ЛК (без лишнего клика). */
-  useEffect(() => {
-    const digits = tgCode.replace(/\D/g, "").slice(0, 4);
-    const len = digits.length;
-    if (len === 0) {
-      prevCodeDigitsLen.current = 0;
-      return;
-    }
-    if (
-      len === 4 &&
-      prevCodeDigitsLen.current < 4 &&
-      !verifyCodePending &&
-      lsGate === "no_telegram"
-    ) {
-      void handleVerifyTelegramCode();
-    }
-    prevCodeDigitsLen.current = len;
-  }, [tgCode, verifyCodePending, lsGate, handleVerifyTelegramCode]);
-
-  if (lsGate === "pending") {
+  if (lsGate === "pending" || autoLoginPending) {
     return (
       <div className="mx-auto max-w-lg px-4 py-20 text-center text-sm text-zinc-500">
-        Загрузка…
+        {autoLoginPending ? "Выполняем вход…" : "Загрузка…"}
       </div>
     );
   }
 
   if (lsGate === "no_telegram") {
-    const codeEntryBlock = (
-      <div
-        ref={codeSectionRef}
-        id="tg-login-code"
-        className={`rounded-2xl bg-zinc-50 p-5 text-zinc-900 shadow-[0_2px_12px_rgba(0,0,0,0.12)] ring-1 sm:rounded-3xl sm:p-6 ${
-          focusCodeEntry
-            ? "ring-violet-400/70 ring-2"
-            : "ring-zinc-200/90"
-        }`}
-      >
-        <h3 className="text-base font-bold tracking-tight text-zinc-950">
-          {focusCodeEntry ? "Введите код вручную" : "Резервный вход по коду"}
-        </h3>
-        <p className="mt-1 text-sm text-zinc-600">
-          {focusCodeEntry
-            ? "Автовход не сработал — введите 4 цифры из бота."
-            : "Обычно вход выполняется автоматически. Код нужен только если автоматически не получилось."}
-        </p>
-        <div className="mt-3 grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto]">
-          <label className="block">
-            <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-zinc-500">
-              Код из бота
-            </span>
-            <input
-              ref={codeInputRef}
-              type="text"
-              inputMode="numeric"
-              pattern="[0-9]*"
-              maxLength={4}
-              placeholder="0000"
-              value={tgCode}
-              onChange={(e) => setTgCode(e.target.value.replace(/\D/g, "").slice(0, 4))}
-              className="h-11 w-full rounded-xl border border-zinc-300 bg-white px-3 text-sm tracking-[0.3em] text-zinc-900 outline-none transition focus:border-violet-400 focus:ring-2 focus:ring-violet-500/20"
-              autoComplete="one-time-code"
-            />
-          </label>
-          <button
-            type="button"
-            onClick={handleVerifyTelegramCode}
-            disabled={verifyCodePending}
-            className="inline-flex min-h-11 items-center justify-center rounded-xl bg-[#5D6BF3] px-4 text-sm font-semibold text-white transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            {verifyCodePending ? "Проверка..." : "Войти"}
-          </button>
-        </div>
-
-        {tgError ? (
-          <p className="mt-3 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
-            {tgError}
-          </p>
-        ) : null}
-        {tgInfo ? (
-          <p className="mt-3 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-700">
-            {tgInfo}
-          </p>
-        ) : null}
-      </div>
-    );
-
-    const telegramButtonBlock = (
-      <div className="rounded-2xl bg-zinc-50 p-5 text-center text-zinc-900 shadow-[0_2px_12px_rgba(0,0,0,0.12)] ring-1 ring-zinc-200/90 sm:rounded-3xl sm:p-6">
-        <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-zinc-100 text-zinc-500 ring-1 ring-zinc-200">
-          <Package className="h-6 w-6" strokeWidth={1.5} aria-hidden />
-        </div>
-        <h2 className="text-lg font-bold tracking-tight text-zinc-950">
-          Войдите, чтобы увидеть заказы
-        </h2>
-        <p className="mx-auto mt-2 max-w-md text-sm leading-relaxed text-zinc-600">
-          После авторизации через Telegram в кабинете появятся ваши заказы и
-          текущие статусы доставки.
-        </p>
-        <button
-          type="button"
-          onClick={() => void handleOpenTelegramForLogin()}
-          className="mt-5 inline-flex min-h-11 w-full items-center justify-center rounded-xl bg-[#5D6BF3] px-6 text-sm font-semibold text-white shadow-md transition hover:brightness-110 sm:w-auto"
-        >
-          Войти через Telegram
-        </button>
-        <p className="mx-auto mt-2 max-w-md text-xs text-zinc-500">
-          Когда подтвердите вход в боте, эта вкладка сама откроет личный кабинет — оставьте
-          сайт открытым.
-        </p>
-      </div>
-    );
-
     return (
       <div
         className="mx-auto w-full max-w-2xl px-4 pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-4 sm:px-5 sm:pt-6 md:max-w-3xl md:px-6"
@@ -489,18 +206,32 @@ export default function AccountPageClient() {
           Здесь будут профиль, заказы и статусы после входа через Telegram
         </p>
 
-        <div className="mt-6 flex flex-col gap-4">
-          {focusCodeEntry ? (
-            <>
-              {codeEntryBlock}
-              {telegramButtonBlock}
-            </>
-          ) : (
-            <>
-              {telegramButtonBlock}
-              {codeEntryBlock}
-            </>
-          )}
+        <div className="mt-6 rounded-2xl bg-zinc-50 p-5 text-center text-zinc-900 shadow-[0_2px_12px_rgba(0,0,0,0.12)] ring-1 ring-zinc-200/90 sm:rounded-3xl sm:p-6">
+          <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-zinc-100 text-zinc-500 ring-1 ring-zinc-200">
+            <Package className="h-6 w-6" strokeWidth={1.5} aria-hidden />
+          </div>
+          <h2 className="text-lg font-bold tracking-tight text-zinc-950">
+            Войдите, чтобы увидеть заказы
+          </h2>
+          <p className="mx-auto mt-2 max-w-md text-sm leading-relaxed text-zinc-600">
+            Нажмите кнопку ниже, подтвердите вход в Telegram — сайт откроет личный кабинет
+            автоматически. Код вводить не нужно.
+          </p>
+          <button
+            type="button"
+            onClick={() => void handleOpenTelegramForLogin()}
+            className="mt-5 inline-flex min-h-11 w-full items-center justify-center rounded-xl bg-[#5D6BF3] px-6 text-sm font-semibold text-white shadow-md transition hover:brightness-110 sm:w-auto"
+          >
+            Войти через Telegram
+          </button>
+          <p className="mx-auto mt-2 max-w-md text-xs text-zinc-500">
+            Оставьте эту вкладку открытой или нажмите кнопку в боте «Открыть личный кабинет».
+          </p>
+          {autoLoginError ? (
+            <p className="mx-auto mt-4 max-w-md rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+              {autoLoginError}
+            </p>
+          ) : null}
         </div>
 
         <section className="mt-8" aria-labelledby="account-orders-heading">

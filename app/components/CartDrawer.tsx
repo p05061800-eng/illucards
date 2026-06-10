@@ -24,7 +24,6 @@ import { bonusPointsToEarnForOrderItems, bonusSpendRateHintRu } from "../lib/bon
 import { displayCurrencyForDelivery, formatCardPrice, rubFromByn } from "../lib/formatPrice";
 import { TelegramCheckoutButton } from "@/components/checkout/TelegramCheckoutButton";
 import { DeliveryCountryField } from "./DeliveryCountryField";
-import { TG_LOGIN_FOCUS_CODE_KEY } from "@/app/lib/telegramLoginWaitKeys";
 
 export function CartDrawer() {
   const pathname = usePathname();
@@ -78,15 +77,7 @@ export function CartDrawer() {
   useEffect(() => {
     if (pathname !== "/account" || typeof window === "undefined") return;
     const sp = new URLSearchParams(window.location.search);
-    let focus = sp.get("login_code") === "1";
-    if (!focus) {
-      try {
-        focus = sessionStorage.getItem(TG_LOGIN_FOCUS_CODE_KEY) === "1";
-      } catch {
-        focus = false;
-      }
-    }
-    if (focus) closeCart();
+    if (sp.get("tg_wait")) closeCart();
   }, [pathname, closeCart]);
 
   useEffect(() => {

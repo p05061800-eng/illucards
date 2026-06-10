@@ -42,8 +42,14 @@ export async function POST(request: Request) {
   const o = body as Record<string, unknown>;
   const codeRaw = typeof o.code === "string" ? o.code : "";
   const digits = codeRaw.replace(/\D/g, "");
-  if (digits.length !== 4) {
-    return NextResponse.json({ error: "Нужен 4-значный код" }, { status: 400 });
+  const waitRawEarly = typeof o.wait_id === "string" ? o.wait_id.trim() : "";
+  const hasWaitEarly =
+    Boolean(waitRawEarly) && isValidLoginWaitId(waitRawEarly);
+  if (digits.length !== 4 && !hasWaitEarly) {
+    return NextResponse.json(
+      { error: "Нужен wait_id или 4-значный код" },
+      { status: 400 },
+    );
   }
 
   const uidRaw = o.user_id;
@@ -68,17 +74,18 @@ export async function POST(request: Request) {
   const display =
     unDisplay.replace(/^@/, "").trim() || (norm ? norm : `id${Math.floor(uid)}`);
 
-  const expires = Date.now() + 5 * 60 * 1000;
-
-  try {
-    await upsertLoginCodeEntry(digits, {
-      user_id: Math.floor(uid),
-      username_norm: norm || display.toLowerCase(),
-      username_display: display,
-      expires,
-    });
-  } catch {
-    return NextResponse.json({ error: "Не удалось сохранить код" }, { status: 500 });
+  if (digits.length === 4) {
+    const expires = Date.now() + 5 * 60 * 1000;
+    try {
+      await upsertLoginCodeEntry(digits, {
+        user_id: Math.floor(uid),
+        username_norm: norm || display.toLowerCase(),
+        username_display: display,
+        expires,
+      });
+    } catch {
+      return NextResponse.json({ error: "Не удалось сохранить код" }, { status: 500 });
+    }
   }
 
   const waitRaw = typeof o.wait_id === "string" ? o.wait_id.trim() : "";

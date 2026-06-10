@@ -20,8 +20,8 @@ import {
   ruPositionCountPhrase,
 } from "@/app/lib/orderStatus";
 import {
-  accountUrlAfterTelegramLogin,
   finishTelegramWebLoginOnClient,
+  waitForLoginWaitReady,
 } from "@/app/lib/completeTelegramWebLoginClient";
 import {
   persistTelegramUserIdentity,
@@ -62,9 +62,21 @@ export default function AccountPageClient() {
       autoLoginStarted.current = true;
       setAutoLoginPending(true);
       setAutoLoginError(null);
+
+      const profile = await waitForLoginWaitReady(waitId);
+      if (!profile) {
+        setAutoLoginPending(false);
+        autoLoginStarted.current = false;
+        setAutoLoginError(
+          "Подтверждение в боте ещё не получено. Нажмите «Start» в боте и повторите.",
+        );
+        return;
+      }
+
       const result = await finishTelegramWebLoginOnClient(
         waitId,
         establishSessionFromTelegramUserId,
+        { knownProfile: profile },
       );
       if (result.ok) {
         try {
@@ -74,7 +86,8 @@ export default function AccountPageClient() {
         }
         setLsGate("ok");
         setAutoLoginPending(false);
-        window.location.assign(accountUrlAfterTelegramLogin());
+        router.replace("/account");
+        router.refresh();
         return;
       }
       setAutoLoginPending(false);
@@ -100,24 +113,25 @@ export default function AccountPageClient() {
   }, []);
 
   useEffect(() => {
-    const fromUrl = searchParams.get(TG_LOGIN_WAIT_QUERY_PARAM);
-    if (fromUrl && isValidLoginWaitId(fromUrl)) {
-      void completeLoginFromWaitId(fromUrl.trim().toLowerCase());
+    if (user?.telegramId != null && user.telegramId > 0) {
+      setLsGate("ok");
+      return;
     }
-  }, [searchParams, completeLoginFromWaitId]);
-
-  useEffect(() => {
-    if (autoLoginPending) return;
-    const fromUrl = searchParams.get(TG_LOGIN_WAIT_QUERY_PARAM);
-    if (fromUrl && isValidLoginWaitId(fromUrl)) return;
-
     const id = readTelegramPrimaryUserId();
     if (id == null) {
       setLsGate("no_telegram");
       return;
     }
     setLsGate("ok");
-  }, [autoLoginPending, searchParams]);
+  }, [user?.telegramId]);
+
+  useEffect(() => {
+    if (lsGate !== "no_telegram") return;
+    const fromUrl = searchParams.get(TG_LOGIN_WAIT_QUERY_PARAM);
+    if (fromUrl && isValidLoginWaitId(fromUrl)) {
+      void completeLoginFromWaitId(fromUrl.trim().toLowerCase());
+    }
+  }, [lsGate, searchParams, completeLoginFromWaitId]);
 
   const loadOrders = useCallback(async () => {
     setOrdersError(null);

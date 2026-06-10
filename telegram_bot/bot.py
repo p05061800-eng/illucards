@@ -1831,13 +1831,19 @@ def _site_open_markup(telegram_user_id: int) -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup([[InlineKeyboardButton("Открыть сайт", url=url)]])
 
 
-def _account_open_markup(wait_id: str | None = None) -> InlineKeyboardMarkup:
-    """Личный кабинет — ссылка с tg_wait для автоматического входа."""
+def _account_open_markup(
+    wait_id: str | None = None,
+    telegram_user_id: int | None = None,
+) -> InlineKeyboardMarkup:
+    """Личный кабинет — user_id для мгновенного входа + tg_wait для синхронизации."""
     wid = str(wait_id or "").strip().lower()
-    if (
-        len(wid) == 32
-        and all(c in "0123456789abcdef" for c in wid)
-    ):
+    uid = int(telegram_user_id or 0)
+    has_wait = len(wid) == 32 and all(c in "0123456789abcdef" for c in wid)
+    if uid > 0 and has_wait:
+        url = f"{SITE_LOGIN_ORIGIN}/account?user_id={uid}&tg_wait={wid}"
+    elif uid > 0:
+        url = f"{SITE_LOGIN_ORIGIN}/account?user_id={uid}"
+    elif has_wait:
         url = f"{SITE_LOGIN_ORIGIN}/account?tg_wait={wid}"
     else:
         url = f"{SITE_LOGIN_ORIGIN}/account"
@@ -3475,7 +3481,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
             "✅ Вход подтверждён.\n\n"
             "Нажмите кнопку ниже — откроется личный кабинет на сайте (вход уже выполнен).\n\n"
             "Или вернитесь на вкладку с сайтом — вход завершится автоматически.",
-            reply_markup=_account_open_markup(web_login_wait_id),
+            reply_markup=_account_open_markup(web_login_wait_id, int(user.id)),
         )
         return
 

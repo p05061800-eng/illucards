@@ -34,9 +34,7 @@ export function telegramUserIdCookieOptions(
   sameSite: "lax";
   path: "/";
   maxAge: number;
-  domain?: string;
 } {
-  const domain = rootCookieDomainFromRequest(request);
   return {
     name: COOKIE_TELEGRAM_USER_ID,
     value: String(Math.floor(userId)),
@@ -45,7 +43,6 @@ export function telegramUserIdCookieOptions(
     sameSite: "lax",
     path: "/",
     maxAge: TELEGRAM_USER_ID_COOKIE_MAX_AGE_SEC,
-    ...(domain ? { domain } : {}),
   };
 }
 
@@ -57,9 +54,7 @@ export function clearTelegramUserIdCookieOptions(request: NextRequest): {
   sameSite: "lax";
   path: "/";
   maxAge: 0;
-  domain?: string;
 } {
-  const domain = rootCookieDomainFromRequest(request);
   return {
     name: COOKIE_TELEGRAM_USER_ID,
     value: "",
@@ -68,6 +63,5 @@ export function clearTelegramUserIdCookieOptions(request: NextRequest): {
     sameSite: "lax",
     path: "/",
     maxAge: 0,
-    ...(domain ? { domain } : {}),
   };
 }

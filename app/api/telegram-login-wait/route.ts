@@ -3,7 +3,7 @@ import type { NextRequest } from "next/server";
 import { isValidLoginWaitId } from "@/app/lib/telegramLoginWaitKeys";
 import {
   createLoginWaitId,
-  isLoginWaitReady,
+  peekLoginWaitProfile,
   registerLoginWait,
 } from "@/app/lib/telegramLoginWaitStore";
 
@@ -22,6 +22,10 @@ export async function GET(request: NextRequest) {
   if (!isValidLoginWaitId(raw)) {
     return NextResponse.json({ error: "Некорректный wait_id" }, { status: 400 });
   }
-  const ready = await isLoginWaitReady(raw);
-  return NextResponse.json({ ready });
+  const profile = await peekLoginWaitProfile(raw);
+  return NextResponse.json({
+    ready: profile != null,
+    user_id: profile?.user_id,
+    username: profile?.username ?? null,
+  });
 }

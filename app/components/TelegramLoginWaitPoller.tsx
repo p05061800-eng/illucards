@@ -6,10 +6,10 @@ import { useAuth } from "@/app/context/AuthContext";
 import {
   accountUrlAfterTelegramLogin,
   finishTelegramWebLoginOnClient,
+  pollLoginWait,
 } from "@/app/lib/completeTelegramWebLoginClient";
 import {
   TG_LOGIN_AUTO_ERROR_KEY,
-  TG_LOGIN_WAIT_QUERY_PARAM,
   TG_LOGIN_WAIT_STORAGE_KEY,
   isValidLoginWaitId,
 } from "@/app/lib/telegramLoginWaitKeys";
@@ -37,13 +37,6 @@ export function TelegramLoginWaitPoller() {
     const tick = async () => {
       if (completing.current) return;
 
-      try {
-        const params = new URLSearchParams(window.location.search);
-        if (params.has(TG_LOGIN_WAIT_QUERY_PARAM)) return;
-      } catch {
-        /* ignore */
-      }
-
       let waitId: string | null = null;
       try {
         waitId = sessionStorage.getItem(TG_LOGIN_WAIT_STORAGE_KEY);
@@ -64,57 +57,52 @@ export function TelegramLoginWaitPoller() {
         startedAt.current = null;
         return;
       }
+
+      const poll = await pollLoginWait(waitId);
+      if (!poll.ready || poll.user_id == null || poll.user_id <= 0) return;
+
+      completing.current = true;
+
+      const closePopup = () => {
+        try {
+          window.__illucardsTgLoginPopup?.close();
+        } catch {
+          /* ignore */
+        }
+      };
+      closePopup();
+      window.setTimeout(closePopup, 120);
+      window.setTimeout(closePopup, 350);
+      window.__illucardsTgLoginPopup = null;
+
+      const result = await finishTelegramWebLoginOnClient(
+        waitId,
+        establishSessionFromTelegramUserId,
+        {
+          knownProfile: {
+            user_id: poll.user_id,
+            username: poll.username ?? undefined,
+          },
+        },
+      );
       try {
-        const res = await fetch(
-          apiUrl(
-            `/api/telegram-login-wait?wait_id=${encodeURIComponent(waitId)}`,
-          ),
-          { cache: "no-store" },
-        );
-        if (!res.ok) return;
-        const data = (await res.json()) as { ready?: boolean };
-        if (!data.ready) return;
-
-        completing.current = true;
-
-        const closePopup = () => {
-          try {
-            window.__illucardsTgLoginPopup?.close();
-          } catch {
-            /* ignore */
-          }
-        };
-        closePopup();
-        window.setTimeout(closePopup, 120);
-        window.setTimeout(closePopup, 350);
-        window.__illucardsTgLoginPopup = null;
-
-        const result = await finishTelegramWebLoginOnClient(
-          waitId,
-          establishSessionFromTelegramUserId,
-          { waitUntilReady: false },
-        );
-        try {
-          sessionStorage.removeItem(TG_LOGIN_WAIT_STORAGE_KEY);
-        } catch {
-          /* ignore */
-        }
-        startedAt.current = null;
-
-        if (result.ok) {
-          window.location.assign(accountUrlAfterTelegramLogin());
-          return;
-        }
-
-        try {
-          sessionStorage.setItem(TG_LOGIN_AUTO_ERROR_KEY, result.error);
-        } catch {
-          /* ignore */
-        }
-        completing.current = false;
+        sessionStorage.removeItem(TG_LOGIN_WAIT_STORAGE_KEY);
       } catch {
-        completing.current = false;
+        /* ignore */
       }
+      startedAt.current = null;
+
+      if (result.ok) {
+        window.location.assign(accountUrlAfterTelegramLogin());
+        return;
+      }
+
+      try {
+        sessionStorage.setItem(TG_LOGIN_AUTO_ERROR_KEY, result.error);
+      } catch {
+        /* ignore */
+      }
+      completing.current = false;
     };
 
     const id = window.setInterval(() => void tick(), POLL_MS);

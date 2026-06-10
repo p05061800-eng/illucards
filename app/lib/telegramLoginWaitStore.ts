@@ -262,14 +262,25 @@ export async function markLoginWaitReady(
   await writeWaitRow(waitId, row);
 }
 
-export async function isLoginWaitReady(waitId: string): Promise<boolean> {
+/** Профиль из готового wait_id без списания (для poll / fallback). */
+export async function peekLoginWaitProfile(
+  waitId: string,
+): Promise<LoginWaitProfile | null> {
+  if (!isValidLoginWaitId(waitId)) return null;
+
+  const done = await readDoneProfile(waitId);
+  if (done) return done;
+
   const row = await readWaitRow(waitId);
-  return (
-    row?.status === "ready" &&
-    (row.expires ?? 0) > Date.now() &&
-    typeof row.user_id === "number" &&
-    row.user_id > 0
-  );
+  if (!row || row.status !== "ready" || (row.expires ?? 0) <= Date.now()) {
+    return null;
+  }
+  return profileFromWaitRow(row);
+}
+
+export async function isLoginWaitReady(waitId: string): Promise<boolean> {
+  const profile = await peekLoginWaitProfile(waitId);
+  return profile != null;
 }
 
 /** Одноразово забрать профиль после подтверждения в боте (автовход без кода). */

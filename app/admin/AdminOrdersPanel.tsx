@@ -36,7 +36,9 @@ export function AdminOrdersPanel({ initialOrders }: Props) {
   }, []);
 
   const onConfirm = useCallback((orderId: string) => {
-    if (!window.confirm(`Подтвердить заказ #${formatOrderCardRef(orderId)}?`)) {
+    const row = orders.find((r) => r.id === orderId);
+    const ref = row?.displayRef || formatOrderCardRef(orderId);
+    if (!window.confirm(`Подтвердить заказ #${ref}?`)) {
       return;
     }
     setMessage(null);
@@ -50,7 +52,7 @@ export function AdminOrdersPanel({ initialOrders }: Props) {
       const rows = await loadAdminOrders();
       setOrders(rows);
     });
-  }, []);
+  }, [orders]);
 
   if (orders.length === 0) {
     return (
@@ -95,7 +97,7 @@ export function AdminOrdersPanel({ initialOrders }: Props) {
             >
               <div className="min-w-0">
                 <p className="font-medium text-zinc-100">
-                  Заказ #{formatOrderCardRef(row.id)}
+                  Заказ #{row.displayRef || formatOrderCardRef(row.id)}
                 </p>
                 <p className="mt-1 text-sm text-zinc-500">
                   {formatAdminOrderMeta(row)} · {row.total} BYN

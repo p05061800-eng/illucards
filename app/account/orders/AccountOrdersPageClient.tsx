@@ -157,7 +157,7 @@ export default function AccountOrdersPageClient() {
       ) : (
         <ul className="flex flex-col gap-4 sm:gap-5">
           {orders.map((o) => {
-            const ref = formatOrderCardRef(o.id);
+            const ref = o.displayRef || formatOrderCardRef(o.id);
             const flowKind = orderAccountFlowKind(o.status);
             const statusText = orderAccountFlowLabel(o.status);
             const badgeClass = orderAccountFlowBadgeClass(flowKind);

@@ -1,5 +1,6 @@
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
+import { displayRefForRecord } from "@/app/lib/orderDisplayRef";
 import { getOrder } from "@/app/lib/ordersStore";
 import { COOKIE_TELEGRAM_USER_ID } from "@/app/lib/telegramUserIdentity";
 
@@ -50,6 +51,7 @@ export async function GET(
   return NextResponse.json({
     id,
     ...order,
+    displayRef: displayRefForRecord(id, order),
     grandTotal: order.total,
   });
 }

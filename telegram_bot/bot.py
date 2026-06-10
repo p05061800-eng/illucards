@@ -40,7 +40,7 @@ from db import init_db, recompute_user_order_stats, sync_all_users_order_stats, 
 logging.basicConfig(format="%(asctime)s %(levelname)s %(message)s", level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-BOT_BUILD_ID = "2026-06-10-tg-wait-link-only-v1"
+BOT_BUILD_ID = "2026-06-10-admin-status-ru-v1"
 
 REPLY_MENU_TEXTS = frozenset(
     {"💬 Связь", "📦 Мои заказы", "📜 Мои заказы", "🚚 Доставка", "⭐ Бонусы"}
@@ -513,6 +513,86 @@ def _save_delivery_profile(uid: int, text: str) -> None:
     _persist_saved_delivery_profiles()
 
 
+def _delivery_sync_secret() -> str:
+    return (os.getenv("ILLUCARDS_LOGIN_CODE_SYNC_SECRET") or "").strip()
+
+
+def _delivery_sync_url() -> str:
+    custom = (os.getenv("ILLUCARDS_SAVED_DELIVERY_SYNC_URL") or "").strip()
+    if custom:
+        return custom
+    return f"{SITE_LOGIN_ORIGIN}/api/internal/sync-saved-delivery"
+
+
+async def _sync_saved_delivery_to_site(uid: int, text: str) -> bool:
+    secret = _delivery_sync_secret()
+    if not secret:
+        return True
+    t = (text or "").strip()
+    if not t or not _delivery_text_acceptable(t):
+        return False
+    timeout = aiohttp.ClientTimeout(total=15)
+    try:
+        async with aiohttp.ClientSession(timeout=timeout) as session:
+            async with session.post(
+                _delivery_sync_url(),
+                headers={
+                    "Authorization": f"Bearer {secret}",
+                    "Content-Type": "application/json",
+                },
+                json={"user_id": int(uid), "text": t},
+            ) as resp:
+                if resp.status != 200:
+                    body = (await resp.text())[:400]
+                    logger.warning(
+                        "sync-saved-delivery POST HTTP %s: %s", resp.status, body
+                    )
+                    return False
+                return True
+    except Exception as e:
+        logger.warning("sync-saved-delivery POST: %s", e)
+        return False
+
+
+async def _refresh_saved_delivery_from_site(uid: int) -> None:
+    """Подтянуть профиль с Vercel/Redis после рестарта бота на Render."""
+    secret = _delivery_sync_secret()
+    if not secret:
+        return
+    _load_saved_delivery_profiles()
+    cached = str(_SAVED_DELIVERY.get(int(uid)) or "").strip()
+    if cached and _delivery_text_acceptable(cached):
+        return
+    url = _delivery_sync_url()
+    timeout = aiohttp.ClientTimeout(total=15)
+    try:
+        async with aiohttp.ClientSession(timeout=timeout) as session:
+            async with session.get(
+                url,
+                params={"user_id": int(uid)},
+                headers={"Authorization": f"Bearer {secret}"},
+            ) as resp:
+                if resp.status == 404:
+                    return
+                if resp.status != 200:
+                    body = (await resp.text())[:400]
+                    logger.warning(
+                        "sync-saved-delivery GET HTTP %s: %s", resp.status, body
+                    )
+                    return
+                data = await resp.json()
+    except Exception as e:
+        logger.warning("sync-saved-delivery GET: %s", e)
+        return
+    if not isinstance(data, dict):
+        return
+    text = str(data.get("text") or "").strip()
+    if not text or not _delivery_text_acceptable(text):
+        return
+    _SAVED_DELIVERY[int(uid)] = text
+    _persist_saved_delivery_profiles()
+
+
 def _load_bot_orders() -> None:
     global BOT_ORDERS
     if not BOT_ORDERS_PATH.exists():
@@ -607,7 +687,8 @@ ORDER_STATUS_RU: dict[str, str] = {
     "confirmed": "✅ Принят",
     "accepted": "✅ Принят",
     "paid": "💳 Чек получен",
-    "proof_submitted": "📸 Чек отправлен",
+    "proof_received": "📸 Чек получен, ждём данные доставки",
+    "proof_submitted": "📸 Чек и доставка отправлены",
     "shipped": "🚚 Отправлен",
     "sent": "🚚 Отправлен",
     "delivered": "✅ Доставлен",
@@ -795,6 +876,12 @@ def _ingest_site_order_summary(
             seq = 0
         if seq > 0:
             rec["buyer_seq"] = seq
+    try:
+        site_seq = int(raw.get("buyer_seq") or 0)
+    except (TypeError, ValueError):
+        site_seq = 0
+    if site_seq > 0:
+        rec["buyer_seq"] = site_seq
     BOT_ORDERS[oid] = rec
     return oid
 
@@ -853,13 +940,20 @@ def _record_site_order_in_bot(
         prev_u = _normalize_order_username(existing.get("username"))
         if prev_u:
             rec["username"] = prev_u
+    site_seq = 0
+    try:
+        site_seq = int(order.get("buyer_seq") or 0)
+    except (TypeError, ValueError):
+        site_seq = 0
     try:
         prev_seq = int(
             (existing.get("buyer_seq") if isinstance(existing, dict) else 0) or 0
         )
     except (TypeError, ValueError):
         prev_seq = 0
-    if prev_seq > 0:
+    if site_seq > 0:
+        rec["buyer_seq"] = site_seq
+    elif prev_seq > 0:
         rec["buyer_seq"] = prev_seq
     else:
         rec["buyer_seq"] = _next_buyer_order_seq(
@@ -1142,7 +1236,10 @@ def _format_order_admin(
     header: str = "✅ Подтверждение заказа (бот)",
 ) -> str:
     u = f"@{username}" if username else f"id {telegram_user_id}"
-    human_ref = _order_display_label(order_id, telegram_user_id, username)
+    human_ref = _order_display_label(
+        order_id, telegram_user_id, username, order=order
+    )
+    status_label = _order_status_display(str(record.get("status") or ""))
     lines = [
         header,
         human_ref,
@@ -2386,10 +2483,48 @@ def _buyer_order_slug(username: str | None, telegram_user_id: int) -> str:
     return f"id{int(telegram_user_id)}"
 
 
+def _resolve_buyer_order_seq(
+    order_id: str,
+    telegram_user_id: int | None = None,
+    order: dict[str, Any] | None = None,
+) -> int:
+    oid = str(order_id or "").strip()
+    if not oid:
+        return 0
+    if isinstance(order, dict):
+        try:
+            seq = int(order.get("buyer_seq") or 0)
+            if seq > 0:
+                return seq
+        except (TypeError, ValueError):
+            pass
+    _load_bot_orders()
+    rec = BOT_ORDERS.get(oid)
+    if isinstance(rec, dict):
+        try:
+            seq = int(rec.get("buyer_seq") or 0)
+            if seq > 0:
+                return seq
+        except (TypeError, ValueError):
+            pass
+    uid = telegram_user_id
+    if uid is None and isinstance(rec, dict):
+        try:
+            uid = int(rec.get("user_id"))
+        except (TypeError, ValueError):
+            uid = None
+    if uid is not None and int(uid) > 0:
+        _ensure_buyer_seqs_for_user(int(uid))
+        return _buyer_order_seq_for(oid, int(uid))
+    return 0
+
+
 def _order_display_ref(
     order_id: str,
     telegram_user_id: int | None = None,
     username: str | None = None,
+    *,
+    order: dict[str, Any] | None = None,
 ) -> str:
     """Короткое имя заказа: miheevlil1, miheevlil2… (username + порядковый номер)."""
     oid = str(order_id or "").strip()
@@ -2399,6 +2534,16 @@ def _order_display_ref(
     rec = BOT_ORDERS.get(oid)
     uid = telegram_user_id
     uname = _normalize_order_username(username)
+    if isinstance(order, dict):
+        if uid is None:
+            try:
+                raw_uid = order.get("user_id")
+                if raw_uid is not None:
+                    uid = int(raw_uid)
+            except (TypeError, ValueError):
+                uid = None
+        if not uname:
+            uname = _normalize_order_username(order.get("username"))
     if isinstance(rec, dict):
         if uid is None:
             try:
@@ -2407,11 +2552,9 @@ def _order_display_ref(
                 uid = None
         if not uname:
             uname = _normalize_order_username(rec.get("username"))
-    if uid is not None and int(uid) > 0:
-        _ensure_buyer_seqs_for_user(int(uid))
-        seq = _buyer_order_seq_for(oid, int(uid))
-        if seq > 0:
-            return f"{_buyer_order_slug(uname, int(uid))}{seq}"
+    seq = _resolve_buyer_order_seq(oid, uid, order)
+    if uid is not None and int(uid) > 0 and seq > 0:
+        return f"{_buyer_order_slug(uname, int(uid))}{seq}"
     return _order_short_ref(oid)
 
 
@@ -2419,8 +2562,12 @@ def _order_display_label(
     order_id: str,
     telegram_user_id: int | None = None,
     username: str | None = None,
+    *,
+    order: dict[str, Any] | None = None,
 ) -> str:
-    ref = _order_display_ref(order_id, telegram_user_id, username)
+    ref = _order_display_ref(
+        order_id, telegram_user_id, username, order=order
+    )
     if ref == "—":
         return ref
     return f"Заказ {ref}"
@@ -2441,12 +2588,12 @@ def _order_owner_from_order(order: dict[str, Any]) -> tuple[int | None, str | No
 
 def _order_display_ref_from_order(order_id: str, order: dict[str, Any]) -> str:
     uid, uname = _order_owner_from_order(order)
-    return _order_display_ref(order_id, uid, uname)
+    return _order_display_ref(order_id, uid, uname, order=order)
 
 
 def _order_display_label_from_order(order_id: str, order: dict[str, Any]) -> str:
     uid, uname = _order_owner_from_order(order)
-    return _order_display_label(order_id, uid, uname)
+    return _order_display_label(order_id, uid, uname, order=order)
 
 
 def _build_order_draft_message(
@@ -2592,11 +2739,11 @@ PAY_DELIVERY_BLANK_TEMPLATE = (
 )
 
 
-def _pay_delivery_request_text() -> str:
+def _pay_delivery_request_text(*, after_proof: bool = False) -> str:
+    prefix = "✅ Чек получен.\n\n" if after_proof else ""
     return (
-        "Пришлите ваш адрес СДЭК, ФИО и номер телефона одним сообщением в этот чат.\n"
-        "После проверки менеджер подтвердит заказ.\n\n"
-        "Скопируйте шаблон ниже, заполните своими данными и отправьте:\n\n"
+        prefix
+        + "Скопируйте шаблон, заполните своими данными и отправьте одним сообщением:\n\n"
         + PAY_DELIVERY_BLANK_TEMPLATE
     )
 
@@ -2742,6 +2889,7 @@ def _saved_delivery_confirm_keyboard(order_id: str) -> InlineKeyboardMarkup:
 
 def _saved_delivery_confirm_message(saved_text: str) -> str:
     return (
+        "✅ Чек получен.\n\n"
         "Ваши сохранённые данные доставки:\n\n"
         f"{saved_text}\n\n"
         "Данные верны?"
@@ -2755,6 +2903,8 @@ async def _send_delivery_prompt_after_proof(
     uid: int,
     order_id: str,
 ) -> None:
+    await _refresh_saved_delivery_from_site(int(uid))
+    _set_awaiting_delivery(int(uid), order_id)
     saved = _get_saved_delivery_text(int(uid))
     if saved and _delivery_text_acceptable(saved) and int(uid) in _AWAIT_DELIVERY_CONFIRM:
         await context.bot.send_message(
@@ -2765,7 +2915,7 @@ async def _send_delivery_prompt_after_proof(
         return
     await context.bot.send_message(
         chat_id=int(chat_id),
-        text=_pay_delivery_request_text(),
+        text=_pay_delivery_request_text(after_proof=True),
         reply_markup=_main_keyboard(),
     )
 
@@ -3583,6 +3733,7 @@ async def _finalize_delivery_submission(
     _persist_bot_orders()
     _clear_awaiting_checkout(uid)
     _save_delivery_profile(uid, delivery_text)
+    await _sync_saved_delivery_to_site(uid, delivery_text)
 
     owner_id = _order_owner_user_id(oid, order, fallback_uid=uid)
     if not await post_site_order_delivery_details(
@@ -3717,7 +3868,6 @@ async def payment_proof_handler(
             await msg.reply_text("Заказ уже передан администратору. Ожидайте подтверждения.")
             return
         if bot_rec.get("proof_file_id"):
-            _set_awaiting_delivery(uid, order_id)
             await _send_delivery_prompt_after_proof(
                 context,
                 chat_id=int(msg.chat_id),
@@ -3736,16 +3886,12 @@ async def payment_proof_handler(
         await msg.reply_text("Сначала выберите способ оплаты под сообщением с заказом.")
         return
 
-    await msg.reply_text(MSG_PROOF_SCREEN_OK)
-
     rec = _record_site_order_in_bot(order_id, order, uid)
     rec["status"] = "proof_received"
     rec["payment_method"] = pm
     rec["proof_file_id"] = file_id
     BOT_ORDERS[order_id] = rec
     _persist_bot_orders()
-
-    _set_awaiting_delivery(uid, order_id)
 
     await _send_delivery_prompt_after_proof(
         context,
@@ -4330,7 +4476,6 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
                     return
                 if bot_rec.get("proof_file_id"):
                     await q.answer("Ждём данные доставки")
-                    _set_awaiting_delivery(int(owner_id), order_id)
                     await _send_delivery_prompt_after_proof(
                         context,
                         chat_id=int(q.message.chat_id),

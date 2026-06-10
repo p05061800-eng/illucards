@@ -48,4 +48,6 @@ export type OrderRecord = {
   telegram_buyer_notified?: boolean;
   /** Адрес СДЭК, ФИО и телефон — из Telegram-бота после оплаты. */
   delivery_details?: string;
+  /** Порядковый номер заказа покупателя (miheevlil1 → 1) — общий с ботом. */
+  buyer_seq?: number;
 };

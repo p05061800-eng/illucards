@@ -3,6 +3,7 @@ import path from "path";
 import { parseCardsJson } from "@/app/lib/cardsJson";
 import { parseCardRarity, type CardRarity } from "@/app/lib/cardRarityTags";
 import { normalizeDeliveryCountry, type DeliveryCountry } from "@/app/lib/delivery";
+import { displayRefForRecord } from "@/app/lib/orderDisplayRef";
 import { orderStatusFromStorage } from "@/app/lib/orderStatus";
 import { ORDERS_DIR } from "@/app/lib/orderPaths";
 import type { OrderPaymentMethod } from "@/app/lib/orderPayment";
@@ -245,6 +246,15 @@ function fileToOrderRecord(raw: unknown): OrderRecord | null {
       ? delivery_details_raw.trim().slice(0, 4000)
       : undefined;
 
+  const buyerSeqRaw = o.buyer_seq;
+  const buyer_seq =
+    typeof buyerSeqRaw === "number" &&
+    Number.isFinite(buyerSeqRaw) &&
+    buyerSeqRaw > 0 &&
+    buyerSeqRaw <= 1_000_000
+      ? Math.floor(buyerSeqRaw)
+      : undefined;
+
   return {
     ...(user_id != null && Number.isFinite(user_id) && user_id > 0
       ? { user_id: Math.floor(user_id) }
@@ -266,7 +276,128 @@ function fileToOrderRecord(raw: unknown): OrderRecord | null {
     ...(payment_method ? { payment_method } : {}),
     ...(telegram_buyer_notified ? { telegram_buyer_notified: true as const } : {}),
     ...(delivery_details ? { delivery_details } : {}),
+    ...(buyer_seq != null ? { buyer_seq } : {}),
   };
+}
+
+async function collectOrderIdsForUser(userId: number): Promise<string[]> {
+  const uid = Math.floor(userId);
+  const seen = new Set<string>();
+  const ids: string[] = [];
+
+  const push = (id: string) => {
+    const t = id.trim();
+    if (!t || t.length > 200 || /[/\\]/.test(t) || t.includes("..") || seen.has(t)) {
+      return;
+    }
+    seen.add(t);
+    ids.push(t);
+  };
+
+  const redisIds = await readUserOrderIdsFromRedis(uid);
+  if (redisIds) {
+    for (const id of redisIds) push(id);
+  }
+
+  let files: string[] = [];
+  try {
+    files = await fs.readdir(ORDERS_DIR);
+  } catch {
+    files = [];
+  }
+  for (const f of files) {
+    if (!f.toLowerCase().endsWith(".json")) continue;
+    push(f.replace(/\.json$/i, ""));
+  }
+
+  try {
+    const text = await fs.readFile(BOT_ORDERS_PATH, "utf-8");
+    const json = JSON.parse(text) as unknown;
+    if (json && typeof json === "object" && !Array.isArray(json)) {
+      for (const id of Object.keys(json as Record<string, unknown>)) {
+        push(id);
+      }
+    }
+  } catch {
+    /* ignore */
+  }
+
+  for (const id of Object.keys(ORDERS)) {
+    push(id);
+  }
+
+  return ids;
+}
+
+async function nextBuyerOrderSeq(
+  userId: number,
+  excludeOrderId?: string,
+): Promise<number> {
+  const uid = Math.floor(userId);
+  const ex = (excludeOrderId || "").trim();
+  let maxSeq = 0;
+  const ids = await collectOrderIdsForUser(uid);
+  for (const id of ids) {
+    if (ex && id === ex) continue;
+    const rec = await getOrder(id);
+    if (!rec || rec.user_id !== uid) continue;
+    const seq = rec.buyer_seq ?? 0;
+    if (seq > maxSeq) maxSeq = seq;
+  }
+  return maxSeq + 1;
+}
+
+async function persistBuyerSeq(
+  orderId: string,
+  record: OrderRecord,
+  buyerSeq: number,
+): Promise<void> {
+  const id = sanitizeOrderIdForPath(orderId);
+  if (!id) return;
+  const seq = Math.floor(buyerSeq);
+  if (seq <= 0) return;
+  const updated: OrderRecord = { ...record, buyer_seq: seq };
+  ORDERS[id] = updated;
+  await persistOrderRecordToRedis(id, updated);
+  const filePath = path.join(ORDERS_DIR, `${id}.json`);
+  try {
+    const text = await fs.readFile(filePath, "utf-8");
+    const parsed: unknown = JSON.parse(text);
+    if (typeof parsed === "object" && parsed !== null) {
+      await fs.writeFile(
+        filePath,
+        JSON.stringify(
+          { ...(parsed as Record<string, unknown>), buyer_seq: seq },
+          null,
+          2,
+        ),
+        "utf-8",
+      );
+    }
+  } catch {
+    /* ignore */
+  }
+}
+
+/** Старым заказам без buyer_seq присваиваем 1, 2, 3… (как в боте). */
+export async function ensureBuyerSeqsForUser(userId: number): Promise<void> {
+  if (!Number.isFinite(userId) || userId <= 0) return;
+  const uid = Math.floor(userId);
+  const ids = await collectOrderIdsForUser(uid);
+  ids.sort();
+  for (const id of ids) {
+    const rec = await getOrder(id);
+    if (!rec || rec.user_id !== uid || (rec.buyer_seq ?? 0) > 0) continue;
+    const seq = await nextBuyerOrderSeq(uid, id);
+    await persistBuyerSeq(id, rec, seq);
+  }
+}
+
+export async function assignBuyerSeqForNewOrder(
+  userId: number,
+): Promise<number | undefined> {
+  if (!Number.isFinite(userId) || userId <= 0) return undefined;
+  return nextBuyerOrderSeq(Math.floor(userId));
 }
 
 export async function markOrderTelegramBuyerNotified(
@@ -316,35 +447,34 @@ export async function getOrder(orderId: string): Promise<OrderRecord | null> {
   const id = orderId.trim();
   if (!id) return null;
 
-  const cached = ORDERS[id];
-  if (cached) {
-    await enrichOrderRecordItemsIfNeeded(cached);
-    return cached;
+  let record: OrderRecord | null = ORDERS[id] ?? null;
+  if (!record) {
+    record = await readOrderRecordFromRedis(id);
   }
-
-  const redisRecord = await readOrderRecordFromRedis(id);
-  if (redisRecord) {
-    await enrichOrderRecordItemsIfNeeded(redisRecord);
-    ORDERS[id] = redisRecord;
-    return redisRecord;
+  if (!record) {
+    const filePath = path.join(ORDERS_DIR, `${id}.json`);
+    try {
+      const text = await fs.readFile(filePath, "utf-8");
+      const json = JSON.parse(text) as unknown;
+      record = fileToOrderRecord(json);
+    } catch {
+      record = await readBotOrderRecordFromFile(id);
+    }
   }
-
-  const filePath = path.join(ORDERS_DIR, `${id}.json`);
-  try {
-    const text = await fs.readFile(filePath, "utf-8");
-    const json = JSON.parse(text) as unknown;
-    const record = fileToOrderRecord(json);
-    if (!record) return null;
-    await enrichOrderRecordItemsIfNeeded(record);
+  if (!record) return null;
+  await enrichOrderRecordItemsIfNeeded(record);
+  if (
+    record.user_id != null &&
+    record.user_id > 0 &&
+    !(record.buyer_seq != null && record.buyer_seq > 0)
+  ) {
+    const seq = await nextBuyerOrderSeq(record.user_id, id);
+    await persistBuyerSeq(id, record, seq);
+    record = ORDERS[id] ?? { ...record, buyer_seq: seq };
+  } else {
     ORDERS[id] = record;
-    return record;
-  } catch {
-    const botRecord = await readBotOrderRecordFromFile(id);
-    if (!botRecord) return null;
-    await enrichOrderRecordItemsIfNeeded(botRecord);
-    ORDERS[id] = botRecord;
-    return botRecord;
   }
+  return record;
 }
 
 function sanitizeOrderIdForPath(orderId: string): string | null {
@@ -447,6 +577,7 @@ export async function updateOrderDeliveryDetails(
 
 export type AdminOrderRow = {
   id: string;
+  displayRef: string;
   total: number;
   status: OrderStatus;
   delivery: OrderRecord["delivery"];
@@ -482,6 +613,7 @@ export async function listRecentOrders(limit = 40): Promise<AdminOrderRow[]> {
         seen.add(id);
         rows.push({
           id,
+          displayRef: displayRefForRecord(id, record),
           total: record.total,
           status: record.status,
           delivery: record.delivery,
@@ -526,6 +658,7 @@ export async function listRecentOrders(limit = 40): Promise<AdminOrderRow[]> {
     }
     rows.push({
       id,
+      displayRef: displayRefForRecord(id, record),
       total: record.total,
       status: record.status,
       delivery: record.delivery,
@@ -798,6 +931,9 @@ export type OrderLinePreview = {
 
 export type OrderListSummary = {
   id: string;
+  /** miheevlil1 — как в Telegram-боте. */
+  displayRef: string;
+  buyer_seq?: number;
   total: number;
   status: OrderStatus;
   /** Страна доставки заказа — для суммы в BYN / RUB в списке. */
@@ -873,6 +1009,7 @@ export async function listOrdersForUser(
 ): Promise<OrderListSummary[]> {
   if (!Number.isFinite(userId) || userId <= 0) return [];
   const uid = Math.floor(userId);
+  await ensureBuyerSeqsForUser(uid);
   const hidden = await readHiddenOrderIdsForUser(uid);
   const redisIds = await readUserOrderIdsFromRedis(uid);
   if (redisIds && redisIds.length > 0) {
@@ -922,6 +1059,8 @@ export async function listOrdersForUser(
   rows.sort((a, b) => b.mtime - a.mtime);
   return rows.map((row) => ({
     id: row.id,
+    displayRef: row.displayRef,
+    ...(row.buyer_seq != null && row.buyer_seq > 0 ? { buyer_seq: row.buyer_seq } : {}),
     total: row.total,
     status: row.status,
     delivery: row.delivery,
@@ -1026,6 +1165,10 @@ function orderSummaryFromRecord(
         });
   return {
     id,
+    displayRef: displayRefForRecord(id, record),
+    ...(record.buyer_seq != null && record.buyer_seq > 0
+      ? { buyer_seq: record.buyer_seq }
+      : {}),
     total: record.total,
     status: record.status,
     delivery: record.delivery,

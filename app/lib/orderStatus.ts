@@ -1,13 +1,28 @@
 import type { OrderStatus } from "@/app/lib/orderTypes";
+import { formatOrderDisplayRef } from "@/app/lib/orderDisplayRef";
 
-/** Короткий номер для карточки (например #a1b2c3 для UUID). */
-export function formatOrderCardRef(orderId: string): string {
-  const id = (orderId || "").trim();
-  if (!id) return "—";
-  if (/^\d{1,20}$/.test(id)) return id;
-  const c = id.replace(/-/g, "");
-  if (c.length <= 8) return c;
-  return c.slice(-6);
+export type OrderCardRefMeta = {
+  userId?: number | null;
+  username?: string | null;
+  buyerSeq?: number | null;
+  displayRef?: string | null;
+};
+
+/** Короткое имя заказа для ЛК и админки (miheevlil1 — как в боте). */
+export function formatOrderCardRef(
+  orderId: string,
+  meta?: OrderCardRefMeta,
+): string {
+  if (meta?.displayRef) {
+    const d = meta.displayRef.trim();
+    if (d) return d;
+  }
+  return formatOrderDisplayRef({
+    orderId,
+    userId: meta?.userId,
+    username: meta?.username,
+    buyerSeq: meta?.buyerSeq,
+  });
 }
 
 const STATUS_RU: Record<OrderStatus, string> = {

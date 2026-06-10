@@ -4,7 +4,11 @@ import { NextResponse } from "next/server";
 import { normalizeDeliveryCountry, type DeliveryCountry } from "@/app/lib/delivery";
 import type { OrderLineIn, OrderRecord, OrderStatus } from "@/app/lib/orderTypes";
 import { parseOrderStatusInput } from "@/app/lib/orderStatus";
-import { saveOrderRecord, updateOrderStatus } from "@/app/lib/ordersStore";
+import {
+  assignBuyerSeqForNewOrder,
+  saveOrderRecord,
+  updateOrderStatus,
+} from "@/app/lib/ordersStore";
 import { notifyTelegramWebhookUserState } from "@/app/lib/telegramStateBotSync";
 import {
   clearSyncedCartForTelegramUser,
@@ -120,6 +124,13 @@ export async function POST(request: NextRequest) {
   const initialStatus: OrderStatus = "new";
   const bonusPointsSpent = parsePositiveInt(o.bonus_points_spent ?? o.bonusApplied);
   const orderId = parseOptionalOrderId(o.order_id ?? o.id) ?? randomUUID();
+  const buyerSeqRaw = o.buyer_seq;
+  let buyer_seq =
+    typeof buyerSeqRaw === "number" &&
+    Number.isFinite(buyerSeqRaw) &&
+    buyerSeqRaw > 0
+      ? Math.floor(buyerSeqRaw)
+      : await assignBuyerSeqForNewOrder(userId);
   const record: OrderRecord = {
     user_id: userId,
     username: parseUsername(o.username),
@@ -128,6 +139,7 @@ export async function POST(request: NextRequest) {
     delivery,
     status: initialStatus,
     ...(bonusPointsSpent != null ? { bonus_points_spent: bonusPointsSpent } : {}),
+    ...(buyer_seq != null && buyer_seq > 0 ? { buyer_seq } : {}),
   };
 
   await saveOrderRecord(orderId, record);

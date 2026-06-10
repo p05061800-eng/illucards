@@ -3,7 +3,7 @@ import { parseCardRarity } from "@/app/lib/cardRarityTags";
 import { bonusDiscountByn, maxSpendableBonusPoints } from "@/app/lib/bonusProgram";
 import { deliveryCharge, normalizeDeliveryCountry, type DeliveryCountry } from "@/app/lib/delivery";
 import type { OrderLineIn, OrderRecord } from "@/app/lib/orderTypes";
-import { saveOrderRecord } from "@/app/lib/ordersStore";
+import { assignBuyerSeqForNewOrder, saveOrderRecord } from "@/app/lib/ordersStore";
 import { sanitizeOrderLineImageUrl } from "@/app/lib/sanitizeOrderLineImageUrl";
 import {
   getTelegramUserState,
@@ -161,6 +161,10 @@ export async function persistOrder(
   }
 
   const orderId = requestedOrderId ?? randomUUID();
+  const buyer_seq =
+    userId != null && userId > 0
+      ? await assignBuyerSeqForNewOrder(userId)
+      : undefined;
 
   if (spendApplied > 0) {
     const uid = Math.floor(userId!);
@@ -185,6 +189,7 @@ export async function persistOrder(
     ...(spendApplied > 0
       ? { bonus_points_spent: spendApplied, bonus_points_deducted: true as const }
       : {}),
+    ...(buyer_seq != null && buyer_seq > 0 ? { buyer_seq } : {}),
   };
 
   await saveOrderRecord(orderId, record);

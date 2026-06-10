@@ -38,6 +38,9 @@ type OrderLineApi = {
 
 type OrderApi = {
   user_id?: number;
+  username?: string | null;
+  buyer_seq?: number;
+  displayRef?: string;
   items?: OrderLineApi[];
   total?: number;
   delivery?: string;
@@ -313,7 +316,13 @@ export default function AccountOrderDetailClient({ orderId }: { orderId: string 
     );
   }
 
-  const ref = formatOrderCardRef(orderId);
+  const ref =
+    order.displayRef ||
+    formatOrderCardRef(orderId, {
+      userId: order.user_id,
+      username: order.username,
+      buyerSeq: order.buyer_seq,
+    });
   const st = orderStatusFromStorage(order.status);
   const canCancelOnSite = st === "new";
   const flowKind = orderAccountFlowKind(st);

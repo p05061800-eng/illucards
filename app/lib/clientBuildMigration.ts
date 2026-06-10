@@ -15,8 +15,8 @@ export const LOCAL_STORAGE_KEYS_VOLATILE_ON_NEW_BUILD = [
   "illucards-purchased-cards",
 ] as const;
 
+/** `illucards_tg_login_wait_id` не трогаем — иначе автовход ломается при деплое, пока пользователь в Telegram. */
 export const SESSION_STORAGE_KEYS_VOLATILE_ON_NEW_BUILD = [
-  "illucards_tg_login_wait_id",
   "illucards-catalog-return-card",
 ] as const;
 

@@ -59,7 +59,7 @@ export function TelegramLoginWaitPoller() {
       }
 
       const poll = await pollLoginWait(waitId);
-      if (!poll.ready || poll.user_id == null || poll.user_id <= 0) return;
+      if (!poll.ready) return;
 
       completing.current = true;
 
@@ -78,12 +78,14 @@ export function TelegramLoginWaitPoller() {
       const result = await finishTelegramWebLoginOnClient(
         waitId,
         establishSessionFromTelegramUserId,
-        {
-          knownProfile: {
-            user_id: poll.user_id,
-            username: poll.username ?? undefined,
-          },
-        },
+        poll.user_id != null && poll.user_id > 0
+          ? {
+              knownProfile: {
+                user_id: poll.user_id,
+                username: poll.username ?? undefined,
+              },
+            }
+          : undefined,
       );
       try {
         sessionStorage.removeItem(TG_LOGIN_WAIT_STORAGE_KEY);
@@ -105,9 +107,19 @@ export function TelegramLoginWaitPoller() {
       completing.current = false;
     };
 
+    const onVisible = () => {
+      if (document.visibilityState === "visible") void tick();
+    };
+
     const id = window.setInterval(() => void tick(), POLL_MS);
+    document.addEventListener("visibilitychange", onVisible);
+    window.addEventListener("focus", onVisible);
     void tick();
-    return () => window.clearInterval(id);
+    return () => {
+      window.clearInterval(id);
+      document.removeEventListener("visibilitychange", onVisible);
+      window.removeEventListener("focus", onVisible);
+    };
   }, [establishSessionFromTelegramUserId]);
 
   return null;

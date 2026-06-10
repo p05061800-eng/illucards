@@ -63,7 +63,10 @@ export default function AccountPageClient() {
       setAutoLoginPending(true);
       setAutoLoginError(null);
 
-      const profile = await waitForLoginWaitReady(waitId);
+      const profile = await waitForLoginWaitReady(waitId, {
+        timeoutMs: 8 * 60 * 1000,
+        intervalMs: 1500,
+      });
       if (!profile) {
         setAutoLoginPending(false);
         autoLoginStarted.current = false;
@@ -135,6 +138,39 @@ export default function AccountPageClient() {
       /* ignore */
     }
     void completeLoginFromWaitId(waitId);
+  }, [searchParams, completeLoginFromWaitId]);
+
+  useEffect(() => {
+    const fromUrl = searchParams.get(TG_LOGIN_WAIT_QUERY_PARAM);
+    if (fromUrl && isValidLoginWaitId(fromUrl)) return;
+
+    let waitId: string | null = null;
+    try {
+      waitId = sessionStorage.getItem(TG_LOGIN_WAIT_STORAGE_KEY);
+    } catch {
+      return;
+    }
+    if (!waitId || !isValidLoginWaitId(waitId)) return;
+
+    const onVisible = () => {
+      if (document.visibilityState !== "visible") return;
+      let stored: string | null = null;
+      try {
+        stored = sessionStorage.getItem(TG_LOGIN_WAIT_STORAGE_KEY);
+      } catch {
+        return;
+      }
+      if (!stored || !isValidLoginWaitId(stored)) return;
+      void completeLoginFromWaitId(stored.trim().toLowerCase());
+    };
+
+    void completeLoginFromWaitId(waitId.trim().toLowerCase());
+    document.addEventListener("visibilitychange", onVisible);
+    window.addEventListener("focus", onVisible);
+    return () => {
+      document.removeEventListener("visibilitychange", onVisible);
+      window.removeEventListener("focus", onVisible);
+    };
   }, [searchParams, completeLoginFromWaitId]);
 
   const loadOrders = useCallback(async () => {

@@ -20,3 +20,5 @@ services:
         sync: false
       - key: TELEGRAM_SYNC_API_SECRET
         sync: false
+      - key: ILLUCARDS_LOGIN_CODE_SYNC_SECRET
+        sync: false

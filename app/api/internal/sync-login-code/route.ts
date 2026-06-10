@@ -10,21 +10,30 @@ function bearerToken(request: Request): string | null {
   return h.slice(7).trim() || null;
 }
 
+function loginSyncSecrets(): string[] {
+  const primary = process.env.ILLUCARDS_LOGIN_CODE_SYNC_SECRET?.trim();
+  const fallback = process.env.TELEGRAM_SYNC_API_SECRET?.trim();
+  return [...new Set([primary, fallback].filter((s): s is string => Boolean(s)))];
+}
+
 /**
  * Бот (или другой доверенный сервис) регистрирует одноразовый код на сайте.
  * Нужно на Vercel: бот пишет код локально, а сайт читает Redis — без sync код не совпадёт.
  */
 export async function POST(request: Request) {
-  const secret = process.env.ILLUCARDS_LOGIN_CODE_SYNC_SECRET?.trim();
-  if (!secret) {
+  const secrets = loginSyncSecrets();
+  if (secrets.length === 0) {
     return NextResponse.json(
-      { error: "Сервер: не настроен ILLUCARDS_LOGIN_CODE_SYNC_SECRET" },
+      {
+        error:
+          "Сервер: не настроен ILLUCARDS_LOGIN_CODE_SYNC_SECRET или TELEGRAM_SYNC_API_SECRET",
+      },
       { status: 503 },
     );
   }
 
   const token = bearerToken(request);
-  if (!token || token !== secret) {
+  if (!token || !secrets.includes(token)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 

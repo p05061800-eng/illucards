@@ -513,8 +513,16 @@ def _save_delivery_profile(uid: int, text: str) -> None:
     _persist_saved_delivery_profiles()
 
 
+def _login_code_sync_secret() -> str:
+    """Секрет sync-login-code: на Render часто задан только TELEGRAM_SYNC_API_SECRET."""
+    return (
+        (os.getenv("ILLUCARDS_LOGIN_CODE_SYNC_SECRET") or "").strip()
+        or (os.getenv("TELEGRAM_SYNC_API_SECRET") or "").strip()
+    )
+
+
 def _delivery_sync_secret() -> str:
-    return (os.getenv("ILLUCARDS_LOGIN_CODE_SYNC_SECRET") or "").strip()
+    return _login_code_sync_secret()
 
 
 def _delivery_sync_url() -> str:
@@ -3340,9 +3348,10 @@ async def _sync_login_code_to_site(
     wait_id: str | None = None,
 ) -> bool:
     """Продакшен (Vercel): код и/или wait_id на сайте (Redis)."""
-    secret = (os.getenv("ILLUCARDS_LOGIN_CODE_SYNC_SECRET") or "").strip()
+    secret = _login_code_sync_secret()
     if not secret:
-        return True
+        logger.warning("sync-login-code: секрет не задан — wait_id не синхронизирован с сайтом")
+        return False
     url = (os.getenv("ILLUCARDS_LOGIN_CODE_SYNC_URL") or "").strip()
     if not url:
         url = f"{SITE_LOGIN_ORIGIN}/api/internal/sync-login-code"
@@ -3381,7 +3390,7 @@ async def _sync_login_code_to_site(
 
 
 def _login_sync_required() -> bool:
-    return bool((os.getenv("ILLUCARDS_LOGIN_CODE_SYNC_SECRET") or "").strip())
+    return bool(_login_code_sync_secret())
 
 
 def _issue_login_code_for_user(telegram_user_id: int, username: str | None) -> str | None:

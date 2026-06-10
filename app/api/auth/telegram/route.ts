@@ -8,7 +8,7 @@ import {
   isTelegramCodeAuthConfigured,
   resolveTelegramAuthCodeToUserId,
 } from "@/app/lib/telegramAuthCode";
-import { COOKIE_TELEGRAM_USER_ID, TELEGRAM_USER_ID_COOKIE_MAX_AGE_SEC } from "@/app/lib/telegramUserIdentity";
+import { telegramUserIdCookieOptions } from "@/app/lib/telegramAuthCookies";
 import {
   sealTelegramWidgetProfile,
   TELEGRAM_WIDGET_SESSION_COOKIE,
@@ -80,15 +80,7 @@ export async function GET(request: NextRequest) {
     path: "/",
     maxAge: 300,
   });
-  res.cookies.set({
-    name: COOKIE_TELEGRAM_USER_ID,
-    value: String(Math.floor(profile.telegramId)),
-    httpOnly: true,
-    secure: isHttps(request),
-    sameSite: "lax",
-    path: "/",
-    maxAge: TELEGRAM_USER_ID_COOKIE_MAX_AGE_SEC,
-  });
+  res.cookies.set(telegramUserIdCookieOptions(request, profile.telegramId));
   return res;
 }
 
@@ -136,15 +128,7 @@ export async function POST(request: NextRequest) {
     }
     const uidFloor = Math.floor(uid);
     const out = NextResponse.json({ ok: true, user_id: uidFloor });
-    out.cookies.set({
-      name: COOKIE_TELEGRAM_USER_ID,
-      value: String(uidFloor),
-      httpOnly: true,
-      secure: isHttps(request),
-      sameSite: "lax",
-      path: "/",
-      maxAge: TELEGRAM_USER_ID_COOKIE_MAX_AGE_SEC,
-    });
+    out.cookies.set(telegramUserIdCookieOptions(request, uidFloor));
     return out;
   }
 
@@ -164,14 +148,6 @@ export async function POST(request: NextRequest) {
   }
 
   const out = NextResponse.json({ ok: true, profile });
-  out.cookies.set({
-    name: COOKIE_TELEGRAM_USER_ID,
-    value: String(Math.floor(profile.telegramId)),
-    httpOnly: true,
-    secure: isHttps(request),
-    sameSite: "lax",
-    path: "/",
-    maxAge: TELEGRAM_USER_ID_COOKIE_MAX_AGE_SEC,
-  });
+  out.cookies.set(telegramUserIdCookieOptions(request, profile.telegramId));
   return out;
 }

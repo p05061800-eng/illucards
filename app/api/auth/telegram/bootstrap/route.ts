@@ -1,6 +1,6 @@
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
-import { COOKIE_TELEGRAM_USER_ID, TELEGRAM_USER_ID_COOKIE_MAX_AGE_SEC } from "@/app/lib/telegramUserIdentity";
+import { telegramUserIdCookieOptions } from "@/app/lib/telegramAuthCookies";
 import {
   TELEGRAM_WIDGET_SESSION_COOKIE,
   unsealTelegramWidgetProfile,
@@ -35,14 +35,6 @@ export async function GET(request: NextRequest) {
     path: "/",
     maxAge: 0,
   });
-  res.cookies.set({
-    name: COOKIE_TELEGRAM_USER_ID,
-    value: String(Math.floor(profile.telegramId)),
-    httpOnly: true,
-    secure: isHttps(request),
-    sameSite: "lax",
-    path: "/",
-    maxAge: TELEGRAM_USER_ID_COOKIE_MAX_AGE_SEC,
-  });
+  res.cookies.set(telegramUserIdCookieOptions(request, profile.telegramId));
   return res;
 }

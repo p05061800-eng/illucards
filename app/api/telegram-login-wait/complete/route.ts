@@ -2,16 +2,7 @@ import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 import { isValidLoginWaitId } from "@/app/lib/telegramLoginWaitKeys";
 import { consumeLoginWait } from "@/app/lib/telegramLoginWaitStore";
-import {
-  COOKIE_TELEGRAM_USER_ID,
-  TELEGRAM_USER_ID_COOKIE_MAX_AGE_SEC,
-} from "@/app/lib/telegramUserIdentity";
-
-function isHttps(request: NextRequest): boolean {
-  if (request.nextUrl.protocol === "https:") return true;
-  const fwd = request.headers.get("x-forwarded-proto");
-  return fwd === "https";
-}
+import { telegramUserIdCookieOptions } from "@/app/lib/telegramAuthCookies";
 
 /** Завершить вход по wait_id после подтверждения в боте — без ввода кода. */
 export async function POST(request: NextRequest) {
@@ -49,14 +40,6 @@ export async function POST(request: NextRequest) {
     user_id: profile.user_id,
     username: profile.username ?? null,
   });
-  res.cookies.set({
-    name: COOKIE_TELEGRAM_USER_ID,
-    value: String(profile.user_id),
-    httpOnly: true,
-    secure: isHttps(request),
-    sameSite: "lax",
-    path: "/",
-    maxAge: TELEGRAM_USER_ID_COOKIE_MAX_AGE_SEC,
-  });
+  res.cookies.set(telegramUserIdCookieOptions(request, profile.user_id));
   return res;
 }

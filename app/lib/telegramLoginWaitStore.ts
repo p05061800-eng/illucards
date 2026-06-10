@@ -5,8 +5,10 @@ import { isValidLoginWaitId } from "@/app/lib/telegramLoginWaitKeys";
 
 const STORE_FILE = path.join(process.cwd(), "data", "telegram-login-waits.json");
 const REDIS_KEY = (id: string) => `illucards:lgwait:${id}`;
+const REDIS_DONE_KEY = (id: string) => `illucards:lgwait:done:${id}`;
 const PENDING_TTL_SEC = 10 * 60;
 const READY_TTL_SEC = 6 * 60;
+const DONE_TTL_SEC = 3 * 60;
 
 export type LoginWaitProfile = {
   user_id: number;
@@ -63,6 +65,71 @@ async function redisGet(key: string): Promise<string | null> {
 
 async function redisDel(key: string): Promise<void> {
   await redisCommand(["DEL", key]);
+}
+
+function profileFromWaitRow(row: WaitRow): LoginWaitProfile | null {
+  if (!row.user_id || row.user_id <= 0) return null;
+  return {
+    user_id: row.user_id,
+    username: row.username,
+  };
+}
+
+function parseDoneProfile(raw: string | null): LoginWaitProfile | null {
+  if (!raw) return null;
+  try {
+    const j = JSON.parse(raw) as unknown;
+    if (!j || typeof j !== "object" || Array.isArray(j)) return null;
+    const o = j as Record<string, unknown>;
+    const uid =
+      typeof o.user_id === "number" && Number.isFinite(o.user_id) && o.user_id > 0
+        ? Math.floor(o.user_id)
+        : null;
+    if (uid == null) return null;
+    const username =
+      typeof o.username === "string" && o.username.trim()
+        ? o.username.trim().replace(/^@/, "")
+        : undefined;
+    return { user_id: uid, username };
+  } catch {
+    return null;
+  }
+}
+
+function serializeDoneProfile(profile: LoginWaitProfile): string {
+  return JSON.stringify({
+    user_id: profile.user_id,
+    username: profile.username ?? "",
+  });
+}
+
+async function readDoneProfile(waitId: string): Promise<LoginWaitProfile | null> {
+  const id = waitId.toLowerCase();
+  const cred = redisRestCredentials();
+  if (cred) {
+    return parseDoneProfile(await redisGet(REDIS_DONE_KEY(id)));
+  }
+  const data = pruneFileStore(await readFileStore());
+  const row = data[`done:${id}`];
+  if (!row || row.status !== "ready" || (row.expires ?? 0) <= Date.now()) return null;
+  return profileFromWaitRow(row);
+}
+
+async function writeDoneProfile(waitId: string, profile: LoginWaitProfile): Promise<void> {
+  const id = waitId.toLowerCase();
+  const cred = redisRestCredentials();
+  if (cred) {
+    await redisSetEx(REDIS_DONE_KEY(id), DONE_TTL_SEC, serializeDoneProfile(profile));
+    return;
+  }
+  const data = pruneFileStore(await readFileStore());
+  data[`done:${id}`] = {
+    status: "ready",
+    expires: Date.now() + DONE_TTL_SEC * 1000,
+    user_id: profile.user_id,
+    username: profile.username,
+  };
+  await writeFileStore(data);
 }
 
 function serializeWaitRow(row: WaitRow): string {
@@ -197,7 +264,12 @@ export async function markLoginWaitReady(
 
 export async function isLoginWaitReady(waitId: string): Promise<boolean> {
   const row = await readWaitRow(waitId);
-  return row?.status === "ready" && (row.expires ?? 0) > Date.now();
+  return (
+    row?.status === "ready" &&
+    (row.expires ?? 0) > Date.now() &&
+    typeof row.user_id === "number" &&
+    row.user_id > 0
+  );
 }
 
 /** Одноразово забрать профиль после подтверждения в боте (автовход без кода). */
@@ -205,16 +277,18 @@ export async function consumeLoginWait(
   waitId: string,
 ): Promise<LoginWaitProfile | null> {
   if (!isValidLoginWaitId(waitId)) return null;
+
+  const done = await readDoneProfile(waitId);
+  if (done) return done;
+
   const row = await readWaitRow(waitId);
   if (!row || row.status !== "ready" || (row.expires ?? 0) <= Date.now()) {
     return null;
   }
-  if (!row.user_id || row.user_id <= 0) {
-    return null;
-  }
+  const profile = profileFromWaitRow(row);
+  if (!profile) return null;
+
   await deleteWaitRow(waitId);
-  return {
-    user_id: row.user_id,
-    username: row.username,
-  };
+  await writeDoneProfile(waitId, profile);
+  return profile;
 }

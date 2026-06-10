@@ -19,7 +19,10 @@ import {
   orderAccountFlowLabel,
   ruPositionCountPhrase,
 } from "@/app/lib/orderStatus";
-import { finishTelegramWebLoginOnClient } from "@/app/lib/completeTelegramWebLoginClient";
+import {
+  accountUrlAfterTelegramLogin,
+  finishTelegramWebLoginOnClient,
+} from "@/app/lib/completeTelegramWebLoginClient";
 import {
   persistTelegramUserIdentity,
   readTelegramPrimaryUserId,
@@ -28,6 +31,7 @@ import {
 import { formatOrderTotalForDisplay } from "@/app/lib/formatPrice";
 import { startTelegramWebLoginWithWait } from "@/app/lib/startTelegramWebLoginClient";
 import {
+  TG_LOGIN_AUTO_ERROR_KEY,
   TG_LOGIN_WAIT_QUERY_PARAM,
   TG_LOGIN_WAIT_STORAGE_KEY,
   isValidLoginWaitId,
@@ -70,8 +74,7 @@ export default function AccountPageClient() {
         }
         setLsGate("ok");
         setAutoLoginPending(false);
-        router.replace("/account");
-        router.refresh();
+        window.location.assign(accountUrlAfterTelegramLogin());
         return;
       }
       setAutoLoginPending(false);
@@ -83,6 +86,18 @@ export default function AccountPageClient() {
     },
     [establishSessionFromTelegramUserId, router],
   );
+
+  useEffect(() => {
+    try {
+      const msg = sessionStorage.getItem(TG_LOGIN_AUTO_ERROR_KEY);
+      if (msg) {
+        sessionStorage.removeItem(TG_LOGIN_AUTO_ERROR_KEY);
+        setAutoLoginError(msg);
+      }
+    } catch {
+      /* ignore */
+    }
+  }, []);
 
   useEffect(() => {
     const fromUrl = searchParams.get(TG_LOGIN_WAIT_QUERY_PARAM);

@@ -1,15 +1,6 @@
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
-import {
-  COOKIE_TELEGRAM_USER_ID,
-  TELEGRAM_USER_ID_COOKIE_MAX_AGE_SEC,
-} from "@/app/lib/telegramUserIdentity";
-
-function isHttps(request: NextRequest): boolean {
-  if (request.nextUrl.protocol === "https:") return true;
-  const fwd = request.headers.get("x-forwarded-proto");
-  return fwd === "https";
-}
+import { telegramUserIdCookieOptions } from "@/app/lib/telegramAuthCookies";
 
 function parseUserId(raw: unknown): number | null {
   const n = typeof raw === "number" ? raw : Number(raw);
@@ -43,14 +34,6 @@ export async function POST(request: NextRequest) {
   }
 
   const res = NextResponse.json({ ok: true });
-  res.cookies.set({
-    name: COOKIE_TELEGRAM_USER_ID,
-    value: String(userId),
-    httpOnly: true,
-    secure: isHttps(request),
-    sameSite: "lax",
-    path: "/",
-    maxAge: TELEGRAM_USER_ID_COOKIE_MAX_AGE_SEC,
-  });
+  res.cookies.set(telegramUserIdCookieOptions(request, userId));
   return res;
 }

@@ -1,6 +1,9 @@
 /** sessionStorage: ждём подтверждения в боте после «Войти через Telegram» */
 export const TG_LOGIN_WAIT_STORAGE_KEY = "illucards_tg_login_wait_id";
 
+/** sessionStorage: ошибка автовхода (из poller) для показа на /account */
+export const TG_LOGIN_AUTO_ERROR_KEY = "illucards_tg_login_auto_error";
+
 /** Query-параметр в ссылке из бота: /account?tg_wait=… */
 export const TG_LOGIN_WAIT_QUERY_PARAM = "tg_wait";
 

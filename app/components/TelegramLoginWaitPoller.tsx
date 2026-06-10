@@ -3,8 +3,13 @@
 import { useEffect, useRef } from "react";
 import { apiUrl } from "@/app/lib/apiUrl";
 import { useAuth } from "@/app/context/AuthContext";
-import { finishTelegramWebLoginOnClient } from "@/app/lib/completeTelegramWebLoginClient";
 import {
+  accountUrlAfterTelegramLogin,
+  finishTelegramWebLoginOnClient,
+} from "@/app/lib/completeTelegramWebLoginClient";
+import {
+  TG_LOGIN_AUTO_ERROR_KEY,
+  TG_LOGIN_WAIT_QUERY_PARAM,
   TG_LOGIN_WAIT_STORAGE_KEY,
   isValidLoginWaitId,
 } from "@/app/lib/telegramLoginWaitKeys";
@@ -31,6 +36,13 @@ export function TelegramLoginWaitPoller() {
 
     const tick = async () => {
       if (completing.current) return;
+
+      try {
+        const params = new URLSearchParams(window.location.search);
+        if (params.has(TG_LOGIN_WAIT_QUERY_PARAM)) return;
+      } catch {
+        /* ignore */
+      }
 
       let waitId: string | null = null;
       try {
@@ -90,10 +102,15 @@ export function TelegramLoginWaitPoller() {
         startedAt.current = null;
 
         if (result.ok) {
-          window.location.assign(`${window.location.origin}/account`);
+          window.location.assign(accountUrlAfterTelegramLogin());
           return;
         }
 
+        try {
+          sessionStorage.setItem(TG_LOGIN_AUTO_ERROR_KEY, result.error);
+        } catch {
+          /* ignore */
+        }
         completing.current = false;
       } catch {
         completing.current = false;

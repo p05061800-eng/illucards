@@ -1,6 +1,11 @@
 import { apiUrl } from "@/app/lib/apiUrl";
 import { isValidLoginWaitId } from "@/app/lib/telegramLoginWaitKeys";
-import { persistTelegramUserIdentity } from "@/app/lib/telegramUserIdentity";
+import { clientCanonicalSiteOrigin } from "@/app/lib/siteOrigin";
+import {
+  persistTelegramUserIdentity,
+  readTelegramPrimaryUserId,
+  readTelegramUserLink,
+} from "@/app/lib/telegramUserIdentity";
 
 export type CompleteTelegramWebLoginResult =
   | { ok: true; user_id: number; username: string | null }
@@ -10,6 +15,47 @@ type EstablishSession = (
   telegramUserId: number,
   options?: { telegramUsername?: string | null },
 ) => { ok: true } | { ok: false; error: string };
+
+async function recoverLoginFromExistingIdentity(
+  establishSessionFromTelegramUserId: EstablishSession,
+): Promise<CompleteTelegramWebLoginResult | null> {
+  const existingId = readTelegramPrimaryUserId();
+  if (existingId == null) return null;
+
+  try {
+    const stateRes = await fetch(apiUrl("/api/user-state"), {
+      credentials: "include",
+      cache: "no-store",
+    });
+    if (stateRes.ok) {
+      const st = (await stateRes.json()) as { telegram_username?: unknown };
+      const username =
+        typeof st.telegram_username === "string"
+          ? st.telegram_username.replace(/^@/, "").trim()
+          : readTelegramUserLink()?.username ?? null;
+      const established = establishSessionFromTelegramUserId(existingId, {
+        telegramUsername: username,
+      });
+      if (!established.ok) return null;
+      persistTelegramUserIdentity(existingId, username);
+      return { ok: true, user_id: existingId, username };
+    }
+  } catch {
+    /* ignore */
+  }
+
+  const link = readTelegramUserLink();
+  if (link?.user_id === existingId) {
+    const established = establishSessionFromTelegramUserId(existingId, {
+      telegramUsername: link.username,
+    });
+    if (!established.ok) return null;
+    persistTelegramUserIdentity(existingId, link.username);
+    return { ok: true, user_id: existingId, username: link.username || null };
+  }
+
+  return null;
+}
 
 /** Ждём, пока бот пометит wait_id готовым на сайте. */
 export async function waitForLoginWaitReady(
@@ -104,7 +150,15 @@ export async function finishTelegramWebLoginOnClient(
   }
 
   const result = await completeTelegramWebLogin(waitId);
-  if (!result.ok) return result;
+  if (!result.ok) {
+    if (result.status === 401) {
+      const recovered = await recoverLoginFromExistingIdentity(
+        establishSessionFromTelegramUserId,
+      );
+      if (recovered) return recovered;
+    }
+    return result;
+  }
 
   const established = establishSessionFromTelegramUserId(result.user_id, {
     telegramUsername: result.username,
@@ -127,4 +181,9 @@ export async function finishTelegramWebLoginOnClient(
   }
 
   return result;
+}
+
+/** Куда перенаправлять после успешного автовхода. */
+export function accountUrlAfterTelegramLogin(): string {
+  return `${clientCanonicalSiteOrigin()}/account`;
 }

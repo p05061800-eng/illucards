@@ -19,16 +19,23 @@ function canUseDom(): boolean {
   return typeof window !== "undefined" && typeof localStorage !== "undefined";
 }
 
+function clientCookieDomain(): string {
+  if (typeof window === "undefined") return "";
+  const host = window.location.hostname.toLowerCase();
+  if (host === "illucards.by" || host === "www.illucards.by") return "; Domain=.illucards.by";
+  return "";
+}
+
 function setCookie(value: string, maxAgeSec: number): void {
   if (typeof document === "undefined") return;
   const secure = window.location?.protocol === "https:" ? "; Secure" : "";
-  document.cookie = `${COOKIE_TELEGRAM_USER_ID}=${encodeURIComponent(value)}; Path=/; Max-Age=${maxAgeSec}; SameSite=Lax${secure}`;
+  document.cookie = `${COOKIE_TELEGRAM_USER_ID}=${encodeURIComponent(value)}; Path=/; Max-Age=${maxAgeSec}; SameSite=Lax${secure}${clientCookieDomain()}`;
 }
 
 function clearCookie(): void {
   if (typeof document === "undefined") return;
   const secure = window.location?.protocol === "https:" ? "; Secure" : "";
-  document.cookie = `${COOKIE_TELEGRAM_USER_ID}=; Path=/; Max-Age=0; SameSite=Lax${secure}`;
+  document.cookie = `${COOKIE_TELEGRAM_USER_ID}=; Path=/; Max-Age=0; SameSite=Lax${secure}${clientCookieDomain()}`;
 }
 
 /** Сохранить после входа через Telegram (localStorage + cookie). */

@@ -77,9 +77,33 @@ export function cardHasRarityTag(card: CardRaritySource, tag: CardRarity): boole
   return cardRarityTags(card).includes(tag);
 }
 
-/** Фиксированная цена 18+ — если среди тегов есть adult. */
+export type CardCatalogPriceFields = CardRaritySource & {
+  price?: number;
+  priceByn?: number;
+};
+
+function cardHasExplicitCatalogPrice(card: CardCatalogPriceFields): boolean {
+  if (card.priceByn != null && Number.isFinite(card.priceByn) && card.priceByn > 0) {
+    return true;
+  }
+  if (card.price != null && Number.isFinite(card.price) && card.price > 0) {
+    return true;
+  }
+  return false;
+}
+
+/**
+ * Фиксированная цена 18+ — только если в каталоге не задана своя цена.
+ * Лимитированные карточки с меткой 18+ сохраняют цену из админки.
+ */
+export function cardUsesAdultFixedPricing(card: CardCatalogPriceFields): boolean {
+  if (!cardHasRarityTag(card, "adult")) return false;
+  return !cardHasExplicitCatalogPrice(card);
+}
+
+/** @deprecated Используйте `cardUsesAdultFixedPricing` (цена) или `cardHasRarityTag(card, "adult")` (размытие). */
 export function cardTreatsAsAdultPricing(card: CardRaritySource): boolean {
-  return cardHasRarityTag(card, "adult");
+  return cardUsesAdultFixedPricing(card);
 }
 
 /** Размытие / подтверждение возраста только для метки 18+ (`adult`). */

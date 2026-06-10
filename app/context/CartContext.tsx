@@ -16,7 +16,8 @@ import {
 } from "react";
 import type { CardRarity, StoredCard } from "../api/cards/route";
 import {
-  cardTreatsAsAdultPricing,
+  cardHasRarityTag,
+  cardUsesAdultFixedPricing,
   parseCardRarity,
 } from "../lib/cardRarityTags";
 import { bonusDiscountByn, maxSpendableBonusPoints } from "../lib/bonusProgram";
@@ -107,11 +108,11 @@ function loadDeliveryCountry(): DeliveryCountry | null {
 
 /** В строке корзины: `adult`, если у карточки есть метка 18+ — для размытия миниатюры. */
 function cartLineRarityForStorage(card: StoredCard): CardRarity {
-  return cardTreatsAsAdultPricing(card) ? "adult" : card.rarity;
+  return cardHasRarityTag(card, "adult") ? "adult" : card.rarity;
 }
 
 function lineFromCard(card: StoredCard): Pick<CartLine, "priceByn" | "priceRub"> {
-  if (cardTreatsAsAdultPricing(card)) {
+  if (cardUsesAdultFixedPricing(card)) {
     return { priceByn: ADULT_FIXED_PRICE_BYN, priceRub: ADULT_FIXED_PRICE_RUB };
   }
   const priceByn = Number.isFinite(card.price) ? card.price : 0;
@@ -164,11 +165,6 @@ function normalizeLines(raw: unknown): CartLine[] {
       priceRub = rubFromByn(priceByn);
     } else {
       continue;
-    }
-
-    if (rarity === "adult") {
-      priceByn = ADULT_FIXED_PRICE_BYN;
-      priceRub = ADULT_FIXED_PRICE_RUB;
     }
 
     out.push({

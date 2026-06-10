@@ -1,5 +1,5 @@
 import { normalizeDeliveryCountry, type DeliveryCountry } from "@/app/lib/delivery";
-import { cardTreatsAsAdultPricing } from "@/app/lib/cardRarityTags";
+import { cardUsesAdultFixedPricing } from "@/app/lib/cardRarityTags";
 
 /** Если в карточке не задан свой рубль — BYN × курс. */
 export const BYN_TO_RUB = 30;
@@ -53,7 +53,7 @@ export function formatCardPrice(
   return `${rub.toLocaleString("ru-RU")} RUB`;
 }
 
-/** Для `rarity: "adult"` — фиксированная розница (независимо от полей в JSON). */
+/** Для 18+ без своей цены в каталоге — розница по умолчанию. */
 export const ADULT_FIXED_PRICE_BYN = 30;
 export const ADULT_FIXED_PRICE_RUB = 800;
 
@@ -66,13 +66,13 @@ export type CardPriceFields = {
 };
 
 export function effectiveCardPriceByn(card: CardPriceFields): number {
-  if (cardTreatsAsAdultPricing(card)) return ADULT_FIXED_PRICE_BYN;
+  if (cardUsesAdultFixedPricing(card)) return ADULT_FIXED_PRICE_BYN;
   if (card.priceByn != null && Number.isFinite(card.priceByn)) return card.priceByn;
   return card.price != null && Number.isFinite(card.price) ? card.price : 0;
 }
 
 export function effectiveCardPriceRub(card: CardPriceFields): number {
-  if (cardTreatsAsAdultPricing(card)) return ADULT_FIXED_PRICE_RUB;
+  if (cardUsesAdultFixedPricing(card)) return ADULT_FIXED_PRICE_RUB;
   const byn = effectiveCardPriceByn(card);
   if (card.priceRub != null && Number.isFinite(card.priceRub)) {
     return Math.round(card.priceRub);

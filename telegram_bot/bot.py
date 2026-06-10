@@ -40,7 +40,7 @@ from db import init_db, recompute_user_order_stats, sync_all_users_order_stats, 
 logging.basicConfig(format="%(asctime)s %(levelname)s %(message)s", level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-BOT_BUILD_ID = "2026-06-10-admin-status-ru-v1"
+BOT_BUILD_ID = "2026-06-10-purge-orders-my-orders-ref-v1"
 
 REPLY_MENU_TEXTS = frozenset(
     {"💬 Связь", "📦 Мои заказы", "📜 Мои заказы", "🚚 Доставка", "⭐ Бонусы"}
@@ -631,6 +631,24 @@ def _persist_bot_orders() -> None:
         logger.warning("bot-orders write: %s", e)
 
 
+def _purge_all_bot_orders() -> int:
+    """Очистить журнал заказов бота (память + bot-orders.json)."""
+    global BOT_ORDERS
+    deleted = len(BOT_ORDERS)
+    BOT_ORDERS = {}
+    _persist_bot_orders()
+    _PENDING_ORDER_BY_USER.clear()
+    _ORDER_SNAPSHOTS.clear()
+    _AWAIT_PAYMENT_PROOF.clear()
+    _AWAIT_ORDER_DETAILS.clear()
+    _AWAIT_DELIVERY_CONFIRM.clear()
+    try:
+        sync_all_users_order_stats({})
+    except Exception as e:
+        logger.warning("purge orders CRM stats: %s", e)
+    return deleted
+
+
 def _load_known_start_user_ids() -> set[int]:
     if not KNOWN_START_IDS_PATH.exists():
         return set()
@@ -1118,6 +1136,14 @@ async def _health_http(_request: web.Request) -> web.Response:
     return web.json_response({"ok": True})
 
 
+async def _purge_orders_http(request: web.Request) -> web.Response:
+    if not _sync_secret_ok(request):
+        return web.json_response({"error": "Unauthorized"}, status=401)
+    deleted = _purge_all_bot_orders()
+    logger.info("purge-orders: deleted %s bot orders", deleted)
+    return web.json_response({"ok": True, "deleted": deleted})
+
+
 async def _push_site_order_notifications(
     order_id: str,
     order: dict[str, Any],
@@ -1218,6 +1244,7 @@ async def _start_http_server(_app: Any) -> None:
     http_app.router.add_post("/api/verify-code", _verify_code_http)
     http_app.router.add_post("/api/telegram-auth", _telegram_auth_http)
     http_app.router.add_post("/api/notify", _notify_http)
+    http_app.router.add_post("/api/purge-orders", _purge_orders_http)
     runner = web.AppRunner(http_app)
     await runner.setup()
     site = web.TCPSite(runner, "0.0.0.0", port)
@@ -3528,8 +3555,14 @@ async def show_my_orders(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
             continue
         label = _order_status_display(st)
         total = _merge_total_byn(rec, order_site)
+        order_for_label = (
+            order_site if isinstance(order_site, dict) else rec
+        )
         order_label = _order_display_label(
-            oid, int(user.id), _normalize_order_username(user.username)
+            oid,
+            int(user.id),
+            _normalize_order_username(user.username),
+            order=order_for_label,
         )
         lines.append(f"{order_label} — {total:g} BYN — {label}")
     if len(lines) <= 2:

@@ -920,6 +920,53 @@ export async function hideOrderForOwner(
   return { ok: true };
 }
 
+async function redisKeys(pattern: string): Promise<string[]> {
+  const j = await redisCommand(["KEYS", pattern]);
+  if (!j || j.error || !Array.isArray(j.result)) return [];
+  return j.result.filter((x): x is string => typeof x === "string");
+}
+
+/** Полная очистка всех заказов (Redis, файлы, память). Для сброса перед новым тестом. */
+export async function purgeAllOrders(): Promise<{ siteDeleted: number }> {
+  let siteDeleted = 0;
+  for (const key of Object.keys(ORDERS)) {
+    delete ORDERS[key];
+  }
+
+  const patterns = [
+    "illucards:order:*",
+    "illucards:user-orders:*",
+    "illucards:user-hidden-orders:*",
+  ] as const;
+  for (const pattern of patterns) {
+    const keys = await redisKeys(pattern);
+    for (const key of keys) {
+      await redisCommand(["DEL", key]);
+      if (pattern === "illucards:order:*") siteDeleted += 1;
+    }
+  }
+
+  try {
+    const files = await fs.readdir(ORDERS_DIR);
+    for (const f of files) {
+      if (!f.toLowerCase().endsWith(".json")) continue;
+      await fs.unlink(path.join(ORDERS_DIR, f));
+      siteDeleted += 1;
+    }
+  } catch {
+    /* нет каталога */
+  }
+
+  try {
+    await fs.mkdir(path.dirname(BOT_ORDERS_PATH), { recursive: true });
+    await fs.writeFile(BOT_ORDERS_PATH, "{}\n", "utf-8");
+  } catch {
+    /* ignore */
+  }
+
+  return { siteDeleted };
+}
+
 export type OrderLinePreview = {
   id: string;
   title: string;

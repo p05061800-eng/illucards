@@ -253,6 +253,38 @@ export type BotNotifyInput =
       messageId: number;
     };
 
+/** POST /api/purge-orders — очистить журнал заказов в боте. */
+export async function botPurgeOrders(): Promise<
+  { ok: true; deleted: number } | { ok: false; error: string }
+> {
+  const url = `${telegramBotApiUrl()}/api/purge-orders`;
+  try {
+    const res = await fetch(url, {
+      method: "POST",
+      headers: telegramBotSyncHeaders(),
+      body: JSON.stringify({}),
+      cache: "no-store",
+    });
+    const data = await readJson(res);
+    if (res.ok && data?.ok === true) {
+      const n =
+        typeof data.deleted === "number" && Number.isFinite(data.deleted)
+          ? Math.floor(data.deleted)
+          : 0;
+      return { ok: true, deleted: n };
+    }
+    return {
+      ok: false,
+      error: errorFromBody(data, `HTTP ${res.status}`),
+    };
+  } catch (e: unknown) {
+    return {
+      ok: false,
+      error: e instanceof Error ? e.message : "Сеть недоступна",
+    };
+  }
+}
+
 /** POST /api/notify */
 export async function botNotify(
   input: BotNotifyInput,

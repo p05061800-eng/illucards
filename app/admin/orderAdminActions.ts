@@ -4,9 +4,11 @@ import { revalidatePath } from "next/cache";
 import {
   getOrder,
   listRecentOrders,
+  purgeAllOrders,
   updateOrderStatus,
   type AdminOrderRow,
 } from "@/app/lib/ordersStore";
+import { botPurgeOrders } from "@/app/lib/telegramBotRenderApi";
 import { notifyBotAwaitOrderDetails } from "@/app/lib/telegramCartBotSync";
 import { sendOrderDetailsRequestToCustomer } from "@/app/lib/telegramOrderCustomerNotify";
 import { notifyTelegramWebhookUserState } from "@/app/lib/telegramStateBotSync";
@@ -14,6 +16,26 @@ import { clearSyncedCartForTelegramUser } from "@/app/lib/telegramUserStateStore
 
 export async function loadAdminOrders(): Promise<AdminOrderRow[]> {
   return listRecentOrders(50);
+}
+
+export async function purgeAllOrdersFromAdmin(): Promise<
+  { ok: true; siteDeleted: number; botDeleted: number } | { ok: false; error: string }
+> {
+  const site = await purgeAllOrders();
+  const bot = await botPurgeOrders();
+  if (!bot.ok) {
+    return {
+      ok: false,
+      error: `Сайт очищен (${site.siteDeleted}), бот: ${bot.error}`,
+    };
+  }
+  revalidatePath("/admin");
+  revalidatePath("/account/orders");
+  return {
+    ok: true,
+    siteDeleted: site.siteDeleted,
+    botDeleted: bot.deleted,
+  };
 }
 
 export async function confirmOrderFromAdmin(

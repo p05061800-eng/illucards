@@ -5,7 +5,11 @@ import type { AdminOrderRow } from "@/app/lib/ordersStore";
 import { formatOrderCardRef } from "@/app/lib/orderStatus";
 import { orderPaymentMethodLabel } from "@/app/lib/orderPayment";
 import { orderStatusLabelRu } from "@/app/lib/orderStatus";
-import { confirmOrderFromAdmin, loadAdminOrders } from "./orderAdminActions";
+import {
+  confirmOrderFromAdmin,
+  loadAdminOrders,
+  purgeAllOrdersFromAdmin,
+} from "./orderAdminActions";
 
 function formatAdminOrderMeta(row: AdminOrderRow): string {
   const parts = [
@@ -32,6 +36,28 @@ export function AdminOrdersPanel({ initialOrders }: Props) {
     startTransition(async () => {
       const rows = await loadAdminOrders();
       setOrders(rows);
+    });
+  }, []);
+
+  const onPurgeAll = useCallback(() => {
+    if (
+      !window.confirm(
+        "Удалить ВСЕ заказы на сайте и в Telegram-боте? Это необратимо.",
+      )
+    ) {
+      return;
+    }
+    setMessage(null);
+    startTransition(async () => {
+      const res = await purgeAllOrdersFromAdmin();
+      if (!res.ok) {
+        setMessage(res.error);
+        return;
+      }
+      setOrders([]);
+      setMessage(
+        `Удалено: сайт — ${res.siteDeleted}, бот — ${res.botDeleted}. Можно оформлять заказы заново.`,
+      );
     });
   }, []);
 
@@ -72,14 +98,24 @@ export function AdminOrdersPanel({ initialOrders }: Props) {
           Подтверждайте заказ после выбора способа оплаты в Telegram — покупателю
           уйдёт запрос на данные доставки.
         </p>
-        <button
-          type="button"
-          onClick={refresh}
-          disabled={pending}
-          className="rounded-full border border-white/15 bg-white/5 px-4 py-2 text-sm text-zinc-200 hover:bg-white/10 disabled:opacity-50"
-        >
-          Обновить
-        </button>
+        <div className="flex flex-wrap gap-2">
+          <button
+            type="button"
+            onClick={refresh}
+            disabled={pending}
+            className="rounded-full border border-white/15 bg-white/5 px-4 py-2 text-sm text-zinc-200 hover:bg-white/10 disabled:opacity-50"
+          >
+            Обновить
+          </button>
+          <button
+            type="button"
+            onClick={onPurgeAll}
+            disabled={pending}
+            className="rounded-full border border-red-500/40 bg-red-950/40 px-4 py-2 text-sm text-red-200 hover:bg-red-950/70 disabled:opacity-50"
+          >
+            Удалить все заказы
+          </button>
+        </div>
       </div>
       {message ? (
         <p className="rounded-xl border border-violet-500/30 bg-violet-950/30 px-4 py-3 text-sm text-violet-100">

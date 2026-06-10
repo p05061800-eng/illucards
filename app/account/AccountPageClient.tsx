@@ -52,15 +52,6 @@ export default function AccountPageClient() {
   const [orderLinesOpenById, setOrderLinesOpenById] = useState<Record<string, boolean>>({});
   const autoLoginStarted = useRef(false);
 
-  useEffect(() => {
-    const id = readTelegramPrimaryUserId();
-    if (id == null) {
-      setLsGate("no_telegram");
-      return;
-    }
-    setLsGate("ok");
-  }, []);
-
   const completeLoginFromWaitId = useCallback(
     async (waitId: string) => {
       if (autoLoginStarted.current) return;
@@ -94,12 +85,24 @@ export default function AccountPageClient() {
   );
 
   useEffect(() => {
-    if (lsGate !== "no_telegram") return;
     const fromUrl = searchParams.get(TG_LOGIN_WAIT_QUERY_PARAM);
     if (fromUrl && isValidLoginWaitId(fromUrl)) {
       void completeLoginFromWaitId(fromUrl.trim().toLowerCase());
     }
-  }, [lsGate, searchParams, completeLoginFromWaitId]);
+  }, [searchParams, completeLoginFromWaitId]);
+
+  useEffect(() => {
+    if (autoLoginPending) return;
+    const fromUrl = searchParams.get(TG_LOGIN_WAIT_QUERY_PARAM);
+    if (fromUrl && isValidLoginWaitId(fromUrl)) return;
+
+    const id = readTelegramPrimaryUserId();
+    if (id == null) {
+      setLsGate("no_telegram");
+      return;
+    }
+    setLsGate("ok");
+  }, [autoLoginPending, searchParams]);
 
   const loadOrders = useCallback(async () => {
     setOrdersError(null);

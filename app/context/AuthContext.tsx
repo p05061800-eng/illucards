@@ -204,6 +204,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       void password;
       setUser(session);
       writeSession(session);
+      persistTelegramUserIdentity(telegramUserId, tgName);
       localStorage.removeItem(STORAGE_GUEST_EMAIL);
       setGuestEmailState(null);
       return { ok: true };

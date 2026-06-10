@@ -1,5 +1,6 @@
 import { apiUrl } from "@/app/lib/apiUrl";
 import { isValidLoginWaitId } from "@/app/lib/telegramLoginWaitKeys";
+import { persistTelegramUserIdentity } from "@/app/lib/telegramUserIdentity";
 
 export type CompleteTelegramWebLoginResult =
   | { ok: true; user_id: number; username: string | null }
@@ -9,6 +10,34 @@ type EstablishSession = (
   telegramUserId: number,
   options?: { telegramUsername?: string | null },
 ) => { ok: true } | { ok: false; error: string };
+
+/** Ждём, пока бот пометит wait_id готовым на сайте. */
+export async function waitForLoginWaitReady(
+  waitId: string,
+  options?: { timeoutMs?: number; intervalMs?: number },
+): Promise<boolean> {
+  const id = waitId.trim().toLowerCase();
+  if (!isValidLoginWaitId(id)) return false;
+  const timeoutMs = options?.timeoutMs ?? 30_000;
+  const intervalMs = options?.intervalMs ?? 1000;
+  const started = Date.now();
+  while (Date.now() - started < timeoutMs) {
+    try {
+      const res = await fetch(
+        apiUrl(`/api/telegram-login-wait?wait_id=${encodeURIComponent(id)}`),
+        { cache: "no-store" },
+      );
+      if (res.ok) {
+        const data = (await res.json()) as { ready?: boolean };
+        if (data.ready) return true;
+      }
+    } catch {
+      /* retry */
+    }
+    await new Promise((r) => setTimeout(r, intervalMs));
+  }
+  return false;
+}
 
 /** Завершить web_login: сервер проверяет wait_id и возвращает Telegram user id. */
 export async function completeTelegramWebLogin(
@@ -61,7 +90,19 @@ export async function completeTelegramWebLogin(
 export async function finishTelegramWebLoginOnClient(
   waitId: string,
   establishSessionFromTelegramUserId: EstablishSession,
+  options?: { waitUntilReady?: boolean },
 ): Promise<CompleteTelegramWebLoginResult> {
+  if (options?.waitUntilReady !== false) {
+    const ready = await waitForLoginWaitReady(waitId);
+    if (!ready) {
+      return {
+        ok: false,
+        error: "Подтверждение в боте ещё не получено. Нажмите «Start» в боте и повторите.",
+        status: 408,
+      };
+    }
+  }
+
   const result = await completeTelegramWebLogin(waitId);
   if (!result.ok) return result;
 
@@ -71,6 +112,8 @@ export async function finishTelegramWebLoginOnClient(
   if (!established.ok) {
     return { ok: false, error: established.error, status: 400 };
   }
+
+  persistTelegramUserIdentity(result.user_id, result.username);
 
   try {
     await fetch("/api/auth/telegram-cookie", {

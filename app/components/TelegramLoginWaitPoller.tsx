@@ -80,6 +80,7 @@ export function TelegramLoginWaitPoller() {
         const result = await finishTelegramWebLoginOnClient(
           waitId,
           establishSessionFromTelegramUserId,
+          { waitUntilReady: false },
         );
         try {
           sessionStorage.removeItem(TG_LOGIN_WAIT_STORAGE_KEY);

@@ -51,7 +51,7 @@ export function AgeConfirmDialog({
           Вам есть 18?
         </p>
         <p className="mt-2 text-center text-xs leading-relaxed text-zinc-400">
-          Подтвердите возраст, чтобы открыть эту карточку.
+          Подтвердите возраст — размытие снимется, страница не откроется.
         </p>
         <div className="mt-5 flex justify-end gap-2">
           <button
@@ -143,7 +143,11 @@ export function AdultContentBlurGate({
             </p>
             <button
               type="button"
-              onClick={confirmForCard}
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                confirmForCard();
+              }}
               className="pointer-events-auto rounded-full border border-rose-400/75 bg-rose-950/95 px-4 py-2.5 text-sm font-semibold text-rose-50 shadow-[0_0_22px_rgba(244,63,94,0.35)] transition hover:bg-rose-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-400 focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-950"
             >
               Мне есть 18 лет

@@ -111,9 +111,7 @@ function CardItem({
         onConfirm={() => {
           adultGate?.confirmAdultForCard(card.id);
           setAgeOpen(false);
-          const h = pendingNavRef.current;
           pendingNavRef.current = null;
-          if (h) router.push(h);
         }}
       />
         <div

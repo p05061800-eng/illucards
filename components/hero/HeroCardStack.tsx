@@ -126,9 +126,7 @@ export function HeroCardStack({
         onConfirm={() => {
           adultGate?.confirmAdultForCard(displayCard.id);
           setAgeOpen(false);
-          const h = pendingNavRef.current;
           pendingNavRef.current = null;
-          if (h) router.push(h);
         }}
       />
       <div

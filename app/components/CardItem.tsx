@@ -83,9 +83,7 @@ export function CardItem({ card, hideUltraLayer = false }: Props) {
         onConfirm={() => {
           adultGate?.confirmAdultForCard(card.id);
           setAgeOpen(false);
-          const h = pendingNavRef.current;
           pendingNavRef.current = null;
-          if (h) router.push(h);
         }}
       />
 

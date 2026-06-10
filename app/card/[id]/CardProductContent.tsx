@@ -109,9 +109,7 @@ function MiniRailCard({ card: c }: { card: StoredCard }) {
         onConfirm={() => {
           adultGate?.confirmAdultForCard(c.id);
           setAgeOpen(false);
-          const h = pendingHrefRef.current;
           pendingHrefRef.current = null;
-          if (h) router.push(h);
         }}
       />
       <Link

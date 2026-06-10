@@ -1,8 +1,9 @@
 import { apiUrl } from "@/app/lib/apiUrl";
+import { isValidLoginWaitId } from "@/app/lib/telegramLoginWaitKeys";
 import {
-  TG_LOGIN_WAIT_STORAGE_KEY,
-  isValidLoginWaitId,
-} from "@/app/lib/telegramLoginWaitKeys";
+  notifyLoginWaitStarted,
+  persistLoginWaitId,
+} from "@/app/lib/telegramLoginWaitStorage";
 import { telegramWebLoginDeepLink } from "@/app/lib/telegramWebLoginUrl";
 
 declare global {
@@ -12,23 +13,19 @@ declare global {
 }
 
 /**
- * Регистрирует ожидание на сервере, сохраняет wait_id в sessionStorage,
+ * Регистрирует ожидание на сервере, сохраняет wait_id,
  * открывает бота — после подтверждения вход выполняется автоматически.
  */
 export async function startTelegramWebLoginWithWait(): Promise<boolean> {
   if (typeof window === "undefined") return false;
   try {
-    try {
-      sessionStorage.removeItem(TG_LOGIN_WAIT_STORAGE_KEY);
-    } catch {
-      /* ignore */
-    }
     const res = await fetch(apiUrl("/api/telegram-login-wait"), { method: "POST" });
     if (!res.ok) return false;
     const j = (await res.json()) as { wait_id?: string };
     const id = typeof j.wait_id === "string" ? j.wait_id.trim() : "";
     if (!isValidLoginWaitId(id)) return false;
-    sessionStorage.setItem(TG_LOGIN_WAIT_STORAGE_KEY, id.toLowerCase());
+    persistLoginWaitId(id);
+    notifyLoginWaitStarted();
     const url = telegramWebLoginDeepLink(id);
     const popup = window.open(
       url,

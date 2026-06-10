@@ -1,20 +1,18 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { apiUrl } from "@/app/lib/apiUrl";
 import { useAuth } from "@/app/context/AuthContext";
 import {
-  accountUrlAfterTelegramLogin,
-  finishTelegramWebLoginOnClient,
-  pollLoginWait,
-} from "@/app/lib/completeTelegramWebLoginClient";
+  completeLoginWaitIfReady,
+  redirectAfterTelegramLogin,
+  stashTelegramLoginAutoError,
+} from "@/app/lib/runTelegramLoginWaitCompletion";
 import {
-  TG_LOGIN_AUTO_ERROR_KEY,
-  TG_LOGIN_WAIT_STORAGE_KEY,
-  isValidLoginWaitId,
-} from "@/app/lib/telegramLoginWaitKeys";
+  readLoginWaitId,
+  TG_LOGIN_WAIT_STARTED_EVENT,
+} from "@/app/lib/telegramLoginWaitStorage";
 
-const POLL_MS = 1500;
+const POLL_MS = 1200;
 const MAX_MS = 8 * 60 * 1000;
 
 declare global {
@@ -34,91 +32,67 @@ export function TelegramLoginWaitPoller() {
   useEffect(() => {
     if (typeof window === "undefined") return;
 
+    const closePopup = () => {
+      try {
+        window.__illucardsTgLoginPopup?.close();
+      } catch {
+        /* ignore */
+      }
+      window.__illucardsTgLoginPopup = null;
+    };
+
     const tick = async () => {
       if (completing.current) return;
 
-      let waitId: string | null = null;
-      try {
-        waitId = sessionStorage.getItem(TG_LOGIN_WAIT_STORAGE_KEY);
-      } catch {
-        return;
-      }
-      if (!waitId || !isValidLoginWaitId(waitId)) {
+      const waitId = readLoginWaitId();
+      if (!waitId) {
         startedAt.current = null;
         return;
       }
       if (startedAt.current == null) startedAt.current = Date.now();
       if (Date.now() - startedAt.current > MAX_MS) {
-        try {
-          sessionStorage.removeItem(TG_LOGIN_WAIT_STORAGE_KEY);
-        } catch {
-          /* ignore */
-        }
-        startedAt.current = null;
         return;
       }
-
-      const poll = await pollLoginWait(waitId);
-      if (!poll.ready) return;
 
       completing.current = true;
-
-      const closePopup = () => {
-        try {
-          window.__illucardsTgLoginPopup?.close();
-        } catch {
-          /* ignore */
+      try {
+        const result = await completeLoginWaitIfReady(
+          waitId,
+          establishSessionFromTelegramUserId,
+        );
+        if (result.ok) {
+          closePopup();
+          window.setTimeout(closePopup, 120);
+          redirectAfterTelegramLogin();
+          return;
         }
-      };
-      closePopup();
-      window.setTimeout(closePopup, 120);
-      window.setTimeout(closePopup, 350);
-      window.__illucardsTgLoginPopup = null;
-
-      const result = await finishTelegramWebLoginOnClient(
-        waitId,
-        establishSessionFromTelegramUserId,
-        poll.user_id != null && poll.user_id > 0
-          ? {
-              knownProfile: {
-                user_id: poll.user_id,
-                username: poll.username ?? undefined,
-              },
-            }
-          : undefined,
-      );
-      try {
-        sessionStorage.removeItem(TG_LOGIN_WAIT_STORAGE_KEY);
+        if (!result.pending && result.error) {
+          stashTelegramLoginAutoError(result.error);
+        }
       } catch {
         /* ignore */
+      } finally {
+        completing.current = false;
       }
-      startedAt.current = null;
-
-      if (result.ok) {
-        window.location.assign(accountUrlAfterTelegramLogin());
-        return;
-      }
-
-      try {
-        sessionStorage.setItem(TG_LOGIN_AUTO_ERROR_KEY, result.error);
-      } catch {
-        /* ignore */
-      }
-      completing.current = false;
     };
 
-    const onVisible = () => {
-      if (document.visibilityState === "visible") void tick();
+    const onWake = () => {
+      void tick();
     };
 
     const id = window.setInterval(() => void tick(), POLL_MS);
-    document.addEventListener("visibilitychange", onVisible);
-    window.addEventListener("focus", onVisible);
+    document.addEventListener("visibilitychange", onWake);
+    window.addEventListener("focus", onWake);
+    window.addEventListener("pageshow", onWake);
+    window.addEventListener(TG_LOGIN_WAIT_STARTED_EVENT, onWake);
     void tick();
+
     return () => {
       window.clearInterval(id);
-      document.removeEventListener("visibilitychange", onVisible);
-      window.removeEventListener("focus", onVisible);
+      document.removeEventListener("visibilitychange", onWake);
+      window.removeEventListener("focus", onWake);
+      window.removeEventListener("pageshow", onWake);
+      window.removeEventListener(TG_LOGIN_WAIT_STARTED_EVENT, onWake);
     };
   }, [establishSessionFromTelegramUserId]);
 

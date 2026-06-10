@@ -20,9 +20,9 @@ import {
   ruPositionCountPhrase,
 } from "@/app/lib/orderStatus";
 import {
-  finishTelegramWebLoginOnClient,
-  waitForLoginWaitReady,
-} from "@/app/lib/completeTelegramWebLoginClient";
+  runTelegramLoginWaitCompletion,
+  redirectAfterTelegramLogin,
+} from "@/app/lib/runTelegramLoginWaitCompletion";
 import {
   persistTelegramUserIdentity,
   readTelegramPrimaryUserId,
@@ -33,9 +33,13 @@ import { startTelegramWebLoginWithWait } from "@/app/lib/startTelegramWebLoginCl
 import {
   TG_LOGIN_AUTO_ERROR_KEY,
   TG_LOGIN_WAIT_QUERY_PARAM,
-  TG_LOGIN_WAIT_STORAGE_KEY,
   isValidLoginWaitId,
 } from "@/app/lib/telegramLoginWaitKeys";
+import {
+  persistLoginWaitId,
+  readLoginWaitId,
+  TG_LOGIN_WAIT_STARTED_EVENT,
+} from "@/app/lib/telegramLoginWaitStorage";
 import { telegramWebLoginDeepLink } from "@/app/lib/telegramWebLoginUrl";
 
 type LsGate = "pending" | "ok" | "no_telegram";
@@ -63,44 +67,25 @@ export default function AccountPageClient() {
       setAutoLoginPending(true);
       setAutoLoginError(null);
 
-      const profile = await waitForLoginWaitReady(waitId, {
-        timeoutMs: 8 * 60 * 1000,
-        intervalMs: 1500,
-      });
-      if (!profile) {
-        setAutoLoginPending(false);
-        autoLoginStarted.current = false;
-        setAutoLoginError(
-          "Подтверждение в боте ещё не получено. Нажмите «Start» в боте и повторите.",
-        );
-        return;
-      }
-
-      const result = await finishTelegramWebLoginOnClient(
+      const result = await runTelegramLoginWaitCompletion(
         waitId,
         establishSessionFromTelegramUserId,
-        { knownProfile: profile },
       );
       if (result.ok) {
-        try {
-          sessionStorage.removeItem(TG_LOGIN_WAIT_STORAGE_KEY);
-        } catch {
-          /* ignore */
-        }
         setLsGate("ok");
         setAutoLoginPending(false);
-        router.replace("/account");
-        router.refresh();
+        redirectAfterTelegramLogin();
         return;
       }
       setAutoLoginPending(false);
       autoLoginStarted.current = false;
+      if (result.pending) return;
       setAutoLoginError(
         result.error ||
           "Не удалось выполнить вход. Нажмите «Войти через Telegram» ещё раз.",
       );
     },
-    [establishSessionFromTelegramUserId, router],
+    [establishSessionFromTelegramUserId],
   );
 
   useEffect(() => {
@@ -132,46 +117,32 @@ export default function AccountPageClient() {
     const fromUrl = searchParams.get(TG_LOGIN_WAIT_QUERY_PARAM);
     if (!fromUrl || !isValidLoginWaitId(fromUrl)) return;
     const waitId = fromUrl.trim().toLowerCase();
-    try {
-      sessionStorage.setItem(TG_LOGIN_WAIT_STORAGE_KEY, waitId);
-    } catch {
-      /* ignore */
-    }
+    persistLoginWaitId(waitId);
+    autoLoginStarted.current = false;
     void completeLoginFromWaitId(waitId);
   }, [searchParams, completeLoginFromWaitId]);
 
   useEffect(() => {
-    const fromUrl = searchParams.get(TG_LOGIN_WAIT_QUERY_PARAM);
-    if (fromUrl && isValidLoginWaitId(fromUrl)) return;
-
-    let waitId: string | null = null;
-    try {
-      waitId = sessionStorage.getItem(TG_LOGIN_WAIT_STORAGE_KEY);
-    } catch {
-      return;
-    }
-    if (!waitId || !isValidLoginWaitId(waitId)) return;
-
-    const onVisible = () => {
-      if (document.visibilityState !== "visible") return;
-      let stored: string | null = null;
-      try {
-        stored = sessionStorage.getItem(TG_LOGIN_WAIT_STORAGE_KEY);
-      } catch {
-        return;
-      }
-      if (!stored || !isValidLoginWaitId(stored)) return;
-      void completeLoginFromWaitId(stored.trim().toLowerCase());
+    const kick = () => {
+      if (document.visibilityState === "hidden") return;
+      if (autoLoginStarted.current) return;
+      const waitId = readLoginWaitId();
+      if (!waitId) return;
+      void completeLoginFromWaitId(waitId);
     };
 
-    void completeLoginFromWaitId(waitId.trim().toLowerCase());
-    document.addEventListener("visibilitychange", onVisible);
-    window.addEventListener("focus", onVisible);
+    kick();
+    window.addEventListener(TG_LOGIN_WAIT_STARTED_EVENT, kick);
+    document.addEventListener("visibilitychange", kick);
+    window.addEventListener("focus", kick);
+    window.addEventListener("pageshow", kick);
     return () => {
-      document.removeEventListener("visibilitychange", onVisible);
-      window.removeEventListener("focus", onVisible);
+      window.removeEventListener(TG_LOGIN_WAIT_STARTED_EVENT, kick);
+      document.removeEventListener("visibilitychange", kick);
+      window.removeEventListener("focus", kick);
+      window.removeEventListener("pageshow", kick);
     };
-  }, [searchParams, completeLoginFromWaitId]);
+  }, [completeLoginFromWaitId]);
 
   const loadOrders = useCallback(async () => {
     setOrdersError(null);
@@ -269,11 +240,16 @@ export default function AccountPageClient() {
   }, [lsGate, hydrated, loadOrders]);
 
   const handleOpenTelegramForLogin = useCallback(async () => {
+    autoLoginStarted.current = false;
+    setAutoLoginError(null);
     const ok = await startTelegramWebLoginWithWait();
     if (!ok && typeof window !== "undefined") {
       window.open(telegramWebLoginDeepLink(), "_blank", "noopener,noreferrer");
+      return;
     }
-  }, []);
+    const waitId = readLoginWaitId();
+    if (waitId) void completeLoginFromWaitId(waitId);
+  }, [completeLoginFromWaitId]);
 
   const handleLogout = useCallback(async () => {
     await logout();
@@ -286,7 +262,16 @@ export default function AccountPageClient() {
   if (lsGate === "pending" || autoLoginPending) {
     return (
       <div className="mx-auto max-w-lg px-4 py-20 text-center text-sm text-zinc-500">
-        {autoLoginPending ? "Выполняем вход…" : "Загрузка…"}
+        {autoLoginPending ? (
+          <>
+            <p>Ждём подтверждение в Telegram…</p>
+            <p className="mt-2 text-xs text-zinc-600">
+              Подтвердите вход в боте и вернитесь на эту вкладку — вход завершится автоматически.
+            </p>
+          </>
+        ) : (
+          "Загрузка…"
+        )}
       </div>
     );
   }

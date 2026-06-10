@@ -239,6 +239,12 @@ function fileToOrderRecord(raw: unknown): OrderRecord | null {
   const telegram_buyer_notified =
     o.telegram_buyer_notified === true || o.telegram_buyer_notified === "true";
 
+  const delivery_details_raw = o.delivery_details;
+  const delivery_details =
+    typeof delivery_details_raw === "string" && delivery_details_raw.trim()
+      ? delivery_details_raw.trim().slice(0, 4000)
+      : undefined;
+
   return {
     ...(user_id != null && Number.isFinite(user_id) && user_id > 0
       ? { user_id: Math.floor(user_id) }
@@ -259,6 +265,7 @@ function fileToOrderRecord(raw: unknown): OrderRecord | null {
       : {}),
     ...(payment_method ? { payment_method } : {}),
     ...(telegram_buyer_notified ? { telegram_buyer_notified: true as const } : {}),
+    ...(delivery_details ? { delivery_details } : {}),
   };
 }
 
@@ -381,6 +388,59 @@ export async function updateOrderPaymentMethod(
     }
   } catch {
     /* ignore */
+  }
+  return { ok: true };
+}
+
+export async function updateOrderDeliveryDetails(
+  orderId: string,
+  deliveryDetails: string,
+): Promise<{ ok: true } | { ok: false; error: string; status: number }> {
+  const id = sanitizeOrderIdForPath(orderId);
+  if (!id) {
+    return { ok: false, error: "Некорректный order_id", status: 400 };
+  }
+  const text = deliveryDetails.trim().slice(0, 4000);
+  if (!text) {
+    return { ok: false, error: "Пустые данные доставки", status: 400 };
+  }
+  const existing = await getOrder(id);
+  if (!existing) {
+    return { ok: false, error: "Заказ не найден", status: 404 };
+  }
+  const updated: OrderRecord = { ...existing, delivery_details: text };
+  ORDERS[id] = updated;
+  await persistOrderRecordToRedis(id, updated);
+  const filePath = path.join(ORDERS_DIR, `${id}.json`);
+  try {
+    const rawText = await fs.readFile(filePath, "utf-8");
+    const parsed: unknown = JSON.parse(rawText);
+    if (typeof parsed === "object" && parsed !== null) {
+      await fs.writeFile(
+        filePath,
+        JSON.stringify(
+          { ...(parsed as Record<string, unknown>), delivery_details: text },
+          null,
+          2,
+        ),
+        "utf-8",
+      );
+    }
+  } catch {
+    try {
+      await fs.mkdir(ORDERS_DIR, { recursive: true });
+      await fs.writeFile(
+        filePath,
+        JSON.stringify(
+          { id, createdAt: new Date().toISOString(), ...updated },
+          null,
+          2,
+        ),
+        "utf-8",
+      );
+    } catch {
+      /* readonly FS — остаётся Redis/in-memory */
+    }
   }
   return { ok: true };
 }

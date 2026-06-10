@@ -42,6 +42,7 @@ type OrderApi = {
   total?: number;
   delivery?: string;
   deliveryCountry?: string;
+  delivery_details?: string;
   status?: string;
 };
 
@@ -323,6 +324,10 @@ export default function AccountOrderDetailClient({ orderId }: { orderId: string 
   const deliveryText = delivery
     ? DELIVERY_COUNTRY_LABELS[delivery]
     : "—";
+  const deliveryDetails =
+    typeof order?.delivery_details === "string" && order.delivery_details.trim()
+      ? order.delivery_details.trim()
+      : null;
   const total =
     typeof order.total === "number" && Number.isFinite(order.total) ? order.total : null;
   const priceCurrency: DisplayCurrency =
@@ -418,6 +423,11 @@ export default function AccountOrderDetailClient({ orderId }: { orderId: string 
               Доставка
             </h2>
             <p className="mt-2 text-base font-medium text-zinc-900">{deliveryText}</p>
+            {deliveryDetails ? (
+              <p className="mt-2 whitespace-pre-wrap text-sm leading-relaxed text-zinc-700">
+                {deliveryDetails}
+              </p>
+            ) : null}
           </div>
           <div className="bg-zinc-50/90 px-5 py-4 sm:px-6 sm:py-5">
             <h2 className="text-xs font-semibold uppercase tracking-wide text-zinc-500">

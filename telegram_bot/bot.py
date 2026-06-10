@@ -1129,6 +1129,7 @@ async def _start_http_server(_app: Any) -> None:
     site = web.TCPSite(runner, "0.0.0.0", port)
     await site.start()
     logger.info("HTTP sync server started on port %s", port)
+    asyncio.create_task(_backfill_delivery_details_to_site())
 
 
 def _format_order_admin(
@@ -1182,11 +1183,12 @@ def _format_order_admin(
     pm = str(order.get("payment_method") or record.get("payment_method") or "").strip().lower()
     if pm:
         lines.append(f"💳 Способ оплаты: {_payment_method_label(pm)}")
+    status_label = _order_status_display(str(record.get("status") or ""))
     if use_byn:
-        lines.append(f"💰 Итого: {total:g} BYN · статус: {record.get('status', '—')}")
+        lines.append(f"💰 Итого: {total:g} BYN · статус: {status_label}")
     else:
         lines.append(
-            f"💰 Итого: {int(round(total * BYN_TO_RUB))} RUB (~{total:g} BYN) · статус: {record.get('status', '—')}"
+            f"💰 Итого: {int(round(total * BYN_TO_RUB))} RUB (~{total:g} BYN) · статус: {status_label}"
         )
     return "\n".join(lines)
 
@@ -1797,7 +1799,39 @@ async def _fetch_site_order_http(order_id: str) -> tuple[dict[str, Any] | None, 
 
 async def fetch_site_order(order_id: str) -> dict[str, Any] | None:
     body, _ = await _fetch_site_order_http(order_id)
+    if isinstance(body, dict):
+        await _maybe_sync_delivery_details_to_site(order_id, body)
     return body
+
+
+async def _maybe_sync_delivery_details_to_site(
+    order_id: str,
+    site_order: dict[str, Any],
+) -> None:
+    """Если на сайте нет delivery_details, но они есть в BOT_ORDERS — дослать."""
+    if str(site_order.get("delivery_details") or "").strip():
+        return
+    _load_bot_orders()
+    bot_rec = BOT_ORDERS.get(order_id)
+    if not isinstance(bot_rec, dict):
+        return
+    dd = str(bot_rec.get("delivery_details") or "").strip()
+    if not dd:
+        return
+    owner_id = _order_owner_user_id(order_id, site_order)
+    if owner_id is None:
+        uid_raw = bot_rec.get("user_id")
+        try:
+            owner_id = int(uid_raw) if uid_raw is not None else None
+        except (TypeError, ValueError):
+            owner_id = None
+    if not await post_site_order_delivery_details(
+        order_id,
+        dd,
+        owner_id=owner_id,
+        order=site_order,
+    ):
+        logger.warning("backfill delivery_details failed order=%s", order_id)
 
 
 async def fetch_site_user_orders_list(telegram_user_id: int) -> list[dict[str, Any]]:
@@ -2059,6 +2093,14 @@ async def post_site_order_status(
         username = str(order.get("username") or "").strip().lstrip("@")
         if username:
             payload["username"] = username
+        dd = str(order.get("delivery_details") or "").strip()
+        if not dd:
+            _load_bot_orders()
+            bot_rec = BOT_ORDERS.get(order_id)
+            if isinstance(bot_rec, dict):
+                dd = str(bot_rec.get("delivery_details") or "").strip()
+        if dd:
+            payload["delivery_details"] = dd
     timeout = aiohttp.ClientTimeout(total=20)
     try:
         async with aiohttp.ClientSession(timeout=timeout) as session:
@@ -2075,6 +2117,92 @@ async def post_site_order_status(
     except (aiohttp.ClientError, asyncio.TimeoutError, OSError) as e:
         logger.warning("POST order/update: %s", e)
         return False
+
+
+async def post_site_order_delivery_details(
+    order_id: str,
+    delivery_details: str,
+    *,
+    owner_id: int | None = None,
+    order: dict[str, Any] | None = None,
+) -> bool:
+    """POST /api/order/update — адрес СДЭК, ФИО и телефон с бота на сайт."""
+    text = str(delivery_details or "").strip()
+    if not text:
+        return False
+    base = os.getenv("ILLUCARDS_SITE_ORIGIN", DEFAULT_SITE_ORIGIN).rstrip("/")
+    url = f"{base}/api/order/update"
+    secret = os.getenv("ILLUCARDS_ORDER_UPDATE_SECRET", "").strip()
+    headers: dict[str, str] = {
+        "Accept": "application/json",
+        "Content-Type": "application/json",
+    }
+    if secret:
+        headers["Authorization"] = f"Bearer {secret}"
+    payload: dict[str, Any] = {
+        "order_id": order_id,
+        "delivery_details": text[:4000],
+    }
+    oid = owner_id
+    if oid is None and isinstance(order, dict):
+        oid = _order_owner_user_id(order_id, order)
+    if oid is not None:
+        payload["user_id"] = int(oid)
+    if isinstance(order, dict):
+        payload["items"] = _order_items_list(order)
+        payload["total"] = _order_total_byn(order)
+        payload["delivery"] = _delivery_price_code(str(order.get("delivery") or "BY"))
+        username = str(order.get("username") or "").strip().lstrip("@")
+        if username:
+            payload["username"] = username
+    timeout = aiohttp.ClientTimeout(total=20)
+    try:
+        async with aiohttp.ClientSession(timeout=timeout) as session:
+            async with session.post(
+                url,
+                headers=headers,
+                json=payload,
+            ) as resp:
+                if resp.status != 200:
+                    body = (await resp.text())[:300]
+                    logger.warning(
+                        "POST order/update delivery_details HTTP %s: %s",
+                        resp.status,
+                        body,
+                    )
+                    return False
+                return True
+    except (aiohttp.ClientError, asyncio.TimeoutError, OSError) as e:
+        logger.warning("POST order/update delivery_details: %s", e)
+        return False
+
+
+async def _backfill_delivery_details_to_site() -> None:
+    """При старте бота — дослать delivery_details на сайт для старых заказов."""
+    _load_bot_orders()
+    synced = 0
+    for order_id, rec in list(BOT_ORDERS.items()):
+        if not isinstance(rec, dict):
+            continue
+        dd = str(rec.get("delivery_details") or "").strip()
+        if not dd:
+            continue
+        owner_id: int | None = None
+        uid_raw = rec.get("user_id")
+        try:
+            if uid_raw is not None:
+                owner_id = int(uid_raw)
+        except (TypeError, ValueError):
+            owner_id = None
+        if await post_site_order_delivery_details(
+            str(order_id),
+            dd,
+            owner_id=owner_id,
+            order=rec,
+        ):
+            synced += 1
+    if synced:
+        logger.info("delivery_details backfill synced %s orders", synced)
 
 
 async def post_site_admin_message_id(order_id: str, message_id: int) -> bool:
@@ -3455,6 +3583,15 @@ async def _finalize_delivery_submission(
     _persist_bot_orders()
     _clear_awaiting_checkout(uid)
     _save_delivery_profile(uid, delivery_text)
+
+    owner_id = _order_owner_user_id(oid, order, fallback_uid=uid)
+    if not await post_site_order_delivery_details(
+        oid,
+        delivery_text,
+        owner_id=owner_id,
+        order=order,
+    ):
+        logger.warning("site delivery_details sync failed order=%s", oid)
 
     await _notify_admin_payment_proof(
         context,

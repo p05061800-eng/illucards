@@ -46,4 +46,6 @@ export type OrderRecord = {
   payment_method?: OrderPaymentMethod;
   /** Покупателю уже отправлено сообщение с заказом в Telegram (с сайта). */
   telegram_buyer_notified?: boolean;
+  /** Адрес СДЭК, ФИО и телефон — из Telegram-бота после оплаты. */
+  delivery_details?: string;
 };

@@ -5,6 +5,7 @@ import { parseOrderStatusInput } from "@/app/lib/orderStatus";
 import {
   getOrder,
   markOrderTelegramBuyerNotified,
+  updateOrderDeliveryDetails,
   updateOrderPaymentMethod,
   updateOrderStatus,
 } from "@/app/lib/ordersStore";
@@ -23,7 +24,7 @@ import {
 
 /**
  * Обновление заказа (статус и/или способ оплаты) — в т.ч. из Telegram-бота.
- * Body: { order_id, status?, payment_method?, telegram_buyer_notified?: true }
+ * Body: { order_id, status?, payment_method?, delivery_details?, telegram_buyer_notified?: true }
  *
  * Если задан ILLUCARDS_ORDER_UPDATE_SECRET — требуется заголовок
  * Authorization: Bearer <secret>
@@ -54,12 +55,18 @@ export async function POST(request: NextRequest) {
   const paymentMethod = parseOrderPaymentMethod(o.payment_method);
   const markBuyerNotified =
     o.telegram_buyer_notified === true || o.telegram_buyer_notified === "true";
+  const deliveryDetailsRaw =
+    typeof o.delivery_details === "string" ? o.delivery_details.trim() : "";
+  const hasDeliveryDetails = deliveryDetailsRaw.length > 0;
   if (!orderId) {
     return NextResponse.json({ error: "Укажите order_id" }, { status: 400 });
   }
-  if (!status && !paymentMethod && !markBuyerNotified) {
+  if (!status && !paymentMethod && !markBuyerNotified && !hasDeliveryDetails) {
     return NextResponse.json(
-      { error: "Укажите status, payment_method и/или telegram_buyer_notified" },
+      {
+        error:
+          "Укажите status, payment_method, delivery_details и/или telegram_buyer_notified",
+      },
       { status: 400 },
     );
   }
@@ -98,6 +105,14 @@ export async function POST(request: NextRequest) {
     const pm = await updateOrderPaymentMethod(orderId, paymentMethod);
     if (!pm.ok) {
       return NextResponse.json({ error: pm.error }, { status: pm.status });
+    }
+    existing = await getOrder(orderId);
+  }
+
+  if (hasDeliveryDetails) {
+    const dd = await updateOrderDeliveryDetails(orderId, deliveryDetailsRaw);
+    if (!dd.ok) {
+      return NextResponse.json({ error: dd.error }, { status: dd.status });
     }
     existing = await getOrder(orderId);
   }

@@ -20,7 +20,7 @@ import {
   ruPositionCountPhrase,
 } from "@/app/lib/orderStatus";
 import {
-  runTelegramLoginWaitCompletion,
+  completeLoginWaitIfReady,
   redirectAfterTelegramLogin,
 } from "@/app/lib/runTelegramLoginWaitCompletion";
 import {
@@ -46,6 +46,9 @@ type LsGate = "pending" | "ok" | "no_telegram";
 
 const PREVIEW_LIMIT = 5;
 
+const LOGIN_WAIT_POLL_MS = 1200;
+const LOGIN_WAIT_MAX_MS = 8 * 60 * 1000;
+
 export default function AccountPageClient() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -58,35 +61,8 @@ export default function AccountPageClient() {
   const [bonusPointsBalance, setBonusPointsBalance] = useState(0);
   const [telegramUsernameFromServer, setTelegramUsernameFromServer] = useState("");
   const [orderLinesOpenById, setOrderLinesOpenById] = useState<Record<string, boolean>>({});
-  const autoLoginStarted = useRef(false);
-
-  const completeLoginFromWaitId = useCallback(
-    async (waitId: string) => {
-      if (autoLoginStarted.current) return;
-      autoLoginStarted.current = true;
-      setAutoLoginPending(true);
-      setAutoLoginError(null);
-
-      const result = await runTelegramLoginWaitCompletion(
-        waitId,
-        establishSessionFromTelegramUserId,
-      );
-      if (result.ok) {
-        setLsGate("ok");
-        setAutoLoginPending(false);
-        redirectAfterTelegramLogin();
-        return;
-      }
-      setAutoLoginPending(false);
-      autoLoginStarted.current = false;
-      if (result.pending) return;
-      setAutoLoginError(
-        result.error ||
-          "Не удалось выполнить вход. Нажмите «Войти через Telegram» ещё раз.",
-      );
-    },
-    [establishSessionFromTelegramUserId],
-  );
+  const loginWaitActive = useRef(false);
+  const loginCompleting = useRef(false);
 
   useEffect(() => {
     try {
@@ -116,33 +92,92 @@ export default function AccountPageClient() {
   useEffect(() => {
     const fromUrl = searchParams.get(TG_LOGIN_WAIT_QUERY_PARAM);
     if (!fromUrl || !isValidLoginWaitId(fromUrl)) return;
-    const waitId = fromUrl.trim().toLowerCase();
-    persistLoginWaitId(waitId);
-    autoLoginStarted.current = false;
-    void completeLoginFromWaitId(waitId);
-  }, [searchParams, completeLoginFromWaitId]);
+    persistLoginWaitId(fromUrl.trim().toLowerCase());
+    setAutoLoginPending(true);
+    setAutoLoginError(null);
+  }, [searchParams]);
 
   useEffect(() => {
-    const kick = () => {
+    const beginIfNeeded = () => {
+      if (readLoginWaitId()) {
+        setAutoLoginPending(true);
+        setAutoLoginError(null);
+      }
+    };
+    beginIfNeeded();
+    window.addEventListener(TG_LOGIN_WAIT_STARTED_EVENT, beginIfNeeded);
+    return () => {
+      window.removeEventListener(TG_LOGIN_WAIT_STARTED_EVENT, beginIfNeeded);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!autoLoginPending) {
+      loginWaitActive.current = false;
+      return;
+    }
+
+    loginWaitActive.current = true;
+    const startedAt = Date.now();
+
+    const tick = async () => {
+      if (!loginWaitActive.current || loginCompleting.current) return;
       if (document.visibilityState === "hidden") return;
-      if (autoLoginStarted.current) return;
+
       const waitId = readLoginWaitId();
-      if (!waitId) return;
-      void completeLoginFromWaitId(waitId);
+      if (!waitId) {
+        setAutoLoginPending(false);
+        return;
+      }
+      if (Date.now() - startedAt > LOGIN_WAIT_MAX_MS) {
+        setAutoLoginPending(false);
+        setAutoLoginError(
+          "Не дождались подтверждения в Telegram. Нажмите «Войти через Telegram» ещё раз.",
+        );
+        return;
+      }
+
+      loginCompleting.current = true;
+      try {
+        const result = await completeLoginWaitIfReady(
+          waitId,
+          establishSessionFromTelegramUserId,
+        );
+        if (result.ok) {
+          setLsGate("ok");
+          setAutoLoginPending(false);
+          redirectAfterTelegramLogin();
+          return;
+        }
+        if (!result.pending && result.error) {
+          setAutoLoginPending(false);
+          setAutoLoginError(result.error);
+        }
+      } catch {
+        /* сеть / Safari suspend — следующий tick или focus */
+      } finally {
+        loginCompleting.current = false;
+      }
     };
 
-    kick();
-    window.addEventListener(TG_LOGIN_WAIT_STARTED_EVENT, kick);
-    document.addEventListener("visibilitychange", kick);
-    window.addEventListener("focus", kick);
-    window.addEventListener("pageshow", kick);
-    return () => {
-      window.removeEventListener(TG_LOGIN_WAIT_STARTED_EVENT, kick);
-      document.removeEventListener("visibilitychange", kick);
-      window.removeEventListener("focus", kick);
-      window.removeEventListener("pageshow", kick);
+    const onWake = () => {
+      void tick();
     };
-  }, [completeLoginFromWaitId]);
+
+    const id = window.setInterval(() => void tick(), LOGIN_WAIT_POLL_MS);
+    document.addEventListener("visibilitychange", onWake);
+    window.addEventListener("focus", onWake);
+    window.addEventListener("pageshow", onWake);
+    void tick();
+
+    return () => {
+      loginWaitActive.current = false;
+      window.clearInterval(id);
+      document.removeEventListener("visibilitychange", onWake);
+      window.removeEventListener("focus", onWake);
+      window.removeEventListener("pageshow", onWake);
+    };
+  }, [autoLoginPending, establishSessionFromTelegramUserId]);
 
   const loadOrders = useCallback(async () => {
     setOrdersError(null);
@@ -240,16 +275,14 @@ export default function AccountPageClient() {
   }, [lsGate, hydrated, loadOrders]);
 
   const handleOpenTelegramForLogin = useCallback(async () => {
-    autoLoginStarted.current = false;
     setAutoLoginError(null);
+    setAutoLoginPending(true);
     const ok = await startTelegramWebLoginWithWait();
     if (!ok && typeof window !== "undefined") {
+      setAutoLoginPending(false);
       window.open(telegramWebLoginDeepLink(), "_blank", "noopener,noreferrer");
-      return;
     }
-    const waitId = readLoginWaitId();
-    if (waitId) void completeLoginFromWaitId(waitId);
-  }, [completeLoginFromWaitId]);
+  }, []);
 
   const handleLogout = useCallback(async () => {
     await logout();

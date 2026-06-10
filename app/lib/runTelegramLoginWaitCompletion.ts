@@ -53,11 +53,29 @@ export async function completeLoginWaitIfReady(
 ): Promise<RunTelegramLoginWaitResult> {
   const id = waitId.trim().toLowerCase();
   const poll = await pollLoginWait(id);
-  const profile = profileFromPoll(poll);
-  if (!profile) {
+  if (!poll.ready) {
     return { ok: false, error: "", pending: true };
   }
-  return finishWithProfile(id, establishSessionFromTelegramUserId, profile);
+
+  const profile = profileFromPoll(poll);
+  if (profile) {
+    return finishWithProfile(id, establishSessionFromTelegramUserId, profile);
+  }
+
+  const result = await finishTelegramWebLoginOnClient(
+    id,
+    establishSessionFromTelegramUserId,
+    null,
+  );
+  if (result.ok) {
+    clearLoginWaitId();
+    return { ok: true, user_id: result.user_id };
+  }
+  return {
+    ok: false,
+    error: result.error,
+    pending: result.status === 401,
+  };
 }
 
 /**

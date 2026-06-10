@@ -22,6 +22,22 @@ export type LoginWaitPollResult = {
   username?: string | null;
 };
 
+const LOGIN_FETCH_TIMEOUT_MS = 12_000;
+
+async function fetchWithTimeout(
+  input: string,
+  init: RequestInit = {},
+  timeoutMs = LOGIN_FETCH_TIMEOUT_MS,
+): Promise<Response> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    return await fetch(input, { ...init, signal: controller.signal });
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 async function applyTelegramLoginOnClient(
   userId: number,
   username: string | null,
@@ -98,9 +114,11 @@ export async function pollLoginWait(
   const id = waitId.trim().toLowerCase();
   if (!isValidLoginWaitId(id)) return { ready: false };
   try {
-    const res = await fetch(
-      apiUrl(`/api/telegram-login-wait?wait_id=${encodeURIComponent(id)}`),
-      { cache: "no-store" },
+    const res = await fetchWithTimeout(
+      apiUrl(
+        `/api/telegram-login-wait?wait_id=${encodeURIComponent(id)}&_=${Date.now()}`,
+      ),
+      { cache: "no-store", credentials: "same-origin" },
     );
     if (!res.ok) return { ready: false };
     const data = (await res.json()) as {
@@ -157,7 +175,7 @@ export async function completeTelegramWebLogin(
     return { ok: false, error: "Некорректная сессия входа", status: 400 };
   }
   try {
-    const res = await fetch(apiUrl("/api/telegram-login-wait/complete"), {
+    const res = await fetchWithTimeout(apiUrl("/api/telegram-login-wait/complete"), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       credentials: "include",

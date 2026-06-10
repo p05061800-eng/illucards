@@ -103,34 +103,61 @@ export default function AccountPageClient() {
 
   const loadOrders = useCallback(async () => {
     setOrdersError(null);
-    try {
-      const [ordersRes, stateRes] = await Promise.all([
-        fetch("/api/orders/mine", { credentials: "include" }),
-        fetch("/api/user-state", { method: "GET", credentials: "include", cache: "no-store" }),
-      ]);
-      if (ordersRes.status === 401) {
-        setLsGate("no_telegram");
-        setOrders([]);
-        setBonusPointsBalance(0);
-        return;
+
+    const fetchWithTimeout = async (
+      input: string,
+      init: RequestInit = {},
+      timeoutMs = 20_000,
+    ): Promise<Response> => {
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), timeoutMs);
+      try {
+        return await fetch(input, {
+          ...init,
+          credentials: "include",
+          signal: controller.signal,
+        });
+      } finally {
+        clearTimeout(timer);
       }
-      if (!ordersRes.ok) {
-        setOrdersError("Не удалось загрузить заказы");
+    };
+
+    const ordersTask = fetchWithTimeout("/api/orders/mine")
+      .then(async (ordersRes) => {
+        if (ordersRes.status === 401) {
+          setLsGate("no_telegram");
+          setOrders([]);
+          setBonusPointsBalance(0);
+          return;
+        }
+        if (!ordersRes.ok) {
+          setOrdersError("Не удалось загрузить заказы");
+          setOrders([]);
+          return;
+        }
+        const data = (await ordersRes.json()) as { orders?: OrderListSummary[] };
+        setOrders(Array.isArray(data.orders) ? data.orders : []);
+      })
+      .catch(() => {
+        setOrdersError("Ошибка сети");
         setOrders([]);
-        setBonusPointsBalance(0);
-        return;
-      }
-      const data = (await ordersRes.json()) as { orders?: OrderListSummary[] };
-      setOrders(Array.isArray(data.orders) ? data.orders : []);
-      let bp = 0;
-      if (stateRes.ok) {
+      });
+
+    const stateTask = fetchWithTimeout("/api/user-state", { cache: "no-store" })
+      .then(async (stateRes) => {
+        if (!stateRes.ok) {
+          setBonusPointsBalance(0);
+          return;
+        }
         const st = (await stateRes.json()) as {
           bonus_points?: unknown;
           telegram_username?: unknown;
         };
+        let bp = 0;
         if (typeof st.bonus_points === "number" && Number.isFinite(st.bonus_points)) {
           bp = Math.max(0, Math.floor(st.bonus_points));
         }
+        setBonusPointsBalance(bp);
         const serverUsername =
           typeof st.telegram_username === "string"
             ? st.telegram_username.replace(/^@/, "").trim()
@@ -140,13 +167,12 @@ export default function AccountPageClient() {
           const uid = readTelegramPrimaryUserId();
           if (uid != null) persistTelegramUserIdentity(uid, serverUsername);
         }
-      }
-      setBonusPointsBalance(bp);
-    } catch {
-      setOrdersError("Ошибка сети");
-      setOrders([]);
-      setBonusPointsBalance(0);
-    }
+      })
+      .catch(() => {
+        setBonusPointsBalance(0);
+      });
+
+    await Promise.allSettled([ordersTask, stateTask]);
   }, []);
 
   const isOrderLinesOpen = useCallback(

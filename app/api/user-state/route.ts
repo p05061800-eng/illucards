@@ -212,7 +212,7 @@ export async function GET(request: NextRequest) {
     if (userId == null) {
       return NextResponse.json({ error: "Некорректный user_id" }, { status: 400 });
     }
-    await reconcileBonusPointsForUser(userId);
+    void reconcileBonusPointsForUser(userId).catch(() => undefined);
     const state = await getTelegramUserState(userId);
     return NextResponse.json(await stateWithTelegramUsername(userId, state));
   }
@@ -223,7 +223,7 @@ export async function GET(request: NextRequest) {
   }
 
   if (cookieUid != null) {
-    await reconcileBonusPointsForUser(cookieUid);
+    void reconcileBonusPointsForUser(cookieUid).catch(() => undefined);
     const state = await getTelegramUserState(cookieUid);
     return NextResponse.json(await stateWithTelegramUsername(cookieUid, state));
   }

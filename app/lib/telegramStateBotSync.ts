@@ -19,10 +19,13 @@ export async function notifyTelegramWebhookUserState(opts: {
 }): Promise<void> {
   const base = telegramBotApiUrl();
   if (!base) return;
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 5000);
   try {
     const res = await fetch(`${base}/api/sync/state`, {
       method: "POST",
       headers: telegramBotSyncHeaders(),
+      signal: controller.signal,
       body: JSON.stringify({
         user_id: opts.userId,
         delivery_country: opts.deliveryCountry,
@@ -51,5 +54,7 @@ export async function notifyTelegramWebhookUserState(opts: {
     }
   } catch {
     /* вторично */
+  } finally {
+    clearTimeout(timer);
   }
 }

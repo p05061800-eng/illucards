@@ -34,12 +34,15 @@ async function postBotSyncCart(
   label: string,
 ): Promise<void> {
   const url = `${botBase()}/api/sync/cart`;
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 5000);
   try {
     const res = await fetch(url, {
       method: "POST",
       headers: telegramBotSyncHeaders(),
       body: JSON.stringify(body),
       cache: "no-store",
+      signal: controller.signal,
     });
     const data = (await res.json().catch(() => null)) as {
       error?: unknown;
@@ -60,6 +63,8 @@ async function postBotSyncCart(
       `[telegram-bot] ${label} sync/cart unavailable:`,
       error instanceof Error ? error.message : error,
     );
+  } finally {
+    clearTimeout(timer);
   }
 }
 
@@ -110,6 +115,8 @@ export async function notifyBotAwaitOrderDetails(
   userId: number,
   orderId: string,
 ): Promise<void> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 5000);
   try {
     const res = await fetch(`${botBase()}/api/await-order-details`, {
       method: "POST",
@@ -119,6 +126,7 @@ export async function notifyBotAwaitOrderDetails(
         order_id: orderId,
       }),
       cache: "no-store",
+      signal: controller.signal,
     });
     if (!res.ok) {
       console.warn("[telegram-bot] await-order-details failed:", res.status);
@@ -128,6 +136,8 @@ export async function notifyBotAwaitOrderDetails(
       "[telegram-bot] await-order-details unavailable:",
       error instanceof Error ? error.message : error,
     );
+  } finally {
+    clearTimeout(timer);
   }
 }
 

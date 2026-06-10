@@ -79,11 +79,20 @@ export function TelegramCheckoutButton({
         orderPayload.username = user.telegramUsername;
       }
 
-      const res = await fetch("/api/order/create", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(orderPayload),
-      });
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), 25_000);
+      let res: Response;
+      try {
+        res = await fetch("/api/order/create", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify(orderPayload),
+          signal: controller.signal,
+        });
+      } finally {
+        clearTimeout(timer);
+      }
 
       const data: unknown = await res.json().catch(() => null);
       const orderId =
@@ -124,9 +133,14 @@ export function TelegramCheckoutButton({
       const botUrl = `https://t.me/${encodeURIComponent(bot)}?start=${encodeURIComponent(`order_${orderId}`)}`;
       console.info("[checkout] redirect telegram", { order_id: orderId, botUrl });
       onBeforeNavigate?.();
-      window.location.assign(botUrl);
-    } catch {
-      setError("Сеть недоступна. Попробуйте ещё раз.");
+      window.location.href = botUrl;
+    } catch (error: unknown) {
+      const aborted = error instanceof Error && error.name === "AbortError";
+      setError(
+        aborted
+          ? "Сервер долго не отвечает. Попробуйте ещё раз через минуту."
+          : "Сеть недоступна. Попробуйте ещё раз.",
+      );
       setSubmitting(false);
     }
   }, [

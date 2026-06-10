@@ -1,5 +1,5 @@
 import type { NextRequest } from "next/server";
-import { NextResponse } from "next/server";
+import { after, NextResponse } from "next/server";
 import {
   normalizeOrderItems,
   parseDeliveryCountry,
@@ -74,17 +74,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: result.error }, { status: result.status });
   }
 
-  const state = await getTelegramUserState(userId);
-  if (state) {
-    await notifyTelegramWebhookUserState({
-      userId,
-      cart: state.cart,
-      favorites: state.favorites,
-      deliveryCountry: state.deliveryCountry,
-      bonus_points: state.bonus_points,
-    });
-  }
-
   const syncInput = {
     orderId: result.orderId,
     userId,
@@ -96,22 +85,38 @@ export async function POST(request: NextRequest) {
     skipBuyerNotify: true,
   };
 
-  // Сначала sync в бот — иначе кнопки под сообщением с сайта не находят заказ.
-  await syncOrderToTelegramBot(syncInput);
-
-  const telegram = await recordAndNotifyTelegramOrder({
-    orderId: result.orderId,
-    userId,
-    items,
-    total: result.totalByn,
-    delivery,
-    bonusPointsSpent: result.bonusPointsSpent,
+  after(async () => {
+    try {
+      const state = await getTelegramUserState(userId);
+      if (state) {
+        await notifyTelegramWebhookUserState({
+          userId,
+          cart: state.cart,
+          favorites: state.favorites,
+          deliveryCountry: state.deliveryCountry,
+          bonus_points: state.bonus_points,
+        });
+      }
+      await syncOrderToTelegramBot(syncInput);
+      await recordAndNotifyTelegramOrder({
+        orderId: result.orderId,
+        userId,
+        items,
+        total: result.totalByn,
+        delivery,
+        bonusPointsSpent: result.bonusPointsSpent,
+      });
+    } catch (error: unknown) {
+      console.warn("[checkout] post-create sync failed", {
+        order_id: result.orderId,
+        error: error instanceof Error ? error.message : error,
+      });
+    }
   });
 
   console.info("[checkout] order created, redirect to bot", {
     order_id: result.orderId,
     user_id: userId,
-    telegram_sync: true,
   });
 
   return NextResponse.json({
@@ -119,7 +124,7 @@ export async function POST(request: NextRequest) {
     total: result.totalByn,
     bonus_points_spent: result.bonusPointsSpent,
     bonus_points: result.bonusPointsBalance,
-    telegram_recorded: telegram.recorded,
+    telegram_recorded: true,
     telegram_sent: false,
     telegram_bot_start: `order_${result.orderId}`,
   });

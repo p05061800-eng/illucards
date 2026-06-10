@@ -17,7 +17,7 @@ export type OrderLineIn = {
 export type OrderStatus =
   | "new"
   | "confirmed"
-  /** Клиент отметил отправку чека оплаты — после этого сбрасывается корзина на сайте и в синке. */
+  /** Клиент отправил чек оплаты (корзина очищается только при `confirmed`). */
   | "paid"
   | "shipped"
   | "sent"

@@ -9,11 +9,7 @@ import {
   saveOrderRecord,
   updateOrderStatus,
 } from "@/app/lib/ordersStore";
-import { notifyTelegramWebhookUserState } from "@/app/lib/telegramStateBotSync";
-import {
-  clearSyncedCartForTelegramUser,
-  getTelegramUserState,
-} from "@/app/lib/telegramUserStateStore";
+import { getTelegramUserState } from "@/app/lib/telegramUserStateStore";
 import {
   bonusPointsToEarnForOrderItems,
   orderStatusEligibleForBonusAccrual,
@@ -152,22 +148,6 @@ export async function POST(request: NextRequest) {
       );
     }
   }
-  if (requestedStatus === "confirmed" || requestedStatus === "paid") {
-    try {
-      const st = await clearSyncedCartForTelegramUser(userId);
-      await notifyTelegramWebhookUserState({
-        userId,
-        cart: st.cart,
-        favorites: st.favorites,
-        deliveryCountry: st.deliveryCountry,
-        bonus_points: st.bonus_points,
-        cartClearedAt: st.cartClearedAt,
-      });
-    } catch {
-      /* Очистка корзины/синк не должны ломать оформление заказа из бота. */
-    }
-  }
-
   const bonusEarned = orderStatusEligibleForBonusAccrual(requestedStatus)
     ? bonusPointsToEarnForOrderItems(items)
     : 0;

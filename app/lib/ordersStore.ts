@@ -16,6 +16,7 @@ import {
 import { sanitizeOrderLineImageUrl } from "@/app/lib/sanitizeOrderLineImageUrl";
 import { notifyTelegramWebhookUserState } from "@/app/lib/telegramStateBotSync";
 import {
+  clearSyncedCartForTelegramUser,
   incrementTelegramUserBonusPoints,
   trySpendTelegramUserBonusPoints,
 } from "@/app/lib/telegramUserStateStore";
@@ -805,6 +806,28 @@ export async function updateOrderStatus(
       } catch {
         /* начисление бонусов не должно ломать смену статуса */
       }
+    }
+  }
+
+  if (
+    status === "confirmed" &&
+    existing.status !== "confirmed" &&
+    existing.user_id != null &&
+    existing.user_id > 0
+  ) {
+    const uid = Math.floor(existing.user_id);
+    try {
+      const st = await clearSyncedCartForTelegramUser(uid);
+      await notifyTelegramWebhookUserState({
+        userId: uid,
+        cart: st.cart,
+        favorites: st.favorites,
+        deliveryCountry: st.deliveryCountry,
+        bonus_points: st.bonus_points,
+        cartClearedAt: st.cartClearedAt,
+      });
+    } catch {
+      /* очистка корзины не должна ломать смену статуса */
     }
   }
 

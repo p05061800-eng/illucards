@@ -9,11 +9,7 @@ import {
   updateOrderPaymentMethod,
   updateOrderStatus,
 } from "@/app/lib/ordersStore";
-import { notifyTelegramWebhookUserState } from "@/app/lib/telegramStateBotSync";
-import {
-  clearSyncedCartForTelegramUser,
-  getTelegramUserState,
-} from "@/app/lib/telegramUserStateStore";
+import { getTelegramUserState } from "@/app/lib/telegramUserStateStore";
 import {
   normalizeOrderItems,
   parseDeliveryCountry,
@@ -123,28 +119,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: result.error }, { status: result.status });
     }
     existing = await getOrder(orderId);
-
-    if (
-      (status === "confirmed" || status === "paid") &&
-      existing?.user_id != null
-    ) {
-      const uid = Math.floor(existing.user_id);
-      if (uid > 0) {
-        try {
-          const st = await clearSyncedCartForTelegramUser(uid);
-          await notifyTelegramWebhookUserState({
-            userId: uid,
-            cart: st.cart,
-            favorites: st.favorites,
-            deliveryCountry: st.deliveryCountry,
-            bonus_points: st.bonus_points,
-            cartClearedAt: st.cartClearedAt,
-          });
-        } catch {
-          /* очистка/синк не должны ломать смену статуса */
-        }
-      }
-    }
   }
 
   const userId = existing?.user_id != null ? Math.floor(existing.user_id) : null;

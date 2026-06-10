@@ -40,7 +40,7 @@ from db import init_db, recompute_user_order_stats, sync_all_users_order_stats, 
 logging.basicConfig(format="%(asctime)s %(levelname)s %(message)s", level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-BOT_BUILD_ID = "2026-06-10-purge-orders-my-orders-ref-v1"
+BOT_BUILD_ID = "2026-06-11-delivery-one-msg-saved-v2"
 
 REPLY_MENU_TEXTS = frozenset(
     {"💬 Связь", "📦 Мои заказы", "📜 Мои заказы", "🚚 Доставка", "⭐ Бонусы"}
@@ -554,15 +554,10 @@ async def _sync_saved_delivery_to_site(uid: int, text: str) -> bool:
         return False
 
 
-async def _refresh_saved_delivery_from_site(uid: int) -> None:
-    """Подтянуть профиль с Vercel/Redis после рестарта бота на Render."""
+async def _fetch_saved_delivery_from_site_http(uid: int) -> str | None:
     secret = _delivery_sync_secret()
     if not secret:
-        return
-    _load_saved_delivery_profiles()
-    cached = str(_SAVED_DELIVERY.get(int(uid)) or "").strip()
-    if cached and _delivery_text_acceptable(cached):
-        return
+        return None
     url = _delivery_sync_url()
     timeout = aiohttp.ClientTimeout(total=15)
     try:
@@ -573,23 +568,60 @@ async def _refresh_saved_delivery_from_site(uid: int) -> None:
                 headers={"Authorization": f"Bearer {secret}"},
             ) as resp:
                 if resp.status == 404:
-                    return
+                    return None
                 if resp.status != 200:
                     body = (await resp.text())[:400]
                     logger.warning(
                         "sync-saved-delivery GET HTTP %s: %s", resp.status, body
                     )
-                    return
+                    return None
                 data = await resp.json()
     except Exception as e:
         logger.warning("sync-saved-delivery GET: %s", e)
-        return
+        return None
     if not isinstance(data, dict):
-        return
+        return None
     text = str(data.get("text") or "").strip()
     if not text or not _delivery_text_acceptable(text):
+        return None
+    return text
+
+
+def _recover_saved_delivery_from_bot_orders(uid: int) -> str | None:
+    """Резерв: последние delivery_details из журнала заказов бота."""
+    _load_bot_orders()
+    best_oid = ""
+    best_text = ""
+    for order_id, rec in BOT_ORDERS.items():
+        if not isinstance(rec, dict):
+            continue
+        try:
+            if int(rec.get("user_id")) != int(uid):
+                continue
+        except (TypeError, ValueError):
+            continue
+        text = str(rec.get("delivery_details") or "").strip()
+        if not text or not _delivery_text_acceptable(text):
+            continue
+        oid = str(order_id).strip()
+        if oid > best_oid:
+            best_oid = oid
+            best_text = text
+    return best_text or None
+
+
+async def _refresh_saved_delivery_from_site(uid: int) -> None:
+    """Подтянуть профиль: Redis на Vercel → delivery_details из заказов бота."""
+    int_uid = int(uid)
+    text = await _fetch_saved_delivery_from_site_http(int_uid)
+    if not text:
+        text = _recover_saved_delivery_from_bot_orders(int_uid)
+        if text and _delivery_sync_secret():
+            await _sync_saved_delivery_to_site(int_uid, text)
+    if not text:
         return
-    _SAVED_DELIVERY[int(uid)] = text
+    _load_saved_delivery_profiles()
+    _SAVED_DELIVERY[int_uid] = text
     _persist_saved_delivery_profiles()
 
 
@@ -2766,11 +2798,24 @@ PAY_DELIVERY_BLANK_TEMPLATE = (
 )
 
 
-def _pay_delivery_request_text(*, after_proof: bool = False) -> str:
-    prefix = "✅ Чек получен.\n\n" if after_proof else ""
+def _pay_delivery_after_proof_text() -> str:
+    """Одно сообщение после скрина: инструкция + шаблон."""
     return (
-        prefix
-        + "Скопируйте шаблон, заполните своими данными и отправьте одним сообщением:\n\n"
+        "✅ Чек получен.\n\n"
+        "Пришлите ваш адрес СДЭК, ФИО и номер телефона одним сообщением в этот чат.\n"
+        "После проверки менеджер подтвердит заказ.\n\n"
+        "Скопируйте шаблон ниже, заполните своими данными и отправьте:\n\n"
+        + PAY_DELIVERY_BLANK_TEMPLATE
+    )
+
+
+def _pay_delivery_request_text(*, after_proof: bool = False) -> str:
+    if after_proof:
+        return _pay_delivery_after_proof_text()
+    return (
+        "Пришлите ваш адрес СДЭК, ФИО и номер телефона одним сообщением в этот чат.\n"
+        "После проверки менеджер подтвердит заказ.\n\n"
+        "Скопируйте шаблон ниже, заполните своими данными и отправьте:\n\n"
         + PAY_DELIVERY_BLANK_TEMPLATE
     )
 
@@ -2929,22 +2974,33 @@ async def _send_delivery_prompt_after_proof(
     chat_id: int,
     uid: int,
     order_id: str,
+    reply_message: Any = None,
 ) -> None:
     await _refresh_saved_delivery_from_site(int(uid))
     _set_awaiting_delivery(int(uid), order_id)
     saved = _get_saved_delivery_text(int(uid))
     if saved and _delivery_text_acceptable(saved) and int(uid) in _AWAIT_DELIVERY_CONFIRM:
+        text = _saved_delivery_confirm_message(saved)
+        markup = _saved_delivery_confirm_keyboard(order_id)
+        if reply_message is not None:
+            await reply_message.reply_text(text, reply_markup=markup)
+        else:
+            await context.bot.send_message(
+                chat_id=int(chat_id),
+                text=text,
+                reply_markup=markup,
+            )
+        return
+    text = _pay_delivery_after_proof_text()
+    markup = _main_keyboard()
+    if reply_message is not None:
+        await reply_message.reply_text(text, reply_markup=markup)
+    else:
         await context.bot.send_message(
             chat_id=int(chat_id),
-            text=_saved_delivery_confirm_message(saved),
-            reply_markup=_saved_delivery_confirm_keyboard(order_id),
+            text=text,
+            reply_markup=markup,
         )
-        return
-    await context.bot.send_message(
-        chat_id=int(chat_id),
-        text=_pay_delivery_request_text(after_proof=True),
-        reply_markup=_main_keyboard(),
-    )
 
 
 def _order_confirm_keyboard(
@@ -3906,6 +3962,7 @@ async def payment_proof_handler(
                 chat_id=int(msg.chat_id),
                 uid=uid,
                 order_id=order_id,
+                reply_message=msg,
             )
             return
 
@@ -3931,6 +3988,7 @@ async def payment_proof_handler(
         chat_id=int(msg.chat_id),
         uid=uid,
         order_id=order_id,
+        reply_message=msg,
     )
 
 

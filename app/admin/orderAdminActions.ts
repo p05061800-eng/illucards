@@ -11,8 +11,6 @@ import {
 import { botPurgeOrders } from "@/app/lib/telegramBotRenderApi";
 import { notifyBotAwaitOrderDetails } from "@/app/lib/telegramCartBotSync";
 import { sendOrderDetailsRequestToCustomer } from "@/app/lib/telegramOrderCustomerNotify";
-import { notifyTelegramWebhookUserState } from "@/app/lib/telegramStateBotSync";
-import { clearSyncedCartForTelegramUser } from "@/app/lib/telegramUserStateStore";
 
 export async function loadAdminOrders(): Promise<AdminOrderRow[]> {
   return listRecentOrders(50);
@@ -66,19 +64,6 @@ export async function confirmOrderFromAdmin(
 
   if (existing.user_id != null && existing.user_id > 0) {
     const uid = Math.floor(existing.user_id);
-    try {
-      const st = await clearSyncedCartForTelegramUser(uid);
-      await notifyTelegramWebhookUserState({
-        userId: uid,
-        cart: st.cart,
-        favorites: st.favorites,
-        deliveryCountry: st.deliveryCountry,
-        bonus_points: st.bonus_points,
-        cartClearedAt: st.cartClearedAt,
-      });
-    } catch {
-      /* ignore */
-    }
     await sendOrderDetailsRequestToCustomer(uid);
     void notifyBotAwaitOrderDetails(uid, id);
   }

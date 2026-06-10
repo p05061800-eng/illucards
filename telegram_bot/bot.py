@@ -3050,6 +3050,15 @@ def _issue_login_code_for_user(telegram_user_id: int, username: str | None) -> s
     return None
 
 
+async def _enter_support_chat(message, user) -> None:
+    """Режим «Связь»: следующие сообщения клиента уходят админу."""
+    if not user:
+        await message.reply_text("Не удалось определить пользователя.")
+        return
+    _USER_SUPPORT.add(int(user.id))
+    await message.reply_text(SUPPORT_INTRO_TEXT, reply_markup=_main_keyboard())
+
+
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     if not update.message:
         return
@@ -3106,13 +3115,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         return
 
     if low0 == "support" or low0.startswith("support_"):
-        support = (os.getenv("ILLUCARDS_SUPPORT_TEXT") or "").strip()
-        if support:
-            await update.message.reply_text(support)
-        else:
-            await update.message.reply_text(
-                "Напишите нам через форму на сайте или в соцсетях — ссылки внизу главной страницы IlluCards."
-            )
+        await _enter_support_chat(update.message, user)
         return
 
     oid = _order_id_from_start_args(args)
@@ -3748,13 +3751,7 @@ async def text_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
         await show_promo_slides(update, context)
         return
     if t == "💬 Связь":
-        if not user:
-            await update.message.reply_text("Не удалось определить пользователя.")
-            return
-        _USER_SUPPORT.add(int(user.id))
-        await update.message.reply_text(
-            SUPPORT_INTRO_TEXT, reply_markup=_main_keyboard()
-        )
+        await _enter_support_chat(update.message, user)
         return
     if t == "⭐ Бонусы":
         if not user:

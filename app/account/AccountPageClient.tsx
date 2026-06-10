@@ -39,6 +39,7 @@ import {
   persistLoginWaitId,
   readLoginWaitId,
   TG_LOGIN_WAIT_STARTED_EVENT,
+  clearLoginWaitId,
 } from "@/app/lib/telegramLoginWaitStorage";
 import { telegramWebLoginDeepLink } from "@/app/lib/telegramWebLoginUrl";
 
@@ -110,6 +111,15 @@ export default function AccountPageClient() {
       window.removeEventListener(TG_LOGIN_WAIT_STARTED_EVENT, beginIfNeeded);
     };
   }, []);
+
+  useEffect(() => {
+    if (!hydrated || !autoLoginPending) return;
+    if (user?.telegramId != null && user.telegramId > 0) {
+      clearLoginWaitId();
+      setAutoLoginPending(false);
+      setLsGate("ok");
+    }
+  }, [hydrated, user?.telegramId, autoLoginPending]);
 
   useEffect(() => {
     if (!autoLoginPending) {

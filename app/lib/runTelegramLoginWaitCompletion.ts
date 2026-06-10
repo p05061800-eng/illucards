@@ -65,7 +65,6 @@ export async function completeLoginWaitIfReady(
   const result = await finishTelegramWebLoginOnClient(
     id,
     establishSessionFromTelegramUserId,
-    null,
   );
   if (result.ok) {
     clearLoginWaitId();

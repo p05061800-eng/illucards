@@ -8,10 +8,12 @@ import { useCart } from "../context/CartContext";
 import { useCurrency } from "../context/CurrencyContext";
 import { useCategoryTiles } from "../context/CategoryFramesContext";
 import { getCardArtIntrinsicSize } from "../lib/cardArtIntrinsicSize";
-import { bonusPointsToEarnForOrderItems, bonusSpendRateHintRu } from "../lib/bonusProgram";
-import { displayCurrencyForDelivery, formatCardPrice, rubFromByn } from "../lib/formatPrice";
+import { bonusPointsToEarnForOrderItems } from "../lib/bonusProgram";
+import { displayCurrencyForDelivery, formatCardPrice } from "../lib/formatPrice";
 import { TelegramCheckoutButton } from "@/components/checkout/TelegramCheckoutButton";
 import { DeliveryCountryField } from "../components/DeliveryCountryField";
+import { BonusSpendControl } from "../components/cart/BonusSpendControl";
+import { CartOrderTotals } from "../components/cart/CartOrderTotals";
 
 export default function CartView() {
   const {
@@ -47,50 +49,44 @@ export default function CartView() {
 
   return (
     <>
-      <div className="relative z-10 mx-auto w-full max-w-2xl px-4 pb-24 pt-10 sm:px-6">
-        <h1 className="mb-10 bg-gradient-to-r from-white via-purple-100 to-violet-200 bg-clip-text text-center text-3xl font-bold tracking-tight text-transparent">
+      <div className="relative z-10 mx-auto w-full max-w-2xl px-4 pb-20 pt-6 sm:px-6 sm:pt-8">
+        <h1 className="mb-5 bg-gradient-to-r from-white via-purple-100 to-violet-200 bg-clip-text text-center text-2xl font-bold tracking-tight text-transparent sm:text-3xl">
           Корзина
         </h1>
 
         {!hydrated ? (
           <p className="text-center text-sm text-zinc-500">Загрузка…</p>
         ) : cartItems.length === 0 ? (
-          <div className="rounded-2xl border border-white/10 bg-white/[0.03] px-6 py-16 text-center">
+          <div className="rounded-2xl border border-white/10 bg-white/[0.03] px-6 py-12 text-center">
             <p className="text-zinc-400">Корзина пуста</p>
             <Link
               href="/#collection"
-              className="mt-6 inline-flex rounded-full border border-purple-500/40 bg-purple-950/40 px-6 py-2.5 text-sm font-medium text-purple-200 transition hover:border-purple-400/60 hover:bg-purple-900/50"
+              className="mt-5 inline-flex rounded-full border border-purple-500/40 bg-purple-950/40 px-6 py-2.5 text-sm font-medium text-purple-200 transition hover:border-purple-400/60 hover:bg-purple-900/50"
             >
               В каталог
             </Link>
           </div>
         ) : (
-          <div className="space-y-4">
-            <ul className="space-y-3">
+          <div className="flex flex-col gap-3 lg:grid lg:grid-cols-[1fr_min(280px,34%)] lg:items-start lg:gap-5">
+            <ul className="space-y-2">
               {cartItems.map((line) => (
                 <li
                   key={line.id}
-                  className="flex items-start gap-4 rounded-2xl border border-white/10 bg-white/[0.04] p-3 sm:p-4"
+                  className="flex items-center gap-3 rounded-xl border border-white/10 bg-white/[0.04] p-2.5 sm:p-3"
                 >
-                  <div className="flex w-[4.5rem] shrink-0 items-start justify-center self-start overflow-visible rounded-2xl bg-zinc-900 ring-1 ring-white/10 sm:w-[5.25rem]">
+                  <div className="flex w-[4.25rem] shrink-0 items-start justify-center self-start overflow-visible rounded-lg bg-zinc-900 ring-1 ring-white/10 sm:w-[5rem]">
                     {line.frontImage ? (
                       <Image
                         src={line.frontImage}
                         alt={line.title}
                         width={
-                          getCardArtIntrinsicSize(
-                            line.category,
-                            categoryTiles,
-                          ).width
+                          getCardArtIntrinsicSize(line.category, categoryTiles).width
                         }
                         height={
-                          getCardArtIntrinsicSize(
-                            line.category,
-                            categoryTiles,
-                          ).height
+                          getCardArtIntrinsicSize(line.category, categoryTiles).height
                         }
-                        className="h-auto w-full rounded-2xl"
-                        sizes="84px"
+                        className="h-auto w-full rounded-lg"
+                        sizes="80px"
                         style={{
                           width: "100%",
                           height: "auto",
@@ -103,51 +99,43 @@ export default function CartView() {
                       </div>
                     )}
                   </div>
-                  <div className="flex min-w-0 flex-1 flex-col justify-between gap-2">
-                    <div>
-                      <Link
-                        href={`/card/${line.id}`}
-                        className="font-semibold text-white transition hover:text-purple-200"
-                      >
-                        {line.title}
-                      </Link>
-                      <p className="mt-1 text-xs leading-snug text-purple-200/90 sm:text-sm">
-                        {formatCardPrice(
-                          line.priceByn,
-                          priceCurrency,
-                          priceCurrency === "RUB" ? line.priceRub : undefined
-                        )}{" "}
-                        × {line.quantity} ={" "}
-                        {formatCardPrice(
-                          line.priceByn * line.quantity,
-                          priceCurrency,
-                          priceCurrency === "RUB"
-                            ? line.priceRub * line.quantity
-                            : undefined
-                        )}
-                      </p>
-                    </div>
-                    <div className="flex flex-wrap items-center gap-2">
-                      <div className="inline-flex items-center rounded-lg border border-white/15 bg-black/30">
+                  <div className="flex min-w-0 flex-1 flex-col gap-1.5">
+                    <Link
+                      href={`/card/${line.id}`}
+                      className="line-clamp-2 text-sm font-semibold leading-snug text-white transition hover:text-purple-200 sm:text-base"
+                    >
+                      {line.title}
+                    </Link>
+                    <p className="text-sm font-medium tabular-nums text-purple-200/90">
+                      {formatCardPrice(
+                        line.priceByn * line.quantity,
+                        priceCurrency,
+                        priceCurrency === "RUB"
+                          ? line.priceRub * line.quantity
+                          : undefined,
+                      )}
+                      <span className="font-normal text-zinc-500">
+                        {" "}
+                        · {line.quantity} шт.
+                      </span>
+                    </p>
+                    <div className="flex items-center gap-2">
+                      <div className="inline-flex items-center rounded-md border border-white/15 bg-black/30 text-sm">
                         <button
                           type="button"
-                          onClick={() =>
-                            setQuantity(line.id, line.quantity - 1)
-                          }
-                          className="px-3 py-1.5 text-sm text-zinc-300 transition hover:bg-white/10 hover:text-white"
+                          onClick={() => setQuantity(line.id, line.quantity - 1)}
+                          className="px-2.5 py-1 text-zinc-300 transition hover:bg-white/10 hover:text-white"
                           aria-label="Уменьшить"
                         >
                           −
                         </button>
-                        <span className="min-w-[2rem] px-2 text-center text-sm tabular-nums text-zinc-200">
+                        <span className="min-w-[1.75rem] px-1.5 text-center tabular-nums text-zinc-200">
                           {line.quantity}
                         </span>
                         <button
                           type="button"
-                          onClick={() =>
-                            setQuantity(line.id, line.quantity + 1)
-                          }
-                          className="px-3 py-1.5 text-sm text-zinc-300 transition hover:bg-white/10 hover:text-white"
+                          onClick={() => setQuantity(line.id, line.quantity + 1)}
+                          className="px-2.5 py-1 text-zinc-300 transition hover:bg-white/10 hover:text-white"
                           aria-label="Увеличить"
                         >
                           +
@@ -156,7 +144,7 @@ export default function CartView() {
                       <button
                         type="button"
                         onClick={() => removeFromCart(line.id)}
-                        className="text-xs text-zinc-500 underline-offset-2 transition hover:text-red-400 hover:underline"
+                        className="text-xs text-zinc-500 transition hover:text-red-400"
                       >
                         Удалить
                       </button>
@@ -166,20 +154,16 @@ export default function CartView() {
               ))}
             </ul>
 
-            <div className="mt-8 flex flex-col gap-6 border-t border-white/10 pt-8">
+            <div className="space-y-2 rounded-xl border border-white/10 bg-white/[0.03] p-3 sm:p-4 lg:sticky lg:top-24">
               <DeliveryCountryField
                 id={deliveryFieldId}
                 value={deliveryCountry}
                 onChange={setDeliveryCountry}
-                className="max-w-md"
+                compact
               />
               {deliveryCountry != null ? (
-                <p className="text-xs leading-relaxed text-zinc-500">
-                  Цены в корзине — в{" "}
-                  {priceCurrency === "RUB"
-                    ? "российских рублях (Россия, Украина, другие страны)"
-                    : "белорусских рублях (Беларусь)"}{" "}
-                  по выбранной доставке.
+                <p className="text-[10px] text-zinc-500">
+                  Цены в {priceCurrency === "RUB" ? "RUB" : "BYN"} по доставке
                 </p>
               ) : (
                 <div className="flex items-center justify-between gap-3">
@@ -196,7 +180,7 @@ export default function CartView() {
                       onClick={() => setCurrency("BYN")}
                       className={`rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-wide transition ${
                         currency === "BYN"
-                          ? "bg-purple-600/90 text-white shadow-[0_0_14px_rgba(168,85,247,0.35)]"
+                          ? "bg-purple-600/90 text-white"
                           : "text-zinc-500 hover:text-zinc-300"
                       }`}
                     >
@@ -207,7 +191,7 @@ export default function CartView() {
                       onClick={() => setCurrency("RUB")}
                       className={`rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-wide transition ${
                         currency === "RUB"
-                          ? "bg-purple-600/90 text-white shadow-[0_0_14px_rgba(168,85,247,0.35)]"
+                          ? "bg-purple-600/90 text-white"
                           : "text-zinc-500 hover:text-zinc-300"
                       }`}
                     >
@@ -216,113 +200,31 @@ export default function CartView() {
                   </div>
                 </div>
               )}
-              <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-                <div className="space-y-2 text-sm sm:text-base">
-                  <div className="flex items-baseline justify-between gap-6 sm:justify-start sm:gap-10">
-                    <span className="text-zinc-500">Товары</span>
-                    <span className="tabular-nums text-zinc-200">
-                      {formatCardPrice(
-                        totalPriceByn,
-                        priceCurrency,
-                        priceCurrency === "RUB" ? totalPriceRub : undefined
-                      )}
-                    </span>
-                  </div>
-                  <div className="flex items-baseline justify-between gap-6 sm:justify-start sm:gap-10">
-                    <span className="text-zinc-500">Доставка</span>
-                    <span className="tabular-nums text-zinc-200">
-                      {deliveryCountry
-                        ? formatCardPrice(
-                            deliveryPriceByn,
-                            priceCurrency,
-                            priceCurrency === "RUB"
-                              ? deliveryPriceRub
-                              : undefined
-                          )
-                        : "—"}
-                    </span>
-                  </div>
-                  {primaryTelegramUserId != null ? (
-                    <div className="rounded-xl border border-amber-400/25 bg-amber-950/30 px-3 py-3 text-sm text-amber-100/95">
-                      <p className="font-medium text-amber-100">
-                        Бонусы: {bonusBalance.toLocaleString("ru-RU")} баллов
-                      </p>
-                      <p className="mt-2 text-xs leading-relaxed text-amber-200/85">
-                        {bonusSpendRateHintRu(deliveryCountry)}
-                      </p>
-                      {bonusPointsFromThisCart > 0 ? (
-                        <p className="mt-1.5 text-sm font-semibold tabular-nums text-amber-50">
-                          За эту покупку:{" "}
-                          {bonusPointsFromThisCart.toLocaleString("ru-RU")} баллов
-                        </p>
-                      ) : null}
-                      {deliveryCountry && bonusBalance > 0 ? (
-                        <div className="mt-3 space-y-2">
-                          <label className="flex flex-col gap-1 text-xs text-amber-100/90">
-                            <span>Списать баллов: {bonusSpendPoints.toLocaleString("ru-RU")}</span>
-                            <input
-                              type="range"
-                              min={0}
-                              max={Math.max(0, maxBonusSpendPoints)}
-                              step={1}
-                              value={Math.min(bonusSpendPoints, maxBonusSpendPoints)}
-                              onChange={(e) =>
-                                setBonusSpendPoints(Number(e.target.value) || 0)
-                              }
-                              className="w-full accent-amber-400"
-                            />
-                          </label>
-                          <div className="flex flex-wrap justify-between gap-2 text-xs text-amber-200/85">
-                            <button
-                              type="button"
-                              className="rounded-lg border border-amber-400/40 px-2 py-1 font-medium transition hover:bg-amber-500/20"
-                              onClick={() => setBonusSpendPoints(0)}
-                            >
-                              Не списывать
-                            </button>
-                            <button
-                              type="button"
-                              className="rounded-lg border border-amber-400/40 px-2 py-1 font-medium transition hover:bg-amber-500/20"
-                              onClick={() => setBonusSpendPoints(maxBonusSpendPoints)}
-                            >
-                              Максимум
-                            </button>
-                          </div>
-                          {bonusSpendPoints > 0 ? (
-                            <p className="text-xs text-amber-100/90">
-                              Скидка:{" "}
-                              {formatCardPrice(
-                                bonusDiscountByn,
-                                priceCurrency,
-                                priceCurrency === "RUB" ? rubFromByn(bonusDiscountByn) : undefined,
-                              )}
-                            </p>
-                          ) : null}
-                        </div>
-                      ) : null}
-                    </div>
-                  ) : null}
-                  <div className="flex items-baseline justify-between gap-6 border-t border-white/10 pt-2 sm:justify-start sm:gap-10">
-                    <span className="font-medium text-zinc-400">Итого</span>
-                    <span className="bg-gradient-to-r from-purple-200 to-violet-200 bg-clip-text text-lg font-semibold tabular-nums text-transparent sm:text-xl">
-                      {deliveryCountry
-                        ? formatCardPrice(
-                            bonusSpendPoints > 0 ? checkoutTotalByn : orderTotalByn,
-                            priceCurrency,
-                            priceCurrency === "RUB"
-                              ? bonusSpendPoints > 0
-                                ? checkoutTotalRub
-                                : orderTotalRub
-                              : undefined,
-                          )
-                        : "—"}
-                    </span>
-                  </div>
-                </div>
-                <div className="flex w-full flex-col gap-3 sm:w-auto sm:min-w-[280px]">
-                  <TelegramCheckoutButton className="rounded-full py-4 text-[15px]" />
-                </div>
-              </div>
+              {primaryTelegramUserId != null ? (
+                <BonusSpendControl
+                  bonusBalance={bonusBalance}
+                  bonusSpendPoints={bonusSpendPoints}
+                  maxBonusSpendPoints={maxBonusSpendPoints}
+                  bonusDiscountByn={bonusDiscountByn}
+                  deliveryCountry={deliveryCountry}
+                  bonusPointsFromThisCart={bonusPointsFromThisCart}
+                  onSpendChange={setBonusSpendPoints}
+                />
+              ) : null}
+              <CartOrderTotals
+                deliveryCountry={deliveryCountry}
+                totalPriceByn={totalPriceByn}
+                totalPriceRub={totalPriceRub}
+                deliveryPriceByn={deliveryPriceByn}
+                deliveryPriceRub={deliveryPriceRub}
+                orderTotalByn={orderTotalByn}
+                orderTotalRub={orderTotalRub}
+                checkoutTotalByn={checkoutTotalByn}
+                checkoutTotalRub={checkoutTotalRub}
+                bonusSpendPoints={bonusSpendPoints}
+                bonusDiscountByn={bonusDiscountByn}
+              />
+              <TelegramCheckoutButton className="rounded-full py-3.5 text-sm sm:text-[15px]" />
             </div>
           </div>
         )}

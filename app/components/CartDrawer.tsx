@@ -20,10 +20,12 @@ import { useCart } from "../context/CartContext";
 import { useCurrency } from "../context/CurrencyContext";
 import { useCategoryTiles } from "../context/CategoryFramesContext";
 import { getCardArtIntrinsicSize } from "../lib/cardArtIntrinsicSize";
-import { bonusPointsToEarnForOrderItems, bonusSpendRateHintRu } from "../lib/bonusProgram";
-import { displayCurrencyForDelivery, formatCardPrice, rubFromByn } from "../lib/formatPrice";
+import { bonusPointsToEarnForOrderItems } from "../lib/bonusProgram";
+import { displayCurrencyForDelivery, formatCardPrice } from "../lib/formatPrice";
 import { TelegramCheckoutButton } from "@/components/checkout/TelegramCheckoutButton";
 import { DeliveryCountryField } from "./DeliveryCountryField";
+import { BonusSpendControl } from "./cart/BonusSpendControl";
+import { CartOrderTotals } from "./cart/CartOrderTotals";
 
 export function CartDrawer() {
   const pathname = usePathname();
@@ -232,12 +234,17 @@ export function CartDrawer() {
           aria-hidden
         />
 
-        <header className="flex shrink-0 items-center justify-between gap-3 border-b border-white/[0.06] px-5 py-4 sm:px-6">
+        <header className="flex shrink-0 items-center justify-between gap-2 border-b border-white/[0.06] px-4 py-2.5 sm:px-5">
           <h2
             id={titleId}
-            className="bg-gradient-to-r from-white via-purple-100 to-violet-200 bg-clip-text text-lg font-semibold tracking-tight text-transparent sm:text-xl"
+            className="bg-gradient-to-r from-white via-purple-100 to-violet-200 bg-clip-text text-base font-semibold tracking-tight text-transparent sm:text-lg"
           >
             Корзина
+            {cartItems.length > 0 ? (
+              <span className="ml-1.5 text-sm font-medium text-zinc-500">
+                ({cartItems.reduce((s, l) => s + l.quantity, 0)})
+              </span>
+            ) : null}
           </h2>
           <div className="flex items-center gap-2">
             <Link
@@ -307,7 +314,7 @@ export function CartDrawer() {
             </div>
           ) : (
             <>
-              <ul className="min-h-0 flex-1 space-y-3 overflow-y-auto overscroll-contain px-4 py-4 sm:px-5">
+              <ul className="min-h-0 flex-1 space-y-2 overflow-y-auto overscroll-contain px-3 py-2 sm:px-4">
                 {cartItems.map((line) => {
                   const cartArt = getCardArtIntrinsicSize(
                     line.category,
@@ -316,9 +323,9 @@ export function CartDrawer() {
                   return (
                   <li
                     key={line.id}
-                    className="flex items-start gap-3 rounded-2xl border border-white/[0.07] bg-white/[0.03] p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] backdrop-blur-sm transition hover:border-white/[0.1] hover:bg-white/[0.045]"
+                    className="flex items-center gap-2.5 rounded-xl border border-white/[0.07] bg-white/[0.03] p-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]"
                   >
-                    <div className="flex w-[3.25rem] shrink-0 items-start justify-center self-start overflow-visible rounded-2xl bg-zinc-900 ring-1 ring-white/10">
+                    <div className="flex w-[3.75rem] shrink-0 items-start justify-center self-start overflow-visible rounded-lg bg-zinc-900 ring-1 ring-white/10 sm:w-[4.25rem]">
                       {line.frontImage ? (
                         <AdultContentBlurGate
                           isAdult={cardRequiresAgeConfirmation({
@@ -332,8 +339,8 @@ export function CartDrawer() {
                             alt=""
                             width={cartArt.width}
                             height={cartArt.height}
-                            className="h-auto w-full rounded-2xl"
-                            sizes="52px"
+                            className="h-auto w-full rounded-lg"
+                            sizes="68px"
                             style={{
                               width: "100%",
                               height: "auto",
@@ -347,44 +354,40 @@ export function CartDrawer() {
                         </div>
                       )}
                     </div>
-                    <div className="flex min-w-0 flex-1 flex-col justify-between gap-2">
-                      <div>
-                        <Link
-                          href={`/card/${line.id}`}
-                          onClick={closeCart}
-                          className="line-clamp-2 text-sm font-semibold leading-snug text-zinc-100 transition hover:text-purple-200"
-                        >
-                          {line.title}
-                        </Link>
-                        <p className="mt-1 text-xs tabular-nums text-purple-200/80">
-                          {formatCardPrice(
-                            line.priceByn,
-                            priceCurrency,
-                            priceCurrency === "RUB" ? line.priceRub : undefined
-                          )}{" "}
-                          × {line.quantity} ={" "}
-                          {formatCardPrice(
-                            line.priceByn * line.quantity,
-                            priceCurrency,
-                            priceCurrency === "RUB"
-                              ? line.priceRub * line.quantity
-                              : undefined
-                          )}
-                        </p>
-                      </div>
-                      <div className="flex flex-wrap items-center gap-2">
-                        <div className="inline-flex items-center rounded-lg border border-white/12 bg-black/40">
+                    <div className="flex min-w-0 flex-1 flex-col gap-1.5">
+                      <Link
+                        href={`/card/${line.id}`}
+                        onClick={closeCart}
+                        className="line-clamp-2 text-sm font-semibold leading-snug text-zinc-100 transition hover:text-purple-200"
+                      >
+                        {line.title}
+                      </Link>
+                      <p className="text-xs font-medium tabular-nums text-purple-200/90">
+                        {formatCardPrice(
+                          line.priceByn * line.quantity,
+                          priceCurrency,
+                          priceCurrency === "RUB"
+                            ? line.priceRub * line.quantity
+                            : undefined
+                        )}
+                        <span className="font-normal text-zinc-500">
+                          {" "}
+                          · {line.quantity} шт.
+                        </span>
+                      </p>
+                      <div className="flex items-center gap-1.5">
+                        <div className="inline-flex items-center rounded-md border border-white/12 bg-black/40 text-xs">
                           <button
                             type="button"
                             onClick={() =>
                               setQuantity(line.id, line.quantity - 1)
                             }
-                            className="px-2.5 py-1 text-sm text-zinc-400 transition hover:bg-white/10 hover:text-white"
+                            className="px-2 py-0.5 text-zinc-400 transition hover:bg-white/10 hover:text-white"
                             aria-label="Уменьшить"
                           >
                             −
                           </button>
-                          <span className="min-w-[1.75rem] px-1.5 text-center text-xs tabular-nums text-zinc-200">
+                          <span className="min-w-[1.5rem] px-1 text-center tabular-nums text-zinc-200">
                             {line.quantity}
                           </span>
                           <button
@@ -392,7 +395,7 @@ export function CartDrawer() {
                             onClick={() =>
                               setQuantity(line.id, line.quantity + 1)
                             }
-                            className="px-2.5 py-1 text-sm text-zinc-400 transition hover:bg-white/10 hover:text-white"
+                            className="px-2 py-0.5 text-zinc-400 transition hover:bg-white/10 hover:text-white"
                             aria-label="Увеличить"
                           >
                             +
@@ -401,9 +404,9 @@ export function CartDrawer() {
                         <button
                           type="button"
                           onClick={() => removeFromCart(line.id)}
-                          className="text-xs text-zinc-500 underline-offset-2 transition hover:text-red-400 hover:underline"
+                          className="text-[11px] text-zinc-500 transition hover:text-red-400"
                         >
-                          Удалить
+                          ✕
                         </button>
                       </div>
                     </div>
@@ -412,23 +415,19 @@ export function CartDrawer() {
                 })}
               </ul>
 
-              <div className="shrink-0 border-t border-white/[0.06] bg-black/20 px-4 py-4 backdrop-blur-md sm:px-6">
+              <div className="shrink-0 space-y-2 border-t border-white/[0.06] bg-black/25 px-3 py-2.5 backdrop-blur-md sm:px-4">
                 <DeliveryCountryField
                   id={deliveryFieldId}
                   value={deliveryCountry}
                   onChange={setDeliveryCountry}
-                  className="mb-4"
+                  compact
                 />
                 {deliveryCountry != null ? (
-                  <p className="mb-4 text-xs leading-relaxed text-zinc-500">
-                    Цены в корзине — в{" "}
-                    {priceCurrency === "RUB"
-                      ? "российских рублях (Россия, Украина, другие страны)"
-                      : "белорусских рублях (Беларусь)"}{" "}
-                    по выбранной доставке.
+                  <p className="text-[10px] leading-snug text-zinc-500">
+                    Цены в {priceCurrency === "RUB" ? "RUB" : "BYN"} по доставке
                   </p>
                 ) : (
-                  <div className="mb-4 flex items-center justify-between gap-3">
+                  <div className="flex items-center justify-between gap-3">
                     <span className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
                       Валюта
                     </span>
@@ -463,113 +462,32 @@ export function CartDrawer() {
                   </div>
                 )}
                 {primaryTelegramUserId != null ? (
-                  <div className="mb-4 rounded-xl border border-amber-400/25 bg-amber-950/25 px-3 py-3 text-xs text-amber-100/95">
-                    <p className="font-medium text-amber-100">
-                      Бонусы: {bonusBalance.toLocaleString("ru-RU")} баллов
-                    </p>
-                    <p className="mt-2 text-[11px] leading-relaxed text-amber-200/85">
-                      {bonusSpendRateHintRu(deliveryCountry)}
-                    </p>
-                    {bonusPointsFromThisCart > 0 ? (
-                      <p className="mt-1.5 text-[13px] font-semibold tabular-nums text-amber-50">
-                        За эту покупку:{" "}
-                        {bonusPointsFromThisCart.toLocaleString("ru-RU")} баллов
-                      </p>
-                    ) : null}
-                    {deliveryCountry && bonusBalance > 0 ? (
-                      <div className="mt-2 space-y-2">
-                        <label className="flex flex-col gap-1 text-amber-100/90">
-                          <span>Списать: {bonusSpendPoints.toLocaleString("ru-RU")}</span>
-                          <input
-                            type="range"
-                            min={0}
-                            max={Math.max(0, maxBonusSpendPoints)}
-                            step={1}
-                            value={Math.min(bonusSpendPoints, maxBonusSpendPoints)}
-                            onChange={(e) =>
-                              setBonusSpendPoints(Number(e.target.value) || 0)
-                            }
-                            className="w-full accent-amber-400"
-                          />
-                        </label>
-                        <div className="flex justify-between gap-2">
-                          <button
-                            type="button"
-                            className="rounded-lg border border-amber-400/40 px-2 py-1 font-medium text-amber-200/90 transition hover:bg-amber-500/20"
-                            onClick={() => setBonusSpendPoints(0)}
-                          >
-                            Не списывать
-                          </button>
-                          <button
-                            type="button"
-                            className="rounded-lg border border-amber-400/40 px-2 py-1 font-medium text-amber-200/90 transition hover:bg-amber-500/20"
-                            onClick={() => setBonusSpendPoints(maxBonusSpendPoints)}
-                          >
-                            Макс.
-                          </button>
-                        </div>
-                      </div>
-                    ) : null}
-                  </div>
+                  <BonusSpendControl
+                    bonusBalance={bonusBalance}
+                    bonusSpendPoints={bonusSpendPoints}
+                    maxBonusSpendPoints={maxBonusSpendPoints}
+                    bonusDiscountByn={bonusDiscountByn}
+                    deliveryCountry={deliveryCountry}
+                    bonusPointsFromThisCart={bonusPointsFromThisCart}
+                    onSpendChange={setBonusSpendPoints}
+                  />
                 ) : null}
-                <div className="mb-4 space-y-2 text-sm">
-                  <div className="flex items-baseline justify-between gap-3">
-                    <span className="text-zinc-500">Товары</span>
-                    <span className="tabular-nums text-zinc-200">
-                      {formatCardPrice(
-                        totalPriceByn,
-                        priceCurrency,
-                        priceCurrency === "RUB" ? totalPriceRub : undefined
-                      )}
-                    </span>
-                  </div>
-                  <div className="flex items-baseline justify-between gap-3">
-                    <span className="text-zinc-500">Доставка</span>
-                    <span className="tabular-nums text-zinc-200">
-                      {deliveryCountry
-                        ? formatCardPrice(
-                            deliveryPriceByn,
-                            priceCurrency,
-                            priceCurrency === "RUB"
-                              ? deliveryPriceRub
-                              : undefined
-                          )
-                        : "—"}
-                    </span>
-                  </div>
-                  {bonusSpendPoints > 0 && deliveryCountry ? (
-                    <div className="flex items-baseline justify-between gap-3 text-xs text-amber-200/90">
-                      <span>Бонусы</span>
-                      <span className="tabular-nums">
-                        −
-                        {formatCardPrice(
-                          bonusDiscountByn,
-                          priceCurrency,
-                          priceCurrency === "RUB" ? rubFromByn(bonusDiscountByn) : undefined,
-                        )}
-                      </span>
-                    </div>
-                  ) : null}
-                  <div className="flex items-baseline justify-between gap-3 border-t border-white/[0.08] pt-2">
-                    <span className="font-medium text-zinc-400">Итого</span>
-                    <span className="bg-gradient-to-r from-purple-200 to-violet-200 bg-clip-text text-lg font-semibold tabular-nums text-transparent">
-                      {deliveryCountry
-                        ? formatCardPrice(
-                            bonusSpendPoints > 0 ? checkoutTotalByn : orderTotalByn,
-                            priceCurrency,
-                            priceCurrency === "RUB"
-                              ? bonusSpendPoints > 0
-                                ? checkoutTotalRub
-                                : orderTotalRub
-                              : undefined,
-                          )
-                        : "—"}
-                    </span>
-                  </div>
-                </div>
+                <CartOrderTotals
+                  deliveryCountry={deliveryCountry}
+                  totalPriceByn={totalPriceByn}
+                  totalPriceRub={totalPriceRub}
+                  deliveryPriceByn={deliveryPriceByn}
+                  deliveryPriceRub={deliveryPriceRub}
+                  orderTotalByn={orderTotalByn}
+                  orderTotalRub={orderTotalRub}
+                  checkoutTotalByn={checkoutTotalByn}
+                  checkoutTotalRub={checkoutTotalRub}
+                  bonusSpendPoints={bonusSpendPoints}
+                  bonusDiscountByn={bonusDiscountByn}
+                />
                 <TelegramCheckoutButton
                   onBeforeNavigate={closeCart}
-                  className="rounded-full py-4 text-[15px] shadow-[0_0_36px_rgba(124,58,237,0.5)]"
+                  className="rounded-full py-3 text-sm shadow-[0_0_36px_rgba(124,58,237,0.5)]"
                 />
               </div>
             </>

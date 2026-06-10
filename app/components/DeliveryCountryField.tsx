@@ -8,6 +8,8 @@ type Props = {
   value: DeliveryCountry | null;
   onChange: (country: DeliveryCountry | null) => void;
   className?: string;
+  /** Компактный вид для выезжающей корзины */
+  compact?: boolean;
 };
 
 export function DeliveryCountryField({
@@ -15,20 +17,25 @@ export function DeliveryCountryField({
   value,
   onChange,
   className = "",
+  compact = false,
 }: Props) {
   return (
     <div
-      className={`rounded-2xl border border-violet-500/35 bg-gradient-to-br from-violet-950/50 via-purple-950/30 to-black/50 p-4 shadow-[0_0_28px_rgba(124,58,237,0.18)] ring-1 ring-inset ring-violet-400/15 ${className}`.trim()}
+      className={`rounded-xl border border-violet-500/35 bg-gradient-to-br from-violet-950/50 via-purple-950/30 to-black/50 shadow-[0_0_20px_rgba(124,58,237,0.12)] ring-1 ring-inset ring-violet-400/15 ${
+        compact ? "p-2" : "rounded-2xl p-4 shadow-[0_0_28px_rgba(124,58,237,0.18)]"
+      } ${className}`.trim()}
     >
-      <div className="flex flex-col gap-3">
+      <div className={compact ? "flex flex-col gap-1.5" : "flex flex-col gap-3"}>
         <div className="flex items-center gap-2">
           <span
-            className="flex h-2 w-2 shrink-0 rounded-full bg-violet-400 shadow-[0_0_10px_rgba(167,139,250,0.9)]"
+            className="flex h-1.5 w-1.5 shrink-0 rounded-full bg-violet-400 shadow-[0_0_8px_rgba(167,139,250,0.9)]"
             aria-hidden
           />
           <label
             htmlFor={id}
-            className="text-sm font-semibold tracking-tight text-violet-100"
+            className={`font-semibold tracking-tight text-violet-100 ${
+              compact ? "text-xs" : "text-sm"
+            }`}
           >
             Страна доставки
           </label>
@@ -42,10 +49,11 @@ export function DeliveryCountryField({
             else onChange(v as DeliveryCountry);
           }}
           className={
-            "w-full cursor-pointer rounded-xl border-2 border-violet-400/45 bg-black/55 px-4 py-3.5 text-base font-medium text-zinc-50 outline-none " +
+            "w-full cursor-pointer rounded-lg border-2 border-violet-400/45 bg-black/55 font-medium text-zinc-50 outline-none " +
             "shadow-inner shadow-black/40 transition " +
             "hover:border-violet-400/70 hover:bg-black/65 " +
             "focus:border-violet-400 focus:ring-2 focus:ring-violet-400/45 " +
+            (compact ? "px-2.5 py-2 text-sm " : "rounded-xl px-4 py-3.5 text-base ") +
             (value ? "" : "text-violet-200/90 ")
           }
         >

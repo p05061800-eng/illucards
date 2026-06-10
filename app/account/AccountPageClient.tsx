@@ -126,12 +126,16 @@ export default function AccountPageClient() {
   }, [user?.telegramId]);
 
   useEffect(() => {
-    if (lsGate !== "no_telegram") return;
     const fromUrl = searchParams.get(TG_LOGIN_WAIT_QUERY_PARAM);
-    if (fromUrl && isValidLoginWaitId(fromUrl)) {
-      void completeLoginFromWaitId(fromUrl.trim().toLowerCase());
+    if (!fromUrl || !isValidLoginWaitId(fromUrl)) return;
+    const waitId = fromUrl.trim().toLowerCase();
+    try {
+      sessionStorage.setItem(TG_LOGIN_WAIT_STORAGE_KEY, waitId);
+    } catch {
+      /* ignore */
     }
-  }, [lsGate, searchParams, completeLoginFromWaitId]);
+    void completeLoginFromWaitId(waitId);
+  }, [searchParams, completeLoginFromWaitId]);
 
   const loadOrders = useCallback(async () => {
     setOrdersError(null);

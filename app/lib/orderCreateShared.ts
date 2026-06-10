@@ -7,6 +7,7 @@ import { saveOrderRecord } from "@/app/lib/ordersStore";
 import { sanitizeOrderLineImageUrl } from "@/app/lib/sanitizeOrderLineImageUrl";
 import {
   getTelegramUserState,
+  trySpendTelegramUserBonusPoints,
 } from "@/app/lib/telegramUserStateStore";
 
 export { ORDERS_DIR } from "@/app/lib/orderPaths";
@@ -100,6 +101,7 @@ export type PersistOrderResult =
       orderId: string;
       totalByn: number;
       bonusPointsSpent: number;
+      bonusPointsBalance: number;
     }
   | { ok: false; error: string; status: number };
 
@@ -129,21 +131,23 @@ export async function persistOrder(
   const orderBynBefore = Math.round((goodsByn + d.amountByn) * 100) / 100;
 
   let spendApplied = 0;
+  let bonusPointsBalance = 0;
   const wantSpend = Math.max(0, Math.floor(Number(rawBonusSpend) || 0));
-  if (wantSpend > 0) {
-    if (userId == null || userId <= 0) {
-      return {
-        ok: false,
-        error: "Чтобы списать бонусы, войдите через Telegram",
-        status: 401,
-      };
-    }
+  if (userId != null && userId > 0) {
     const balState = await getTelegramUserState(userId);
-    const balance = Math.max(0, Math.floor(balState?.bonus_points ?? 0));
-    spendApplied = Math.min(
-      wantSpend,
-      maxSpendableBonusPoints(balance, orderBynBefore, deliveryCountry),
-    );
+    bonusPointsBalance = Math.max(0, Math.floor(balState?.bonus_points ?? 0));
+    if (wantSpend > 0) {
+      spendApplied = Math.min(
+        wantSpend,
+        maxSpendableBonusPoints(bonusPointsBalance, orderBynBefore, deliveryCountry),
+      );
+    }
+  } else if (wantSpend > 0) {
+    return {
+      ok: false,
+      error: "Чтобы списать бонусы, войдите через Telegram",
+      status: 401,
+    };
   }
 
   const discountByn = bonusDiscountByn(spendApplied, deliveryCountry);
@@ -158,6 +162,19 @@ export async function persistOrder(
 
   const orderId = requestedOrderId ?? randomUUID();
 
+  if (spendApplied > 0) {
+    const uid = Math.floor(userId!);
+    const spent = await trySpendTelegramUserBonusPoints(uid, spendApplied);
+    if (!spent.ok) {
+      return {
+        ok: false,
+        error: "Недостаточно бонусов на счёте",
+        status: 409,
+      };
+    }
+    bonusPointsBalance = spent.state.bonus_points;
+  }
+
   const record: OrderRecord = {
     ...(userId != null && userId > 0 ? { user_id: userId } : {}),
     username: username ?? null,
@@ -165,7 +182,9 @@ export async function persistOrder(
     total: orderBynCharged,
     delivery: deliveryCountry,
     status: "new",
-    ...(spendApplied > 0 ? { bonus_points_spent: spendApplied } : {}),
+    ...(spendApplied > 0
+      ? { bonus_points_spent: spendApplied, bonus_points_deducted: true as const }
+      : {}),
   };
 
   await saveOrderRecord(orderId, record);
@@ -175,5 +194,6 @@ export async function persistOrder(
     orderId,
     totalByn: orderBynCharged,
     bonusPointsSpent: spendApplied,
+    bonusPointsBalance,
   };
 }

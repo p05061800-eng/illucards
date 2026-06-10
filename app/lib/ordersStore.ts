@@ -226,6 +226,8 @@ function fileToOrderRecord(raw: unknown): OrderRecord | null {
   const bonus_awarded = o.bonus_awarded === true || o.bonus_awarded === "true";
   const bonus_points_deducted =
     o.bonus_points_deducted === true || o.bonus_points_deducted === "true";
+  const bonus_points_refunded =
+    o.bonus_points_refunded === true || o.bonus_points_refunded === "true";
   const bpsRaw = o.bonus_points_spent;
   const bonus_points_spent =
     typeof bpsRaw === "number" && Number.isFinite(bpsRaw) && bpsRaw > 0
@@ -251,6 +253,7 @@ function fileToOrderRecord(raw: unknown): OrderRecord | null {
       : {}),
     ...(bonus_awarded ? { bonus_awarded: true as const } : {}),
     ...(bonus_points_deducted ? { bonus_points_deducted: true as const } : {}),
+    ...(bonus_points_refunded ? { bonus_points_refunded: true as const } : {}),
     ...(bonus_points_spent != null && bonus_points_spent > 0
       ? { bonus_points_spent }
       : {}),
@@ -501,6 +504,27 @@ export async function updateOrderStatus(
     existing.status !== "cancelled" &&
     status !== "cancelled";
   const spend = Math.max(0, Math.floor(existing.bonus_points_spent ?? 0));
+  let bonusRefundedNow = false;
+  const refundBonusNow =
+    status === "cancelled" &&
+    existing.status !== "cancelled" &&
+    existing.bonus_points_deducted &&
+    !existing.bonus_points_refunded &&
+    spend > 0 &&
+    existing.user_id != null &&
+    existing.user_id > 0;
+  if (refundBonusNow) {
+    const uid = Math.floor(existing.user_id!);
+    const st = await incrementTelegramUserBonusPoints(uid, spend);
+    bonusRefundedNow = true;
+    await notifyTelegramWebhookUserState({
+      userId: uid,
+      cart: st.cart,
+      favorites: st.favorites,
+      deliveryCountry: st.deliveryCountry,
+      bonus_points: st.bonus_points,
+    });
+  }
   const deductBonusNow =
     nowBonusEligible &&
     spend > 0 &&
@@ -527,6 +551,7 @@ export async function updateOrderStatus(
     ...existing,
     status,
     ...(bonusDeductedNow ? { bonus_points_deducted: true } : {}),
+    ...(bonusRefundedNow ? { bonus_points_refunded: true } : {}),
   };
   ORDERS[id] = updated;
   await persistOrderRecordToRedis(id, updated);
@@ -543,6 +568,9 @@ export async function updateOrderStatus(
       }
       if (updated.bonus_points_deducted) {
         raw.bonus_points_deducted = true;
+      }
+      if (updated.bonus_points_refunded) {
+        raw.bonus_points_refunded = true;
       }
       await fs.writeFile(filePath, JSON.stringify(raw, null, 2), "utf-8");
     }

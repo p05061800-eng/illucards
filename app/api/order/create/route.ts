@@ -10,6 +10,8 @@ import {
 } from "@/app/lib/orderCreateShared";
 import { syncOrderToTelegramBot } from "@/app/lib/telegramCartBotSync";
 import { recordAndNotifyTelegramOrder } from "@/app/lib/telegramOrderNotify";
+import { notifyTelegramWebhookUserState } from "@/app/lib/telegramStateBotSync";
+import { getTelegramUserState } from "@/app/lib/telegramUserStateStore";
 
 /**
  * Создание заказа.
@@ -72,6 +74,17 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: result.error }, { status: result.status });
   }
 
+  const state = await getTelegramUserState(userId);
+  if (state) {
+    await notifyTelegramWebhookUserState({
+      userId,
+      cart: state.cart,
+      favorites: state.favorites,
+      deliveryCountry: state.deliveryCountry,
+      bonus_points: state.bonus_points,
+    });
+  }
+
   const syncInput = {
     orderId: result.orderId,
     userId,
@@ -105,6 +118,7 @@ export async function POST(request: NextRequest) {
     order_id: result.orderId,
     total: result.totalByn,
     bonus_points_spent: result.bonusPointsSpent,
+    bonus_points: result.bonusPointsBalance,
     telegram_recorded: telegram.recorded,
     telegram_sent: false,
     telegram_bot_start: `order_${result.orderId}`,

@@ -246,6 +246,8 @@ type CartContextValue = {
   /** Сколько баллов списать в этом заказе. */
   bonusSpendPoints: number;
   setBonusSpendPoints: (points: number) => void;
+  /** Обновить баланс баллов после списания на сервере (checkout). */
+  applyServerBonusBalance: (points: number) => void;
   /** Максимум баллов к списанию при текущей корзине и доставке. */
   maxBonusSpendPoints: number;
   /** Скидка в BYN от выбранных баллов. */
@@ -320,6 +322,11 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const setBonusSpendPoints = useCallback((points: number) => {
     const p = Math.max(0, Math.floor(Number(points) || 0));
     setBonusSpendPointsState(p);
+  }, []);
+
+  const applyServerBonusBalance = useCallback((points: number) => {
+    setBonusBalance(Math.max(0, Math.floor(Number(points) || 0)));
+    setBonusSpendPointsState(0);
   }, []);
 
   useEffect(() => {
@@ -678,6 +685,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
       bonusBalance,
       bonusSpendPoints,
       setBonusSpendPoints,
+      applyServerBonusBalance,
       maxBonusSpendPoints: maxBonusSpendPointsValue,
       bonusDiscountByn: bonusDiscountBynValue,
       checkoutTotalByn,
@@ -707,6 +715,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
       bonusBalance,
       bonusSpendPoints,
       setBonusSpendPoints,
+      applyServerBonusBalance,
       maxBonusSpendPointsValue,
       bonusDiscountBynValue,
       checkoutTotalByn,

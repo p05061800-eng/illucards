@@ -40,6 +40,8 @@ export type OrderRecord = {
   bonus_points_spent?: number;
   /** Бонусы за скидку уже фактически списаны с баланса пользователя. */
   bonus_points_deducted?: boolean;
+  /** Списанные бонусы возвращены на счёт (отмена заказа). */
+  bonus_points_refunded?: boolean;
   /** Способ оплаты, выбранный покупателем в Telegram после подтверждения заказа. */
   payment_method?: OrderPaymentMethod;
   /** Покупателю уже отправлено сообщение с заказом в Telegram (с сайта). */

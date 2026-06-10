@@ -35,6 +35,7 @@ export function TelegramCheckoutButton({
     deliveryCountry,
     checkoutTotalByn,
     bonusSpendPoints,
+    applyServerBonusBalance,
   } = useCart();
   const { primaryTelegramUserId, user } = useAuth();
   const [submitting, setSubmitting] = useState(false);
@@ -110,6 +111,15 @@ export function TelegramCheckoutButton({
         return;
       }
 
+      if (
+        data &&
+        typeof data === "object" &&
+        "bonus_points" in data &&
+        typeof (data as { bonus_points: unknown }).bonus_points === "number"
+      ) {
+        applyServerBonusBalance((data as { bonus_points: number }).bonus_points);
+      }
+
       const bot = getTelegramOrderBotUsername();
       const botUrl = `https://t.me/${encodeURIComponent(bot)}?start=${encodeURIComponent(`order_${orderId}`)}`;
       console.info("[checkout] redirect telegram", { order_id: orderId, botUrl });
@@ -126,6 +136,7 @@ export function TelegramCheckoutButton({
     onBeforeNavigate,
     checkoutTotalByn,
     bonusSpendPoints,
+    applyServerBonusBalance,
     primaryTelegramUserId,
     router,
     submitting,

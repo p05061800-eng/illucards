@@ -99,7 +99,7 @@ export async function POST(request: NextRequest) {
   if (bpRaw !== undefined && bpRaw !== null) {
     const n = typeof bpRaw === "number" ? bpRaw : Number(bpRaw);
     if (Number.isFinite(n) && n >= 0 && n <= 1e9) {
-      bonus_points = Math.max(prevBonusPoints, Math.floor(n));
+      bonus_points = Math.floor(n);
     }
   }
 

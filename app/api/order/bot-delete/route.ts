@@ -1,11 +1,10 @@
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
-import { deleteOrderForOwner } from "@/app/lib/ordersStore";
-import { removeSiteBotOrderSnapshot } from "@/app/lib/telegramOrderNotify";
+import { getOrder, updateOrderStatus } from "@/app/lib/ordersStore";
 
 /**
- * POST /api/order/bot-delete — полное удаление заказа из Telegram-бота (только `new`).
- * Тот же секрет, что и у /api/order/update (без cookie).
+ * POST /api/order/bot-delete — legacy endpoint from бота.
+ * Заказы не удаляются: при необходимости только отмена (status cancelled).
  * Body: { order_id: string, telegram_user_id: number }
  */
 export async function POST(request: NextRequest) {
@@ -38,11 +37,31 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Укажите telegram_user_id" }, { status: 400 });
   }
 
-  const result = await deleteOrderForOwner(orderId, Math.floor(telegramUserId));
-  if (!result.ok) {
-    return NextResponse.json({ error: result.error }, { status: result.status });
+  const order = await getOrder(orderId);
+  if (!order) {
+    return NextResponse.json({ error: "Заказ не найден" }, { status: 404 });
+  }
+  const owner = order.user_id;
+  if (owner == null || Math.floor(owner) !== Math.floor(telegramUserId)) {
+    return NextResponse.json({ error: "Нет доступа к этому заказу" }, { status: 403 });
   }
 
-  await removeSiteBotOrderSnapshot(orderId);
-  return NextResponse.json({ ok: true });
+  if (order.status === "cancelled") {
+    return NextResponse.json({ ok: true, status: "cancelled", deleted: false });
+  }
+
+  if (order.status === "new") {
+    const result = await updateOrderStatus(orderId, "cancelled");
+    if (!result.ok) {
+      return NextResponse.json({ error: result.error }, { status: result.status });
+    }
+    return NextResponse.json({ ok: true, status: "cancelled", deleted: false });
+  }
+
+  return NextResponse.json({
+    ok: true,
+    status: order.status,
+    deleted: false,
+    message: "Заказ сохранён; удаление отключено",
+  });
 }

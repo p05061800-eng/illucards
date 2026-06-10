@@ -1,8 +1,7 @@
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 import { COOKIE_TELEGRAM_USER_ID } from "@/app/lib/telegramUserIdentity";
-import { deleteOrderForOwner, getOrder, hideOrderForOwner } from "@/app/lib/ordersStore";
-import { removeSiteBotOrderSnapshot } from "@/app/lib/telegramOrderNotify";
+import { getOrder, hideOrderForOwner } from "@/app/lib/ordersStore";
 
 function parseUserId(request: NextRequest): number | null {
   const raw = request.cookies.get(COOKIE_TELEGRAM_USER_ID)?.value;
@@ -12,7 +11,7 @@ function parseUserId(request: NextRequest): number | null {
 }
 
 /**
- * POST /api/order/delete — удаление заказа из ЛК владельца.
+ * POST /api/order/delete — скрыть заказ из списка в ЛК (данные заказа сохраняются).
  * Body: { order_id: string }
  */
 export async function POST(request: NextRequest) {
@@ -37,15 +36,13 @@ export async function POST(request: NextRequest) {
   }
 
   const order = await getOrder(orderId);
-  const result = order?.status === "new"
-    ? await deleteOrderForOwner(orderId, userId)
-    : await hideOrderForOwner(orderId, userId);
+  if (!order) {
+    return NextResponse.json({ error: "Заказ не найден" }, { status: 404 });
+  }
+
+  const result = await hideOrderForOwner(orderId, userId);
   if (!result.ok) {
     return NextResponse.json({ error: result.error }, { status: result.status });
   }
-
-  if (order?.status === "new") {
-    await removeSiteBotOrderSnapshot(orderId);
-  }
-  return NextResponse.json({ ok: true });
+  return NextResponse.json({ ok: true, hidden: true });
 }

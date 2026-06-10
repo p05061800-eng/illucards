@@ -1,6 +1,4 @@
 import { NextResponse } from "next/server";
-import { purgeAllOrders } from "@/app/lib/ordersStore";
-import { botPurgeOrders } from "@/app/lib/telegramBotRenderApi";
 
 function bearerToken(request: Request): string | null {
   const h = request.headers.get("authorization");
@@ -8,7 +6,7 @@ function bearerToken(request: Request): string | null {
   return h.slice(7).trim() || null;
 }
 
-/** POST — удалить все заказы на сайте и в боте (только с секретом). */
+/** POST — очистка заказов отключена (журнал хранится всегда). */
 export async function POST(request: Request) {
   const secret = process.env.ILLUCARDS_ORDER_UPDATE_SECRET?.trim();
   if (!secret) {
@@ -22,13 +20,8 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const site = await purgeAllOrders();
-  const bot = await botPurgeOrders();
-
-  return NextResponse.json({
-    ok: true,
-    site_deleted: site.siteDeleted,
-    bot_deleted: bot.ok ? bot.deleted : 0,
-    bot_error: bot.ok ? undefined : bot.error,
-  });
+  return NextResponse.json(
+    { error: "Очистка заказов отключена — журнал заказов хранится всегда." },
+    { status: 403 },
+  );
 }

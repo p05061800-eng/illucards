@@ -4,11 +4,9 @@ import { revalidatePath } from "next/cache";
 import {
   getOrder,
   listRecentOrders,
-  purgeAllOrders,
   updateOrderStatus,
   type AdminOrderRow,
 } from "@/app/lib/ordersStore";
-import { botPurgeOrders } from "@/app/lib/telegramBotRenderApi";
 import { notifyBotAwaitOrderDetails } from "@/app/lib/telegramCartBotSync";
 import { sendOrderDetailsRequestToCustomer } from "@/app/lib/telegramOrderCustomerNotify";
 
@@ -19,20 +17,9 @@ export async function loadAdminOrders(): Promise<AdminOrderRow[]> {
 export async function purgeAllOrdersFromAdmin(): Promise<
   { ok: true; siteDeleted: number; botDeleted: number } | { ok: false; error: string }
 > {
-  const site = await purgeAllOrders();
-  const bot = await botPurgeOrders();
-  if (!bot.ok) {
-    return {
-      ok: false,
-      error: `Сайт очищен (${site.siteDeleted}), бот: ${bot.error}`,
-    };
-  }
-  revalidatePath("/admin");
-  revalidatePath("/account/orders");
   return {
-    ok: true,
-    siteDeleted: site.siteDeleted,
-    botDeleted: bot.deleted,
+    ok: false,
+    error: "Очистка заказов отключена — журнал заказов хранится всегда.",
   };
 }
 

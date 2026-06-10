@@ -8,7 +8,6 @@ import { orderStatusLabelRu } from "@/app/lib/orderStatus";
 import {
   confirmOrderFromAdmin,
   loadAdminOrders,
-  purgeAllOrdersFromAdmin,
 } from "./orderAdminActions";
 
 function formatAdminOrderMeta(row: AdminOrderRow): string {
@@ -36,28 +35,6 @@ export function AdminOrdersPanel({ initialOrders }: Props) {
     startTransition(async () => {
       const rows = await loadAdminOrders();
       setOrders(rows);
-    });
-  }, []);
-
-  const onPurgeAll = useCallback(() => {
-    if (
-      !window.confirm(
-        "Удалить ВСЕ заказы на сайте и в Telegram-боте? Это необратимо.",
-      )
-    ) {
-      return;
-    }
-    setMessage(null);
-    startTransition(async () => {
-      const res = await purgeAllOrdersFromAdmin();
-      if (!res.ok) {
-        setMessage(res.error);
-        return;
-      }
-      setOrders([]);
-      setMessage(
-        `Удалено: сайт — ${res.siteDeleted}, бот — ${res.botDeleted}. Можно оформлять заказы заново.`,
-      );
     });
   }, []);
 
@@ -106,14 +83,6 @@ export function AdminOrdersPanel({ initialOrders }: Props) {
             className="rounded-full border border-white/15 bg-white/5 px-4 py-2 text-sm text-zinc-200 hover:bg-white/10 disabled:opacity-50"
           >
             Обновить
-          </button>
-          <button
-            type="button"
-            onClick={onPurgeAll}
-            disabled={pending}
-            className="rounded-full border border-red-500/40 bg-red-950/40 px-4 py-2 text-sm text-red-200 hover:bg-red-950/70 disabled:opacity-50"
-          >
-            Удалить все заказы
           </button>
         </div>
       </div>

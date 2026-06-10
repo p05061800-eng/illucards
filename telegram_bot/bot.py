@@ -746,9 +746,11 @@ ORDER_STATUS_RU: dict[str, str] = {
     "canceled": "❌ Отменён",
 }
 
-# В «Мои заказы» — только после подтверждения менеджером и дальше по цепочке.
+# В «Мои заказы» — все этапы, кроме черновиков без статуса.
 MY_ORDERS_VISIBLE_STATUSES = frozenset(
     {
+        "new",
+        "proof_submitted",
         "confirmed",
         "accepted",
         "paid",
@@ -1171,9 +1173,11 @@ async def _health_http(_request: web.Request) -> web.Response:
 async def _purge_orders_http(request: web.Request) -> web.Response:
     if not _sync_secret_ok(request):
         return web.json_response({"error": "Unauthorized"}, status=401)
-    deleted = _purge_all_bot_orders()
-    logger.info("purge-orders: deleted %s bot orders", deleted)
-    return web.json_response({"ok": True, "deleted": deleted})
+    logger.warning("purge-orders rejected — order journal is never deleted")
+    return web.json_response(
+        {"error": "Очистка заказов отключена — журнал заказов хранится всегда."},
+        status=403,
+    )
 
 
 async def _push_site_order_notifications(
@@ -2108,9 +2112,9 @@ async def _cart_snapshot_for_user(
 
 
 async def post_site_order_bot_delete(order_id: str, telegram_user_id: int) -> bool:
-    """POST /api/order/bot-delete — удалить заказ на сайте (статус new), тот же Bearer что у update."""
+    """Legacy: заказы не удаляются — только отмена статуса new → cancelled."""
     base = os.getenv("ILLUCARDS_SITE_ORIGIN", DEFAULT_SITE_ORIGIN).rstrip("/")
-    url = f"{base}/api/order/bot-delete"
+    url = f"{base}/api/order/update"
     secret = os.getenv("ILLUCARDS_ORDER_UPDATE_SECRET", "").strip()
     headers: dict[str, str] = {
         "Accept": "application/json",
@@ -2124,15 +2128,19 @@ async def post_site_order_bot_delete(order_id: str, telegram_user_id: int) -> bo
             async with session.post(
                 url,
                 headers=headers,
-                json={"order_id": order_id, "telegram_user_id": int(telegram_user_id)},
+                json={
+                    "order_id": order_id,
+                    "status": "cancelled",
+                    "user_id": int(telegram_user_id),
+                },
             ) as resp:
                 if resp.status != 200:
                     text = (await resp.text())[:300]
-                    logger.warning("POST order/bot-delete HTTP %s: %s", resp.status, text)
+                    logger.warning("POST order/update cancel HTTP %s: %s", resp.status, text)
                     return False
                 return True
     except (aiohttp.ClientError, asyncio.TimeoutError, OSError) as e:
-        logger.warning("POST order/bot-delete: %s", e)
+        logger.warning("POST order/update cancel: %s", e)
         return False
 
 

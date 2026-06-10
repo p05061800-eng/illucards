@@ -163,7 +163,7 @@ export default function AccountOrderDetailClient({ orderId }: { orderId: string 
     const ok =
       typeof window !== "undefined"
         ? window.confirm(
-            "Удалить заказ из личного кабинета? Это не отменяет заказ, если он уже в сборке.",
+            "Скрыть заказ из списка? Данные заказа сохраняются в системе.",
           )
         : true;
     if (!ok) return;
@@ -183,7 +183,7 @@ export default function AccountOrderDetailClient({ orderId }: { orderId: string 
         "error" in data &&
         typeof (data as { error: unknown }).error === "string"
           ? (data as { error: string }).error
-          : "Не удалось удалить заказ";
+          : "Не удалось скрыть заказ";
       if (!res.ok) {
         setDeleteErr(msg);
         setDeleteBusy(false);
@@ -505,7 +505,7 @@ export default function AccountOrderDetailClient({ orderId }: { orderId: string 
             className="flex min-h-[3.25rem] w-full items-center justify-center gap-2 rounded-xl border-2 border-red-300/90 bg-red-50 px-4 text-base font-semibold text-red-900 shadow-sm transition hover:bg-red-100 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-50 sm:min-h-14"
           >
             <Trash2 className="h-5 w-5 shrink-0" strokeWidth={2} aria-hidden />
-            {deleteBusy ? "Удаление…" : "Удалить заказ"}
+            {deleteBusy ? "Скрываем…" : "Скрыть из списка"}
           </button>
           <button
             type="button"

@@ -875,47 +875,13 @@ export async function setOrderTelegramAdminMessageId(
 }
 
 /**
- * Полное удаление заказа (только статус `new` — до подтверждения в Telegram).
+ * «Удаление» из ЛК — только скрытие из списка. Запись заказа в хранилище не трогаем.
  */
 export async function deleteOrderForOwner(
   orderId: string,
   userId: number,
 ): Promise<{ ok: true } | { ok: false; error: string; status: number }> {
-  const id = sanitizeOrderIdForPath(orderId);
-  if (!id) {
-    return { ok: false, error: "Некорректный order_id", status: 400 };
-  }
-
-  const order = await getOrder(id);
-  if (!order) {
-    return { ok: false, error: "Заказ не найден", status: 404 };
-  }
-
-  const owner = order.user_id;
-  if (owner == null || Math.floor(owner) !== userId) {
-    return { ok: false, error: "Нет доступа к этому заказу", status: 403 };
-  }
-
-  if (order.status !== "new") {
-    return {
-      ok: false,
-      error:
-        "Удалить можно только заказ в статусе «Новый» (ещё не подтверждён в Telegram). Отмените заказ или дождитесь обработки.",
-      status: 409,
-    };
-  }
-
-  delete ORDERS[id];
-  await redisCommand(["DEL", REDIS_ORDER_KEY(id)]);
-  await redisCommand(["ZREM", REDIS_USER_ORDERS_KEY(userId), id]);
-  const filePath = path.join(ORDERS_DIR, `${id}.json`);
-  try {
-    await fs.unlink(filePath);
-  } catch {
-    /* нет файла */
-  }
-
-  return { ok: true };
+  return hideOrderForOwner(orderId, userId);
 }
 
 export async function hideOrderForOwner(
@@ -943,51 +909,10 @@ export async function hideOrderForOwner(
   return { ok: true };
 }
 
-async function redisKeys(pattern: string): Promise<string[]> {
-  const j = await redisCommand(["KEYS", pattern]);
-  if (!j || j.error || !Array.isArray(j.result)) return [];
-  return j.result.filter((x): x is string => typeof x === "string");
-}
-
-/** Полная очистка всех заказов (Redis, файлы, память). Для сброса перед новым тестом. */
+/** Полная очистка всех заказов отключена — журнал заказов хранится всегда. */
 export async function purgeAllOrders(): Promise<{ siteDeleted: number }> {
-  let siteDeleted = 0;
-  for (const key of Object.keys(ORDERS)) {
-    delete ORDERS[key];
-  }
-
-  const patterns = [
-    "illucards:order:*",
-    "illucards:user-orders:*",
-    "illucards:user-hidden-orders:*",
-  ] as const;
-  for (const pattern of patterns) {
-    const keys = await redisKeys(pattern);
-    for (const key of keys) {
-      await redisCommand(["DEL", key]);
-      if (pattern === "illucards:order:*") siteDeleted += 1;
-    }
-  }
-
-  try {
-    const files = await fs.readdir(ORDERS_DIR);
-    for (const f of files) {
-      if (!f.toLowerCase().endsWith(".json")) continue;
-      await fs.unlink(path.join(ORDERS_DIR, f));
-      siteDeleted += 1;
-    }
-  } catch {
-    /* нет каталога */
-  }
-
-  try {
-    await fs.mkdir(path.dirname(BOT_ORDERS_PATH), { recursive: true });
-    await fs.writeFile(BOT_ORDERS_PATH, "{}\n", "utf-8");
-  } catch {
-    /* ignore */
-  }
-
-  return { siteDeleted };
+  console.warn("[orders] purgeAllOrders disabled — orders are never deleted");
+  return { siteDeleted: 0 };
 }
 
 export type OrderLinePreview = {

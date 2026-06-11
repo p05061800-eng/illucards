@@ -40,7 +40,7 @@ from db import init_db, recompute_user_order_stats, sync_all_users_order_stats, 
 logging.basicConfig(format="%(asctime)s %(levelname)s %(message)s", level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-BOT_BUILD_ID = "2026-06-11-bonus-accrual-v1"
+BOT_BUILD_ID = "2026-06-11-admin-order-notify-v1"
 
 REPLY_MENU_TEXTS = frozenset(
     {"💬 Связь", "📦 Мои заказы", "📜 Мои заказы", "🚚 Доставка", "⭐ Бонусы"}
@@ -3857,41 +3857,87 @@ PAYMENT_CANCELLED_TEXT = (
 )
 
 
-def _order_admin_actions_keyboard(order_id: str) -> InlineKeyboardMarkup:
+def _admin_order_steps_line(status: str) -> str:
+    st = str(status or "new").strip().lower()
+    if st in ("canceled",):
+        st = "cancelled"
+    if st == "cancelled":
+        return "📋 Этапы: ❌ заказ отменён"
+    confirmed = st in ("confirmed", "shipped", "sent", "delivered")
+    shipped = st in ("shipped", "sent", "delivered")
+    done = st == "delivered"
+    p = "✅" if confirmed else "○"
+    s = "✅" if shipped else "○"
+    d = "✅" if done else "○"
+    if not confirmed:
+        hint = " · Сейчас: принять заказ"
+    elif not shipped:
+        hint = " · Сейчас: отметить отправку"
+    elif not done:
+        hint = " · Сейчас: завершить доставку"
+    else:
+        hint = " · Все этапы пройдены"
+    return f"📋 Этапы: {p} Принят → {s} Отправлен → {d} Завершён{hint}"
+
+
+def _order_admin_actions_keyboard(
+    order_id: str, status: str = ""
+) -> InlineKeyboardMarkup:
     oid = str(order_id or "").strip()
-    return InlineKeyboardMarkup(
+    st = str(status or "new").strip().lower()
+    if st in ("canceled",):
+        st = "cancelled"
+    confirmed = st in ("confirmed", "shipped", "sent", "delivered")
+    shipped = st in ("shipped", "sent", "delivered")
+    done = st == "delivered"
+    cancelled = st == "cancelled"
+
+    accept_label = "✅ Принят ✓" if confirmed else "✅ Принять"
+    ship_label = "🚚 Отправлен ✓" if shipped else "🚚 Отправить"
+    done_label = "🏁 Завершён ✓" if done else "🏁 Завершить"
+    cancel_label = "❌ Отменён ✓" if cancelled else "❌ Отменить"
+
+    rows: list[list[InlineKeyboardButton]] = [
         [
+            InlineKeyboardButton(
+                "💬 Ответить", callback_data=f"orderadmrep:{oid}"
+            ),
+        ],
+    ]
+    if not cancelled:
+        rows[0].append(
+            InlineKeyboardButton(accept_label, callback_data=f"orderadmok:{oid}")
+        )
+        rows.append(
             [
                 InlineKeyboardButton(
-                    "💬 Ответить", callback_data=f"orderadmrep:{oid}"
+                    ship_label, callback_data=f"orderadmsent:{oid}"
                 ),
                 InlineKeyboardButton(
-                    "✅ Принять", callback_data=f"orderadmok:{oid}"
+                    done_label, callback_data=f"orderadmdone:{oid}"
                 ),
-            ],
+            ]
+        )
+        rows.append(
             [
                 InlineKeyboardButton(
-                    "🚚 Отправлен", callback_data=f"orderadmsent:{oid}"
+                    cancel_label, callback_data=f"orderadmcx:{oid}"
                 ),
-                InlineKeyboardButton(
-                    "🏁 Завершён", callback_data=f"orderadmdone:{oid}"
-                ),
-            ],
-            [
-                InlineKeyboardButton(
-                    "❌ Отменить", callback_data=f"orderadmcx:{oid}"
-                ),
-            ],
-            [
-                InlineKeyboardButton("👥 Клиенты", callback_data="adm:clients:0"),
-                InlineKeyboardButton("📊 Статистика", callback_data="adm:stats"),
-            ],
+            ]
+        )
+    rows.append(
+        [
+            InlineKeyboardButton("👥 Клиенты", callback_data="adm:clients:0"),
+            InlineKeyboardButton("📊 Статистика", callback_data="adm:stats"),
         ]
     )
+    return InlineKeyboardMarkup(rows)
 
 
-def _order_admin_confirm_keyboard(order_id: str) -> InlineKeyboardMarkup:
-    return _order_admin_actions_keyboard(order_id)
+def _order_admin_confirm_keyboard(
+    order_id: str, status: str = ""
+) -> InlineKeyboardMarkup:
+    return _order_admin_actions_keyboard(order_id, status)
 
 
 async def _notify_customer_order_message(
@@ -3909,15 +3955,176 @@ async def _notify_customer_order_message(
         logger.warning("customer notify uid=%s: %s", customer_id, e)
 
 
-async def _refresh_admin_message_keyboard(
-    q: Any, order_id: str
-) -> None:
-    try:
-        await q.edit_message_reply_markup(
-            reply_markup=_order_admin_actions_keyboard(order_id)
+def _admin_customer_status_text(order_id: str, owner_id: int, status: str) -> str:
+    label = _order_display_label(order_id, owner_id)
+    st = str(status or "").strip().lower()
+    if st in ("canceled",):
+        st = "cancelled"
+    if st == "confirmed":
+        return ORDER_CONFIRMED_CUSTOMER_TEXT
+    if st in ("shipped", "sent"):
+        return f"🚚 {label} отправлен!"
+    if st == "delivered":
+        return f"✅ {label} доставлен. Спасибо за покупку!"
+    if st == "cancelled":
+        return f"❌ {label} отменён менеджером."
+    return f"📦 {label}: обновление по заказу."
+
+
+async def _admin_persist_order_status(
+    order_id: str,
+    order: dict[str, Any],
+    owner_id: int,
+    new_status: str,
+) -> dict[str, Any]:
+    """Записать статус в журнал бота и синхронизировать с сайтом (best effort)."""
+    oid = str(order_id or "").strip()
+    st = str(new_status or "").strip().lower()
+    if st in ("canceled",):
+        st = "cancelled"
+    _load_bot_orders()
+    prev_rec = BOT_ORDERS.get(oid)
+    rec = _record_site_order_in_bot(oid, order, int(owner_id))
+    rec["status"] = st
+    if isinstance(prev_rec, dict) and prev_rec.get("delivery_details"):
+        rec["delivery_details"] = prev_rec.get("delivery_details")
+    BOT_ORDERS[oid] = rec
+    _persist_bot_orders()
+
+    sync_order = _order_for_site_sync(oid, rec, int(owner_id))
+    site_ok = await post_site_order_status(oid, st, sync_order, int(owner_id))
+    if not site_ok:
+        site_ok = await post_site_order_upsert_snapshot(
+            oid, sync_order, int(owner_id), st
         )
-    except Exception:
-        pass
+        if not site_ok:
+            logger.warning(
+                "admin status sync failed order=%s status=%s", oid, st
+            )
+
+    updated = dict(order)
+    updated["status"] = st
+    return updated
+
+
+async def _admin_notify_customer_status(
+    context: ContextTypes.DEFAULT_TYPE,
+    owner_id: int,
+    order_id: str,
+    status: str,
+) -> bool:
+    text = _admin_customer_status_text(order_id, int(owner_id), status)
+    try:
+        await context.bot.send_message(
+            chat_id=int(owner_id),
+            text=text,
+            reply_markup=_main_keyboard(),
+        )
+        return True
+    except Exception as e:
+        logger.warning(
+            "admin customer status notify order=%s uid=%s status=%s: %s",
+            order_id,
+            owner_id,
+            status,
+            e,
+        )
+        return False
+
+
+def _extract_delivery_block_from_caption(caption: str) -> str:
+    marker = "\n\n📋 Данные от клиента:\n"
+    idx = caption.find(marker)
+    if idx < 0:
+        return ""
+    return caption[idx + len(marker) :].strip()
+
+
+def _admin_message_header_from_caption(caption: str, order_id: str) -> str:
+    if "Подтверждение заказа" in caption:
+        return "✅ Подтверждение заказа (бот)"
+    if "Оплата" in caption:
+        return caption.split("\n", 1)[0].strip() or f"💳 Оплата · {_order_short_ref(order_id)}"
+    return "📦 Заказ (админ)"
+
+
+async def _refresh_admin_order_message(
+    q: Any,
+    order_id: str,
+    *,
+    order: dict[str, Any] | None = None,
+) -> None:
+    """Обновить текст/подпись и кнопки у админа — этапы заказа остаются видимыми."""
+    if not q or not getattr(q, "message", None):
+        return
+    oid = str(order_id or "").strip()
+    if not oid:
+        return
+    msg = q.message
+    existing = str(getattr(msg, "caption", None) or getattr(msg, "text", None) or "")
+
+    if order is None:
+        order = await _load_order_for_admin_action(oid)
+    if not order:
+        try:
+            await q.edit_message_reply_markup(
+                reply_markup=_order_admin_actions_keyboard(oid, "new")
+            )
+        except Exception:
+            pass
+        return
+
+    owner_id = _order_owner_user_id(oid, order)
+    uid = int(owner_id or 0)
+    uname = _normalize_order_username(order.get("username"))
+    _load_bot_orders()
+    bot_rec = BOT_ORDERS.get(oid)
+    record: dict[str, Any] = dict(bot_rec) if isinstance(bot_rec, dict) else {}
+    record.setdefault("items", _order_items_list(order))
+    site_st = str(order.get("status") or "").strip().lower()
+    bot_st = str(record.get("status") or "").strip().lower()
+    if _bot_status_rank(site_st) >= _bot_status_rank(bot_st):
+        record["status"] = site_st or bot_st or "new"
+    else:
+        record["status"] = bot_st or site_st or "new"
+    st = str(record.get("status") or "new").strip().lower()
+
+    header = _admin_message_header_from_caption(existing, oid)
+    body = _format_order_admin(oid, order, uid, uname, record, header=header)
+    delivery_text = str(record.get("delivery_details") or order.get("delivery_details") or "").strip()
+    if not delivery_text:
+        delivery_text = _extract_delivery_block_from_caption(existing)
+    if delivery_text:
+        body += f"\n\n📋 Данные от клиента:\n{delivery_text}"
+    body += f"\n\n{_admin_order_steps_line(st)}"
+    keyboard = _order_admin_actions_keyboard(oid, st)
+
+    try:
+        if getattr(msg, "photo", None):
+            await q.edit_message_caption(
+                caption=body[:1024],
+                reply_markup=keyboard,
+            )
+            return
+        if getattr(msg, "text", None):
+            await q.edit_message_text(
+                text=body[:4096],
+                reply_markup=keyboard,
+            )
+            return
+        await q.edit_message_reply_markup(reply_markup=keyboard)
+    except Exception as e:
+        logger.warning("admin order message refresh order=%s: %s", oid, e)
+        try:
+            await q.edit_message_reply_markup(reply_markup=keyboard)
+        except Exception:
+            pass
+
+
+async def _refresh_admin_message_keyboard(
+    q: Any, order_id: str, *, order: dict[str, Any] | None = None
+) -> None:
+    await _refresh_admin_order_message(q, order_id, order=order)
 
 
 ORDER_CONFIRMED_CUSTOMER_TEXT = (
@@ -3964,15 +4171,20 @@ def _format_admin_proof_caption(
         record,
         header=f"💳 Оплата · {_order_display_label(order_id, telegram_user_id, username)}",
     )
+    st = str(record.get("status") or order.get("status") or "new").strip().lower()
+    steps = f"\n\n{_admin_order_steps_line(st)}"
     delivery_block = f"\n\n📋 Данные от клиента:\n{delivery_text}"
-    full = base + delivery_block
+    full = base + delivery_block + steps
     if len(full) <= 1024:
         return full
-    max_delivery = 1024 - len(base) - len("\n\n📋 Данные от клиента:\n")
+    max_delivery = (
+        1024 - len(base) - len(steps) - len("\n\n📋 Данные от клиента:\n")
+    )
     if max_delivery > 40:
         trimmed = delivery_text[: max_delivery - 1] + "…"
-        return base + f"\n\n📋 Данные от клиента:\n{trimmed}"
-    return base[:1020] + "…"
+        return base + f"\n\n📋 Данные от клиента:\n{trimmed}" + steps
+    trimmed_base = base[: 1024 - len(steps) - 1] + "…"
+    return trimmed_base + steps
 
 
 def _order_eligible_for_payment_proof(rec: dict[str, Any]) -> bool:
@@ -4688,7 +4900,8 @@ async def _notify_admin_payment_proof(
         rec,
         delivery_text,
     )
-    markup = _order_admin_confirm_keyboard(order_id)
+    st = str(rec.get("status") or order.get("status") or "new").strip().lower()
+    markup = _order_admin_confirm_keyboard(order_id, st)
     if not str(file_id or "").strip():
         try:
             admin_msg = await context.bot.send_message(
@@ -5562,71 +5775,30 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
                 await q.answer("Не найден владелец заказа", show_alert=True)
                 return
 
-            pm = str(order.get("payment_method") or "").strip().lower()
-            if pm not in ("card", "crypto", "phone"):
-                _load_bot_orders()
-                bot_rec = BOT_ORDERS.get(order_id)
-                if isinstance(bot_rec, dict):
-                    pm = str(bot_rec.get("payment_method") or "").strip().lower()
-            if pm not in ("card", "crypto", "phone"):
-                await q.answer("Покупатель ещё не выбрал способ оплаты", show_alert=True)
-                return
-
-            _load_bot_orders()
-            bot_rec = BOT_ORDERS.get(order_id)
-            if isinstance(bot_rec, dict):
-                bot_st = str(bot_rec.get("status") or "").strip().lower()
-                if bot_st == "confirmed":
-                    await q.answer("Уже подтверждён")
-                    await _refresh_admin_message_keyboard(q, order_id)
-                    return
-
-            site_st = str(order.get("status") or "").strip().lower()
-            if site_st == "confirmed":
-                await q.answer("Уже подтверждён")
-                await _refresh_admin_message_keyboard(q, order_id)
-                return
-
-            _load_bot_orders()
-            prev_rec = BOT_ORDERS.get(order_id)
-            rec = _record_site_order_in_bot(order_id, order, owner_id)
-            rec["status"] = "confirmed"
-            if isinstance(prev_rec, dict) and prev_rec.get("delivery_details"):
-                rec["delivery_details"] = prev_rec.get("delivery_details")
-            BOT_ORDERS[order_id] = rec
-            _persist_bot_orders()
-
-            sync_order = _order_for_site_sync(order_id, rec, int(owner_id))
-            if not await post_site_order_status(
-                order_id, "confirmed", sync_order, int(owner_id)
-            ):
-                if not await post_site_order_upsert_snapshot(
-                    order_id, sync_order, int(owner_id), "confirmed"
-                ):
-                    await q.answer("Не удалось обновить на сайте", show_alert=True)
-                    return
-                logger.warning(
-                    "admin confirm: order/update failed, upserted via from-bot order=%s",
-                    order_id,
-                )
-
-            await _sync_user_orders_from_site(int(owner_id))
-
-            try:
-                await context.bot.send_message(
-                    chat_id=int(owner_id),
-                    text=ORDER_CONFIRMED_CUSTOMER_TEXT,
-                    reply_markup=_main_keyboard(),
-                )
-            except Exception as e:
-                logger.warning("customer confirm notify: %s", e)
-
-            await q.answer("Заказ подтверждён")
-            await _refresh_admin_message_keyboard(q, order_id)
-            await q.message.reply_text(
-                f"{_order_display_label(order_id, owner_id)} подтверждён. "
-                "Покупателю отправлено уведомление."
+            prev_st = str(order.get("status") or "").strip().lower()
+            order = await _admin_persist_order_status(
+                order_id, order, int(owner_id), "confirmed"
             )
+            await _sync_user_orders_from_site(int(owner_id))
+            notified = await _admin_notify_customer_status(
+                context, int(owner_id), order_id, "confirmed"
+            )
+
+            await _refresh_admin_message_keyboard(q, order_id, order=order)
+            if prev_st == "confirmed":
+                await q.answer("Повторно уведомили покупателя")
+            else:
+                await q.answer("Заказ подтверждён")
+            note = (
+                f"{_order_display_label(order_id, owner_id)} подтверждён. "
+                if prev_st != "confirmed"
+                else f"{_order_display_label(order_id, owner_id)} уже был подтверждён. "
+            )
+            if notified:
+                note += "Покупателю отправлено уведомление."
+            else:
+                note += "Не удалось доставить уведомление покупателю (проверьте, что он писал боту)."
+            await q.message.reply_text(note)
             return
         except Exception as e:
             logger.exception("order admin confirm failed: %s", e)
@@ -5695,20 +5867,18 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
             if owner_id is None:
                 await q.answer("Не найден клиент", show_alert=True)
                 return
-            if not await post_site_order_status(order_id, "shipped", order, owner_id):
-                await q.answer("Не удалось обновить на сайте", show_alert=True)
-                return
-            rec = _record_site_order_in_bot(order_id, order, owner_id)
-            rec["status"] = "shipped"
-            BOT_ORDERS[order_id] = rec
-            _persist_bot_orders()
-            await _notify_customer_order_message(
-                context,
-                int(owner_id),
-                f"🚚 {_order_display_label(order_id)} отправлен!",
+            prev_st = str(order.get("status") or "").strip().lower()
+            order = await _admin_persist_order_status(
+                order_id, order, int(owner_id), "shipped"
             )
-            await q.answer("Статус: отправлен")
-            await _refresh_admin_message_keyboard(q, order_id)
+            await _admin_notify_customer_status(
+                context, int(owner_id), order_id, "shipped"
+            )
+            await _refresh_admin_message_keyboard(q, order_id, order=order)
+            if prev_st in ("shipped", "sent", "delivered"):
+                await q.answer("Повторно уведомили: отправлен")
+            else:
+                await q.answer("Статус: отправлен")
             return
         except Exception as e:
             logger.exception("orderadmsent failed: %s", e)
@@ -5729,21 +5899,19 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
             if owner_id is None:
                 await q.answer("Не найден клиент", show_alert=True)
                 return
-            if not await post_site_order_status(order_id, "delivered", order, owner_id):
-                await q.answer("Не удалось обновить на сайте", show_alert=True)
-                return
-            rec = _record_site_order_in_bot(order_id, order, owner_id)
-            rec["status"] = "delivered"
-            BOT_ORDERS[order_id] = rec
-            _persist_bot_orders()
-            _AWAIT_ORDER_DETAILS.pop(int(owner_id), None)
-            await _notify_customer_order_message(
-                context,
-                int(owner_id),
-                f"✅ {_order_display_label(order_id)} доставлен. Спасибо за покупку!",
+            prev_st = str(order.get("status") or "").strip().lower()
+            order = await _admin_persist_order_status(
+                order_id, order, int(owner_id), "delivered"
             )
-            await q.answer("Статус: завершён")
-            await _refresh_admin_message_keyboard(q, order_id)
+            _AWAIT_ORDER_DETAILS.pop(int(owner_id), None)
+            await _admin_notify_customer_status(
+                context, int(owner_id), order_id, "delivered"
+            )
+            await _refresh_admin_message_keyboard(q, order_id, order=order)
+            if prev_st == "delivered":
+                await q.answer("Повторно уведомили: завершён")
+            else:
+                await q.answer("Статус: завершён")
             return
         except Exception as e:
             logger.exception("orderadmdone failed: %s", e)
@@ -5764,22 +5932,20 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
             if owner_id is None:
                 await q.answer("Не найден клиент", show_alert=True)
                 return
-            if not await post_site_order_status(order_id, "cancelled", order, owner_id):
-                await q.answer("Не удалось обновить на сайте", show_alert=True)
-                return
-            rec = _record_site_order_in_bot(order_id, order, owner_id)
-            rec["status"] = "cancelled"
-            BOT_ORDERS[order_id] = rec
-            _persist_bot_orders()
+            prev_st = str(order.get("status") or "").strip().lower()
+            order = await _admin_persist_order_status(
+                order_id, order, int(owner_id), "cancelled"
+            )
             _AWAIT_PAYMENT_PROOF.pop(int(owner_id), None)
             _AWAIT_ORDER_DETAILS.pop(int(owner_id), None)
-            await _notify_customer_order_message(
-                context,
-                int(owner_id),
-                f"❌ {_order_display_label(order_id)} отменён менеджером.",
+            await _admin_notify_customer_status(
+                context, int(owner_id), order_id, "cancelled"
             )
-            await q.answer("Заказ отменён")
-            await _refresh_admin_message_keyboard(q, order_id)
+            await _refresh_admin_message_keyboard(q, order_id, order=order)
+            if prev_st in ("cancelled", "canceled"):
+                await q.answer("Повторно уведомили: отменён")
+            else:
+                await q.answer("Заказ отменён")
             return
         except Exception as e:
             logger.exception("orderadmcx failed: %s", e)
@@ -5918,14 +6084,19 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
             if admin_chat_id:
                 admin_msg = None
                 try:
+                    admin_body = _format_order_admin(
+                        order_id,
+                        order,
+                        int(user.id),
+                        (user.username or "").strip() or None,
+                        rec,
+                    )
+                    admin_body += f"\n\n{_admin_order_steps_line('confirmed')}"
                     admin_msg = await context.bot.send_message(
                         chat_id=admin_chat_id,
-                        text=_format_order_admin(
-                            order_id,
-                            order,
-                            int(user.id),
-                            (user.username or "").strip() or None,
-                            rec,
+                        text=admin_body,
+                        reply_markup=_order_admin_confirm_keyboard(
+                            order_id, "confirmed"
                         ),
                     )
                 except Exception as e:

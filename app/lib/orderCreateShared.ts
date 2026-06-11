@@ -5,10 +5,7 @@ import { deliveryCharge, normalizeDeliveryCountry, type DeliveryCountry } from "
 import type { OrderLineIn, OrderRecord } from "@/app/lib/orderTypes";
 import { assignBuyerSeqForNewOrder, saveOrderRecord } from "@/app/lib/ordersStore";
 import { sanitizeOrderLineImageUrl } from "@/app/lib/sanitizeOrderLineImageUrl";
-import {
-  getTelegramUserState,
-  trySpendTelegramUserBonusPoints,
-} from "@/app/lib/telegramUserStateStore";
+import { getTelegramUserState } from "@/app/lib/telegramUserStateStore";
 
 export { ORDERS_DIR } from "@/app/lib/orderPaths";
 export type { OrderLineIn } from "@/app/lib/orderTypes";
@@ -166,19 +163,6 @@ export async function persistOrder(
       ? await assignBuyerSeqForNewOrder(userId)
       : undefined;
 
-  if (spendApplied > 0) {
-    const uid = Math.floor(userId!);
-    const spent = await trySpendTelegramUserBonusPoints(uid, spendApplied);
-    if (!spent.ok) {
-      return {
-        ok: false,
-        error: "Недостаточно бонусов на счёте",
-        status: 409,
-      };
-    }
-    bonusPointsBalance = spent.state.bonus_points;
-  }
-
   const record: OrderRecord = {
     ...(userId != null && userId > 0 ? { user_id: userId } : {}),
     username: username ?? null,
@@ -186,9 +170,7 @@ export async function persistOrder(
     total: orderBynCharged,
     delivery: deliveryCountry,
     status: "new",
-    ...(spendApplied > 0
-      ? { bonus_points_spent: spendApplied, bonus_points_deducted: true as const }
-      : {}),
+    ...(spendApplied > 0 ? { bonus_points_spent: spendApplied } : {}),
     ...(buyer_seq != null && buyer_seq > 0 ? { buyer_seq } : {}),
   };
 

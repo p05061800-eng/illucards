@@ -15,6 +15,11 @@ export function orderStatusEligibleForBonusAccrual(status: OrderStatus): boolean
   );
 }
 
+/** Списание бонусов по заказу — только после подтверждения админом. */
+export function orderStatusEligibleForBonusSpend(status: OrderStatus): boolean {
+  return status === "confirmed";
+}
+
 /** Баллы за одну купленную единицу карточки (шт. в заказе). */
 export const BONUS_POINTS_PER_CARD_UNIT = 100;
 

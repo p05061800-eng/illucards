@@ -12,6 +12,7 @@ import type { OrderLineIn, OrderRecord, OrderStatus } from "@/app/lib/orderTypes
 import {
   bonusPointsToEarnForOrderItems,
   orderStatusEligibleForBonusAccrual,
+  orderStatusEligibleForBonusSpend,
 } from "@/app/lib/bonusProgram";
 import { sanitizeOrderLineImageUrl } from "@/app/lib/sanitizeOrderLineImageUrl";
 import { notifyTelegramWebhookUserState } from "@/app/lib/telegramStateBotSync";
@@ -800,7 +801,8 @@ export async function updateOrderStatus(
     });
   }
   const deductBonusNow =
-    nowBonusEligible &&
+    orderStatusEligibleForBonusSpend(status) &&
+    existing.status !== "confirmed" &&
     spend > 0 &&
     !existing.bonus_points_deducted &&
     existing.user_id != null &&

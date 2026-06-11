@@ -40,7 +40,7 @@ from db import init_db, recompute_user_order_stats, sync_all_users_order_stats, 
 logging.basicConfig(format="%(asctime)s %(levelname)s %(message)s", level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-BOT_BUILD_ID = "2026-06-11-persist-orders-bonuses-v1"
+BOT_BUILD_ID = "2026-06-11-my-orders-site-fallback-v1"
 
 REPLY_MENU_TEXTS = frozenset(
     {"💬 Связь", "📦 Мои заказы", "📜 Мои заказы", "🚚 Доставка", "⭐ Бонусы"}
@@ -758,6 +758,7 @@ ORDER_STATUS_RU: dict[str, str] = {
 MY_ORDERS_VISIBLE_STATUSES = frozenset(
     {
         "new",
+        "proof_received",
         "proof_submitted",
         "confirmed",
         "accepted",
@@ -779,14 +780,18 @@ def _order_status_display(status: str) -> str:
 
 
 def _merge_order_status_for_display(rec: dict[str, Any], site: dict[str, Any] | None) -> str:
-    """Сайт пока часто отдаёт только new; приоритет у обновлённого статуса с сайта, иначе из бота."""
+    """Берём более продвинутый статус — сайт не должен затирать confirmed в боте."""
     r = str(rec.get("status") or "new").strip().lower()
     if not site:
         return r
     s = str(site.get("status") or "").strip().lower()
-    if s and s != "new":
+    if not s:
+        return r
+    if _bot_status_rank(s) > _bot_status_rank(r):
         return s
-    return r or s or "new"
+    if _bot_status_rank(r) > _bot_status_rank(s):
+        return r
+    return s if s != "new" else (r or s or "new")
 
 
 def _merge_order_for_display(
@@ -911,7 +916,7 @@ def _ingest_site_order_summary(
     oid = str(raw.get("id") or raw.get("order_id") or "").strip()
     if not oid:
         return None
-    status = str(raw.get("status") or "new").strip().lower()
+    incoming_status = str(raw.get("status") or "new").strip().lower()
     existing = BOT_ORDERS.get(oid)
     prev_items: list[dict[str, Any]] = []
     if isinstance(existing, dict):
@@ -922,34 +927,49 @@ def _ingest_site_order_summary(
         total = 0.0
     if total <= 0 and isinstance(existing, dict):
         total = _order_total_byn(existing)
-    rec: dict[str, Any] = {
-        "user_id": int(telegram_user_id),
-        "items": prev_items,
-        "total": total,
-        "delivery": raw.get("delivery")
-        or (existing.get("delivery") if isinstance(existing, dict) else "BY"),
-        "status": status,
-    }
+    site_items = _order_items_list(raw)
+    incoming = _order_record_from_site_export(raw, int(telegram_user_id))
+    incoming["total"] = total if total > 0 else incoming.get("total", 0)
+    if site_items:
+        incoming["items"] = site_items
+    elif prev_items:
+        incoming["items"] = prev_items
     if isinstance(existing, dict):
-        pm = str(existing.get("payment_method") or "").strip().lower()
-        if pm:
-            rec["payment_method"] = pm
-        if existing.get("delivery_details"):
-            rec["delivery_details"] = existing.get("delivery_details")
-        try:
-            seq = int(existing.get("buyer_seq") or 0)
-        except (TypeError, ValueError):
-            seq = 0
-        if seq > 0:
-            rec["buyer_seq"] = seq
-    try:
-        site_seq = int(raw.get("buyer_seq") or 0)
-    except (TypeError, ValueError):
-        site_seq = 0
-    if site_seq > 0:
-        rec["buyer_seq"] = site_seq
+        rec = _merge_bot_order_from_site_export(existing, incoming)
+    else:
+        rec = incoming
     BOT_ORDERS[oid] = rec
     return oid
+
+
+def _my_orders_display_rows(
+    telegram_user_id: int, site_summaries: list[dict[str, Any]]
+) -> list[tuple[str, dict[str, Any]]]:
+    """Строки для «Мои заказы»: сайт (источник истины) + локальный журнал бота."""
+    uid = int(telegram_user_id)
+    out: list[tuple[str, dict[str, Any]]] = []
+    seen: set[str] = set()
+    for raw in site_summaries:
+        if not isinstance(raw, dict):
+            continue
+        oid = str(raw.get("id") or raw.get("order_id") or "").strip()
+        if not oid or oid in seen:
+            continue
+        seen.add(oid)
+        bot_rec = BOT_ORDERS.get(oid)
+        if isinstance(bot_rec, dict):
+            incoming = _order_record_from_site_export(raw, uid)
+            rec = _merge_bot_order_from_site_export(bot_rec, incoming)
+        else:
+            rec = _order_record_from_site_export(raw, uid)
+        out.append((oid, rec))
+    for oid, rec in _orders_for_telegram_user(uid):
+        if oid in seen:
+            continue
+        if isinstance(rec, dict):
+            out.append((oid, rec))
+            seen.add(oid)
+    return out
 
 
 def _order_total_byn(order: dict[str, Any]) -> float:
@@ -2324,11 +2344,11 @@ async def fetch_site_user_orders_list(telegram_user_id: int) -> list[dict[str, A
     return out
 
 
-async def _sync_user_orders_from_site(telegram_user_id: int) -> int:
-    """Подтянуть заказы с сайта в BOT_ORDERS перед показом «Мои заказы»."""
+async def _sync_user_orders_from_site(telegram_user_id: int) -> list[dict[str, Any]]:
+    """Подтянуть заказы с сайта в BOT_ORDERS; вернуть список с сайта (даже если пустой)."""
     summaries = await fetch_site_user_orders_list(telegram_user_id)
     if not summaries:
-        return 0
+        return []
     _load_bot_orders()
     changed = False
     for raw in summaries:
@@ -2337,7 +2357,7 @@ async def _sync_user_orders_from_site(telegram_user_id: int) -> int:
     if changed:
         _persist_bot_orders()
         _sync_crm_order_stats_for_user(int(telegram_user_id))
-    return len(summaries)
+    return summaries
 
 
 async def fetch_site_user_state(telegram_user_id: int) -> dict[str, Any] | None:
@@ -3964,13 +3984,16 @@ async def show_my_orders(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
     if not user:
         await update.message.reply_text("Не удалось определить пользователя.")
         return
-    await _sync_user_orders_from_site(int(user.id))
+    uid = int(user.id)
+    site_summaries = await _sync_user_orders_from_site(uid)
+    if not site_summaries:
+        site_summaries = await fetch_site_user_orders_list(uid)
     _load_bot_orders()
-    rows = _orders_for_telegram_user(user.id)
+    rows = _my_orders_display_rows(uid, site_summaries)
     if not rows:
         await update.message.reply_text(
-            "Пока нет подтверждённых заказов.\n"
-            "После проверки оплаты менеджером заказ появится здесь автоматически.",
+            "Пока нет заказов.\n"
+            "После оформления на сайте и проверки оплаты заказ появится здесь.",
             reply_markup=_main_keyboard(),
         )
         return
@@ -4004,8 +4027,8 @@ async def show_my_orders(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
         lines.append(f"{order_label} — {total_display} — {label}")
     if len(lines) <= 2:
         await update.message.reply_text(
-            "Пока нет подтверждённых заказов.\n"
-            "После проверки оплаты менеджером заказ появится здесь автоматически.",
+            "Пока нет заказов для отображения.\n"
+            "Если вы недавно оформляли заказ — откройте «Мои заказы» ещё раз через минуту.",
             reply_markup=_main_keyboard(),
         )
         return

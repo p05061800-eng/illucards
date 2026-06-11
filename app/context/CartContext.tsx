@@ -58,6 +58,8 @@ const DELIVERY_STORAGE_KEY = "illucards-delivery-country";
 /** Последний `updatedAt` с сервера (`/api/user-state`) — для согласования после очистки корзины при подтверждении заказа в боте. */
 const USER_STATE_SYNC_AT_KEY = "illucards-user-state-updated-at";
 const CART_CLEARED_AT_KEY = "illucards-cart-cleared-at";
+/** Когда пользователь последний раз менял локальную корзину (добавление/удаление). */
+const CART_LOCAL_MODIFIED_AT_KEY = "illucards-cart-local-modified-at";
 
 function readClientSeenServerUpdatedAt(): number {
   if (typeof window === "undefined") return 0;
@@ -95,6 +97,38 @@ function writeClientSeenCartClearedAt(ts: number): void {
   } catch {
     /* ignore */
   }
+}
+
+function readLocalCartModifiedAt(): number {
+  if (typeof window === "undefined") return 0;
+  try {
+    const v = Number(localStorage.getItem(CART_LOCAL_MODIFIED_AT_KEY));
+    return Number.isFinite(v) && v > 0 ? v : 0;
+  } catch {
+    return 0;
+  }
+}
+
+function writeLocalCartModifiedAt(ts: number): void {
+  if (typeof window === "undefined" || !Number.isFinite(ts) || ts <= 0) return;
+  try {
+    localStorage.setItem(CART_LOCAL_MODIFIED_AT_KEY, String(Math.floor(ts)));
+  } catch {
+    /* ignore */
+  }
+}
+
+function touchLocalCartModifiedAt(): void {
+  writeLocalCartModifiedAt(Date.now());
+}
+
+function applyLocalCartClear(clearedAt: number): void {
+  try {
+    localStorage.setItem(STORAGE_KEY, "[]");
+  } catch {
+    /* ignore */
+  }
+  writeLocalCartModifiedAt(clearedAt);
 }
 
 function loadDeliveryCountry(): DeliveryCountry | null {
@@ -271,7 +305,6 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const { hydrated: authHydrated, primaryTelegramUserId } = useAuth();
   const { currency, setCurrency, hydrated: currencyHydrated } = useCurrency();
 
-  const openCart = useCallback(() => setCartOpen(true), []);
   const closeCart = useCallback(() => setCartOpen(false), []);
   const toggleCart = useCallback(() => setCartOpen((o) => !o), []);
 
@@ -366,38 +399,46 @@ export function CartProvider({ children }: { children: ReactNode }) {
         typeof data.cartClearedAt === "number" && Number.isFinite(data.cartClearedAt)
           ? data.cartClearedAt
           : 0;
+      setBonusBalance(bp);
+
+      const prevSeenClear = readClientSeenCartClearedAt();
+      const localModified = readLocalCartModifiedAt();
+      const serverClearedCart =
+        cartClearedAt > prevSeenClear ||
+        (serverCart.length === 0 &&
+          cartClearedAt > 0 &&
+          localModified <= cartClearedAt);
+
+      if (cartClearedAt > prevSeenClear) {
+        writeClientSeenCartClearedAt(cartClearedAt);
+      }
       if (ts > 0) {
         writeClientSeenServerUpdatedAt(ts);
       }
-      setBonusBalance(bp);
-      if (cartClearedAt > readClientSeenCartClearedAt()) {
-        writeClientSeenCartClearedAt(cartClearedAt);
-        const localCart = loadFromStorage();
-        // Не затираем новую локальную корзину после заказа (cartClearedAt с прошлого checkout).
-        if (localCart.length === 0) {
-          setCartItems([]);
-          setBonusSpendPointsState(0);
-        }
-      }
-      if (serverCart.length > 0) {
+
+      if (serverClearedCart && localModified <= Math.max(cartClearedAt, prevSeenClear)) {
+        setCartItems([]);
+        setBonusSpendPointsState(0);
+        applyLocalCartClear(Math.max(cartClearedAt, prevSeenClear) || Date.now());
+      } else if (serverCart.length > 0) {
         setCartItems((prev) => (prev.length === 0 ? serverCart : prev));
-      } else {
-        const localCart = loadFromStorage();
-        if (localCart.length > 0) {
-          setCartItems((prev) => (prev.length === 0 ? localCart : prev));
-        }
       }
     } catch {
       /* ignore */
     }
   }, [authHydrated]);
 
+  const openCart = useCallback(() => {
+    setCartOpen(true);
+    void refreshServerUserStateMeta();
+  }, [refreshServerUserStateMeta]);
+
   useEffect(() => {
     if (!hydrated || !authHydrated) return;
     void refreshServerUserStateMeta();
     const tick = window.setInterval(() => {
       void refreshServerUserStateMeta();
-    }, 28000);
+    }, 12000);
     const onVis = () => {
       if (document.visibilityState === "visible") void refreshServerUserStateMeta();
     };
@@ -413,6 +454,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
     const userId = primaryTelegramUserId ?? readTelegramPrimaryUserId();
     if (userId == null) return;
     const seen = readClientSeenServerUpdatedAt();
+    const seenClear = readClientSeenCartClearedAt();
     const cartPayload = cartItems.map((x) => ({
       id: x.id,
       title: x.title,
@@ -424,18 +466,26 @@ export function CartProvider({ children }: { children: ReactNode }) {
       ...(x.categoryOrder != null ? { categoryOrder: x.categoryOrder } : {}),
       ...(x.rarity ? { rarity: x.rarity } : {}),
     }));
-    if (cartPayload.length === 0 && deliveryCountry == null) return;
+    const shouldSyncEmptyCart = cartPayload.length === 0 && seenClear > 0;
+    if (cartPayload.length === 0 && deliveryCountry == null && !shouldSyncEmptyCart) {
+      return;
+    }
     void fetch(apiUrl("/api/user-state"), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         user_id: userId,
         ...(seen > 0 ? { client_seen_updated_at: seen } : {}),
+        ...(seenClear > 0 ? { client_seen_cart_cleared_at: seenClear } : {}),
         ...(deliveryCountry != null ? { delivery_country: deliveryCountry } : {}),
         ...(deliveryCountry != null
           ? { currency: displayCurrencyForDelivery(deliveryCountry) }
           : {}),
-        ...(cartPayload.length > 0 ? { cart: cartPayload } : {}),
+        ...(cartPayload.length > 0
+          ? { cart: cartPayload }
+          : shouldSyncEmptyCart
+            ? { cart: [], clear_cart: true }
+            : {}),
       }),
     })
       .then(async (res) => {
@@ -451,6 +501,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
   }, [cartItems, deliveryCountry, hydrated, primaryTelegramUserId]);
 
   const addToCart = useCallback((card: StoredCard) => {
+    touchLocalCartModifiedAt();
     const { priceByn, priceRub } = lineFromCard(card);
     setCartItems((prev) => {
       const i = prev.findIndex((l) => l.id === card.id);
@@ -483,10 +534,12 @@ export function CartProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const removeFromCart = useCallback((id: string) => {
+    touchLocalCartModifiedAt();
     setCartItems((prev) => prev.filter((l) => l.id !== id));
   }, []);
 
   const setQuantity = useCallback((id: string, quantity: number) => {
+    touchLocalCartModifiedAt();
     const q = Math.floor(quantity);
     if (q < 1) {
       setCartItems((prev) => prev.filter((l) => l.id !== id));
@@ -498,7 +551,9 @@ export function CartProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const clearCart = useCallback(() => {
+    touchLocalCartModifiedAt();
     setCartItems([]);
+    applyLocalCartClear(Date.now());
   }, []);
 
   const PLACEHOLDER_IMAGE = "/file.svg";
@@ -554,6 +609,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
       }
       if (toAdd.length === 0) return;
 
+      touchLocalCartModifiedAt();
       setCartItems((prev) => {
         const next = prev.map((x) => ({ ...x }));
         for (const l of toAdd) {

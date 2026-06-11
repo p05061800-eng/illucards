@@ -133,9 +133,24 @@ export async function POST(request: NextRequest) {
       prev && typeof prev.updatedAt === "number" && Number.isFinite(prev.updatedAt)
         ? prev.updatedAt
         : 0;
+    const prevClearedAt =
+      prev && typeof prev.cartClearedAt === "number" && Number.isFinite(prev.cartClearedAt)
+        ? Math.floor(prev.cartClearedAt)
+        : 0;
+    const clearedSeenRaw = o.client_seen_cart_cleared_at;
+    const clientClearedSeen =
+      typeof clearedSeenRaw === "number" && Number.isFinite(clearedSeenRaw)
+        ? Math.floor(clearedSeenRaw)
+        : typeof clearedSeenRaw === "string"
+          ? Math.floor(Number(clearedSeenRaw))
+          : 0;
     /** Сервер очистил корзину новее, чем знает клиент — не затирать пустую корзину старым localStorage. */
     const clientStaleVsServerEmpty =
-      prevEmpty && incoming.length > 0 && prevTs > 0 && (!clientSeenOk || clientSeen < prevTs);
+      prevEmpty &&
+      incoming.length > 0 &&
+      ((prevTs > 0 && (!clientSeenOk || clientSeen < prevTs)) ||
+        (prevClearedAt > 0 &&
+          (clientClearedSeen <= 0 || clientClearedSeen < prevClearedAt)));
     if (clientStaleVsServerEmpty) {
       incoming = [];
     }

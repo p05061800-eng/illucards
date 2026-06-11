@@ -40,7 +40,7 @@ from db import init_db, recompute_user_order_stats, sync_all_users_order_stats, 
 logging.basicConfig(format="%(asctime)s %(levelname)s %(message)s", level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-BOT_BUILD_ID = "2026-06-11-admin-order-fallback-v1"
+BOT_BUILD_ID = "2026-06-11-my-orders-currency-v1"
 
 REPLY_MENU_TEXTS = frozenset(
     {"💬 Связь", "📦 Мои заказы", "📜 Мои заказы", "🚚 Доставка", "⭐ Бонусы"}
@@ -789,12 +789,18 @@ def _merge_order_status_for_display(rec: dict[str, Any], site: dict[str, Any] | 
     return r or s or "new"
 
 
-def _merge_total_byn(rec: dict[str, Any], site: dict[str, Any] | None) -> float:
-    if site:
-        t = _order_total_byn(site)
-        if t > 0:
-            return t
-    return _order_total_byn(rec)
+def _merge_order_for_display(
+    rec: dict[str, Any], site: dict[str, Any] | None
+) -> dict[str, Any]:
+    merged = dict(rec)
+    if isinstance(site, dict):
+        merged.update(site)
+    items = _order_items_list(merged)
+    if not items:
+        merged["items"] = _order_items_list(rec)
+    if not merged.get("delivery"):
+        merged["delivery"] = rec.get("delivery") or "BY"
+    return merged
 
 
 def _order_id_short(oid: str) -> str:
@@ -1400,22 +1406,16 @@ def _format_order_admin(
             lines.append(f"• {title} ×{qty} — {int(round(sub_r))} RUB")
     if len(lines) <= 4:
         lines.append("—")
-    try:
-        total = float(record.get("total", 0) or 0)
-    except (TypeError, ValueError):
-        total = 0.0
     lines.append("")
     lines.append(_format_delivery_line_order(dcode))
     pm = str(order.get("payment_method") or record.get("payment_method") or "").strip().lower()
     if pm:
         lines.append(f"💳 Способ оплаты: {_payment_method_label(pm)}")
     status_label = _order_status_display(str(record.get("status") or ""))
-    if use_byn:
-        lines.append(f"💰 Итого: {total:g} BYN · статус: {status_label}")
-    else:
-        lines.append(
-            f"💰 Итого: {int(round(total * BYN_TO_RUB))} RUB (~{total:g} BYN) · статус: {status_label}"
-        )
+    display_order = _merge_order_for_display(record, order)
+    lines.append(
+        f"💰 Итого: {_order_total_display(display_order)} · статус: {status_label}"
+    )
     return "\n".join(lines)
 
 
@@ -3720,17 +3720,15 @@ async def show_my_orders(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
         if not _order_visible_in_my_orders(st):
             continue
         label = _order_status_display(st)
-        total = _merge_total_byn(rec, order_site)
-        order_for_label = (
-            order_site if isinstance(order_site, dict) else rec
-        )
+        order_for_display = _merge_order_for_display(rec, order_site)
         order_label = _order_display_label(
             oid,
             int(user.id),
             _normalize_order_username(user.username),
-            order=order_for_label,
+            order=order_for_display,
         )
-        lines.append(f"{order_label} — {total:g} BYN — {label}")
+        total_display = _order_total_display(order_for_display)
+        lines.append(f"{order_label} — {total_display} — {label}")
     if len(lines) <= 2:
         await update.message.reply_text(
             "Пока нет подтверждённых заказов.\n"

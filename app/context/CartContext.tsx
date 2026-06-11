@@ -422,6 +422,10 @@ export function CartProvider({ children }: { children: ReactNode }) {
         applyLocalCartClear(Math.max(cartClearedAt, prevSeenClear) || Date.now());
       } else if (serverCart.length > 0) {
         setCartItems((prev) => (prev.length === 0 ? serverCart : prev));
+      } else if (cartClearedAt > 0 || prevSeenClear > 0) {
+        setCartItems([]);
+        setBonusSpendPointsState(0);
+        applyLocalCartClear(Math.max(cartClearedAt, prevSeenClear) || Date.now());
       }
     } catch {
       /* ignore */

@@ -40,7 +40,7 @@ from db import init_db, recompute_user_order_stats, sync_all_users_order_stats, 
 logging.basicConfig(format="%(asctime)s %(levelname)s %(message)s", level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-BOT_BUILD_ID = "2026-06-11-my-orders-site-fallback-v1"
+BOT_BUILD_ID = "2026-06-11-proof-delivery-confirm-v1"
 
 REPLY_MENU_TEXTS = frozenset(
     {"💬 Связь", "📦 Мои заказы", "📜 Мои заказы", "🚚 Доставка", "⭐ Бонусы"}
@@ -982,11 +982,45 @@ def _order_total_byn(order: dict[str, Any]) -> float:
 def _order_items_list(order: dict[str, Any]) -> list[dict[str, Any]]:
     items = order.get("items")
     if not isinstance(items, list):
-        return []
+        items = None
     out: list[dict[str, Any]] = []
-    for it in items:
-        if isinstance(it, dict):
-            out.append(dict(it))
+    if isinstance(items, list):
+        for it in items:
+            if isinstance(it, dict):
+                out.append(dict(it))
+    if out:
+        return out
+    lines = order.get("lines")
+    if not isinstance(lines, list):
+        return []
+    for row in lines:
+        if not isinstance(row, dict):
+            continue
+        item_id = str(row.get("id") or row.get("ref") or "").strip()
+        title = str(row.get("title") or row.get("name") or "").strip()
+        if not item_id or not title:
+            continue
+        try:
+            qty = max(1, int(row.get("quantity") or row.get("qty") or 1))
+        except (TypeError, ValueError):
+            qty = 1
+        try:
+            price_byn = float(row.get("priceByn") or row.get("price") or 0)
+        except (TypeError, ValueError):
+            price_byn = 0.0
+        try:
+            price_rub = float(row.get("priceRub") or row.get("price_rub") or 0)
+        except (TypeError, ValueError):
+            price_rub = 0.0
+        out.append(
+            {
+                "id": item_id,
+                "title": title,
+                "quantity": qty,
+                "priceByn": price_byn,
+                "priceRub": price_rub,
+            }
+        )
     return out
 
 
@@ -1364,6 +1398,16 @@ def _merge_bot_order_fields(order_id: str, order: dict[str, Any]) -> dict[str, A
     bot_rec = BOT_ORDERS.get(str(order_id or "").strip())
     if not isinstance(bot_rec, dict):
         return merged
+    if not _order_items_list(merged):
+        bot_items = _order_items_list(bot_rec)
+        if bot_items:
+            merged["items"] = bot_items
+    if _order_total_byn(merged) <= 0:
+        bot_total = _order_total_byn(bot_rec)
+        if bot_total > 0:
+            merged["total"] = bot_total
+    if not str(merged.get("delivery") or "").strip():
+        merged["delivery"] = bot_rec.get("delivery") or "BY"
     pm = str(bot_rec.get("payment_method") or "").strip().lower()
     if pm and not str(merged.get("payment_method") or "").strip():
         merged["payment_method"] = pm
@@ -1375,6 +1419,45 @@ def _merge_bot_order_fields(order_id: str, order: dict[str, Any]) -> dict[str, A
         merged.get("status") or ""
     ).strip().lower() in ("", "new", "confirmed"):
         merged["status"] = "paid"
+    return merged
+
+
+def _order_for_site_sync(
+    order_id: str,
+    order: dict[str, Any] | None,
+    owner_id: int | None = None,
+) -> dict[str, Any]:
+    """Полный снимок заказа для POST /api/order/update (позиции из журнала бота)."""
+    oid = str(order_id or "").strip()
+    merged = dict(order) if isinstance(order, dict) else {}
+    _load_bot_orders()
+    bot_rec = BOT_ORDERS.get(oid)
+    if isinstance(bot_rec, dict):
+        if not _order_items_list(merged):
+            bot_items = _order_items_list(bot_rec)
+            if bot_items:
+                merged["items"] = bot_items
+        if _order_total_byn(merged) <= 0:
+            bot_total = _order_total_byn(bot_rec)
+            if bot_total > 0:
+                merged["total"] = bot_total
+        if not str(merged.get("delivery") or "").strip():
+            merged["delivery"] = bot_rec.get("delivery") or "BY"
+        pm = str(bot_rec.get("payment_method") or "").strip().lower()
+        if pm and not str(merged.get("payment_method") or "").strip():
+            merged["payment_method"] = pm
+        dd = str(bot_rec.get("delivery_details") or "").strip()
+        if dd and not str(merged.get("delivery_details") or "").strip():
+            merged["delivery_details"] = dd
+        uname = _normalize_order_username(bot_rec.get("username"))
+        if uname and not _normalize_order_username(merged.get("username")):
+            merged["username"] = uname
+    uid = owner_id if owner_id is not None else _order_owner_user_id(oid, merged)
+    if uid is not None:
+        merged["user_id"] = int(uid)
+    merged["items"] = _order_items_list(merged)
+    merged.setdefault("total", _order_total_byn(merged))
+    merged.setdefault("delivery", merged.get("delivery") or "BY")
     return merged
 
 
@@ -2351,13 +2434,21 @@ async def _sync_user_orders_from_site(telegram_user_id: int) -> list[dict[str, A
         return []
     _load_bot_orders()
     changed = False
+    enriched: list[dict[str, Any]] = []
     for raw in summaries:
-        if _ingest_site_order_summary(raw, telegram_user_id):
+        row = dict(raw)
+        oid = str(row.get("id") or row.get("order_id") or "").strip()
+        if oid and not _order_items_list(row):
+            full = await fetch_site_order(oid)
+            if isinstance(full, dict):
+                row.update(full)
+        enriched.append(row)
+        if _ingest_site_order_summary(row, telegram_user_id):
             changed = True
     if changed:
         _persist_bot_orders()
         _sync_crm_order_stats_for_user(int(telegram_user_id))
-    return summaries
+    return enriched
 
 
 async def fetch_site_user_state(telegram_user_id: int) -> dict[str, Any] | None:
@@ -2557,22 +2648,21 @@ async def post_site_order_status(
     if secret:
         headers["Authorization"] = f"Bearer {secret}"
     payload: dict[str, Any] = {"order_id": order_id, "status": status}
-    if isinstance(order, dict):
-        oid = owner_id if owner_id is not None else _order_owner_user_id(order_id, order)
+    if isinstance(order, dict) or owner_id is not None:
+        sync_order = _order_for_site_sync(order_id, order, owner_id)
+        oid = owner_id if owner_id is not None else _order_owner_user_id(order_id, sync_order)
         if oid is not None:
             payload["user_id"] = int(oid)
-        payload["items"] = _order_items_list(order)
-        payload["total"] = _order_total_byn(order)
-        payload["delivery"] = _delivery_price_code(str(order.get("delivery") or "BY"))
-        username = str(order.get("username") or "").strip().lstrip("@")
+        payload["items"] = _order_items_list(sync_order)
+        payload["total"] = _order_total_byn(sync_order)
+        payload["delivery"] = _delivery_price_code(str(sync_order.get("delivery") or "BY"))
+        username = str(sync_order.get("username") or "").strip().lstrip("@")
         if username:
             payload["username"] = username
-        dd = str(order.get("delivery_details") or "").strip()
-        if not dd:
-            _load_bot_orders()
-            bot_rec = BOT_ORDERS.get(order_id)
-            if isinstance(bot_rec, dict):
-                dd = str(bot_rec.get("delivery_details") or "").strip()
+        pm = str(sync_order.get("payment_method") or "").strip().lower()
+        if pm in ("card", "crypto", "phone"):
+            payload["payment_method"] = pm
+        dd = str(sync_order.get("delivery_details") or "").strip()
         if dd:
             payload["delivery_details"] = dd
     timeout = aiohttp.ClientTimeout(total=20)
@@ -2815,12 +2905,13 @@ async def post_site_order_upsert_snapshot(
     status: str,
 ) -> bool:
     """Повторно записать заказ на сайт из снимка (если order/update не прошёл)."""
-    items = _order_items_list(order)
+    sync_order = _order_for_site_sync(order_id, order, int(owner_id))
+    items = _order_items_list(sync_order)
     if not items:
         return False
-    username = str(order.get("username") or "").strip().lstrip("@") or None
-    delivery = _delivery_price_code(str(order.get("delivery") or "BY"))
-    total = _order_total_byn(order)
+    username = str(sync_order.get("username") or "").strip().lstrip("@") or None
+    delivery = _delivery_price_code(str(sync_order.get("delivery") or "BY"))
+    total = _order_total_byn(sync_order)
     data = await _post_site_order_from_bot_payload(
         int(owner_id),
         username,
@@ -3264,6 +3355,81 @@ def _find_proof_received_order_id(uid: int) -> str | None:
         if rec.get("proof_file_id"):
             return str(order_id).strip()
     return None
+
+
+def _bot_order_has_payment_proof(rec: dict[str, Any]) -> bool:
+    return bool(str(rec.get("proof_file_id") or "").strip())
+
+
+def _bot_order_awaiting_delivery_confirm(uid: int, order_id: str) -> bool:
+    """Чек уже в журнале — можно подтвердить доставку (не зависит от in-memory)."""
+    oid = str(order_id or "").strip()
+    if not oid:
+        return False
+    _load_bot_orders()
+    rec = BOT_ORDERS.get(oid)
+    if not isinstance(rec, dict):
+        return False
+    try:
+        if int(rec.get("user_id")) != int(uid):
+            return False
+    except (TypeError, ValueError):
+        return False
+    if not _bot_order_has_payment_proof(rec):
+        return False
+    st = str(rec.get("status") or "").strip().lower()
+    if st in ("proof_submitted", "confirmed", "cancelled", "canceled"):
+        return False
+    return True
+
+
+def _user_may_confirm_saved_delivery(uid: int, order_id: str) -> bool:
+    pending = _AWAIT_DELIVERY_CONFIRM.get(int(uid))
+    if pending and str(pending).strip() == str(order_id).strip():
+        return True
+    return _bot_order_awaiting_delivery_confirm(uid, order_id)
+
+
+def _ensure_delivery_confirm_state(uid: int, order_id: str) -> None:
+    if _user_may_confirm_saved_delivery(uid, order_id):
+        _set_awaiting_delivery_confirm(int(uid), order_id)
+
+
+def _rehydrate_checkout_await_states_for_user(uid: int) -> None:
+    """После redeploy: восстановить шаг checkout из bot-orders.json."""
+    u = int(uid)
+    if (
+        u in _AWAIT_DELIVERY_CONFIRM
+        or u in _AWAIT_ORDER_DETAILS
+        or _AWAIT_PAYMENT_PROOF.get(u)
+    ):
+        return
+    _load_bot_orders()
+    proof_received_oid: str | None = None
+    awaiting_proof_oid: str | None = None
+    for order_id, rec in BOT_ORDERS.items():
+        if not isinstance(rec, dict):
+            continue
+        try:
+            if int(rec.get("user_id")) != u:
+                continue
+        except (TypeError, ValueError):
+            continue
+        oid = str(order_id).strip()
+        if not oid:
+            continue
+        st = str(rec.get("status") or "").strip().lower()
+        if st in ("proof_submitted", "confirmed", "cancelled", "canceled"):
+            continue
+        if _bot_order_has_payment_proof(rec) and st == "proof_received":
+            proof_received_oid = oid
+            break
+        if not _bot_order_has_payment_proof(rec) and _order_eligible_for_payment_proof(rec):
+            awaiting_proof_oid = oid
+    if proof_received_oid:
+        _set_awaiting_delivery(u, proof_received_oid)
+    elif awaiting_proof_oid:
+        _AWAIT_PAYMENT_PROOF[u] = awaiting_proof_oid
 
 
 def _resolve_awaiting_delivery_order_id(uid: int) -> str | None:
@@ -4317,6 +4483,7 @@ async def payment_proof_handler(
     if not user:
         return
     uid = int(user.id)
+    _rehydrate_checkout_await_states_for_user(uid)
 
     if _AWAIT_DELIVERY_CONFIRM.get(uid):
         await msg.reply_text(PAY_DELIVERY_CONFIRM_HINT_TEXT)
@@ -4451,7 +4618,15 @@ async def text_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
 
         screenshot_oid = _resolve_awaiting_screenshot_order_id(int(user.id))
         if screenshot_oid:
-            await update.message.reply_text(PAY_PROOF_NEED_SCREENSHOT_TEXT)
+            if _delivery_text_acceptable(t):
+                _save_delivery_profile(int(user.id), t)
+                await _sync_saved_delivery_to_site(int(user.id), t)
+                await update.message.reply_text(
+                    "✅ Данные доставки сохранены.\n\n"
+                    "Теперь пришлите скриншот чека (фото)."
+                )
+            else:
+                await update.message.reply_text(PAY_PROOF_NEED_SCREENSHOT_TEXT)
             return
 
     if user and _is_admin_user(int(user.id)):
@@ -4828,10 +5003,11 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
                 await q.answer("Некорректный заказ", show_alert=True)
                 return
             uid = int(user.id)
-            pending = _AWAIT_DELIVERY_CONFIRM.get(uid)
-            if not pending or str(pending).strip() != order_id:
+            _rehydrate_checkout_await_states_for_user(uid)
+            if not _user_may_confirm_saved_delivery(uid, order_id):
                 await q.answer("Сначала пришлите скриншот чека", show_alert=True)
                 return
+            _ensure_delivery_confirm_state(uid, order_id)
             saved = _get_saved_delivery_text(uid)
             if not saved or not _delivery_text_acceptable(saved):
                 await q.answer("Нет сохранённых данных", show_alert=True)
@@ -4889,10 +5065,11 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
                 await q.answer("Некорректный заказ", show_alert=True)
                 return
             uid = int(user.id)
-            pending = _AWAIT_DELIVERY_CONFIRM.get(uid)
-            if not pending or str(pending).strip() != order_id:
+            _rehydrate_checkout_await_states_for_user(uid)
+            if not _user_may_confirm_saved_delivery(uid, order_id):
                 await q.answer("Сначала пришлите скриншот чека", show_alert=True)
                 return
+            _ensure_delivery_confirm_state(uid, order_id)
             order = await _load_order_for_callback(order_id, uid)
             if not order:
                 await q.answer()
@@ -5156,11 +5333,12 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
             BOT_ORDERS[order_id] = rec
             _persist_bot_orders()
 
-            if not await post_site_order_status(order_id, "paid", order, owner_id):
-                logger.warning("admin confirm: site paid failed order=%s", order_id)
-            if not await post_site_order_status(order_id, "confirmed", order, owner_id):
+            sync_order = _order_for_site_sync(order_id, rec, int(owner_id))
+            if not await post_site_order_status(
+                order_id, "confirmed", sync_order, int(owner_id)
+            ):
                 if not await post_site_order_upsert_snapshot(
-                    order_id, order, int(owner_id), "confirmed"
+                    order_id, sync_order, int(owner_id), "confirmed"
                 ):
                     await q.answer("Не удалось обновить на сайте", show_alert=True)
                     return

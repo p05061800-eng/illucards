@@ -181,6 +181,7 @@ export async function attachOrderOwnerIfMissing(
   };
   ORDERS[id] = updated;
   await persistOrderRecordToRedis(id, updated);
+  await ensureOrderIndexedForUser(uid, id, updated);
   const filePath = path.join(ORDERS_DIR, `${id}.json`);
   try {
     const text = await fs.readFile(filePath, "utf-8");
@@ -210,6 +211,9 @@ export async function saveOrderRecord(
 ): Promise<void> {
   registerOrder(orderId, record);
   await persistOrderRecordToRedis(orderId, record, createdAt.getTime());
+  if (record.user_id != null && record.user_id > 0) {
+    await ensureOrderIndexedForUser(Math.floor(record.user_id), orderId, record);
+  }
 
   try {
     await fs.mkdir(ORDERS_DIR, { recursive: true });

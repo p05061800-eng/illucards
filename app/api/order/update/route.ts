@@ -3,9 +3,11 @@ import { NextResponse } from "next/server";
 import { parseOrderPaymentMethod } from "@/app/lib/orderPayment";
 import { parseOrderStatusInput } from "@/app/lib/orderStatus";
 import {
+  assignBuyerSeqForNewOrder,
   attachOrderOwnerIfMissing,
   getOrder,
   markOrderTelegramBuyerNotified,
+  saveOrderRecord,
   updateOrderDeliveryDetails,
   updateOrderPaymentMethod,
   updateOrderStatus,
@@ -84,7 +86,16 @@ export async function POST(request: NextRequest) {
         clientTotalByn: total,
       });
       if (!created.ok) {
-        return NextResponse.json({ error: created.error }, { status: created.status });
+        const buyer_seq = await assignBuyerSeqForNewOrder(userId);
+        await saveOrderRecord(orderId, {
+          user_id: userId,
+          username: parseOptionalUsername(o.username) ?? null,
+          items,
+          total,
+          delivery,
+          status: "new",
+          ...(buyer_seq != null && buyer_seq > 0 ? { buyer_seq } : {}),
+        });
       }
       existing = await getOrder(orderId);
     }
@@ -125,6 +136,15 @@ export async function POST(request: NextRequest) {
   }
 
   if (status) {
+    if (!existing) {
+      return NextResponse.json(
+        {
+          error:
+            "Заказ не найден на сайте. Передайте user_id, items, total и delivery.",
+        },
+        { status: 404 },
+      );
+    }
     const result = await updateOrderStatus(orderId, status);
     if (!result.ok) {
       return NextResponse.json({ error: result.error }, { status: result.status });

@@ -1418,6 +1418,17 @@ def _merge_bot_order_fields(order_id: str, order: dict[str, Any]) -> dict[str, A
     dd = str(bot_rec.get("delivery_details") or "").strip()
     if dd and not str(merged.get("delivery_details") or "").strip():
         merged["delivery_details"] = dd
+    try:
+        site_spent = int(merged.get("bonus_points_spent") or 0)
+    except (TypeError, ValueError):
+        site_spent = 0
+    try:
+        bot_spent = int(bot_rec.get("bonus_points_spent") or 0)
+    except (TypeError, ValueError):
+        bot_spent = 0
+    spent = max(site_spent, bot_spent)
+    if spent > 0:
+        merged["bonus_points_spent"] = spent
     bot_st = str(bot_rec.get("status") or "").strip().lower()
     if bot_st in ("proof_received", "proof_submitted") and str(
         merged.get("status") or ""
@@ -1456,6 +1467,17 @@ def _order_for_site_sync(
         uname = _normalize_order_username(bot_rec.get("username"))
         if uname and not _normalize_order_username(merged.get("username")):
             merged["username"] = uname
+        try:
+            site_spent = int(merged.get("bonus_points_spent") or 0)
+        except (TypeError, ValueError):
+            site_spent = 0
+        try:
+            bot_spent = int(bot_rec.get("bonus_points_spent") or 0)
+        except (TypeError, ValueError):
+            bot_spent = 0
+        spent = max(site_spent, bot_spent)
+        if spent > 0:
+            merged["bonus_points_spent"] = spent
     uid = owner_id if owner_id is not None else _order_owner_user_id(oid, merged)
     if uid is not None:
         merged["user_id"] = int(uid)
@@ -2672,6 +2694,12 @@ async def post_site_order_status(
         proof_fid = str(sync_order.get("proof_file_id") or "").strip()
         if proof_fid:
             payload["telegram_payment_proof_file_id"] = proof_fid
+        try:
+            spent = int(sync_order.get("bonus_points_spent") or 0)
+        except (TypeError, ValueError):
+            spent = 0
+        if spent > 0:
+            payload["bonus_points_spent"] = spent
     timeout = aiohttp.ClientTimeout(total=20)
     try:
         async with aiohttp.ClientSession(timeout=timeout) as session:
@@ -2923,6 +2951,7 @@ async def _post_site_order_from_bot_payload(
     *,
     order_id: str | None = None,
     status: str = "confirmed",
+    bonus_points_spent: int | None = None,
 ) -> dict[str, Any] | None:
     if not items:
         return None
@@ -2945,6 +2974,8 @@ async def _post_site_order_from_bot_payload(
     }
     if order_id:
         payload["order_id"] = order_id
+    if bonus_points_spent is not None and int(bonus_points_spent) > 0:
+        payload["bonus_points_spent"] = int(bonus_points_spent)
     timeout = aiohttp.ClientTimeout(total=25)
     try:
         async with aiohttp.ClientSession(timeout=timeout) as session:
@@ -2973,6 +3004,10 @@ async def post_site_order_upsert_snapshot(
     username = str(sync_order.get("username") or "").strip().lstrip("@") or None
     delivery = _delivery_price_code(str(sync_order.get("delivery") or "BY"))
     total = _order_total_byn(sync_order)
+    try:
+        spent = int(sync_order.get("bonus_points_spent") or 0)
+    except (TypeError, ValueError):
+        spent = 0
     data = await _post_site_order_from_bot_payload(
         int(owner_id),
         username,
@@ -2981,6 +3016,7 @@ async def post_site_order_upsert_snapshot(
         delivery,
         order_id=order_id,
         status=status,
+        bonus_points_spent=spent if spent > 0 else None,
     )
     return isinstance(data, dict) and data.get("ok") is True
 

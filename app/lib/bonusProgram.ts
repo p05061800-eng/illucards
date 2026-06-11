@@ -1,16 +1,13 @@
-import type { DeliveryCountry } from "@/app/lib/delivery";
+import { deliveryCharge, type DeliveryCountry } from "@/app/lib/delivery";
 import { BYN_TO_RUB } from "@/app/lib/formatPrice";
-import type { OrderStatus } from "@/app/lib/orderTypes";
+import type { OrderRecord, OrderStatus } from "@/app/lib/orderTypes";
+
+const ORDER_TOTAL_EPS = 0.05;
 
 /**
  * Начисление баллов за заказ — только после подтверждения админом («Принят»).
  */
 export function orderStatusEligibleForBonusAccrual(status: OrderStatus): boolean {
-  return status === "confirmed";
-}
-
-/** Списание бонусов по заказу — только после подтверждения админом. */
-export function orderStatusEligibleForBonusSpend(status: OrderStatus): boolean {
   return status === "confirmed";
 }
 
@@ -59,6 +56,27 @@ export function maxSpendableBonusPoints(
     else hi = mid - 1;
   }
   return lo;
+}
+
+/** Сколько баллов списать по заказу (явное поле или скидка в total). */
+export function bonusPointsSpentForOrder(record: OrderRecord): number {
+  const explicit = Math.floor(record.bonus_points_spent ?? 0);
+  if (explicit > 0) return explicit;
+  const items = Array.isArray(record.items) ? record.items : [];
+  if (items.length === 0 || !Number.isFinite(record.total)) return 0;
+  const goodsByn =
+    Math.round(items.reduce((s, l) => s + l.priceByn * l.quantity, 0) * 100) / 100;
+  const d = deliveryCharge(record.delivery);
+  const before = Math.round((goodsByn + d.amountByn) * 100) / 100;
+  const discountByn = Math.round((before - record.total) * 100) / 100;
+  if (discountByn <= ORDER_TOTAL_EPS) return 0;
+  const maxPts = maxSpendableBonusPoints(1_000_000_000, before, record.delivery);
+  for (let p = 100; p <= maxPts; p += 100) {
+    if (Math.abs(bonusDiscountByn(p, record.delivery) - discountByn) <= ORDER_TOTAL_EPS) {
+      return p;
+    }
+  }
+  return 0;
 }
 
 /** Сколько баллов начислить за заказ (по количеству карточек). */

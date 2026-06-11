@@ -10,9 +10,9 @@ import type { OrderPaymentMethod } from "@/app/lib/orderPayment";
 import { parseOrderPaymentMethod } from "@/app/lib/orderPayment";
 import type { OrderLineIn, OrderRecord, OrderStatus } from "@/app/lib/orderTypes";
 import {
+  bonusPointsSpentForOrder,
   bonusPointsToEarnForOrderItems,
   orderStatusEligibleForBonusAccrual,
-  orderStatusEligibleForBonusSpend,
 } from "@/app/lib/bonusProgram";
 import { sanitizeOrderLineImageUrl } from "@/app/lib/sanitizeOrderLineImageUrl";
 import { notifyTelegramWebhookUserState } from "@/app/lib/telegramStateBotSync";
@@ -834,7 +834,7 @@ export async function updateOrderStatus(
     return { ok: false, error: "Заказ не найден", status: 404 };
   }
 
-  const spend = Math.max(0, Math.floor(existing.bonus_points_spent ?? 0));
+  const spend = bonusPointsSpentForOrder(existing);
   let bonusRefundedNow = false;
   const refundBonusNow =
     status === "cancelled" &&
@@ -857,8 +857,7 @@ export async function updateOrderStatus(
     });
   }
   const deductBonusNow =
-    orderStatusEligibleForBonusSpend(status) &&
-    existing.status !== "confirmed" &&
+    status === "confirmed" &&
     spend > 0 &&
     !existing.bonus_points_deducted &&
     existing.user_id != null &&
@@ -882,6 +881,9 @@ export async function updateOrderStatus(
   const updated: OrderRecord = {
     ...existing,
     status,
+    ...(spend > 0 && !(existing.bonus_points_spent != null && existing.bonus_points_spent > 0)
+      ? { bonus_points_spent: spend }
+      : {}),
     ...(bonusDeductedNow ? { bonus_points_deducted: true } : {}),
     ...(bonusRefundedNow ? { bonus_points_refunded: true } : {}),
   };
@@ -910,8 +912,7 @@ export async function updateOrderStatus(
     /* нет файла или FS только для чтения — статус уже в ORDERS */
   }
   const grantBonusNow =
-    orderStatusEligibleForBonusAccrual(status) &&
-    existing.status !== "confirmed" &&
+    status === "confirmed" &&
     !existing.bonus_awarded &&
     existing.user_id != null &&
     existing.user_id > 0;
@@ -1324,6 +1325,30 @@ export async function reconcileBonusPointsForUser(userId: number): Promise<numbe
     if (result.ok) awarded += before;
   }
   return awarded;
+}
+
+/** Списать бонусы по подтверждённым заказам, если пропустили при синке с ботом. */
+export async function reconcileBonusDeductionForUser(userId: number): Promise<number> {
+  if (!Number.isFinite(userId) || userId <= 0) return 0;
+  const uid = Math.floor(userId);
+  const rows = await listOrdersForUser(uid);
+  let deducted = 0;
+  for (const row of rows) {
+    const record = await getOrder(row.id);
+    if (
+      !record ||
+      record.user_id !== uid ||
+      record.bonus_points_deducted ||
+      record.status !== "confirmed"
+    ) {
+      continue;
+    }
+    const spend = bonusPointsSpentForOrder(record);
+    if (spend <= 0) continue;
+    const result = await updateOrderStatus(row.id, "confirmed");
+    if (result.ok) deducted += spend;
+  }
+  return deducted;
 }
 
 function orderSummaryFromRecord(

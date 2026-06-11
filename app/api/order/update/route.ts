@@ -17,6 +17,7 @@ import { getTelegramUserState } from "@/app/lib/telegramUserStateStore";
 import {
   normalizeOrderItems,
   parseDeliveryCountry,
+  parseOptionalBonusPointsToSpend,
   parseOptionalTelegramUserId,
   parseOptionalUsername,
   persistOrder,
@@ -155,6 +156,18 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: pp.error }, { status: pp.status });
     }
     existing = await getOrder(orderId);
+  }
+
+  const bonusSpendPatch = parseOptionalBonusPointsToSpend(
+    o.bonus_points_spent ?? o.bonusPointsSpent,
+  );
+  if (bonusSpendPatch > 0 && existing && !existing.bonus_points_deducted) {
+    const patched: typeof existing = {
+      ...existing,
+      bonus_points_spent: bonusSpendPatch,
+    };
+    await saveOrderRecord(orderId, patched);
+    existing = patched;
   }
 
   if (status) {

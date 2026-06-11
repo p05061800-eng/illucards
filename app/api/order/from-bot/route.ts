@@ -6,6 +6,7 @@ import type { OrderLineIn, OrderRecord, OrderStatus } from "@/app/lib/orderTypes
 import { parseOrderStatusInput } from "@/app/lib/orderStatus";
 import {
   assignBuyerSeqForNewOrder,
+  getOrder,
   saveOrderRecord,
   updateOrderStatus,
 } from "@/app/lib/ordersStore";
@@ -120,21 +121,32 @@ export async function POST(request: NextRequest) {
   const initialStatus: OrderStatus = "new";
   const bonusPointsSpent = parsePositiveInt(o.bonus_points_spent ?? o.bonusApplied);
   const orderId = parseOptionalOrderId(o.order_id ?? o.id) ?? randomUUID();
+  const prior = await getOrder(orderId);
   const buyerSeqRaw = o.buyer_seq;
   let buyer_seq =
     typeof buyerSeqRaw === "number" &&
     Number.isFinite(buyerSeqRaw) &&
     buyerSeqRaw > 0
       ? Math.floor(buyerSeqRaw)
-      : await assignBuyerSeqForNewOrder(userId);
+      : (prior?.buyer_seq != null && prior.buyer_seq > 0
+          ? prior.buyer_seq
+          : await assignBuyerSeqForNewOrder(userId));
   const record: OrderRecord = {
+    ...(prior ?? {}),
     user_id: userId,
-    username: parseUsername(o.username),
+    username: parseUsername(o.username) ?? prior?.username ?? null,
     items,
     total,
     delivery,
     status: initialStatus,
-    ...(bonusPointsSpent != null ? { bonus_points_spent: bonusPointsSpent } : {}),
+    ...(bonusPointsSpent != null
+      ? { bonus_points_spent: bonusPointsSpent }
+      : prior?.bonus_points_spent != null && prior.bonus_points_spent > 0
+        ? { bonus_points_spent: prior.bonus_points_spent }
+        : {}),
+    ...(prior?.bonus_points_deducted ? { bonus_points_deducted: true as const } : {}),
+    ...(prior?.bonus_points_refunded ? { bonus_points_refunded: true as const } : {}),
+    ...(prior?.bonus_awarded ? { bonus_awarded: true as const } : {}),
     ...(buyer_seq != null && buyer_seq > 0 ? { buyer_seq } : {}),
   };
 

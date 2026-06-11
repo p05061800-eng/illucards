@@ -50,4 +50,6 @@ export type OrderRecord = {
   delivery_details?: string;
   /** Порядковый номер заказа покупателя (miheevlil1 → 1) — общий с ботом. */
   buyer_seq?: number;
+  /** file_id скрина оплаты в Telegram (для синка между инстансами бота). */
+  telegram_payment_proof_file_id?: string;
 };

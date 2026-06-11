@@ -329,6 +329,13 @@ function fileToOrderRecord(raw: unknown): OrderRecord | null {
       ? delivery_details_raw.trim().slice(0, 4000)
       : undefined;
 
+  const proofRaw =
+    o.telegram_payment_proof_file_id ?? o.payment_proof_file_id ?? o.proof_file_id;
+  const telegram_payment_proof_file_id =
+    typeof proofRaw === "string" && proofRaw.trim()
+      ? proofRaw.trim().slice(0, 256)
+      : undefined;
+
   const buyerSeqRaw = o.buyer_seq;
   const buyer_seq =
     typeof buyerSeqRaw === "number" &&
@@ -360,6 +367,9 @@ function fileToOrderRecord(raw: unknown): OrderRecord | null {
     ...(telegram_buyer_notified ? { telegram_buyer_notified: true as const } : {}),
     ...(delivery_details ? { delivery_details } : {}),
     ...(buyer_seq != null ? { buyer_seq } : {}),
+    ...(telegram_payment_proof_file_id
+      ? { telegram_payment_proof_file_id }
+      : {}),
   };
 }
 
@@ -599,6 +609,52 @@ export async function updateOrderPaymentMethod(
       await fs.writeFile(
         filePath,
         JSON.stringify({ ...(parsed as Record<string, unknown>), payment_method: paymentMethod }, null, 2),
+        "utf-8",
+      );
+    }
+  } catch {
+    /* ignore */
+  }
+  return { ok: true };
+}
+
+export async function updateOrderPaymentProofFileId(
+  orderId: string,
+  fileId: string,
+): Promise<{ ok: true } | { ok: false; error: string; status: number }> {
+  const id = sanitizeOrderIdForPath(orderId);
+  if (!id) {
+    return { ok: false, error: "Некорректный order_id", status: 400 };
+  }
+  const fid = fileId.trim().slice(0, 256);
+  if (!fid) {
+    return { ok: false, error: "Пустой file_id", status: 400 };
+  }
+  const existing = await getOrder(id);
+  if (!existing) {
+    return { ok: false, error: "Заказ не найден", status: 404 };
+  }
+  const updated: OrderRecord = {
+    ...existing,
+    telegram_payment_proof_file_id: fid,
+  };
+  ORDERS[id] = updated;
+  await persistOrderRecordToRedis(id, updated);
+  const filePath = path.join(ORDERS_DIR, `${id}.json`);
+  try {
+    const rawText = await fs.readFile(filePath, "utf-8");
+    const parsed: unknown = JSON.parse(rawText);
+    if (typeof parsed === "object" && parsed !== null) {
+      await fs.writeFile(
+        filePath,
+        JSON.stringify(
+          {
+            ...(parsed as Record<string, unknown>),
+            telegram_payment_proof_file_id: fid,
+          },
+          null,
+          2,
+        ),
         "utf-8",
       );
     }

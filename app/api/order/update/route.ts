@@ -10,6 +10,7 @@ import {
   saveOrderRecord,
   updateOrderDeliveryDetails,
   updateOrderPaymentMethod,
+  updateOrderPaymentProofFileId,
   updateOrderStatus,
 } from "@/app/lib/ordersStore";
 import { getTelegramUserState } from "@/app/lib/telegramUserStateStore";
@@ -23,7 +24,7 @@ import {
 
 /**
  * Обновление заказа (статус и/или способ оплаты) — в т.ч. из Telegram-бота.
- * Body: { order_id, status?, payment_method?, delivery_details?, telegram_buyer_notified?: true }
+ * Body: { order_id, status?, payment_method?, delivery_details?, telegram_payment_proof_file_id?, telegram_buyer_notified?: true }
  *
  * Если задан ILLUCARDS_ORDER_UPDATE_SECRET — требуется заголовок
  * Authorization: Bearer <secret>
@@ -57,14 +58,27 @@ export async function POST(request: NextRequest) {
   const deliveryDetailsRaw =
     typeof o.delivery_details === "string" ? o.delivery_details.trim() : "";
   const hasDeliveryDetails = deliveryDetailsRaw.length > 0;
+  const paymentProofFileIdRaw =
+    typeof o.telegram_payment_proof_file_id === "string"
+      ? o.telegram_payment_proof_file_id.trim()
+      : typeof o.payment_proof_file_id === "string"
+        ? o.payment_proof_file_id.trim()
+        : "";
+  const hasPaymentProofFileId = paymentProofFileIdRaw.length > 0;
   if (!orderId) {
     return NextResponse.json({ error: "Укажите order_id" }, { status: 400 });
   }
-  if (!status && !paymentMethod && !markBuyerNotified && !hasDeliveryDetails) {
+  if (
+    !status &&
+    !paymentMethod &&
+    !markBuyerNotified &&
+    !hasDeliveryDetails &&
+    !hasPaymentProofFileId
+  ) {
     return NextResponse.json(
       {
         error:
-          "Укажите status, payment_method, delivery_details и/или telegram_buyer_notified",
+          "Укажите status, payment_method, delivery_details, telegram_payment_proof_file_id и/или telegram_buyer_notified",
       },
       { status: 400 },
     );
@@ -131,6 +145,14 @@ export async function POST(request: NextRequest) {
     const dd = await updateOrderDeliveryDetails(orderId, deliveryDetailsRaw);
     if (!dd.ok) {
       return NextResponse.json({ error: dd.error }, { status: dd.status });
+    }
+    existing = await getOrder(orderId);
+  }
+
+  if (hasPaymentProofFileId) {
+    const pp = await updateOrderPaymentProofFileId(orderId, paymentProofFileIdRaw);
+    if (!pp.ok) {
+      return NextResponse.json({ error: pp.error }, { status: pp.status });
     }
     existing = await getOrder(orderId);
   }

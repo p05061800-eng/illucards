@@ -40,7 +40,7 @@ from db import init_db, recompute_user_order_stats, sync_all_users_order_stats, 
 logging.basicConfig(format="%(asctime)s %(levelname)s %(message)s", level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-BOT_BUILD_ID = "2026-06-11-proof-delvok-v2"
+BOT_BUILD_ID = "2026-06-11-proof-site-redis-v3"
 
 REPLY_MENU_TEXTS = frozenset(
     {"💬 Связь", "📦 Мои заказы", "📜 Мои заказы", "🚚 Доставка", "⭐ Бонусы"}
@@ -2669,6 +2669,9 @@ async def post_site_order_status(
         dd = str(sync_order.get("delivery_details") or "").strip()
         if dd:
             payload["delivery_details"] = dd
+        proof_fid = str(sync_order.get("proof_file_id") or "").strip()
+        if proof_fid:
+            payload["telegram_payment_proof_file_id"] = proof_fid
     timeout = aiohttp.ClientTimeout(total=20)
     try:
         async with aiohttp.ClientSession(timeout=timeout) as session:
@@ -2684,6 +2687,60 @@ async def post_site_order_status(
                 return True
     except (aiohttp.ClientError, asyncio.TimeoutError, OSError) as e:
         logger.warning("POST order/update: %s", e)
+        return False
+
+
+async def post_site_order_payment_proof_file_id(
+    order_id: str,
+    proof_file_id: str,
+    *,
+    owner_id: int | None = None,
+    order: dict[str, Any] | None = None,
+) -> bool:
+    """Сохранить file_id чека на сайте (Redis) — общий для всех инстансов бота."""
+    fid = str(proof_file_id or "").strip()
+    if not fid:
+        return False
+    base = _site_origin()
+    url = f"{base}/api/order/update"
+    secret = os.getenv("ILLUCARDS_ORDER_UPDATE_SECRET", "").strip()
+    headers: dict[str, str] = {
+        "Accept": "application/json",
+        "Content-Type": "application/json",
+    }
+    if secret:
+        headers["Authorization"] = f"Bearer {secret}"
+    payload: dict[str, Any] = {
+        "order_id": order_id,
+        "telegram_payment_proof_file_id": fid,
+    }
+    oid = owner_id
+    if oid is None and isinstance(order, dict):
+        oid = _order_owner_user_id(order_id, order)
+    if oid is not None:
+        payload["user_id"] = int(oid)
+    if isinstance(order, dict):
+        payload["items"] = _order_items_list(order)
+        payload["total"] = _order_total_byn(order)
+        payload["delivery"] = _delivery_price_code(str(order.get("delivery") or "BY"))
+        username = str(order.get("username") or "").strip().lstrip("@")
+        if username:
+            payload["username"] = username
+    timeout = aiohttp.ClientTimeout(total=20)
+    try:
+        async with aiohttp.ClientSession(timeout=timeout) as session:
+            async with session.post(url, headers=headers, json=payload) as resp:
+                if resp.status != 200:
+                    body = (await resp.text())[:300]
+                    logger.warning(
+                        "POST order/update (proof file_id) HTTP %s: %s",
+                        resp.status,
+                        body,
+                    )
+                    return False
+                return True
+    except (aiohttp.ClientError, asyncio.TimeoutError, OSError) as e:
+        logger.warning("POST order/update (proof file_id): %s", e)
         return False
 
 
@@ -3372,6 +3429,30 @@ def _get_order_proof_file_id(order_id: str, uid: int) -> str:
     rec = _order_rec_for_user(uid, order_id)
     if isinstance(rec, dict):
         return str(rec.get("proof_file_id") or "").strip()
+    return ""
+
+
+async def _fetch_proof_file_id_for_order(order_id: str, uid: int) -> str:
+    """Локальный журнал → API сайта (Redis), чтобы работало на разных инстансах Render."""
+    fid = _get_order_proof_file_id(order_id, uid)
+    if fid:
+        return fid
+    body = await fetch_site_order(order_id)
+    if isinstance(body, dict):
+        try:
+            owner = int(body.get("user_id") or 0)
+        except (TypeError, ValueError):
+            owner = 0
+        if owner > 0 and owner != int(uid):
+            return ""
+        fid = str(
+            body.get("telegram_payment_proof_file_id")
+            or body.get("proof_file_id")
+            or ""
+        ).strip()
+        if fid:
+            _ensure_bot_order_proof_file_id(order_id, uid, fid)
+            return fid
     return ""
 
 
@@ -4420,6 +4501,7 @@ async def _finalize_delivery_submission(
     delivery_text: str,
     user: Any,
     reply_chat_id: int,
+    require_proof: bool = True,
 ) -> bool:
     uid = int(getattr(user, "id", 0) or 0)
     oid = str(order_id or "").strip()
@@ -4450,10 +4532,10 @@ async def _finalize_delivery_submission(
         _clear_awaiting_checkout(uid)
         return True
 
-    file_id = _get_order_proof_file_id(oid, uid)
+    file_id = await _fetch_proof_file_id_for_order(oid, uid)
     if not file_id and isinstance(bot_rec, dict):
         file_id = str(bot_rec.get("proof_file_id") or "").strip()
-    if not file_id:
+    if not file_id and require_proof:
         _AWAIT_PAYMENT_PROOF[uid] = oid
         _AWAIT_ORDER_DETAILS.pop(uid, None)
         _AWAIT_DELIVERY_CONFIRM.pop(uid, None)
@@ -4471,7 +4553,8 @@ async def _finalize_delivery_submission(
     rec = _record_site_order_in_bot(oid, order, uid)
     rec["status"] = "proof_submitted"
     rec["payment_method"] = pm
-    rec["proof_file_id"] = file_id
+    if file_id:
+        rec["proof_file_id"] = file_id
     rec["delivery_details"] = delivery_text
     BOT_ORDERS[oid] = rec
     _persist_bot_orders()
@@ -4533,12 +4616,26 @@ async def _notify_admin_payment_proof(
         rec,
         delivery_text,
     )
+    markup = _order_admin_confirm_keyboard(order_id)
+    if not str(file_id or "").strip():
+        try:
+            admin_msg = await context.bot.send_message(
+                chat_id=int(admin_chat_id),
+                text=caption + "\n\n(Скрин чека: см. чат покупателя выше.)",
+                reply_markup=markup,
+            )
+            mid = getattr(admin_msg, "message_id", None)
+            if isinstance(mid, int) and mid > 0:
+                await post_site_admin_message_id(order_id, mid)
+        except Exception as e:
+            logger.warning("admin payment proof text notify: %s", e)
+        return
     try:
         admin_msg = await context.bot.send_photo(
             chat_id=int(admin_chat_id),
             photo=file_id,
             caption=caption,
-            reply_markup=_order_admin_confirm_keyboard(order_id),
+            reply_markup=markup,
         )
         mid = getattr(admin_msg, "message_id", None)
         if isinstance(mid, int) and mid > 0:
@@ -4549,7 +4646,7 @@ async def _notify_admin_payment_proof(
             await context.bot.send_message(
                 chat_id=int(admin_chat_id),
                 text=caption,
-                reply_markup=_order_admin_confirm_keyboard(order_id),
+                reply_markup=markup,
             )
         except Exception as e2:
             logger.warning("admin payment proof fallback text: %s", e2)
@@ -4641,7 +4738,12 @@ async def payment_proof_handler(
     _cache_order_snapshot(order_id, rec, uid)
     _persist_bot_orders()
     sync_order = _order_for_site_sync(order_id, rec, uid)
-    await post_site_order_status(order_id, "paid", sync_order, uid)
+    sync_order["proof_file_id"] = file_id
+    if not await post_site_order_status(order_id, "paid", sync_order, uid):
+        logger.warning("proof: site paid sync failed order=%s", order_id)
+        await post_site_order_payment_proof_file_id(
+            order_id, file_id, owner_id=uid, order=sync_order
+        )
 
     await _send_delivery_prompt_after_proof(
         context,
@@ -5093,25 +5195,8 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
                 return
             uid = int(user.id)
             _rehydrate_checkout_await_states_for_user(uid)
-            resolved_oid = _find_user_order_awaiting_delivery_confirm(uid, order_id)
-            if not resolved_oid:
-                await q.answer("Сначала пришлите скриншот чека", show_alert=True)
-                return
-            order_id = resolved_oid
-            _ensure_delivery_confirm_state(uid, order_id)
-            proof_id = _get_order_proof_file_id(order_id, uid)
-            if proof_id:
-                _ensure_bot_order_proof_file_id(order_id, uid, proof_id)
-            saved = _get_saved_delivery_text(uid)
-            if not saved or not _delivery_text_acceptable(saved):
-                await q.answer("Нет сохранённых данных", show_alert=True)
-                _set_awaiting_delivery_input(uid, order_id)
-                await q.message.reply_text(
-                    _pay_delivery_request_text(), reply_markup=_main_keyboard()
-                )
-                return
             order = await _load_order_for_callback(order_id, uid)
-            if not order:
+            if not order or not _order_belongs_to_telegram_user(order, uid):
                 await q.answer()
                 await q.message.reply_text(
                     "Не удалось обработать кнопку. Откройте заказ снова с сайта или отправьте /start."
@@ -5130,9 +5215,19 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
                     await q.answer("Заказ уже передан администратору")
                     _clear_awaiting_checkout(uid)
                     return
-            if not _get_order_proof_file_id(order_id, uid):
-                await q.answer("Сначала пришлите скриншот чека", show_alert=True)
+            site_st = str(order.get("status") or "").strip().lower()
+            if site_st in ("confirmed", "shipped", "delivered"):
+                await q.answer("Заказ уже обрабатывается")
                 return
+            saved = _get_saved_delivery_text(uid)
+            if not saved or not _delivery_text_acceptable(saved):
+                await q.answer("Нет сохранённых данных", show_alert=True)
+                _set_awaiting_delivery_input(uid, order_id)
+                await q.message.reply_text(
+                    _pay_delivery_request_text(), reply_markup=_main_keyboard()
+                )
+                return
+            _set_awaiting_delivery_confirm(uid, order_id)
             await q.answer("Передаём заказ")
             try:
                 await q.edit_message_reply_markup(reply_markup=None)
@@ -5144,6 +5239,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
                 delivery_text=saved,
                 user=user,
                 reply_chat_id=int(q.message.chat_id),
+                require_proof=False,
             )
             return
         except Exception as e:
@@ -5159,14 +5255,8 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
                 return
             uid = int(user.id)
             _rehydrate_checkout_await_states_for_user(uid)
-            resolved_oid = _find_user_order_awaiting_delivery_confirm(uid, order_id)
-            if not resolved_oid:
-                await q.answer("Сначала пришлите скриншот чека", show_alert=True)
-                return
-            order_id = resolved_oid
-            _ensure_delivery_confirm_state(uid, order_id)
             order = await _load_order_for_callback(order_id, uid)
-            if not order:
+            if not order or not _order_belongs_to_telegram_user(order, uid):
                 await q.answer()
                 await q.message.reply_text(
                     "Не удалось обработать кнопку. Откройте заказ снова с сайта или отправьте /start."
@@ -5178,6 +5268,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
             if owner_id is None or uid != int(owner_id):
                 await q.answer("Это не ваш заказ", show_alert=True)
                 return
+            _ensure_delivery_confirm_state(uid, order_id)
             await q.answer("Введите новые данные")
             try:
                 await q.edit_message_reply_markup(reply_markup=None)

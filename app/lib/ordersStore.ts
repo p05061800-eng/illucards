@@ -9,18 +9,9 @@ import { ORDERS_DIR } from "@/app/lib/orderPaths";
 import type { OrderPaymentMethod } from "@/app/lib/orderPayment";
 import { parseOrderPaymentMethod } from "@/app/lib/orderPayment";
 import type { OrderLineIn, OrderRecord, OrderStatus } from "@/app/lib/orderTypes";
-import {
-  bonusPointsSpentForOrder,
-  bonusPointsToEarnForOrderItems,
-  orderStatusEligibleForBonusAccrual,
-} from "@/app/lib/bonusProgram";
 import { sanitizeOrderLineImageUrl } from "@/app/lib/sanitizeOrderLineImageUrl";
 import { notifyTelegramWebhookUserState } from "@/app/lib/telegramStateBotSync";
-import {
-  clearSyncedCartForTelegramUser,
-  incrementTelegramUserBonusPoints,
-  trySpendTelegramUserBonusPoints,
-} from "@/app/lib/telegramUserStateStore";
+import { clearSyncedCartForTelegramUser } from "@/app/lib/telegramUserStateStore";
 
 /**
  * In-memory заказы (сервер). При перезапуске подгружается из `data/orders/*.json`.
@@ -307,17 +298,6 @@ function fileToOrderRecord(raw: unknown): OrderRecord | null {
       ? Math.floor(adminMidRaw)
       : undefined;
 
-  const bonus_awarded = o.bonus_awarded === true || o.bonus_awarded === "true";
-  const bonus_points_deducted =
-    o.bonus_points_deducted === true || o.bonus_points_deducted === "true";
-  const bonus_points_refunded =
-    o.bonus_points_refunded === true || o.bonus_points_refunded === "true";
-  const bpsRaw = o.bonus_points_spent;
-  const bonus_points_spent =
-    typeof bpsRaw === "number" && Number.isFinite(bpsRaw) && bpsRaw > 0
-      ? Math.floor(bpsRaw)
-      : undefined;
-
   const payment_method = parseOrderPaymentMethod(o.payment_method) ?? undefined;
 
   const telegram_buyer_notified =
@@ -334,12 +314,6 @@ function fileToOrderRecord(raw: unknown): OrderRecord | null {
   const telegram_payment_proof_file_id =
     typeof proofRaw === "string" && proofRaw.trim()
       ? proofRaw.trim().slice(0, 256)
-      : undefined;
-
-  const earnRaw = o.bonus_points_earn_expected;
-  const bonus_points_earn_expected =
-    typeof earnRaw === "number" && Number.isFinite(earnRaw) && earnRaw > 0
-      ? Math.floor(earnRaw)
       : undefined;
 
   const buyerSeqRaw = o.buyer_seq;
@@ -363,12 +337,6 @@ function fileToOrderRecord(raw: unknown): OrderRecord | null {
     ...(telegram_admin_message_id != null
       ? { telegram_admin_message_id }
       : {}),
-    ...(bonus_awarded ? { bonus_awarded: true as const } : {}),
-    ...(bonus_points_deducted ? { bonus_points_deducted: true as const } : {}),
-    ...(bonus_points_refunded ? { bonus_points_refunded: true as const } : {}),
-    ...(bonus_points_spent != null && bonus_points_spent > 0
-      ? { bonus_points_spent }
-      : {}),
     ...(payment_method ? { payment_method } : {}),
     ...(telegram_buyer_notified ? { telegram_buyer_notified: true as const } : {}),
     ...(delivery_details ? { delivery_details } : {}),
@@ -376,19 +344,7 @@ function fileToOrderRecord(raw: unknown): OrderRecord | null {
     ...(telegram_payment_proof_file_id
       ? { telegram_payment_proof_file_id }
       : {}),
-    ...(bonus_points_earn_expected != null && bonus_points_earn_expected > 0
-      ? { bonus_points_earn_expected }
-      : {}),
   };
-}
-
-function bonusEarnForOrderRecord(record: OrderRecord): number {
-  const fromItems = bonusPointsToEarnForOrderItems(
-    Array.isArray(record.items) ? record.items : [],
-  );
-  if (fromItems > 0) return fromItems;
-  const expected = Math.max(0, Math.floor(record.bonus_points_earn_expected ?? 0));
-  return expected;
 }
 
 async function collectOrderIdsForUser(userId: number): Promise<string[]> {
@@ -852,58 +808,9 @@ export async function updateOrderStatus(
     return { ok: false, error: "Заказ не найден", status: 404 };
   }
 
-  const spend = bonusPointsSpentForOrder(existing);
-  let bonusRefundedNow = false;
-  const refundBonusNow =
-    status === "cancelled" &&
-    existing.status !== "cancelled" &&
-    existing.bonus_points_deducted &&
-    !existing.bonus_points_refunded &&
-    spend > 0 &&
-    existing.user_id != null &&
-    existing.user_id > 0;
-  if (refundBonusNow) {
-    const uid = Math.floor(existing.user_id!);
-    const st = await incrementTelegramUserBonusPoints(uid, spend);
-    bonusRefundedNow = true;
-    await notifyTelegramWebhookUserState({
-      userId: uid,
-      cart: st.cart,
-      favorites: st.favorites,
-      deliveryCountry: st.deliveryCountry,
-      bonus_points: st.bonus_points,
-    });
-  }
-  const deductBonusNow =
-    status === "confirmed" &&
-    spend > 0 &&
-    !existing.bonus_points_deducted &&
-    existing.user_id != null &&
-    existing.user_id > 0;
-  let bonusDeductedNow = false;
-  if (deductBonusNow) {
-    const uid = Math.floor(existing.user_id!);
-    const spent = await trySpendTelegramUserBonusPoints(uid, spend);
-    if (!spent.ok) {
-      return { ok: false, error: "Недостаточно бонусов для списания", status: 409 };
-    }
-    bonusDeductedNow = true;
-    await notifyTelegramWebhookUserState({
-      userId: uid,
-      cart: spent.state.cart,
-      favorites: spent.state.favorites,
-      deliveryCountry: spent.state.deliveryCountry,
-      bonus_points: spent.state.bonus_points,
-    });
-  }
   const updated: OrderRecord = {
     ...existing,
     status,
-    ...(spend > 0 && !(existing.bonus_points_spent != null && existing.bonus_points_spent > 0)
-      ? { bonus_points_spent: spend }
-      : {}),
-    ...(bonusDeductedNow ? { bonus_points_deducted: true } : {}),
-    ...(bonusRefundedNow ? { bonus_points_refunded: true } : {}),
   };
   ORDERS[id] = updated;
   await persistOrderRecordToRedis(id, updated);
@@ -918,55 +825,11 @@ export async function updateOrderStatus(
       if (updated.telegram_admin_message_id != null) {
         raw.telegram_admin_message_id = updated.telegram_admin_message_id;
       }
-      if (updated.bonus_points_deducted) {
-        raw.bonus_points_deducted = true;
-      }
-      if (updated.bonus_points_refunded) {
-        raw.bonus_points_refunded = true;
-      }
       await fs.writeFile(filePath, JSON.stringify(raw, null, 2), "utf-8");
     }
   } catch {
     /* нет файла или FS только для чтения — статус уже в ORDERS */
   }
-  const grantBonusNow =
-    status === "confirmed" &&
-    !existing.bonus_awarded &&
-    existing.user_id != null &&
-    existing.user_id > 0;
-  if (grantBonusNow) {
-    const earn = bonusEarnForOrderRecord(existing);
-    if (earn > 0) {
-      try {
-        const uid = Math.floor(existing.user_id!);
-        const st = await incrementTelegramUserBonusPoints(uid, earn);
-        ORDERS[id] = { ...ORDERS[id]!, bonus_awarded: true };
-        await persistOrderRecordToRedis(id, ORDERS[id]!);
-        await notifyTelegramWebhookUserState({
-          userId: uid,
-          cart: st.cart,
-          favorites: st.favorites,
-          deliveryCountry: st.deliveryCountry,
-          bonus_points: st.bonus_points,
-          bonusEarned: earn,
-        });
-        try {
-          const text2 = await fs.readFile(filePath, "utf-8");
-          const parsed2: unknown = JSON.parse(text2);
-          if (typeof parsed2 === "object" && parsed2 !== null) {
-            const raw2 = parsed2 as Record<string, unknown>;
-            raw2.bonus_awarded = true;
-            await fs.writeFile(filePath, JSON.stringify(raw2, null, 2), "utf-8");
-          }
-        } catch {
-          /* ignore */
-        }
-      } catch {
-        /* начисление бонусов не должно ломать смену статуса */
-      }
-    }
-  }
-
   if (
     status === "confirmed" &&
     existing.status !== "confirmed" &&
@@ -981,7 +844,6 @@ export async function updateOrderStatus(
         cart: st.cart,
         favorites: st.favorites,
         deliveryCountry: st.deliveryCountry,
-        bonus_points: st.bonus_points,
         cartClearedAt: st.cartClearedAt,
       });
     } catch {
@@ -1320,53 +1182,6 @@ async function collectAllOrderIds(): Promise<string[]> {
   }
 
   return ids;
-}
-
-export async function reconcileBonusPointsForUser(userId: number): Promise<number> {
-  if (!Number.isFinite(userId) || userId <= 0) return 0;
-  const uid = Math.floor(userId);
-  const rows = await listOrdersForUser(uid);
-  let awarded = 0;
-  for (const row of rows) {
-    const record = await getOrder(row.id);
-    if (
-      !record ||
-      record.user_id !== uid ||
-      record.bonus_awarded ||
-      !orderStatusEligibleForBonusAccrual(record.status)
-    ) {
-      continue;
-    }
-    const before = bonusEarnForOrderRecord(record);
-    if (before <= 0) continue;
-    const result = await updateOrderStatus(row.id, record.status);
-    if (result.ok) awarded += before;
-  }
-  return awarded;
-}
-
-/** Списать бонусы по подтверждённым заказам, если пропустили при синке с ботом. */
-export async function reconcileBonusDeductionForUser(userId: number): Promise<number> {
-  if (!Number.isFinite(userId) || userId <= 0) return 0;
-  const uid = Math.floor(userId);
-  const rows = await listOrdersForUser(uid);
-  let deducted = 0;
-  for (const row of rows) {
-    const record = await getOrder(row.id);
-    if (
-      !record ||
-      record.user_id !== uid ||
-      record.bonus_points_deducted ||
-      record.status !== "confirmed"
-    ) {
-      continue;
-    }
-    const spend = bonusPointsSpentForOrder(record);
-    if (spend <= 0) continue;
-    const result = await updateOrderStatus(row.id, "confirmed");
-    if (result.ok) deducted += spend;
-  }
-  return deducted;
 }
 
 function orderSummaryFromRecord(

@@ -8,11 +8,6 @@ import { OrderLineRow } from "@/app/components/orders/OrderLineRow";
 import { useAuth } from "@/app/context/AuthContext";
 import type { OrderListSummary } from "@/app/lib/ordersStore";
 import {
-  bonusBalanceDescriptionRu,
-  BYN_PER_100_BONUS_POINTS,
-  RUB_PER_100_BONUS_POINTS,
-} from "@/app/lib/bonusProgram";
-import {
   formatOrderCardRef,
   orderAccountFlowBadgeClass,
   orderAccountFlowKind,
@@ -61,7 +56,6 @@ export default function AccountPageClient() {
   const [autoLoginError, setAutoLoginError] = useState<string | null>(null);
   const [orders, setOrders] = useState<OrderListSummary[] | null>(null);
   const [ordersError, setOrdersError] = useState<string | null>(null);
-  const [bonusPointsBalance, setBonusPointsBalance] = useState(0);
   const [telegramUsernameFromServer, setTelegramUsernameFromServer] = useState("");
   const [orderLinesOpenById, setOrderLinesOpenById] = useState<Record<string, boolean>>({});
   const [loginAttempt, setLoginAttempt] = useState(0);
@@ -222,7 +216,6 @@ export default function AccountPageClient() {
         if (ordersRes.status === 401) {
           setLsGate("no_telegram");
           setOrders([]);
-          setBonusPointsBalance(0);
           return;
         }
         if (!ordersRes.ok) {
@@ -232,15 +225,8 @@ export default function AccountPageClient() {
         }
         const data = (await ordersRes.json()) as {
           orders?: OrderListSummary[];
-          bonus_points?: unknown;
         };
         setOrders(Array.isArray(data.orders) ? data.orders : []);
-        if (
-          typeof data.bonus_points === "number" &&
-          Number.isFinite(data.bonus_points)
-        ) {
-          setBonusPointsBalance(Math.max(0, Math.floor(data.bonus_points)));
-        }
       })
       .catch(() => {
         setOrdersError("Ошибка сети");
@@ -250,18 +236,11 @@ export default function AccountPageClient() {
     const stateTask = fetchWithTimeout("/api/user-state", { cache: "no-store" })
       .then(async (stateRes) => {
         if (!stateRes.ok) {
-          setBonusPointsBalance(0);
           return;
         }
         const st = (await stateRes.json()) as {
-          bonus_points?: unknown;
           telegram_username?: unknown;
         };
-        let bp = 0;
-        if (typeof st.bonus_points === "number" && Number.isFinite(st.bonus_points)) {
-          bp = Math.max(0, Math.floor(st.bonus_points));
-        }
-        setBonusPointsBalance(bp);
         const serverUsername =
           typeof st.telegram_username === "string"
             ? st.telegram_username.replace(/^@/, "").trim()
@@ -272,9 +251,7 @@ export default function AccountPageClient() {
           if (uid != null) persistTelegramUserIdentity(uid, serverUsername);
         }
       })
-      .catch(() => {
-        setBonusPointsBalance(0);
-      });
+      .catch(() => undefined);
 
     await Promise.allSettled([ordersTask, stateTask]);
   }, []);
@@ -475,32 +452,6 @@ export default function AccountPageClient() {
           <span className="font-mono font-medium tabular-nums text-zinc-900">
             {telegramId}
           </span>
-        </p>
-      </div>
-
-      <div className="mt-6 rounded-2xl bg-zinc-50 p-5 text-zinc-900 shadow-[0_2px_12px_rgba(0,0,0,0.12)] ring-1 ring-zinc-200/90 sm:rounded-3xl sm:p-6">
-        <h2 className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
-          Бонусная программа
-        </h2>
-        <p className="mt-2 text-lg font-bold tabular-nums text-zinc-950">
-          {orders === null
-            ? "…"
-            : `${bonusPointsBalance.toLocaleString("ru-RU")} баллов`}
-        </p>
-        {orders !== null ? (
-          <p className="mt-1 text-sm text-zinc-600">{bonusBalanceDescriptionRu(bonusPointsBalance)}</p>
-        ) : (
-          <p className="mt-1 text-sm text-zinc-500">Загрузка…</p>
-        )}
-        <p className="mt-3 text-xs leading-relaxed text-zinc-500">
-          За каждую единицу товара — 100 баллов один раз после подтверждения заказа админом
-          («Принят»). Списание бонусов — тоже только после «Принят». 100 баллов ={" "}
-          {BYN_PER_100_BONUS_POINTS.toLocaleString("ru-RU", {
-            minimumFractionDigits: 0,
-            maximumFractionDigits: 2,
-          })}{" "}
-          BYN (BY) или {RUB_PER_100_BONUS_POINTS.toLocaleString("ru-RU")} RUB (другие страны), шаг
-          100.
         </p>
       </div>
 

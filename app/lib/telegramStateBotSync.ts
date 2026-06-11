@@ -13,8 +13,6 @@ export async function notifyTelegramWebhookUserState(opts: {
   cart: SyncedCartItem[];
   favorites: string[];
   deliveryCountry: DeliveryCountry | null;
-  bonus_points?: number;
-  bonusEarned?: number;
   cartClearedAt?: number;
 }): Promise<void> {
   const base = telegramBotApiUrl();
@@ -29,12 +27,6 @@ export async function notifyTelegramWebhookUserState(opts: {
       body: JSON.stringify({
         user_id: opts.userId,
         delivery_country: opts.deliveryCountry,
-        ...(typeof opts.bonus_points === "number" && Number.isFinite(opts.bonus_points)
-          ? { bonus_points: Math.max(0, Math.floor(opts.bonus_points)) }
-          : {}),
-        ...(typeof opts.bonusEarned === "number" && Number.isFinite(opts.bonusEarned)
-          ? { bonusEarned: Math.max(0, Math.floor(opts.bonusEarned)) }
-          : {}),
         ...(typeof opts.cartClearedAt === "number" && Number.isFinite(opts.cartClearedAt)
           ? { cartClearedAt: Math.floor(opts.cartClearedAt) }
           : {}),

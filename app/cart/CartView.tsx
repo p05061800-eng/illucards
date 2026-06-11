@@ -2,17 +2,15 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useId, useMemo } from "react";
+import { useId } from "react";
 import { useAuth } from "../context/AuthContext";
 import { useCart } from "../context/CartContext";
 import { useCurrency } from "../context/CurrencyContext";
 import { useCategoryTiles } from "../context/CategoryFramesContext";
 import { getCardArtIntrinsicSize } from "../lib/cardArtIntrinsicSize";
-import { bonusPointsToEarnForOrderItems } from "../lib/bonusProgram";
 import { displayCurrencyForDelivery, formatCardPrice } from "../lib/formatPrice";
 import { TelegramCheckoutButton } from "@/components/checkout/TelegramCheckoutButton";
 import { DeliveryCountryField } from "../components/DeliveryCountryField";
-import { BonusSpendControl } from "../components/cart/BonusSpendControl";
 import { CartOrderTotals } from "../components/cart/CartOrderTotals";
 
 export default function CartView() {
@@ -28,11 +26,6 @@ export default function CartView() {
     orderTotalRub,
     checkoutTotalByn,
     checkoutTotalRub,
-    bonusBalance,
-    bonusSpendPoints,
-    setBonusSpendPoints,
-    maxBonusSpendPoints,
-    bonusDiscountByn,
     removeFromCart,
     setQuantity,
     hydrated,
@@ -42,11 +35,6 @@ export default function CartView() {
   const priceCurrency = displayCurrencyForDelivery(deliveryCountry);
   const categoryTiles = useCategoryTiles();
   const deliveryFieldId = useId();
-  const bonusPointsFromThisCart = useMemo(
-    () => bonusPointsToEarnForOrderItems(cartItems.map((i) => ({ quantity: i.quantity }))),
-    [cartItems],
-  );
-
   return (
     <>
       <div className="relative z-10 mx-auto w-full max-w-2xl px-4 pb-20 pt-6 sm:px-6 sm:pt-8">
@@ -200,17 +188,6 @@ export default function CartView() {
                   </div>
                 </div>
               )}
-              {primaryTelegramUserId != null ? (
-                <BonusSpendControl
-                  bonusBalance={bonusBalance}
-                  bonusSpendPoints={bonusSpendPoints}
-                  maxBonusSpendPoints={maxBonusSpendPoints}
-                  bonusDiscountByn={bonusDiscountByn}
-                  deliveryCountry={deliveryCountry}
-                  bonusPointsFromThisCart={bonusPointsFromThisCart}
-                  onSpendChange={setBonusSpendPoints}
-                />
-              ) : null}
               <CartOrderTotals
                 deliveryCountry={deliveryCountry}
                 totalPriceByn={totalPriceByn}
@@ -221,8 +198,6 @@ export default function CartView() {
                 orderTotalRub={orderTotalRub}
                 checkoutTotalByn={checkoutTotalByn}
                 checkoutTotalRub={checkoutTotalRub}
-                bonusSpendPoints={bonusSpendPoints}
-                bonusDiscountByn={bonusDiscountByn}
               />
               <TelegramCheckoutButton className="rounded-full py-3.5 text-sm sm:text-[15px]" />
             </div>

@@ -12,7 +12,6 @@ export type SyncOrderToTelegramBotInput = {
   total: number;
   delivery: DeliveryCountry;
   username?: string | null;
-  bonusPointsSpent?: number;
   /** Сайт уже отправил сообщение покупателю — бот не дублирует. */
   skipBuyerNotify?: boolean;
 };
@@ -22,7 +21,6 @@ export type SyncCartAfterVerifyInput = {
   cart: unknown[];
   deliveryCountry: string;
   grandTotal?: number;
-  bonusPoints?: number;
 };
 
 function botBase(): string {
@@ -104,7 +102,6 @@ export async function syncCartToTelegramBotAfterVerify(
       items,
       deliveryCountry: input.deliveryCountry,
       ...(input.grandTotal != null ? { grandTotal: input.grandTotal } : {}),
-      ...(input.bonusPoints != null ? { bonusPoints: input.bonusPoints } : {}),
     },
     "verify",
   );
@@ -152,9 +149,6 @@ export async function syncOrderToTelegramBot(
     delivery: input.delivery,
     user_id: input.userId,
     status: "new",
-    ...(input.bonusPointsSpent != null && input.bonusPointsSpent > 0
-      ? { bonus_points_spent: input.bonusPointsSpent }
-      : {}),
     ...(input.username ? { username: input.username } : {}),
   };
 

@@ -45,8 +45,6 @@ export async function POST(request: Request) {
             typeof o.deliveryCountry === "string" ? o.deliveryCountry : "BY",
           grandTotal:
             typeof o.grandTotal === "number" ? o.grandTotal : undefined,
-          bonusPoints:
-            typeof o.bonusPoints === "number" ? o.bonusPoints : undefined,
         }
       : null;
 
@@ -57,7 +55,6 @@ export async function POST(request: Request) {
         cart: cartPayload.cart,
         deliveryCountry: cartPayload.deliveryCountry,
         grandTotal: cartPayload.grandTotal,
-        bonusPoints: cartPayload.bonusPoints,
       });
     }
     return NextResponse.json({
@@ -88,9 +85,6 @@ export async function POST(request: Request) {
     ...(cartPayload ? { deliveryCountry: cartPayload.deliveryCountry } : {}),
     ...(cartPayload?.grandTotal != null
       ? { grandTotal: cartPayload.grandTotal }
-      : {}),
-    ...(cartPayload?.bonusPoints != null
-      ? { bonusPoints: cartPayload.bonusPoints }
       : {}),
   });
 

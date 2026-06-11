@@ -97,7 +97,6 @@ export type BotVerifyCodeInput = {
   cart?: unknown[];
   deliveryCountry?: string;
   grandTotal?: number;
-  bonusPoints?: number;
 };
 
 export type BotVerifyCodeResult =

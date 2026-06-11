@@ -20,7 +20,6 @@ import {
   cardUsesAdultFixedPricing,
   parseCardRarity,
 } from "../lib/cardRarityTags";
-import { bonusDiscountByn, maxSpendableBonusPoints } from "../lib/bonusProgram";
 import { deliveryCharge } from "../lib/delivery";
 import { normalizeDeliveryCountry, type DeliveryCountry } from "../lib/delivery";
 import {
@@ -275,20 +274,9 @@ type CartContextValue = {
       openCart?: boolean;
     },
   ) => void;
-  /** Баллы на счёте (с сервера). */
-  bonusBalance: number;
-  /** Сколько баллов списать в этом заказе. */
-  bonusSpendPoints: number;
-  setBonusSpendPoints: (points: number) => void;
-  /** Обновить баланс баллов после списания на сервере (checkout). */
-  applyServerBonusBalance: (points: number) => void;
-  /** Максимум баллов к списанию при текущей корзине и доставке. */
-  maxBonusSpendPoints: number;
-  /** Скидка в BYN от выбранных баллов. */
-  bonusDiscountByn: number;
-  /** Итого к оплате после бонусов (BYN). */
+  /** Итого к оплате (BYN). */
   checkoutTotalByn: number;
-  /** Итого после бонусов для отображения в RUB (доставка не BY). */
+  /** Итого к оплате для отображения в RUB (доставка не BY). */
   checkoutTotalRub: number;
 };
 
@@ -300,8 +288,6 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const [cartOpen, setCartOpen] = useState(false);
   const [deliveryCountry, setDeliveryCountryState] =
     useState<DeliveryCountry | null>(null);
-  const [bonusBalance, setBonusBalance] = useState(0);
-  const [bonusSpendPoints, setBonusSpendPointsState] = useState(0);
   const { hydrated: authHydrated, primaryTelegramUserId } = useAuth();
   const { currency, setCurrency, hydrated: currencyHydrated } = useCurrency();
 
@@ -349,17 +335,6 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   const setDeliveryCountry = useCallback((country: DeliveryCountry | null) => {
     setDeliveryCountryState(country);
-    if (country == null) setBonusSpendPointsState(0);
-  }, []);
-
-  const setBonusSpendPoints = useCallback((points: number) => {
-    const p = Math.max(0, Math.floor(Number(points) || 0));
-    setBonusSpendPointsState(p);
-  }, []);
-
-  const applyServerBonusBalance = useCallback((points: number) => {
-    setBonusBalance(Math.max(0, Math.floor(Number(points) || 0)));
-    setBonusSpendPointsState(0);
   }, []);
 
   useEffect(() => {
@@ -383,24 +358,17 @@ export function CartProvider({ children }: { children: ReactNode }) {
       const data = (await res.json()) as {
         cart?: unknown[];
         updatedAt?: unknown;
-        bonus_points?: unknown;
         cartClearedAt?: unknown;
       };
       const ts =
         typeof data.updatedAt === "number" && Number.isFinite(data.updatedAt)
           ? data.updatedAt
           : 0;
-      const bp =
-        typeof data.bonus_points === "number" && Number.isFinite(data.bonus_points)
-          ? Math.max(0, Math.floor(data.bonus_points))
-          : 0;
       const serverCart = normalizeLines(data.cart);
       const cartClearedAt =
         typeof data.cartClearedAt === "number" && Number.isFinite(data.cartClearedAt)
           ? data.cartClearedAt
           : 0;
-      setBonusBalance(bp);
-
       const prevSeenClear = readClientSeenCartClearedAt();
       const localModified = readLocalCartModifiedAt();
       const serverClearedCart =
@@ -418,13 +386,11 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
       if (serverClearedCart && localModified <= Math.max(cartClearedAt, prevSeenClear)) {
         setCartItems([]);
-        setBonusSpendPointsState(0);
         applyLocalCartClear(Math.max(cartClearedAt, prevSeenClear) || Date.now());
       } else if (serverCart.length > 0) {
         setCartItems((prev) => (prev.length === 0 ? serverCart : prev));
       } else if (cartClearedAt > 0 || prevSeenClear > 0) {
         setCartItems([]);
-        setBonusSpendPointsState(0);
         applyLocalCartClear(Math.max(cartClearedAt, prevSeenClear) || Date.now());
       }
     } catch {
@@ -689,36 +655,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
     [totalPriceRub, deliveryPriceRub]
   );
 
-  const bonusDiscountBynValue = useMemo(() => {
-    if (!deliveryCountry) return 0;
-    return bonusDiscountByn(bonusSpendPoints, deliveryCountry);
-  }, [bonusSpendPoints, deliveryCountry]);
-
-  const maxBonusSpendPointsValue = useMemo(() => {
-    if (!deliveryCountry || bonusBalance <= 0 || orderTotalByn <= 0) return 0;
-    return maxSpendableBonusPoints(bonusBalance, orderTotalByn, deliveryCountry);
-  }, [bonusBalance, deliveryCountry, orderTotalByn]);
-
-  useEffect(() => {
-    setBonusSpendPointsState((p) => Math.min(p, maxBonusSpendPointsValue));
-  }, [maxBonusSpendPointsValue]);
-
-  useEffect(() => {
-    if (cartItems.length === 0) setBonusSpendPointsState(0);
-  }, [cartItems.length]);
-
-  const checkoutTotalByn = useMemo(
-    () => Math.max(0, Math.round((orderTotalByn - bonusDiscountBynValue) * 100) / 100),
-    [orderTotalByn, bonusDiscountBynValue],
-  );
-
-  const checkoutTotalRub = useMemo(() => {
-    if (!deliveryCountry) return orderTotalRub;
-    if (deliveryCountry === "BY") {
-      return Math.max(0, Math.round(orderTotalRub - rubFromByn(bonusDiscountBynValue)));
-    }
-    return Math.max(0, orderTotalRub - bonusSpendPoints);
-  }, [bonusDiscountBynValue, bonusSpendPoints, deliveryCountry, orderTotalRub]);
+  const checkoutTotalByn = orderTotalByn;
+  const checkoutTotalRub = orderTotalRub;
 
   const value = useMemo(
     () => ({
@@ -742,12 +680,6 @@ export function CartProvider({ children }: { children: ReactNode }) {
       setQuantity,
       clearCart,
       repeatOrderToCart,
-      bonusBalance,
-      bonusSpendPoints,
-      setBonusSpendPoints,
-      applyServerBonusBalance,
-      maxBonusSpendPoints: maxBonusSpendPointsValue,
-      bonusDiscountByn: bonusDiscountBynValue,
       checkoutTotalByn,
       checkoutTotalRub,
     }),
@@ -772,12 +704,6 @@ export function CartProvider({ children }: { children: ReactNode }) {
       setQuantity,
       clearCart,
       repeatOrderToCart,
-      bonusBalance,
-      bonusSpendPoints,
-      setBonusSpendPoints,
-      applyServerBonusBalance,
-      maxBonusSpendPointsValue,
-      bonusDiscountBynValue,
       checkoutTotalByn,
       checkoutTotalRub,
     ]

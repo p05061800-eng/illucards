@@ -60,14 +60,12 @@ export async function POST(req: NextRequest) {
         cart: prev?.cart ?? [],
         favorites: ids,
         deliveryCountry: prev?.deliveryCountry ?? null,
-        bonus_points: Math.max(0, Math.floor(prev?.bonus_points ?? 0)),
       });
       await notifyTelegramWebhookUserState({
         userId,
         cart: saved.cart,
         favorites: saved.favorites,
         deliveryCountry: saved.deliveryCountry,
-        bonus_points: saved.bonus_points,
       });
     }
     return NextResponse.json({ ok: true });

@@ -45,15 +45,11 @@ export async function POST(request: NextRequest) {
       : undefined,
   ) ?? "BY";
   let total = 0;
-  let bonusPointsSpent: number | undefined;
   let username: string | null | undefined;
 
   if (orderRaw && typeof orderRaw === "object" && orderRaw !== null) {
     const ord = orderRaw as Record<string, unknown>;
     total = typeof ord.total === "number" ? ord.total : Number(ord.total) || 0;
-    if (typeof ord.bonus_points_spent === "number") {
-      bonusPointsSpent = Math.floor(ord.bonus_points_spent);
-    }
     if (typeof ord.username === "string") {
       username = ord.username.trim() || null;
     }
@@ -70,7 +66,6 @@ export async function POST(request: NextRequest) {
     total,
     delivery,
     username,
-    bonusPointsSpent,
   });
 
   return NextResponse.json({ ok: true, order_id: orderId });

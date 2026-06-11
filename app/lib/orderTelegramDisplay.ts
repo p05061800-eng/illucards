@@ -3,7 +3,6 @@ import {
   DELIVERY_COUNTRY_LABELS,
   deliveryCharge,
 } from "@/app/lib/delivery";
-import { bonusDiscountByn } from "@/app/lib/bonusProgram";
 import { displayCurrencyForDelivery } from "@/app/lib/formatPrice";
 import type { OrderLineIn } from "@/app/lib/orderTypes";
 
@@ -40,16 +39,14 @@ export function orderCheckoutDisplayTotal(input: {
   items: readonly OrderLineIn[];
   delivery: DeliveryCountry;
   totalByn: number;
-  bonusPointsSpent?: number;
 }): { amount: number; currency: "BYN" | "RUB" } {
-  const spent = Math.max(0, Math.floor(input.bonusPointsSpent ?? 0));
   if (displayCurrencyForDelivery(input.delivery) === "BYN") {
     return { amount: input.totalByn, currency: "BYN" };
   }
   const goodsRub = orderGoodsTotalRub(input.items);
   const delRub = deliveryCharge(input.delivery).amountRub;
   return {
-    amount: Math.max(0, goodsRub + delRub - spent),
+    amount: Math.max(0, goodsRub + delRub),
     currency: "RUB",
   };
 }
@@ -80,23 +77,10 @@ export function formatDeliveryLineTelegram(delivery: DeliveryCountry): string {
   return `🚚 Доставка: ${flag} ${label} — ${formatRubAmount(amountRub)}`;
 }
 
-export function formatBonusDiscountTelegram(
-  bonusPointsSpent: number,
-  delivery: DeliveryCountry,
-): string {
-  const pts = Math.max(0, Math.floor(bonusPointsSpent));
-  if (pts <= 0) return "";
-  if (displayCurrencyForDelivery(delivery) === "BYN") {
-    return formatBynAmount(bonusDiscountByn(pts, delivery));
-  }
-  return formatRubAmount(pts);
-}
-
 export function formatOrderTotalTelegram(input: {
   items: readonly OrderLineIn[];
   delivery: DeliveryCountry;
   totalByn: number;
-  bonusPointsSpent?: number;
 }): string {
   const { amount, currency } = orderCheckoutDisplayTotal(input);
   return currency === "BYN" ? formatBynAmount(amount) : formatRubAmount(amount);

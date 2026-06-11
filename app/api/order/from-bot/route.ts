@@ -10,11 +10,6 @@ import {
   saveOrderRecord,
   updateOrderStatus,
 } from "@/app/lib/ordersStore";
-import { getTelegramUserState } from "@/app/lib/telegramUserStateStore";
-import {
-  bonusPointsToEarnForOrderItems,
-  orderStatusEligibleForBonusAccrual,
-} from "@/app/lib/bonusProgram";
 
 function parseUserId(raw: unknown): number | null {
   const n = typeof raw === "number" ? raw : Number(raw);
@@ -65,12 +60,6 @@ function parseUsername(raw: unknown): string | null {
   return /^[a-zA-Z0-9_]+$/.test(t) ? t : null;
 }
 
-function parsePositiveInt(raw: unknown): number | undefined {
-  const n = typeof raw === "number" ? raw : Number(raw);
-  if (!Number.isFinite(n) || n <= 0) return undefined;
-  return Math.floor(n);
-}
-
 function parseOptionalOrderId(raw: unknown): string | null {
   if (typeof raw !== "string") return null;
   const id = raw.trim();
@@ -119,7 +108,6 @@ export async function POST(request: NextRequest) {
     parseOrderStatusInput(o.status) ??
     (o.paid === true ? "paid" : "new");
   const initialStatus: OrderStatus = "new";
-  const bonusPointsSpent = parsePositiveInt(o.bonus_points_spent ?? o.bonusApplied);
   const orderId = parseOptionalOrderId(o.order_id ?? o.id) ?? randomUUID();
   const prior = await getOrder(orderId);
   const buyerSeqRaw = o.buyer_seq;
@@ -131,7 +119,6 @@ export async function POST(request: NextRequest) {
       : (prior?.buyer_seq != null && prior.buyer_seq > 0
           ? prior.buyer_seq
           : await assignBuyerSeqForNewOrder(userId));
-  const earnExpected = bonusPointsToEarnForOrderItems(items);
   const record: OrderRecord = {
     ...(prior ?? {}),
     user_id: userId,
@@ -140,15 +127,6 @@ export async function POST(request: NextRequest) {
     total,
     delivery,
     status: initialStatus,
-    ...(bonusPointsSpent != null
-      ? { bonus_points_spent: bonusPointsSpent }
-      : prior?.bonus_points_spent != null && prior.bonus_points_spent > 0
-        ? { bonus_points_spent: prior.bonus_points_spent }
-        : {}),
-    ...(prior?.bonus_points_deducted ? { bonus_points_deducted: true as const } : {}),
-    ...(prior?.bonus_points_refunded ? { bonus_points_refunded: true as const } : {}),
-    ...(prior?.bonus_awarded ? { bonus_awarded: true as const } : {}),
-    ...(earnExpected > 0 ? { bonus_points_earn_expected: earnExpected } : {}),
     ...(buyer_seq != null && buyer_seq > 0 ? { buyer_seq } : {}),
   };
 
@@ -162,15 +140,9 @@ export async function POST(request: NextRequest) {
       );
     }
   }
-  const bonusEarned = orderStatusEligibleForBonusAccrual(requestedStatus)
-    ? bonusPointsToEarnForOrderItems(items)
-    : 0;
-  const state = await getTelegramUserState(userId);
   return NextResponse.json({
     ok: true,
     order_id: orderId,
     status: requestedStatus,
-    bonus_earned: bonusEarned,
-    bonus_points: Math.max(0, Math.floor(state?.bonus_points ?? 0)),
   });
 }

@@ -93,22 +93,10 @@ export async function POST(request: NextRequest) {
     }
     nextState.deliveryCountry = deliveryCountry;
   }
-  const prevBonusPoints = Math.max(0, Math.floor(prev?.bonus_points ?? 0));
-  let bonus_points = prevBonusPoints;
-  const bpRaw = o.bonus_points;
-  if (bpRaw !== undefined && bpRaw !== null) {
-    const n = typeof bpRaw === "number" ? bpRaw : Number(bpRaw);
-    if (Number.isFinite(n) && n >= 0 && n <= 1e9) {
-      bonus_points = Math.floor(n);
-    }
-  }
-
-  nextState.bonus_points = bonus_points;
   const saved = await saveTelegramUserState(userId, nextState);
 
   return NextResponse.json({
     ok: true,
     updatedAt: saved.updatedAt,
-    bonus_points: saved.bonus_points,
   });
 }

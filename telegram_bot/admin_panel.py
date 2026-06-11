@@ -69,7 +69,7 @@ def _client_main_keyboard() -> ReplyKeyboardMarkup:
     return ReplyKeyboardMarkup(
         [
             ["💬 Связь", "📦 Мои заказы"],
-            ["🚚 Доставка", "⭐ Бонусы"],
+            ["🚚 Доставка"],
         ],
         resize_keyboard=True,
     )

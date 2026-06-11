@@ -13,12 +13,9 @@ import {
   updateOrderPaymentProofFileId,
   updateOrderStatus,
 } from "@/app/lib/ordersStore";
-import { getTelegramUserState } from "@/app/lib/telegramUserStateStore";
-import { bonusPointsToEarnForOrderItems } from "@/app/lib/bonusProgram";
 import {
   normalizeOrderItems,
   parseDeliveryCountry,
-  parseOptionalBonusPointsToSpend,
   parseOptionalTelegramUserId,
   parseOptionalUsername,
   persistOrder,
@@ -67,11 +64,6 @@ export async function POST(request: NextRequest) {
         ? o.payment_proof_file_id.trim()
         : "";
   const hasPaymentProofFileId = paymentProofFileIdRaw.length > 0;
-  const earnExpectedRaw = o.bonus_points_earn_expected;
-  const earnExpectedPatch =
-    typeof earnExpectedRaw === "number" && Number.isFinite(earnExpectedRaw) && earnExpectedRaw > 0
-      ? Math.floor(earnExpectedRaw)
-      : undefined;
   if (!orderId) {
     return NextResponse.json({ error: "Укажите order_id" }, { status: 400 });
   }
@@ -108,7 +100,6 @@ export async function POST(request: NextRequest) {
       });
       if (!created.ok) {
         const buyer_seq = await assignBuyerSeqForNewOrder(userId);
-        const earnFallback = bonusPointsToEarnForOrderItems(items);
         await saveOrderRecord(orderId, {
           user_id: userId,
           username: parseOptionalUsername(o.username) ?? null,
@@ -116,7 +107,6 @@ export async function POST(request: NextRequest) {
           total,
           delivery,
           status: "new",
-          ...(earnFallback > 0 ? { bonus_points_earn_expected: earnFallback } : {}),
           ...(buyer_seq != null && buyer_seq > 0 ? { buyer_seq } : {}),
         });
       }
@@ -132,27 +122,18 @@ export async function POST(request: NextRequest) {
           parseOptionalUsername(o.username),
         )) ?? existing;
     }
-    if (existing && earnExpectedPatch != null && !(existing.bonus_points_earn_expected ?? 0)) {
+    const items = normalizeOrderItems(o.items);
+    if (
+      existing &&
+      items &&
+      items.length > 0 &&
+      (!Array.isArray(existing.items) || existing.items.length === 0)
+    ) {
       await saveOrderRecord(orderId, {
         ...existing,
-        bonus_points_earn_expected: earnExpectedPatch,
+        items,
       });
       existing = await getOrder(orderId);
-    } else if (existing) {
-      const items = normalizeOrderItems(o.items);
-      if (
-        items &&
-        items.length > 0 &&
-        (!Array.isArray(existing.items) || existing.items.length === 0)
-      ) {
-        const earnFallback = bonusPointsToEarnForOrderItems(items);
-        await saveOrderRecord(orderId, {
-          ...existing,
-          items,
-          ...(earnFallback > 0 ? { bonus_points_earn_expected: earnFallback } : {}),
-        });
-        existing = await getOrder(orderId);
-      }
     }
   }
 
@@ -188,18 +169,6 @@ export async function POST(request: NextRequest) {
     existing = await getOrder(orderId);
   }
 
-  const bonusSpendPatch = parseOptionalBonusPointsToSpend(
-    o.bonus_points_spent ?? o.bonusPointsSpent,
-  );
-  if (bonusSpendPatch > 0 && existing && !existing.bonus_points_deducted) {
-    const patched: typeof existing = {
-      ...existing,
-      bonus_points_spent: bonusSpendPatch,
-    };
-    await saveOrderRecord(orderId, patched);
-    existing = patched;
-  }
-
   if (status) {
     if (!existing) {
       return NextResponse.json(
@@ -217,10 +186,5 @@ export async function POST(request: NextRequest) {
     existing = await getOrder(orderId);
   }
 
-  const userId = existing?.user_id != null ? Math.floor(existing.user_id) : null;
-  const state = userId != null && userId > 0 ? await getTelegramUserState(userId) : null;
-  return NextResponse.json({
-    ok: true,
-    ...(state ? { bonus_points: state.bonus_points } : {}),
-  });
+  return NextResponse.json({ ok: true });
 }

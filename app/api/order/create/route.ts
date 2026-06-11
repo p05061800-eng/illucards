@@ -3,7 +3,6 @@ import { after, NextResponse } from "next/server";
 import {
   normalizeOrderItems,
   parseDeliveryCountry,
-  parseOptionalBonusPointsToSpend,
   parseOptionalTelegramUserId,
   parseOptionalUsername,
   persistOrder,
@@ -57,9 +56,6 @@ export async function POST(request: NextRequest) {
     );
   }
   const username = parseOptionalUsername(o.username);
-  const bonusPointsToSpend = parseOptionalBonusPointsToSpend(
-    o.bonus_points_to_spend ?? o.bonusPointsToSpend,
-  );
 
   const result = await persistOrder({
     deliveryCountry: delivery,
@@ -67,7 +63,6 @@ export async function POST(request: NextRequest) {
     userId,
     username: username ?? null,
     clientTotalByn: total,
-    bonusPointsToSpend,
   });
 
   if (!result.ok) {
@@ -81,7 +76,6 @@ export async function POST(request: NextRequest) {
     total: result.totalByn,
     delivery,
     username: username ?? null,
-    bonusPointsSpent: result.bonusPointsSpent,
     skipBuyerNotify: true,
   };
 
@@ -94,7 +88,6 @@ export async function POST(request: NextRequest) {
           cart: state.cart,
           favorites: state.favorites,
           deliveryCountry: state.deliveryCountry,
-          bonus_points: state.bonus_points,
         });
       }
       await syncOrderToTelegramBot(syncInput);
@@ -104,7 +97,6 @@ export async function POST(request: NextRequest) {
         items,
         total: result.totalByn,
         delivery,
-        bonusPointsSpent: result.bonusPointsSpent,
       });
     } catch (error: unknown) {
       console.warn("[checkout] post-create sync failed", {
@@ -122,8 +114,6 @@ export async function POST(request: NextRequest) {
   return NextResponse.json({
     order_id: result.orderId,
     total: result.totalByn,
-    bonus_points_spent: result.bonusPointsSpent,
-    bonus_points: result.bonusPointsBalance,
     telegram_recorded: true,
     telegram_sent: false,
     telegram_bot_start: `order_${result.orderId}`,

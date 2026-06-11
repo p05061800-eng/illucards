@@ -40,10 +40,10 @@ from db import init_db, recompute_user_order_stats, sync_all_users_order_stats, 
 logging.basicConfig(format="%(asctime)s %(levelname)s %(message)s", level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-BOT_BUILD_ID = "2026-06-11-admin-order-notify-v1"
+BOT_BUILD_ID = "2026-06-11-no-bonus-program-v1"
 
 REPLY_MENU_TEXTS = frozenset(
-    {"💬 Связь", "📦 Мои заказы", "📜 Мои заказы", "🚚 Доставка", "⭐ Бонусы"}
+    {"💬 Связь", "📦 Мои заказы", "📜 Мои заказы", "🚚 Доставка"}
 )
 
 SUPPORT_INTRO_TEXT = (
@@ -55,11 +55,6 @@ SUPPORT_INTRO_TEXT = (
     "Администратор ответит вам прямо здесь 👇"
 )
 MSG_SUPPORT_THANKS = "Сообщение принято, мы ответим в этом чате."
-MSG_LOYALTY_MENU = (
-    "100 бонусов = 100 RUB или 3,5 BYN\n"
-    "Потратить бонусы можно на последующие заказы"
-)
-
 REPO_ROOT = Path(__file__).resolve().parent.parent
 TELEGRAM_USERS_PATH = REPO_ROOT / "data" / "telegram-bot-users.json"
 BOT_ORDERS_PATH = REPO_ROOT / "data" / "bot-orders.json"
@@ -1418,17 +1413,6 @@ def _merge_bot_order_fields(order_id: str, order: dict[str, Any]) -> dict[str, A
     dd = str(bot_rec.get("delivery_details") or "").strip()
     if dd and not str(merged.get("delivery_details") or "").strip():
         merged["delivery_details"] = dd
-    try:
-        site_spent = int(merged.get("bonus_points_spent") or 0)
-    except (TypeError, ValueError):
-        site_spent = 0
-    try:
-        bot_spent = int(bot_rec.get("bonus_points_spent") or 0)
-    except (TypeError, ValueError):
-        bot_spent = 0
-    spent = max(site_spent, bot_spent)
-    if spent > 0:
-        merged["bonus_points_spent"] = spent
     bot_st = str(bot_rec.get("status") or "").strip().lower()
     if bot_st in ("proof_received", "proof_submitted") and str(
         merged.get("status") or ""
@@ -1467,17 +1451,6 @@ def _order_for_site_sync(
         uname = _normalize_order_username(bot_rec.get("username"))
         if uname and not _normalize_order_username(merged.get("username")):
             merged["username"] = uname
-        try:
-            site_spent = int(merged.get("bonus_points_spent") or 0)
-        except (TypeError, ValueError):
-            site_spent = 0
-        try:
-            bot_spent = int(bot_rec.get("bonus_points_spent") or 0)
-        except (TypeError, ValueError):
-            bot_spent = 0
-        spent = max(site_spent, bot_spent)
-        if spent > 0:
-            merged["bonus_points_spent"] = spent
     uid = owner_id if owner_id is not None else _order_owner_user_id(oid, merged)
     if uid is not None:
         merged["user_id"] = int(uid)
@@ -1810,8 +1783,6 @@ DELIVERY_CARRIER_HINTS: dict[str, str] = {
     "OTHER": "СДЭК",
 }
 
-BONUS_POINTS_PER_CARD_UNIT = 100
-
 BYN_TO_RUB = 30.0
 
 
@@ -1885,16 +1856,6 @@ def _delivery_info_text() -> str:
     return "\n".join(lines)
 
 
-def _loyalty_menu_text(bonus_points: int) -> str:
-    pts = max(0, int(bonus_points))
-    return (
-        f"⭐ Текущий баланс: {pts:,} бонусов\n".replace(",", " ")
-        + f"{pts} бонусов можно потратить в корзине на сайте.\n\n"
-        + MSG_LOYALTY_MENU
-        + "\n\nНачисляются после принятия заказа менеджером (кнопка «Принять»)."
-    )
-
-
 def _is_admin_user(telegram_user_id: int | None) -> bool:
     admin_chat_id = _resolve_admin_chat_id()
     if not admin_chat_id or telegram_user_id is None:
@@ -1952,30 +1913,12 @@ def _order_checkout_display_total(order: dict[str, Any]) -> tuple[float, str]:
         total_byn = float(order.get("total", 0) or 0)
     except (TypeError, ValueError):
         total_byn = 0.0
-    try:
-        spent = max(0, int(order.get("bonus_points_spent") or 0))
-    except (TypeError, ValueError):
-        spent = 0
     if _use_byn_for_delivery(dcode):
         return total_byn, "BYN"
     goods_rub = _order_goods_total_rub(order)
     del_rub = _delivery_charge_rub(dcode)
-    rub_total = max(0, goods_rub + del_rub - spent)
+    rub_total = max(0, goods_rub + del_rub)
     return float(rub_total), "RUB"
-
-
-def _format_bonus_discount_order(order: dict[str, Any]) -> str:
-    dcode = _delivery_price_code(order.get("delivery") or "BY")
-    try:
-        spent = max(0, int(order.get("bonus_points_spent") or 0))
-    except (TypeError, ValueError):
-        spent = 0
-    if spent <= 0:
-        return ""
-    if _use_byn_for_delivery(dcode):
-        disc = spent * (3.5 / 100.0)
-        return f"{disc:g} BYN"
-    return f"{spent:,} RUB".replace(",", " ")
 
 
 CACHE_TTL_SEC = 60.0
@@ -2226,7 +2169,7 @@ def _main_keyboard() -> ReplyKeyboardMarkup:
     return ReplyKeyboardMarkup(
         [
             ["💬 Связь", "📦 Мои заказы"],
-            ["🚚 Доставка", "⭐ Бонусы"],
+            ["🚚 Доставка"],
         ],
         resize_keyboard=True,
     )
@@ -2510,11 +2453,10 @@ async def fetch_site_user_state(telegram_user_id: int) -> dict[str, Any] | None:
 async def _cart_snapshot_for_user(
     context: ContextTypes.DEFAULT_TYPE,
     telegram_user_id: int,
-) -> tuple[list[dict[str, Any]], str, int, bool]:
+) -> tuple[list[dict[str, Any]], str, bool]:
     """Корзина для показа/оформления: сначала синхрон с сайта, затем локальная корзина бота."""
     synced_cart: list[dict[str, Any]] = []
     dcode = "BY"
-    bonus_points = 0
     state = await fetch_site_user_state(int(telegram_user_id))
     if isinstance(state, dict):
         raw = state.get("cart")
@@ -2523,11 +2465,6 @@ async def _cart_snapshot_for_user(
         raw_dc = state.get("delivery_country") or state.get("deliveryCountry")
         if isinstance(raw_dc, str) and raw_dc.strip().upper() in ("BY", "RU", "UA", "OTHER"):
             dcode = raw_dc.strip().upper()
-        bp_raw = state.get("bonus_points")
-        if isinstance(bp_raw, (int, float)) and bp_raw >= 0:
-            bonus_points = int(bp_raw)
-        elif isinstance(bp_raw, str) and bp_raw.strip().isdigit():
-            bonus_points = int(bp_raw.strip())
     context.user_data["_delivery_cache"] = {
         "uid": int(telegram_user_id),
         "ts": time.monotonic(),
@@ -2535,7 +2472,7 @@ async def _cart_snapshot_for_user(
     }
     local_cart = context.user_data.get("cart") or []
     cart = synced_cart if synced_cart else (local_cart if isinstance(local_cart, list) else [])
-    return cart, dcode, bonus_points, bool(synced_cart)
+    return cart, dcode, bool(synced_cart)
 
 
 async def post_site_order_bot_delete(order_id: str, telegram_user_id: int) -> bool:
@@ -2694,15 +2631,6 @@ async def post_site_order_status(
         proof_fid = str(sync_order.get("proof_file_id") or "").strip()
         if proof_fid:
             payload["telegram_payment_proof_file_id"] = proof_fid
-        try:
-            spent = int(sync_order.get("bonus_points_spent") or 0)
-        except (TypeError, ValueError):
-            spent = 0
-        if spent > 0:
-            payload["bonus_points_spent"] = spent
-        earn = _bonus_points_to_earn(sync_order)
-        if earn > 0:
-            payload["bonus_points_earn_expected"] = int(earn)
     timeout = aiohttp.ClientTimeout(total=20)
     try:
         async with aiohttp.ClientSession(timeout=timeout) as session:
@@ -2719,39 +2647,6 @@ async def post_site_order_status(
     except (aiohttp.ClientError, asyncio.TimeoutError, OSError) as e:
         logger.warning("POST order/update: %s", e)
         return False
-
-
-async def _repair_user_bonus_accrual_on_site(uid: int) -> None:
-    """Дозачислить бонусы: синк заказов с позициями на сайт и reconcile."""
-    u = int(uid)
-    if u <= 0:
-        return
-    _load_bot_orders()
-    for oid, rec in list(BOT_ORDERS.items()):
-        if not isinstance(rec, dict):
-            continue
-        try:
-            if int(rec.get("user_id") or 0) != u:
-                continue
-        except (TypeError, ValueError):
-            continue
-        items = _order_items_list(rec)
-        if not items:
-            continue
-        st = str(rec.get("status") or "").strip().lower()
-        if st in ("cancelled", "canceled", "new"):
-            continue
-        site_st = "confirmed"
-        if st in ("shipped", "sent", "delivered"):
-            site_st = "shipped" if st in ("shipped", "sent") else st
-        elif st == "paid":
-            site_st = "paid"
-        sync_order = _order_for_site_sync(str(oid), rec, u)
-        earn = _bonus_points_to_earn(sync_order)
-        if earn > 0:
-            sync_order["bonus_points_earn_expected"] = int(earn)
-        await post_site_order_status(str(oid), site_st, sync_order, u)
-    await fetch_site_user_orders_list(u)
 
 
 async def post_site_order_payment_proof_file_id(
@@ -2987,7 +2882,6 @@ async def _post_site_order_from_bot_payload(
     *,
     order_id: str | None = None,
     status: str = "confirmed",
-    bonus_points_spent: int | None = None,
 ) -> dict[str, Any] | None:
     if not items:
         return None
@@ -3010,8 +2904,6 @@ async def _post_site_order_from_bot_payload(
     }
     if order_id:
         payload["order_id"] = order_id
-    if bonus_points_spent is not None and int(bonus_points_spent) > 0:
-        payload["bonus_points_spent"] = int(bonus_points_spent)
     timeout = aiohttp.ClientTimeout(total=25)
     try:
         async with aiohttp.ClientSession(timeout=timeout) as session:
@@ -3040,10 +2932,6 @@ async def post_site_order_upsert_snapshot(
     username = str(sync_order.get("username") or "").strip().lstrip("@") or None
     delivery = _delivery_price_code(str(sync_order.get("delivery") or "BY"))
     total = _order_total_byn(sync_order)
-    try:
-        spent = int(sync_order.get("bonus_points_spent") or 0)
-    except (TypeError, ValueError):
-        spent = 0
     data = await _post_site_order_from_bot_payload(
         int(owner_id),
         username,
@@ -3052,24 +2940,8 @@ async def post_site_order_upsert_snapshot(
         delivery,
         order_id=order_id,
         status=status,
-        bonus_points_spent=spent if spent > 0 else None,
     )
     return isinstance(data, dict) and data.get("ok") is True
-
-
-def _bonus_points_to_earn(order: dict[str, Any]) -> int:
-    items = order.get("items")
-    if not isinstance(items, list):
-        return 0
-    qty = 0
-    for it in items:
-        if not isinstance(it, dict):
-            continue
-        try:
-            qty += max(0, int(it.get("quantity", 1)))
-        except (TypeError, ValueError):
-            qty += 1
-    return qty * BONUS_POINTS_PER_CARD_UNIT
 
 
 def _order_item_lines(order: dict[str, Any]) -> list[str]:
@@ -3249,28 +3121,14 @@ def _build_order_draft_message(
     order: dict[str, Any], _order_id: str | None = None
 ) -> str:
     dcode = _delivery_price_code(order.get("delivery") or "BY")
-    bonus_earn = _bonus_points_to_earn(order)
     lines = [
         "📦 Ваш заказ",
         "",
         *_order_item_lines(order),
         "",
         _format_delivery_line_order(dcode),
+        f"💰 Итого: {_order_total_display(order)}",
     ]
-    try:
-        spent = int(order.get("bonus_points_spent") or 0)
-    except (TypeError, ValueError):
-        spent = 0
-    if spent > 0:
-        lines.append(f"Списано бонусов: {spent:,}".replace(",", " "))
-        disc = _format_bonus_discount_order(order)
-        if disc:
-            lines.append(f"Скидка бонусами: {disc}")
-    lines.append(f"💰 Итого: {_order_total_display(order)}")
-    lines.append("")
-    lines.append(
-        f"⭐ Ориентировочно начислится бонусов с заказа: ~{bonus_earn:,}".replace(",", " ")
-    )
     return "\n".join(lines)
 
 
@@ -4660,7 +4518,7 @@ async def show_cart_text(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
     if not user:
         await update.message.reply_text("Не удалось определить пользователя.")
         return
-    cart, dcode, bonus_points, synced_from_site = await _cart_snapshot_for_user(
+    cart, dcode, _synced_from_site = await _cart_snapshot_for_user(
         context,
         int(user.id),
     )
@@ -4694,15 +4552,8 @@ async def show_cart_text(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
         total_suffix = f"{total_main:g} BYN"
     else:
         total_suffix = f"{int(round(total_main))} RUB"
-    bonus_line = ""
-    if bonus_points > 0:
-        bonus_line = f"\n\n💎 Бонусные баллы на сайте: {bonus_points:,}".replace(",", " ")
-    elif synced_from_site or cart:
-        bonus_line = (
-            "\n\n💎 Бонусы начисляются после перевода заказа в «Отправлен» или «Доставлен» на сайте."
-        )
     await update.message.reply_text(
-        "🛒 Корзина\n\n" + "\n".join(lines) + f"\n\nИтого: {total_suffix}" + bonus_line,
+        "🛒 Корзина\n\n" + "\n".join(lines) + f"\n\nИтого: {total_suffix}",
         reply_markup=InlineKeyboardMarkup(
             [[InlineKeyboardButton("Оформить заказ", callback_data="cartcheckout")]]
         ),
@@ -5181,27 +5032,6 @@ async def text_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
         return
     if t == "💬 Связь":
         await _enter_support_chat(update.message, user)
-        return
-    if t == "⭐ Бонусы":
-        if not user:
-            await update.message.reply_text("Не удалось определить пользователя.")
-            return
-        uid = int(user.id)
-        try:
-            await _repair_user_bonus_accrual_on_site(uid)
-        except Exception as e:
-            logger.warning("bonus repair uid=%s: %s", uid, e)
-        st = await fetch_site_user_state(uid)
-        pts = 0
-        if isinstance(st, dict):
-            try:
-                pts = int(st.get("bonus_points") or st.get("bonusPoints") or 0)
-            except (TypeError, ValueError):
-                pts = 0
-        await update.message.reply_text(
-            _loyalty_menu_text(pts),
-            reply_markup=_main_keyboard(),
-        )
         return
     if t not in ("📦 Каталог", "📦 Категории"):
         return
@@ -6042,7 +5872,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
             if not user:
                 await q.answer("Ошибка", show_alert=True)
                 return
-            cart, dcode, _bonus_points, _synced = await _cart_snapshot_for_user(
+            cart, dcode, _synced = await _cart_snapshot_for_user(
                 context,
                 int(user.id),
             )
@@ -6105,13 +5935,6 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
                 if isinstance(mid, int) and mid > 0:
                     await post_site_admin_message_id(order_id, mid)
 
-            earned = int(result.get("bonus_earned") or 0)
-            balance = int(result.get("bonus_points") or 0)
-            bonus_note = ""
-            if earned > 0:
-                bonus_note = (
-                    f"\n\n💎 Начислено: {earned:,} баллов. Баланс: {balance:,}."
-                ).replace(",", " ")
             await q.answer("Заказ оформлен")
             try:
                 await q.edit_message_reply_markup(reply_markup=None)
@@ -6119,8 +5942,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
                 pass
             await q.message.reply_text(
                 "✅ Заказ оформлен и появился в личном кабинете.\n\n"
-                + _format_order_text(order)
-                + bonus_note,
+                + _format_order_text(order),
                 reply_markup=_order_saved_keyboard(int(user.id)),
             )
             return

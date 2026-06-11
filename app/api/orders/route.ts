@@ -1,10 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import {
-  listOrdersForUser,
-  reconcileBonusDeductionForUser,
-  reconcileBonusPointsForUser,
-} from "@/app/lib/ordersStore";
-import { getTelegramUserState } from "@/app/lib/telegramUserStateStore";
+import { listOrdersForUser } from "@/app/lib/ordersStore";
 
 function botBearerAuthorized(request: NextRequest): boolean {
   const secret = process.env.ILLUCARDS_ORDER_UPDATE_SECRET?.trim();
@@ -32,12 +27,6 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "Некорректный user_id" }, { status: 400 });
   }
   const userId = Math.floor(n);
-  await reconcileBonusDeductionForUser(userId).catch(() => undefined);
-  await reconcileBonusPointsForUser(userId).catch(() => undefined);
   const orders = await listOrdersForUser(userId);
-  const state = await getTelegramUserState(userId);
-  return NextResponse.json({
-    orders,
-    ...(state ? { bonus_points: state.bonus_points } : {}),
-  });
+  return NextResponse.json({ orders });
 }

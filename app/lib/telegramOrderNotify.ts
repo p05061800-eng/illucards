@@ -11,7 +11,6 @@ type BotOrderRecord = {
   total: number;
   delivery: DeliveryCountry;
   status: string;
-  bonus_points_spent?: number;
 };
 
 async function readBotOrders(): Promise<Record<string, BotOrderRecord>> {
@@ -61,7 +60,6 @@ export async function recordAndNotifyTelegramOrder(input: {
   items: OrderLineIn[];
   total: number;
   delivery: DeliveryCountry;
-  bonusPointsSpent?: number;
 }): Promise<{ recorded: boolean; sent: boolean; error?: string }> {
   const record: BotOrderRecord = {
     user_id: input.userId,
@@ -69,9 +67,6 @@ export async function recordAndNotifyTelegramOrder(input: {
     total: Math.round(input.total * 100) / 100,
     delivery: input.delivery,
     status: "new",
-    ...(input.bonusPointsSpent != null && input.bonusPointsSpent > 0
-      ? { bonus_points_spent: Math.floor(input.bonusPointsSpent) }
-      : {}),
   };
 
   try {

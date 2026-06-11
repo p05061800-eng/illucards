@@ -34,14 +34,6 @@ export type OrderRecord = {
   status: OrderStatus;
   /** message_id уведомления админу в Telegram (пишет бот после подтверждения). */
   telegram_admin_message_id?: number;
-  /** Бонусы за этот заказ уже начислены (после подтверждения админом — «Принят»). */
-  bonus_awarded?: boolean;
-  /** Сколько бонусных баллов списано при оформлении. */
-  bonus_points_spent?: number;
-  /** Бонусы за скидку уже фактически списаны с баланса пользователя. */
-  bonus_points_deducted?: boolean;
-  /** Списанные бонусы возвращены на счёт (отмена заказа). */
-  bonus_points_refunded?: boolean;
   /** Способ оплаты, выбранный покупателем в Telegram после подтверждения заказа. */
   payment_method?: OrderPaymentMethod;
   /** Покупателю уже отправлено сообщение с заказом в Telegram (с сайта). */
@@ -52,6 +44,4 @@ export type OrderRecord = {
   buyer_seq?: number;
   /** file_id скрина оплаты в Telegram (для синка между инстансами бота). */
   telegram_payment_proof_file_id?: string;
-  /** Сколько баллов начислить за заказ (фиксируется при оформлении). */
-  bonus_points_earn_expected?: number;
 };

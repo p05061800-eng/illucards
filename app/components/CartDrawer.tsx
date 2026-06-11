@@ -20,11 +20,9 @@ import { useCart } from "../context/CartContext";
 import { useCurrency } from "../context/CurrencyContext";
 import { useCategoryTiles } from "../context/CategoryFramesContext";
 import { getCardArtIntrinsicSize } from "../lib/cardArtIntrinsicSize";
-import { bonusPointsToEarnForOrderItems } from "../lib/bonusProgram";
 import { displayCurrencyForDelivery, formatCardPrice } from "../lib/formatPrice";
 import { TelegramCheckoutButton } from "@/components/checkout/TelegramCheckoutButton";
 import { DeliveryCountryField } from "./DeliveryCountryField";
-import { BonusSpendControl } from "./cart/BonusSpendControl";
 import { CartOrderTotals } from "./cart/CartOrderTotals";
 
 export function CartDrawer() {
@@ -41,11 +39,6 @@ export function CartDrawer() {
     orderTotalRub,
     checkoutTotalByn,
     checkoutTotalRub,
-    bonusBalance,
-    bonusSpendPoints,
-    setBonusSpendPoints,
-    maxBonusSpendPoints,
-    bonusDiscountByn,
     hydrated,
     cartOpen,
     closeCart,
@@ -55,10 +48,6 @@ export function CartDrawer() {
   const { primaryTelegramUserId } = useAuth();
   const { currency, setCurrency } = useCurrency();
   const priceCurrency = displayCurrencyForDelivery(deliveryCountry);
-  const bonusPointsFromThisCart = useMemo(
-    () => bonusPointsToEarnForOrderItems(cartItems.map((i) => ({ quantity: i.quantity }))),
-    [cartItems],
-  );
   const categoryTiles = useCategoryTiles();
   const [mounted, setMounted] = useState(false);
   const titleId = useId();
@@ -461,17 +450,6 @@ export function CartDrawer() {
                     </div>
                   </div>
                 )}
-                {primaryTelegramUserId != null ? (
-                  <BonusSpendControl
-                    bonusBalance={bonusBalance}
-                    bonusSpendPoints={bonusSpendPoints}
-                    maxBonusSpendPoints={maxBonusSpendPoints}
-                    bonusDiscountByn={bonusDiscountByn}
-                    deliveryCountry={deliveryCountry}
-                    bonusPointsFromThisCart={bonusPointsFromThisCart}
-                    onSpendChange={setBonusSpendPoints}
-                  />
-                ) : null}
                 <CartOrderTotals
                   deliveryCountry={deliveryCountry}
                   totalPriceByn={totalPriceByn}
@@ -482,8 +460,6 @@ export function CartDrawer() {
                   orderTotalRub={orderTotalRub}
                   checkoutTotalByn={checkoutTotalByn}
                   checkoutTotalRub={checkoutTotalRub}
-                  bonusSpendPoints={bonusSpendPoints}
-                  bonusDiscountByn={bonusDiscountByn}
                 />
                 <TelegramCheckoutButton
                   onBeforeNavigate={closeCart}

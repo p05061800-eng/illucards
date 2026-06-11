@@ -1,15 +1,9 @@
 import { randomUUID } from "crypto";
 import { parseCardRarity } from "@/app/lib/cardRarityTags";
-import {
-  bonusDiscountByn,
-  bonusPointsToEarnForOrderItems,
-  maxSpendableBonusPoints,
-} from "@/app/lib/bonusProgram";
 import { deliveryCharge, normalizeDeliveryCountry, type DeliveryCountry } from "@/app/lib/delivery";
 import type { OrderLineIn, OrderRecord } from "@/app/lib/orderTypes";
 import { assignBuyerSeqForNewOrder, saveOrderRecord } from "@/app/lib/ordersStore";
 import { sanitizeOrderLineImageUrl } from "@/app/lib/sanitizeOrderLineImageUrl";
-import { getTelegramUserState } from "@/app/lib/telegramUserStateStore";
 
 export { ORDERS_DIR } from "@/app/lib/orderPaths";
 export type { OrderLineIn } from "@/app/lib/orderTypes";
@@ -31,13 +25,6 @@ export function parseOptionalUsername(v: unknown): string | null | undefined {
   const t = v.trim().replace(/^@/, "").slice(0, 64);
   if (!/^[a-zA-Z0-9_]*$/.test(t)) return undefined;
   return t || null;
-}
-
-export function parseOptionalBonusPointsToSpend(v: unknown): number {
-  if (v === undefined || v === null) return 0;
-  const n = typeof v === "number" ? v : Number(v);
-  if (!Number.isFinite(n) || n <= 0) return 0;
-  return Math.min(1_000_000_000, Math.floor(n));
 }
 
 export function normalizeOrderItems(raw: unknown): OrderLineIn[] | null {
@@ -92,8 +79,6 @@ export type PersistOrderInput = {
   userId?: number;
   username?: string | null;
   clientTotalByn: number;
-  /** Сколько бонусных баллов списать (после проверки баланса и лимита по сумме). */
-  bonusPointsToSpend?: number;
 };
 
 export type PersistOrderResult =
@@ -101,8 +86,6 @@ export type PersistOrderResult =
       ok: true;
       orderId: string;
       totalByn: number;
-      bonusPointsSpent: number;
-      bonusPointsBalance: number;
     }
   | { ok: false; error: string; status: number };
 
@@ -117,7 +100,6 @@ export async function persistOrder(
     userId,
     username,
     clientTotalByn,
-    bonusPointsToSpend: rawBonusSpend = 0,
   } = input;
 
   if (!Number.isFinite(clientTotalByn) || clientTotalByn < 0) {
@@ -129,33 +111,7 @@ export async function persistOrder(
       items.reduce((s, l) => s + l.priceByn * l.quantity, 0) * 100,
     ) / 100;
   const d = deliveryCharge(deliveryCountry);
-  const orderBynBefore = Math.round((goodsByn + d.amountByn) * 100) / 100;
-
-  let spendApplied = 0;
-  let bonusPointsBalance = 0;
-  const wantSpend = Math.max(0, Math.floor(Number(rawBonusSpend) || 0));
-  if (userId != null && userId > 0) {
-    const balState = await getTelegramUserState(userId);
-    bonusPointsBalance = Math.max(0, Math.floor(balState?.bonus_points ?? 0));
-    if (wantSpend > 0) {
-      spendApplied = Math.min(
-        wantSpend,
-        maxSpendableBonusPoints(bonusPointsBalance, orderBynBefore, deliveryCountry),
-      );
-    }
-  } else if (wantSpend > 0) {
-    return {
-      ok: false,
-      error: "Чтобы списать бонусы, войдите через Telegram",
-      status: 401,
-    };
-  }
-
-  const discountByn = bonusDiscountByn(spendApplied, deliveryCountry);
-  const orderBynCharged = Math.round((orderBynBefore - discountByn) * 100) / 100;
-  if (orderBynCharged < -TOTAL_EPS) {
-    return { ok: false, error: "Некорректная скидка бонусами", status: 400 };
-  }
+  const orderBynCharged = Math.round((goodsByn + d.amountByn) * 100) / 100;
 
   if (Math.abs(orderBynCharged - clientTotalByn) > TOTAL_EPS) {
     return { ok: false, error: "Сумма заказа не совпадает с корзиной", status: 400 };
@@ -167,7 +123,6 @@ export async function persistOrder(
       ? await assignBuyerSeqForNewOrder(userId)
       : undefined;
 
-  const earnExpected = bonusPointsToEarnForOrderItems(items);
   const record: OrderRecord = {
     ...(userId != null && userId > 0 ? { user_id: userId } : {}),
     username: username ?? null,
@@ -175,8 +130,6 @@ export async function persistOrder(
     total: orderBynCharged,
     delivery: deliveryCountry,
     status: "new",
-    ...(spendApplied > 0 ? { bonus_points_spent: spendApplied } : {}),
-    ...(earnExpected > 0 ? { bonus_points_earn_expected: earnExpected } : {}),
     ...(buyer_seq != null && buyer_seq > 0 ? { buyer_seq } : {}),
   };
 
@@ -186,7 +139,5 @@ export async function persistOrder(
     ok: true,
     orderId,
     totalByn: orderBynCharged,
-    bonusPointsSpent: spendApplied,
-    bonusPointsBalance,
   };
 }

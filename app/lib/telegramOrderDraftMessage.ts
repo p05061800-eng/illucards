@@ -1,8 +1,6 @@
-import { BONUS_POINTS_PER_CARD_UNIT } from "@/app/lib/bonusProgram";
 import type { OrderLineIn } from "@/app/lib/orderTypes";
 import type { DeliveryCountry } from "@/app/lib/delivery";
 import {
-  formatBonusDiscountTelegram,
   formatDeliveryLineTelegram,
   formatOrderLineTelegram,
   formatOrderTotalTelegram,
@@ -23,19 +21,12 @@ export function buildTelegramOrderDraftMessage(input: {
   items: OrderLineIn[];
   total: number;
   delivery: DeliveryCountry;
-  bonusPointsSpent?: number;
 }): string {
   const itemLines = input.items.map((item) => {
     const raw = formatOrderLineTelegram(item, input.delivery);
     const body = raw.startsWith("• ") ? raw.slice(2) : raw;
     return `• ${escapeTelegramHtml(body)}`;
   });
-  const bonusEarn = input.items.reduce(
-    (s, it) => s + Math.max(0, Math.floor(it.quantity)) * BONUS_POINTS_PER_CARD_UNIT,
-    0,
-  );
-  const spent = Math.max(0, Math.floor(input.bonusPointsSpent ?? 0));
-  const discountLabel = spent > 0 ? formatBonusDiscountTelegram(spent, input.delivery) : "";
 
   const lines = [
     "Проверьте состав и доставку. Нажмите «Подтвердить заказ» — откроются шаги оплаты. Заказ уходит админу только после подтверждения оплаты со скрином чека.",
@@ -45,20 +36,11 @@ export function buildTelegramOrderDraftMessage(input: {
     ...itemLines,
     "",
     formatDeliveryLineTelegram(input.delivery),
-    ...(spent > 0
-      ? [
-          `Списано бонусов: ${spent.toLocaleString("ru-RU")}`,
-          `Скидка бонусами: ${discountLabel}`,
-        ]
-      : []),
     `💰 Итого: ${formatOrderTotalTelegram({
       items: input.items,
       delivery: input.delivery,
       totalByn: input.total,
-      bonusPointsSpent: spent,
     })}`,
-    "",
-    `⭐ Ориентировочно начислится бонусов с заказа: ~${bonusEarn.toLocaleString("ru-RU")}`,
   ];
 
   return lines.join("\n");
@@ -79,14 +61,11 @@ export function buildTelegramPaymentSelectionMessage(input: {
   items: OrderLineIn[];
   delivery: DeliveryCountry;
   totalByn: number;
-  bonusPointsSpent?: number;
-  bonusEarn: number;
 }): string {
   const total = formatOrderTotalTelegram({
     items: input.items,
     delivery: input.delivery,
     totalByn: input.totalByn,
-    bonusPointsSpent: input.bonusPointsSpent,
   });
   return [
     "Выбери действие в меню ниже 👇",
@@ -97,8 +76,6 @@ export function buildTelegramPaymentSelectionMessage(input: {
     "",
     "💳 Карта -> 💵 Перевод -> ₿ Крипта",
     "💻 Оплата -> 📸 Скрин -> 🔎 Проверка -> ✅ Готово",
-    "",
-    `⭐ Ориентировочно начислится бонусов с заказа: ~${input.bonusEarn.toLocaleString("ru-RU")}`,
   ].join("\n");
 }
 

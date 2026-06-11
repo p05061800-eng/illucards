@@ -27,7 +27,6 @@ export type AuthUser = {
   id: string;
   /** Для Telegram: синтетический адрес tg_{id}@illucards.local; для email-аккаунта — обычный email */
   email: string;
-  bonusPoints: number;
   /** Основной идентификатор для пользователей Telegram (= user_id в API Telegram) */
   telegramId?: number;
   telegramUsername?: string | null;
@@ -176,7 +175,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           id: crypto.randomUUID(),
           email,
           password: crypto.randomUUID(),
-          bonusPoints: 0,
           telegramId: telegramUserId,
           telegramUsername: tgName,
           firstName: tgName ? `@${tgName}` : "Пользователь",

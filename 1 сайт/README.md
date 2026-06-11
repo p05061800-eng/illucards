@@ -46,7 +46,7 @@ npm run lint
 
 ### Vercel (рекомендуемый путь из репозитория)
 
-В корне есть `vercel.json` (`framework: nextjs`). Скрипты:
+В каталоге сайта есть `vercel.json` (`framework: nextjs`). В Vercel **Root Directory** должен быть `1 сайт`. Скрипты:
 
 ```bash
 npm run vercel:link    # один раз: привязка к проекту Vercel

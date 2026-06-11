@@ -40,7 +40,7 @@ from db import init_db, recompute_user_order_stats, sync_all_users_order_stats, 
 logging.basicConfig(format="%(asctime)s %(levelname)s %(message)s", level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-BOT_BUILD_ID = "2026-06-11-my-orders-currency-v1"
+BOT_BUILD_ID = "2026-06-11-persist-orders-bonuses-v1"
 
 REPLY_MENU_TEXTS = frozenset(
     {"💬 Связь", "📦 Мои заказы", "📜 Мои заказы", "🚚 Доставка", "⭐ Бонусы"}
@@ -1028,7 +1028,211 @@ def _record_site_order_in_bot(
     BOT_ORDERS[order_id] = rec
     _persist_bot_orders()
     _sync_crm_order_stats_for_user(int(telegram_user_id))
+    _schedule_mirror_order_to_site(order_id, rec)
     return rec
+
+
+def _bot_status_rank(status: str) -> int:
+    key = (status or "").strip().lower()
+    if key in ("cancelled", "canceled"):
+        return -1
+    return {
+        "new": 0,
+        "paid": 1,
+        "proof_received": 1,
+        "proof_submitted": 1,
+        "confirmed": 2,
+        "shipped": 3,
+        "sent": 3,
+        "delivered": 4,
+    }.get(key, 0)
+
+
+def _merge_bot_order_from_site_export(
+    existing: dict[str, Any] | None, incoming: dict[str, Any]
+) -> dict[str, Any]:
+    merged = dict(incoming)
+    if not isinstance(existing, dict):
+        return merged
+    for key in (
+        "proof_file_id",
+        "delivery_details",
+        "payment_method",
+        "username",
+        "buyer_seq",
+    ):
+        if existing.get(key) and not merged.get(key):
+            merged[key] = existing[key]
+    ex_st = str(existing.get("status") or "").strip().lower()
+    in_st = str(merged.get("status") or "").strip().lower()
+    if _bot_status_rank(ex_st) > _bot_status_rank(in_st):
+        merged["status"] = ex_st
+    if existing.get("proof_file_id"):
+        merged["proof_file_id"] = existing.get("proof_file_id")
+    ex_items = _order_items_list(existing)
+    in_items = _order_items_list(merged)
+    if ex_items and not in_items:
+        merged["items"] = ex_items
+    return merged
+
+
+def _order_record_from_site_export(
+    row: dict[str, Any], telegram_user_id: int
+) -> dict[str, Any]:
+    oid = str(row.get("id") or row.get("order_id") or "").strip()
+    rec: dict[str, Any] = {
+        "user_id": int(telegram_user_id),
+        "items": _order_items_list(row),
+        "total": _order_total_byn(row),
+        "delivery": row.get("delivery") or "BY",
+        "status": str(row.get("status") or "new").strip().lower() or "new",
+    }
+    pm = str(row.get("payment_method") or "").strip().lower()
+    if pm:
+        rec["payment_method"] = pm
+    dd = str(row.get("delivery_details") or "").strip()
+    if dd:
+        rec["delivery_details"] = dd
+    uname = _normalize_order_username(row.get("username"))
+    if uname:
+        rec["username"] = uname
+    try:
+        seq = int(row.get("buyer_seq") or 0)
+    except (TypeError, ValueError):
+        seq = 0
+    if seq > 0:
+        rec["buyer_seq"] = seq
+    return rec
+
+
+def _site_status_from_bot_rec(rec: dict[str, Any]) -> str | None:
+    st = str(rec.get("status") or "new").strip().lower()
+    if st in ("proof_received", "proof_submitted"):
+        return "paid"
+    if st in ("cancelled", "canceled"):
+        return "cancelled"
+    if st in ("confirmed", "shipped", "sent", "delivered", "paid"):
+        return "shipped" if st in ("shipped", "sent") else st
+    if st == "new":
+        pm = str(rec.get("payment_method") or "").strip().lower()
+        if pm in ("card", "crypto", "phone"):
+            return "new"
+    return None
+
+
+def _should_mirror_order_to_site(rec: dict[str, Any]) -> bool:
+    if _site_status_from_bot_rec(rec):
+        return True
+    if str(rec.get("payment_method") or "").strip():
+        return True
+    if str(rec.get("delivery_details") or "").strip():
+        return True
+    return False
+
+
+async def _mirror_order_to_site(order_id: str, rec: dict[str, Any]) -> None:
+    oid = str(order_id or "").strip()
+    if not oid:
+        return
+    try:
+        uid = int(rec.get("user_id") or 0)
+    except (TypeError, ValueError):
+        return
+    if uid <= 0:
+        return
+    order = _order_dict_from_bot_record(rec, uid)
+    site_st = _site_status_from_bot_rec(rec)
+    if site_st:
+        await post_site_order_status(oid, site_st, order, uid)
+    pm = str(rec.get("payment_method") or "").strip().lower()
+    if pm in ("card", "crypto", "phone"):
+        await post_site_order_payment_method(oid, pm, order, uid)
+    dd = str(rec.get("delivery_details") or "").strip()
+    if dd:
+        await post_site_order_delivery_details(oid, dd, owner_id=uid, order=order)
+
+
+def _schedule_mirror_order_to_site(order_id: str, rec: dict[str, Any]) -> None:
+    if not _should_mirror_order_to_site(rec):
+        return
+    try:
+        loop = asyncio.get_running_loop()
+    except RuntimeError:
+        return
+    loop.create_task(_mirror_order_to_site(order_id, rec))
+
+
+async def _fetch_site_orders_export() -> list[dict[str, Any]]:
+    base = os.getenv("ILLUCARDS_SITE_ORIGIN", DEFAULT_SITE_ORIGIN).rstrip("/")
+    url = f"{base}/api/internal/orders-export"
+    secret = (os.getenv("ILLUCARDS_ORDER_UPDATE_SECRET") or "").strip()
+    if not secret:
+        logger.warning("orders export: ILLUCARDS_ORDER_UPDATE_SECRET not set")
+        return []
+    headers = {
+        "Accept": "application/json",
+        "Authorization": f"Bearer {secret}",
+    }
+    timeout = aiohttp.ClientTimeout(total=45)
+    try:
+        async with aiohttp.ClientSession(timeout=timeout) as session:
+            async with session.get(url, headers=headers) as resp:
+                if resp.status != 200:
+                    text = (await resp.text())[:300]
+                    logger.warning("GET orders-export HTTP %s: %s", resp.status, text)
+                    return []
+                data = await resp.json(content_type=None)
+    except (aiohttp.ClientError, asyncio.TimeoutError, OSError, json.JSONDecodeError, ValueError) as e:
+        logger.warning("GET orders-export: %s", e)
+        return []
+    if not isinstance(data, dict):
+        return []
+    raw = data.get("orders")
+    if not isinstance(raw, list):
+        return []
+    return [x for x in raw if isinstance(x, dict)]
+
+
+async def _rehydrate_bot_orders_from_site() -> None:
+    """После redeploy Render: восстановить BOT_ORDERS из Redis сайта (Vercel)."""
+    rows = await _fetch_site_orders_export()
+    if not rows:
+        logger.info("orders rehydrate: site export empty or unavailable")
+        return
+    _load_bot_orders()
+    changed = 0
+    for row in rows:
+        try:
+            uid = int(row.get("user_id") or 0)
+        except (TypeError, ValueError):
+            uid = 0
+        if uid <= 0:
+            continue
+        oid = str(row.get("id") or row.get("order_id") or "").strip()
+        if not oid:
+            continue
+        incoming = _order_record_from_site_export(row, uid)
+        existing = BOT_ORDERS.get(oid)
+        merged = _merge_bot_order_from_site_export(
+            existing if isinstance(existing, dict) else None,
+            incoming,
+        )
+        if merged != existing:
+            changed += 1
+        BOT_ORDERS[oid] = merged
+        _remember_pending_order_for_user(uid, oid)
+    if changed or rows:
+        _persist_bot_orders()
+        try:
+            sync_all_users_order_stats(BOT_ORDERS)
+        except Exception as e:
+            logger.warning("orders rehydrate CRM stats: %s", e)
+    logger.info(
+        "orders rehydrate: %s rows from site, %s updated, %s total in bot",
+        len(rows),
+        changed,
+        len(BOT_ORDERS),
+    )
 
 
 def _remember_pending_order_for_user(telegram_user_id: int, order_id: str) -> None:
@@ -1336,6 +1540,7 @@ async def _start_http_server(_app: Any) -> None:
         )
     except Exception as e:
         logger.warning("Telegram startup check: %s", e)
+    asyncio.create_task(_rehydrate_bot_orders_from_site())
     port_raw = os.getenv("PORT", "").strip()
     if not port_raw:
         return

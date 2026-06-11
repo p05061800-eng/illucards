@@ -1157,6 +1157,93 @@ async function listBotOrderSummariesForUser(
   return rows;
 }
 
+export type BotOrderExportRow = { id: string } & OrderRecord;
+
+/** Полный снимок заказов для восстановления бота после redeploy (Redis → файлы). */
+export async function exportAllOrderRecordsForBot(): Promise<BotOrderExportRow[]> {
+  const out: BotOrderExportRow[] = [];
+  const seen = new Set<string>();
+
+  const cred = redisRestCredentials();
+  if (cred) {
+    try {
+      const res = await fetch(cred.url, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${cred.token}` },
+        body: JSON.stringify(["KEYS", "illucards:order:*"]),
+        cache: "no-store",
+      });
+      const j = (await res.json()) as { result?: unknown };
+      const keys = Array.isArray(j.result)
+        ? j.result.filter((k): k is string => typeof k === "string")
+        : [];
+      for (const key of keys) {
+        const id = key.replace(/^illucards:order:/, "").trim();
+        if (!id || seen.has(id)) continue;
+        const record = await getOrder(id);
+        if (!record) continue;
+        seen.add(id);
+        out.push({ id, ...record });
+      }
+    } catch {
+      /* fallback below */
+    }
+  }
+
+  const ids = await collectAllOrderIds();
+  for (const id of ids) {
+    if (seen.has(id)) continue;
+    const record = await getOrder(id);
+    if (!record) continue;
+    seen.add(id);
+    out.push({ id, ...record });
+  }
+
+  return out;
+}
+
+async function collectAllOrderIds(): Promise<string[]> {
+  const ids: string[] = [];
+  const seen = new Set<string>();
+  const push = (raw: string) => {
+    const id = raw.trim();
+    if (!id || id.length > 200 || /[/\\]/.test(id) || id.includes("..") || seen.has(id)) {
+      return;
+    }
+    seen.add(id);
+    ids.push(id);
+  };
+
+  let files: string[] = [];
+  try {
+    files = await fs.readdir(ORDERS_DIR);
+  } catch {
+    files = [];
+  }
+  for (const f of files) {
+    if (!f.toLowerCase().endsWith(".json")) continue;
+    push(f.replace(/\.json$/i, ""));
+  }
+
+  try {
+    const text = await fs.readFile(BOT_ORDERS_PATH, "utf-8");
+    const json = JSON.parse(text) as unknown;
+    if (json && typeof json === "object" && !Array.isArray(json)) {
+      for (const id of Object.keys(json as Record<string, unknown>)) {
+        push(id);
+      }
+    }
+  } catch {
+    /* ignore */
+  }
+
+  for (const id of Object.keys(ORDERS)) {
+    push(id);
+  }
+
+  return ids;
+}
+
 export async function reconcileBonusPointsForUser(userId: number): Promise<number> {
   if (!Number.isFinite(userId) || userId <= 0) return 0;
   const uid = Math.floor(userId);

@@ -22,3 +22,5 @@ services:
         sync: false
       - key: ILLUCARDS_LOGIN_CODE_SYNC_SECRET
         sync: false
+      - key: ILLUCARDS_USER_STATE_SYNC_SECRET
+        sync: false

@@ -40,7 +40,7 @@ from db import init_db, recompute_user_order_stats, sync_all_users_order_stats, 
 logging.basicConfig(format="%(asctime)s %(levelname)s %(message)s", level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-BOT_BUILD_ID = "2026-06-11-accept-proof-without-paid-btn-v1"
+BOT_BUILD_ID = "2026-06-11-admin-order-fallback-v1"
 
 REPLY_MENU_TEXTS = frozenset(
     {"💬 Связь", "📦 Мои заказы", "📜 Мои заказы", "🚚 Доставка", "⭐ Бонусы"}
@@ -1107,6 +1107,64 @@ async def _load_order_for_callback(
     return None
 
 
+def _bot_order_owner_id(order_id: str) -> int | None:
+    _load_bot_orders()
+    rec = BOT_ORDERS.get(str(order_id or "").strip())
+    if isinstance(rec, dict):
+        try:
+            uid = int(rec.get("user_id") or 0)
+        except (TypeError, ValueError):
+            uid = 0
+        if uid > 0:
+            return uid
+    snap = _ORDER_SNAPSHOTS.get(str(order_id or "").strip())
+    if isinstance(snap, dict):
+        try:
+            uid = int(snap.get("user_id") or 0)
+        except (TypeError, ValueError):
+            uid = 0
+        if uid > 0:
+            return uid
+    return None
+
+
+def _merge_bot_order_fields(order_id: str, order: dict[str, Any]) -> dict[str, Any]:
+    merged = dict(order)
+    _load_bot_orders()
+    bot_rec = BOT_ORDERS.get(str(order_id or "").strip())
+    if not isinstance(bot_rec, dict):
+        return merged
+    pm = str(bot_rec.get("payment_method") or "").strip().lower()
+    if pm and not str(merged.get("payment_method") or "").strip():
+        merged["payment_method"] = pm
+    dd = str(bot_rec.get("delivery_details") or "").strip()
+    if dd and not str(merged.get("delivery_details") or "").strip():
+        merged["delivery_details"] = dd
+    bot_st = str(bot_rec.get("status") or "").strip().lower()
+    if bot_st in ("proof_received", "proof_submitted") and str(
+        merged.get("status") or ""
+    ).strip().lower() in ("", "new", "confirmed"):
+        merged["status"] = "paid"
+    return merged
+
+
+async def _load_order_for_admin_action(order_id: str) -> dict[str, Any] | None:
+    """Заказ для кнопок админа: API сайта → снимок/файл бота."""
+    oid = str(order_id or "").strip()
+    if not oid:
+        return None
+    order = await fetch_site_order(oid)
+    if order:
+        return _merge_bot_order_fields(oid, order)
+    owner_id = _bot_order_owner_id(oid)
+    if owner_id is None:
+        return None
+    order = await _load_order_for_callback(oid, owner_id)
+    if not order:
+        return None
+    return _merge_bot_order_fields(oid, order)
+
+
 def _resolve_order_id_for_site_callback(
     telegram_user_id: int, *, prefer_status: str = "new"
 ) -> str | None:
@@ -1959,7 +2017,12 @@ async def _fetch_site_order_http(order_id: str) -> tuple[dict[str, Any] | None, 
             ) as resp:
                 code = int(resp.status)
                 if code != 200:
-                    if code != 404:
+                    if code == 401:
+                        logger.warning(
+                            "GET order HTTP 401 %s — проверьте ILLUCARDS_ORDER_UPDATE_SECRET на Render и Vercel",
+                            order_id,
+                        )
+                    elif code != 404:
                         logger.warning("GET order HTTP %s %s", code, order_id)
                     return None, code
                 data = await resp.json(content_type=None)
@@ -4756,7 +4819,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
                 await q.answer("Только для администратора", show_alert=True)
                 return
 
-            order = await fetch_site_order(order_id)
+            order = await _load_order_for_admin_action(order_id)
             if not order:
                 await q.answer("Заказ не найден", show_alert=True)
                 return
@@ -4774,6 +4837,15 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
             if pm not in ("card", "crypto", "phone"):
                 await q.answer("Покупатель ещё не выбрал способ оплаты", show_alert=True)
                 return
+
+            _load_bot_orders()
+            bot_rec = BOT_ORDERS.get(order_id)
+            if isinstance(bot_rec, dict):
+                bot_st = str(bot_rec.get("status") or "").strip().lower()
+                if bot_st == "confirmed":
+                    await q.answer("Уже подтверждён")
+                    await _refresh_admin_message_keyboard(q, order_id)
+                    return
 
             site_st = str(order.get("status") or "").strip().lower()
             if site_st == "confirmed":
@@ -4828,9 +4900,10 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
             if not _is_admin_user(int(user.id)):
                 await q.answer("Только для администратора", show_alert=True)
                 return
-            order = await fetch_site_order(order_id)
+            order = await _load_order_for_admin_action(order_id)
             if not order:
-                order = await _load_order_for_callback(order_id, int(user.id))
+                await q.answer("Заказ не найден", show_alert=True)
+                return
             owner_id = _order_owner_user_id(order_id, order)
             if owner_id is None:
                 await q.answer("Не найден клиент", show_alert=True)
@@ -4872,7 +4945,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
             if not order_id or not user or not _is_admin_user(int(user.id)):
                 await q.answer("Только для администратора", show_alert=True)
                 return
-            order = await fetch_site_order(order_id)
+            order = await _load_order_for_admin_action(order_id)
             if not order:
                 await q.answer("Заказ не найден", show_alert=True)
                 return
@@ -4906,7 +4979,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
             if not order_id or not user or not _is_admin_user(int(user.id)):
                 await q.answer("Только для администратора", show_alert=True)
                 return
-            order = await fetch_site_order(order_id)
+            order = await _load_order_for_admin_action(order_id)
             if not order:
                 await q.answer("Заказ не найден", show_alert=True)
                 return
@@ -4941,7 +5014,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
             if not order_id or not user or not _is_admin_user(int(user.id)):
                 await q.answer("Только для администратора", show_alert=True)
                 return
-            order = await fetch_site_order(order_id)
+            order = await _load_order_for_admin_action(order_id)
             if not order:
                 await q.answer("Заказ не найден", show_alert=True)
                 return

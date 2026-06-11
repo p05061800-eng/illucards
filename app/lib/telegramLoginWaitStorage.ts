@@ -15,7 +15,10 @@ type StoredWait = {
 function parseStoredWait(raw: string | null): string | null {
   if (!raw) return null;
   const trimmed = raw.trim();
-  if (isValidLoginWaitId(trimmed)) return trimmed.toLowerCase();
+  if (isValidLoginWaitId(trimmed)) {
+    /* legacy plain id без TTL — не используем */
+    return null;
+  }
   try {
     const j = JSON.parse(trimmed) as StoredWait;
     const id = typeof j.id === "string" ? j.id.trim() : "";
@@ -34,7 +37,7 @@ export function persistLoginWaitId(waitId: string): void {
   if (!isValidLoginWaitId(id)) return;
   const payload = JSON.stringify({ id, at: Date.now() } satisfies StoredWait);
   try {
-    sessionStorage.setItem(TG_LOGIN_WAIT_STORAGE_KEY, id);
+    sessionStorage.setItem(TG_LOGIN_WAIT_STORAGE_KEY, payload);
   } catch {
     /* ignore */
   }
@@ -60,7 +63,10 @@ export function readLoginWaitId(): string | null {
     const fromLocal = parseStoredWait(localStorage.getItem(TG_LOGIN_WAIT_STORAGE_KEY));
     if (fromLocal) {
       try {
-        sessionStorage.setItem(TG_LOGIN_WAIT_STORAGE_KEY, fromLocal);
+        sessionStorage.setItem(
+          TG_LOGIN_WAIT_STORAGE_KEY,
+          localStorage.getItem(TG_LOGIN_WAIT_STORAGE_KEY) ?? "",
+        );
       } catch {
         /* ignore */
       }
@@ -88,4 +94,14 @@ export function clearLoginWaitId(): void {
 export function notifyLoginWaitStarted(): void {
   if (typeof window === "undefined") return;
   window.dispatchEvent(new CustomEvent(TG_LOGIN_WAIT_STARTED_EVENT));
+}
+
+/** Сброс «зависшего» ожидания (logout / отмена). */
+export function resetTelegramLoginWaitClientState(): void {
+  clearLoginWaitId();
+  try {
+    sessionStorage.removeItem("illucards_tg_login_auto_error");
+  } catch {
+    /* ignore */
+  }
 }

@@ -40,6 +40,7 @@ import {
   readLoginWaitId,
   TG_LOGIN_WAIT_STARTED_EVENT,
   clearLoginWaitId,
+  resetTelegramLoginWaitClientState,
 } from "@/app/lib/telegramLoginWaitStorage";
 import { telegramWebLoginDeepLink } from "@/app/lib/telegramWebLoginUrl";
 
@@ -62,6 +63,7 @@ export default function AccountPageClient() {
   const [bonusPointsBalance, setBonusPointsBalance] = useState(0);
   const [telegramUsernameFromServer, setTelegramUsernameFromServer] = useState("");
   const [orderLinesOpenById, setOrderLinesOpenById] = useState<Record<string, boolean>>({});
+  const [loginAttempt, setLoginAttempt] = useState(0);
   const loginWaitActive = useRef(false);
   const loginCompleting = useRef(false);
 
@@ -85,6 +87,7 @@ export default function AccountPageClient() {
     const id = readTelegramPrimaryUserId();
     if (id == null) {
       setLsGate("no_telegram");
+      if (!readLoginWaitId()) clearLoginWaitId();
       return;
     }
     setLsGate("ok");
@@ -96,19 +99,18 @@ export default function AccountPageClient() {
     persistLoginWaitId(fromUrl.trim().toLowerCase());
     setAutoLoginPending(true);
     setAutoLoginError(null);
+    setLoginAttempt((n) => n + 1);
   }, [searchParams]);
 
   useEffect(() => {
-    const beginIfNeeded = () => {
-      if (readLoginWaitId()) {
-        setAutoLoginPending(true);
-        setAutoLoginError(null);
-      }
+    const onLoginStarted = () => {
+      setAutoLoginPending(true);
+      setAutoLoginError(null);
+      setLoginAttempt((n) => n + 1);
     };
-    beginIfNeeded();
-    window.addEventListener(TG_LOGIN_WAIT_STARTED_EVENT, beginIfNeeded);
+    window.addEventListener(TG_LOGIN_WAIT_STARTED_EVENT, onLoginStarted);
     return () => {
-      window.removeEventListener(TG_LOGIN_WAIT_STARTED_EVENT, beginIfNeeded);
+      window.removeEventListener(TG_LOGIN_WAIT_STARTED_EVENT, onLoginStarted);
     };
   }, []);
 
@@ -187,7 +189,7 @@ export default function AccountPageClient() {
       window.removeEventListener("focus", onWake);
       window.removeEventListener("pageshow", onWake);
     };
-  }, [autoLoginPending, establishSessionFromTelegramUserId]);
+  }, [autoLoginPending, loginAttempt, establishSessionFromTelegramUserId]);
 
   const loadOrders = useCallback(async () => {
     setOrdersError(null);
@@ -286,7 +288,9 @@ export default function AccountPageClient() {
 
   const handleOpenTelegramForLogin = useCallback(async () => {
     setAutoLoginError(null);
+    resetTelegramLoginWaitClientState();
     setAutoLoginPending(true);
+    setLoginAttempt((n) => n + 1);
     const ok = await startTelegramWebLoginWithWait();
     if (!ok && typeof window !== "undefined") {
       setAutoLoginPending(false);
@@ -294,7 +298,17 @@ export default function AccountPageClient() {
     }
   }, []);
 
+  const handleCancelLoginWait = useCallback(() => {
+    resetTelegramLoginWaitClientState();
+    setAutoLoginPending(false);
+    setAutoLoginError(null);
+    setLoginAttempt((n) => n + 1);
+  }, []);
+
   const handleLogout = useCallback(async () => {
+    resetTelegramLoginWaitClientState();
+    setAutoLoginPending(false);
+    setAutoLoginError(null);
     await logout();
     setOrders([]);
     setLsGate("no_telegram");
@@ -311,6 +325,13 @@ export default function AccountPageClient() {
             <p className="mt-2 text-xs text-zinc-600">
               Подтвердите вход в боте и вернитесь на эту вкладку — вход завершится автоматически.
             </p>
+            <button
+              type="button"
+              onClick={handleCancelLoginWait}
+              className="mt-5 text-xs text-zinc-500 underline underline-offset-2 hover:text-zinc-300"
+            >
+              Отменить и вернуться
+            </button>
           </>
         ) : (
           "Загрузка…"

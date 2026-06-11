@@ -16,6 +16,7 @@ import {
   readTelegramUserLink,
   syncTelegramIdentityFromSession,
 } from "@/app/lib/telegramUserIdentity";
+import { resetTelegramLoginWaitClientState } from "@/app/lib/telegramLoginWaitStorage";
 
 const STORAGE_USERS = "illucards_users";
 const STORAGE_SESSION = "illucards_session";
@@ -218,6 +219,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } catch {
       /* ignore */
     }
+    resetTelegramLoginWaitClientState();
     setUser(null);
     writeSession(null);
     try {

@@ -834,10 +834,6 @@ export async function updateOrderStatus(
     return { ok: false, error: "Заказ не найден", status: 404 };
   }
 
-  const nowBonusEligible =
-    orderStatusEligibleForBonusAccrual(status) &&
-    existing.status !== "cancelled" &&
-    status !== "cancelled";
   const spend = Math.max(0, Math.floor(existing.bonus_points_spent ?? 0));
   let bonusRefundedNow = false;
   const refundBonusNow =
@@ -914,7 +910,8 @@ export async function updateOrderStatus(
     /* нет файла или FS только для чтения — статус уже в ORDERS */
   }
   const grantBonusNow =
-    nowBonusEligible &&
+    orderStatusEligibleForBonusAccrual(status) &&
+    existing.status !== "confirmed" &&
     !existing.bonus_awarded &&
     existing.user_id != null &&
     existing.user_id > 0;

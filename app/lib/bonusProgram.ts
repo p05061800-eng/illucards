@@ -3,16 +3,10 @@ import { BYN_TO_RUB } from "@/app/lib/formatPrice";
 import type { OrderStatus } from "@/app/lib/orderTypes";
 
 /**
- * Заказ принят в работу или отгружен — один раз начисляем баллы (после подтверждения админом и дальше).
+ * Начисление баллов за заказ — только после подтверждения админом («Принят»).
  */
 export function orderStatusEligibleForBonusAccrual(status: OrderStatus): boolean {
-  return (
-    status === "confirmed" ||
-    status === "paid" ||
-    status === "shipped" ||
-    status === "sent" ||
-    status === "delivered"
-  );
+  return status === "confirmed";
 }
 
 /** Списание бонусов по заказу — только после подтверждения админом. */

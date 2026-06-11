@@ -493,8 +493,8 @@ export default function AccountPageClient() {
           <p className="mt-1 text-sm text-zinc-500">Загрузка…</p>
         )}
         <p className="mt-3 text-xs leading-relaxed text-zinc-500">
-          За каждую единицу товара — 100 баллов один раз после «Принят», отметки чека («Чек получен»)
-          или при «Отправлен» / «Доставлен». Списание в корзине: 100 баллов ={" "}
+          За каждую единицу товара — 100 баллов один раз после подтверждения заказа админом
+          («Принят»). Списание бонусов — тоже только после «Принят». 100 баллов ={" "}
           {BYN_PER_100_BONUS_POINTS.toLocaleString("ru-RU", {
             minimumFractionDigits: 0,
             maximumFractionDigits: 2,

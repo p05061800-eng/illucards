@@ -52,4 +52,6 @@ export type OrderRecord = {
   buyer_seq?: number;
   /** file_id скрина оплаты в Telegram (для синка между инстансами бота). */
   telegram_payment_proof_file_id?: string;
+  /** Сколько баллов начислить за заказ (фиксируется при оформлении). */
+  bonus_points_earn_expected?: number;
 };

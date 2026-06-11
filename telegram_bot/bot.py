@@ -40,7 +40,7 @@ from db import init_db, recompute_user_order_stats, sync_all_users_order_stats, 
 logging.basicConfig(format="%(asctime)s %(levelname)s %(message)s", level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-BOT_BUILD_ID = "2026-06-11-proof-site-redis-v3"
+BOT_BUILD_ID = "2026-06-11-bonus-accrual-v1"
 
 REPLY_MENU_TEXTS = frozenset(
     {"💬 Связь", "📦 Мои заказы", "📜 Мои заказы", "🚚 Доставка", "⭐ Бонусы"}
@@ -1891,7 +1891,7 @@ def _loyalty_menu_text(bonus_points: int) -> str:
         f"⭐ Текущий баланс: {pts:,} бонусов\n".replace(",", " ")
         + f"{pts} бонусов можно потратить в корзине на сайте.\n\n"
         + MSG_LOYALTY_MENU
-        + "\n\nНачисляются после отправки заказа."
+        + "\n\nНачисляются после принятия заказа менеджером (кнопка «Принять»)."
     )
 
 
@@ -2700,6 +2700,9 @@ async def post_site_order_status(
             spent = 0
         if spent > 0:
             payload["bonus_points_spent"] = spent
+        earn = _bonus_points_to_earn(sync_order)
+        if earn > 0:
+            payload["bonus_points_earn_expected"] = int(earn)
     timeout = aiohttp.ClientTimeout(total=20)
     try:
         async with aiohttp.ClientSession(timeout=timeout) as session:
@@ -2716,6 +2719,39 @@ async def post_site_order_status(
     except (aiohttp.ClientError, asyncio.TimeoutError, OSError) as e:
         logger.warning("POST order/update: %s", e)
         return False
+
+
+async def _repair_user_bonus_accrual_on_site(uid: int) -> None:
+    """Дозачислить бонусы: синк заказов с позициями на сайт и reconcile."""
+    u = int(uid)
+    if u <= 0:
+        return
+    _load_bot_orders()
+    for oid, rec in list(BOT_ORDERS.items()):
+        if not isinstance(rec, dict):
+            continue
+        try:
+            if int(rec.get("user_id") or 0) != u:
+                continue
+        except (TypeError, ValueError):
+            continue
+        items = _order_items_list(rec)
+        if not items:
+            continue
+        st = str(rec.get("status") or "").strip().lower()
+        if st in ("cancelled", "canceled", "new"):
+            continue
+        site_st = "confirmed"
+        if st in ("shipped", "sent", "delivered"):
+            site_st = "shipped" if st in ("shipped", "sent") else st
+        elif st == "paid":
+            site_st = "paid"
+        sync_order = _order_for_site_sync(str(oid), rec, u)
+        earn = _bonus_points_to_earn(sync_order)
+        if earn > 0:
+            sync_order["bonus_points_earn_expected"] = int(earn)
+        await post_site_order_status(str(oid), site_st, sync_order, u)
+    await fetch_site_user_orders_list(u)
 
 
 async def post_site_order_payment_proof_file_id(
@@ -4937,7 +4973,12 @@ async def text_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
         if not user:
             await update.message.reply_text("Не удалось определить пользователя.")
             return
-        st = await fetch_site_user_state(int(user.id))
+        uid = int(user.id)
+        try:
+            await _repair_user_bonus_accrual_on_site(uid)
+        except Exception as e:
+            logger.warning("bonus repair uid=%s: %s", uid, e)
+        st = await fetch_site_user_state(uid)
         pts = 0
         if isinstance(st, dict):
             try:

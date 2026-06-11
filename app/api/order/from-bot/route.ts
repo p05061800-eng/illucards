@@ -131,6 +131,7 @@ export async function POST(request: NextRequest) {
       : (prior?.buyer_seq != null && prior.buyer_seq > 0
           ? prior.buyer_seq
           : await assignBuyerSeqForNewOrder(userId));
+  const earnExpected = bonusPointsToEarnForOrderItems(items);
   const record: OrderRecord = {
     ...(prior ?? {}),
     user_id: userId,
@@ -147,6 +148,7 @@ export async function POST(request: NextRequest) {
     ...(prior?.bonus_points_deducted ? { bonus_points_deducted: true as const } : {}),
     ...(prior?.bonus_points_refunded ? { bonus_points_refunded: true as const } : {}),
     ...(prior?.bonus_awarded ? { bonus_awarded: true as const } : {}),
+    ...(earnExpected > 0 ? { bonus_points_earn_expected: earnExpected } : {}),
     ...(buyer_seq != null && buyer_seq > 0 ? { buyer_seq } : {}),
   };
 

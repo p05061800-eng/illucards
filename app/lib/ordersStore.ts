@@ -336,6 +336,12 @@ function fileToOrderRecord(raw: unknown): OrderRecord | null {
       ? proofRaw.trim().slice(0, 256)
       : undefined;
 
+  const earnRaw = o.bonus_points_earn_expected;
+  const bonus_points_earn_expected =
+    typeof earnRaw === "number" && Number.isFinite(earnRaw) && earnRaw > 0
+      ? Math.floor(earnRaw)
+      : undefined;
+
   const buyerSeqRaw = o.buyer_seq;
   const buyer_seq =
     typeof buyerSeqRaw === "number" &&
@@ -370,7 +376,19 @@ function fileToOrderRecord(raw: unknown): OrderRecord | null {
     ...(telegram_payment_proof_file_id
       ? { telegram_payment_proof_file_id }
       : {}),
+    ...(bonus_points_earn_expected != null && bonus_points_earn_expected > 0
+      ? { bonus_points_earn_expected }
+      : {}),
   };
+}
+
+function bonusEarnForOrderRecord(record: OrderRecord): number {
+  const fromItems = bonusPointsToEarnForOrderItems(
+    Array.isArray(record.items) ? record.items : [],
+  );
+  if (fromItems > 0) return fromItems;
+  const expected = Math.max(0, Math.floor(record.bonus_points_earn_expected ?? 0));
+  return expected;
 }
 
 async function collectOrderIdsForUser(userId: number): Promise<string[]> {
@@ -917,7 +935,7 @@ export async function updateOrderStatus(
     existing.user_id != null &&
     existing.user_id > 0;
   if (grantBonusNow) {
-    const earn = bonusPointsToEarnForOrderItems(existing.items);
+    const earn = bonusEarnForOrderRecord(existing);
     if (earn > 0) {
       try {
         const uid = Math.floor(existing.user_id!);
@@ -1319,7 +1337,7 @@ export async function reconcileBonusPointsForUser(userId: number): Promise<numbe
     ) {
       continue;
     }
-    const before = bonusPointsToEarnForOrderItems(record.items);
+    const before = bonusEarnForOrderRecord(record);
     if (before <= 0) continue;
     const result = await updateOrderStatus(row.id, record.status);
     if (result.ok) awarded += before;

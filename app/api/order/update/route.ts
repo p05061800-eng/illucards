@@ -14,6 +14,7 @@ import {
   updateOrderStatus,
 } from "@/app/lib/ordersStore";
 import { getTelegramUserState } from "@/app/lib/telegramUserStateStore";
+import { bonusPointsToEarnForOrderItems } from "@/app/lib/bonusProgram";
 import {
   normalizeOrderItems,
   parseDeliveryCountry,
@@ -66,6 +67,11 @@ export async function POST(request: NextRequest) {
         ? o.payment_proof_file_id.trim()
         : "";
   const hasPaymentProofFileId = paymentProofFileIdRaw.length > 0;
+  const earnExpectedRaw = o.bonus_points_earn_expected;
+  const earnExpectedPatch =
+    typeof earnExpectedRaw === "number" && Number.isFinite(earnExpectedRaw) && earnExpectedRaw > 0
+      ? Math.floor(earnExpectedRaw)
+      : undefined;
   if (!orderId) {
     return NextResponse.json({ error: "Укажите order_id" }, { status: 400 });
   }
@@ -102,6 +108,7 @@ export async function POST(request: NextRequest) {
       });
       if (!created.ok) {
         const buyer_seq = await assignBuyerSeqForNewOrder(userId);
+        const earnFallback = bonusPointsToEarnForOrderItems(items);
         await saveOrderRecord(orderId, {
           user_id: userId,
           username: parseOptionalUsername(o.username) ?? null,
@@ -109,6 +116,7 @@ export async function POST(request: NextRequest) {
           total,
           delivery,
           status: "new",
+          ...(earnFallback > 0 ? { bonus_points_earn_expected: earnFallback } : {}),
           ...(buyer_seq != null && buyer_seq > 0 ? { buyer_seq } : {}),
         });
       }
@@ -123,6 +131,28 @@ export async function POST(request: NextRequest) {
           patchUid,
           parseOptionalUsername(o.username),
         )) ?? existing;
+    }
+    if (existing && earnExpectedPatch != null && !(existing.bonus_points_earn_expected ?? 0)) {
+      await saveOrderRecord(orderId, {
+        ...existing,
+        bonus_points_earn_expected: earnExpectedPatch,
+      });
+      existing = await getOrder(orderId);
+    } else if (existing) {
+      const items = normalizeOrderItems(o.items);
+      if (
+        items &&
+        items.length > 0 &&
+        (!Array.isArray(existing.items) || existing.items.length === 0)
+      ) {
+        const earnFallback = bonusPointsToEarnForOrderItems(items);
+        await saveOrderRecord(orderId, {
+          ...existing,
+          items,
+          ...(earnFallback > 0 ? { bonus_points_earn_expected: earnFallback } : {}),
+        });
+        existing = await getOrder(orderId);
+      }
     }
   }
 

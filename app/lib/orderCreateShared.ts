@@ -1,6 +1,10 @@
 import { randomUUID } from "crypto";
 import { parseCardRarity } from "@/app/lib/cardRarityTags";
-import { bonusDiscountByn, maxSpendableBonusPoints } from "@/app/lib/bonusProgram";
+import {
+  bonusDiscountByn,
+  bonusPointsToEarnForOrderItems,
+  maxSpendableBonusPoints,
+} from "@/app/lib/bonusProgram";
 import { deliveryCharge, normalizeDeliveryCountry, type DeliveryCountry } from "@/app/lib/delivery";
 import type { OrderLineIn, OrderRecord } from "@/app/lib/orderTypes";
 import { assignBuyerSeqForNewOrder, saveOrderRecord } from "@/app/lib/ordersStore";
@@ -163,6 +167,7 @@ export async function persistOrder(
       ? await assignBuyerSeqForNewOrder(userId)
       : undefined;
 
+  const earnExpected = bonusPointsToEarnForOrderItems(items);
   const record: OrderRecord = {
     ...(userId != null && userId > 0 ? { user_id: userId } : {}),
     username: username ?? null,
@@ -171,6 +176,7 @@ export async function persistOrder(
     delivery: deliveryCountry,
     status: "new",
     ...(spendApplied > 0 ? { bonus_points_spent: spendApplied } : {}),
+    ...(earnExpected > 0 ? { bonus_points_earn_expected: earnExpected } : {}),
     ...(buyer_seq != null && buyer_seq > 0 ? { buyer_seq } : {}),
   };
 

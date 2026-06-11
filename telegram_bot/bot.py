@@ -40,7 +40,7 @@ from db import init_db, recompute_user_order_stats, sync_all_users_order_stats, 
 logging.basicConfig(format="%(asctime)s %(levelname)s %(message)s", level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-BOT_BUILD_ID = "2026-06-11-tg-wait-without-lsgate-v1"
+BOT_BUILD_ID = "2026-06-11-delivery-two-msgs-after-proof-v1"
 
 REPLY_MENU_TEXTS = frozenset(
     {"💬 Связь", "📦 Мои заказы", "📜 Мои заказы", "🚚 Доставка", "⭐ Бонусы"}
@@ -2820,15 +2820,18 @@ PAY_DELIVERY_BLANK_TEMPLATE = (
 )
 
 
-def _pay_delivery_after_proof_text() -> str:
-    """Одно сообщение после скрина: инструкция + шаблон."""
+def _pay_delivery_after_proof_intro_text() -> str:
+    """Первое сообщение после скрина чека."""
     return (
         "✅ Чек получен.\n\n"
-        "Пришлите ваш адрес СДЭК, ФИО и номер телефона одним сообщением в этот чат.\n"
-        "После проверки менеджер подтвердит заказ.\n\n"
-        "Скопируйте шаблон ниже, заполните своими данными и отправьте:\n\n"
-        + PAY_DELIVERY_BLANK_TEMPLATE
+        "заполните данные ниже\n"
+        "После проверки менеджер подтвердит заказ."
     )
+
+
+def _pay_delivery_after_proof_text() -> str:
+    """Устаревший объединённый текст — не использовать для отправки."""
+    return _pay_delivery_after_proof_intro_text() + "\n\n" + PAY_DELIVERY_BLANK_TEMPLATE
 
 
 def _pay_delivery_request_text(*, after_proof: bool = False) -> str:
@@ -3013,14 +3016,17 @@ async def _send_delivery_prompt_after_proof(
                 reply_markup=markup,
             )
         return
-    text = _pay_delivery_after_proof_text()
+    intro = _pay_delivery_after_proof_intro_text()
+    template = PAY_DELIVERY_BLANK_TEMPLATE
     markup = _main_keyboard()
     if reply_message is not None:
-        await reply_message.reply_text(text, reply_markup=markup)
+        await reply_message.reply_text(intro)
+        await reply_message.reply_text(template, reply_markup=markup)
     else:
+        await context.bot.send_message(chat_id=int(chat_id), text=intro)
         await context.bot.send_message(
             chat_id=int(chat_id),
-            text=text,
+            text=template,
             reply_markup=markup,
         )
 

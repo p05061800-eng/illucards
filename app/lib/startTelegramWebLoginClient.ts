@@ -19,7 +19,10 @@ declare global {
 export async function startTelegramWebLoginWithWait(): Promise<boolean> {
   if (typeof window === "undefined") return false;
   try {
-    const res = await fetch(apiUrl("/api/telegram-login-wait"), { method: "POST" });
+    const res = await fetch(apiUrl("/api/telegram-login-wait"), {
+      method: "POST",
+      credentials: "include",
+    });
     if (!res.ok) return false;
     const j = (await res.json()) as { wait_id?: string };
     const id = typeof j.wait_id === "string" ? j.wait_id.trim() : "";
@@ -33,7 +36,12 @@ export async function startTelegramWebLoginWithWait(): Promise<boolean> {
       "popup=yes,width=520,height=820,menubar=no,toolbar=no,location=yes,status=no,scrollbars=yes,resizable=yes",
     );
     window.__illucardsTgLoginPopup = popup;
-    if (popup && !popup.closed) popup.focus();
+    if (popup && !popup.closed) {
+      popup.focus();
+      return true;
+    }
+    // Popup blocked — новая вкладка; poller на этой вкладке продолжит ждать.
+    window.open(url, "_blank", "noopener,noreferrer");
     return true;
   } catch {
     return false;

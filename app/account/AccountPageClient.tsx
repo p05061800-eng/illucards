@@ -134,7 +134,6 @@ export default function AccountPageClient() {
 
     const tick = async () => {
       if (!loginWaitActive.current || loginCompleting.current) return;
-      if (document.visibilityState === "hidden") return;
 
       const waitId = readLoginWaitId();
       if (!waitId) {

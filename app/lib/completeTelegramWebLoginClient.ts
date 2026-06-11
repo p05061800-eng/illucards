@@ -221,6 +221,23 @@ export async function finishTelegramWebLoginOnClient(
 ): Promise<CompleteTelegramWebLoginResult> {
   const knownProfile = options?.knownProfile ?? null;
 
+  // Poll уже вернул профиль — входим сразу; consume только для HttpOnly cookie.
+  if (knownProfile && knownProfile.user_id > 0) {
+    const applied = await applyTelegramLoginOnClient(
+      knownProfile.user_id,
+      knownProfile.username ?? null,
+      establishSessionFromTelegramUserId,
+    );
+    if (applied.ok) {
+      void completeTelegramWebLogin(waitId).catch(() => {});
+      return {
+        ok: true,
+        user_id: knownProfile.user_id,
+        username: knownProfile.username ?? null,
+      };
+    }
+  }
+
   const result = await completeTelegramWebLogin(waitId);
   if (result.ok) {
     const applied = await applyTelegramLoginOnClient(
@@ -232,21 +249,6 @@ export async function finishTelegramWebLoginOnClient(
       return { ok: false, error: applied.error, status: 400 };
     }
     return result;
-  }
-
-  if (knownProfile && knownProfile.user_id > 0) {
-    const applied = await applyTelegramLoginOnClient(
-      knownProfile.user_id,
-      knownProfile.username ?? null,
-      establishSessionFromTelegramUserId,
-    );
-    if (applied.ok) {
-      return {
-        ok: true,
-        user_id: knownProfile.user_id,
-        username: knownProfile.username ?? null,
-      };
-    }
   }
 
   if (result.status === 401) {

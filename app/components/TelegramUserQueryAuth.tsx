@@ -3,6 +3,7 @@
 import { useEffect, useLayoutEffect, useRef } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/app/context/AuthContext";
+import { clearLoginWaitId } from "@/app/lib/telegramLoginWaitStorage";
 
 const MAX_TG_ID = 1e12;
 
@@ -56,6 +57,13 @@ export function TelegramUserQueryAuth() {
     const uname = u?.trim() ? u.trim().replace(/^@/, "") : null;
 
     establishSessionFromTelegramUserId(uid, { telegramUsername: uname });
+    clearLoginWaitId();
+    void fetch("/api/auth/telegram-cookie", {
+      method: "POST",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ user_id: uid }),
+    }).catch(() => {});
 
     const params = removeAuthParams(searchParams);
     const q = params.toString();

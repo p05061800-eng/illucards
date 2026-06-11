@@ -40,7 +40,7 @@ from db import init_db, recompute_user_order_stats, sync_all_users_order_stats, 
 logging.basicConfig(format="%(asctime)s %(levelname)s %(message)s", level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-BOT_BUILD_ID = "2026-06-11-proof-delivery-confirm-v1"
+BOT_BUILD_ID = "2026-06-11-proof-delvok-v2"
 
 REPLY_MENU_TEXTS = frozenset(
     {"💬 Связь", "📦 Мои заказы", "📜 Мои заказы", "🚚 Доставка", "⭐ Бонусы"}
@@ -634,7 +634,7 @@ async def _refresh_saved_delivery_from_site(uid: int) -> None:
 
 
 def _load_bot_orders() -> None:
-    global BOT_ORDERS
+    """Подмешать bot-orders.json в память, не затирая свежий proof_file_id."""
     if not BOT_ORDERS_PATH.exists():
         return
     try:
@@ -642,11 +642,15 @@ def _load_bot_orders() -> None:
             raw = json.load(f)
         if not isinstance(raw, dict):
             return
-        out: dict[str, dict[str, Any]] = {}
         for k, v in raw.items():
-            if isinstance(v, dict):
-                out[str(k)] = v
-        BOT_ORDERS = out
+            if not isinstance(v, dict):
+                continue
+            key = str(k)
+            existing = BOT_ORDERS.get(key)
+            if isinstance(existing, dict):
+                BOT_ORDERS[key] = _merge_bot_order_from_site_export(existing, dict(v))
+            else:
+                BOT_ORDERS[key] = dict(v)
     except (OSError, json.JSONDecodeError, ValueError) as e:
         logger.warning("bot-orders read: %s", e)
 
@@ -3340,20 +3344,77 @@ def _clear_awaiting_checkout(uid: int) -> None:
     _AWAIT_DELIVERY_CONFIRM.pop(int(uid), None)
 
 
+def _order_rec_for_user(uid: int, order_id: str) -> dict[str, Any] | None:
+    oid = str(order_id or "").strip()
+    if not oid:
+        return None
+    rec = BOT_ORDERS.get(oid)
+    if not isinstance(rec, dict):
+        snap = _ORDER_SNAPSHOTS.get(oid)
+        rec = snap if isinstance(snap, dict) else None
+    if not isinstance(rec, dict):
+        return None
+    try:
+        if int(rec.get("user_id")) != int(uid):
+            return None
+    except (TypeError, ValueError):
+        return None
+    return rec
+
+
+def _get_order_proof_file_id(order_id: str, uid: int) -> str:
+    rec = _order_rec_for_user(uid, order_id)
+    if isinstance(rec, dict):
+        fid = str(rec.get("proof_file_id") or "").strip()
+        if fid:
+            return fid
+    _load_bot_orders()
+    rec = _order_rec_for_user(uid, order_id)
+    if isinstance(rec, dict):
+        return str(rec.get("proof_file_id") or "").strip()
+    return ""
+
+
 def _find_proof_received_order_id(uid: int) -> str | None:
     _load_bot_orders()
+    best_oid = ""
     for order_id, rec in BOT_ORDERS.items():
         if not isinstance(rec, dict):
             continue
-        try:
-            if int(rec.get("user_id")) != int(uid):
-                continue
-        except (TypeError, ValueError):
+        if not _bot_order_awaiting_delivery_confirm(int(uid), str(order_id)):
             continue
-        if str(rec.get("status") or "").strip().lower() != "proof_received":
+        oid = str(order_id).strip()
+        if oid >= best_oid:
+            best_oid = oid
+    if best_oid:
+        return best_oid
+    for order_id, snap in _ORDER_SNAPSHOTS.items():
+        if not isinstance(snap, dict):
             continue
-        if rec.get("proof_file_id"):
+        if _bot_order_awaiting_delivery_confirm(int(uid), str(order_id)):
             return str(order_id).strip()
+    return None
+
+
+def _find_user_order_awaiting_delivery_confirm(
+    uid: int, preferred_order_id: str = ""
+) -> str | None:
+    preferred = str(preferred_order_id or "").strip()
+    if preferred and _bot_order_awaiting_delivery_confirm(uid, preferred):
+        return preferred
+    pending = _AWAIT_DELIVERY_CONFIRM.get(int(uid))
+    if pending:
+        p = str(pending).strip()
+        if p:
+            if _bot_order_awaiting_delivery_confirm(uid, p) or _get_order_proof_file_id(
+                p, uid
+            ):
+                return p
+    found = _find_proof_received_order_id(uid)
+    if found:
+        return found
+    if preferred and _get_order_proof_file_id(preferred, uid):
+        return preferred
     return None
 
 
@@ -3366,8 +3427,10 @@ def _bot_order_awaiting_delivery_confirm(uid: int, order_id: str) -> bool:
     oid = str(order_id or "").strip()
     if not oid:
         return False
-    _load_bot_orders()
-    rec = BOT_ORDERS.get(oid)
+    rec = _order_rec_for_user(uid, oid)
+    if not isinstance(rec, dict):
+        _load_bot_orders()
+        rec = _order_rec_for_user(uid, oid)
     if not isinstance(rec, dict):
         return False
     try:
@@ -3384,10 +3447,34 @@ def _bot_order_awaiting_delivery_confirm(uid: int, order_id: str) -> bool:
 
 
 def _user_may_confirm_saved_delivery(uid: int, order_id: str) -> bool:
-    pending = _AWAIT_DELIVERY_CONFIRM.get(int(uid))
-    if pending and str(pending).strip() == str(order_id).strip():
-        return True
-    return _bot_order_awaiting_delivery_confirm(uid, order_id)
+    return _find_user_order_awaiting_delivery_confirm(uid, order_id) is not None
+
+
+def _ensure_bot_order_proof_file_id(
+    order_id: str, uid: int, proof_file_id: str
+) -> None:
+    fid = str(proof_file_id or "").strip()
+    if not fid:
+        return
+    oid = str(order_id or "").strip()
+    if not oid:
+        return
+    rec = BOT_ORDERS.get(oid)
+    if not isinstance(rec, dict):
+        rec = {"user_id": int(uid)}
+    if str(rec.get("proof_file_id") or "").strip():
+        return
+    rec = dict(rec)
+    rec["proof_file_id"] = fid
+    if not str(rec.get("status") or "").strip():
+        rec["status"] = "proof_received"
+    BOT_ORDERS[oid] = rec
+    snap = _ORDER_SNAPSHOTS.get(oid)
+    if isinstance(snap, dict):
+        merged = dict(snap)
+        merged["proof_file_id"] = fid
+        _ORDER_SNAPSHOTS[oid] = merged
+    _persist_bot_orders()
 
 
 def _ensure_delivery_confirm_state(uid: int, order_id: str) -> None:
@@ -4363,11 +4450,9 @@ async def _finalize_delivery_submission(
         _clear_awaiting_checkout(uid)
         return True
 
-    file_id = (
-        str(bot_rec.get("proof_file_id") or "").strip()
-        if isinstance(bot_rec, dict)
-        else ""
-    )
+    file_id = _get_order_proof_file_id(oid, uid)
+    if not file_id and isinstance(bot_rec, dict):
+        file_id = str(bot_rec.get("proof_file_id") or "").strip()
     if not file_id:
         _AWAIT_PAYMENT_PROOF[uid] = oid
         _AWAIT_ORDER_DETAILS.pop(uid, None)
@@ -4528,6 +4613,7 @@ async def payment_proof_handler(
             await msg.reply_text("Заказ уже передан администратору. Ожидайте подтверждения.")
             return
         if bot_rec.get("proof_file_id"):
+            _cache_order_snapshot(order_id, bot_rec, uid)
             await _send_delivery_prompt_after_proof(
                 context,
                 chat_id=int(msg.chat_id),
@@ -4552,7 +4638,10 @@ async def payment_proof_handler(
     rec["payment_method"] = pm
     rec["proof_file_id"] = file_id
     BOT_ORDERS[order_id] = rec
+    _cache_order_snapshot(order_id, rec, uid)
     _persist_bot_orders()
+    sync_order = _order_for_site_sync(order_id, rec, uid)
+    await post_site_order_status(order_id, "paid", sync_order, uid)
 
     await _send_delivery_prompt_after_proof(
         context,
@@ -5004,10 +5093,15 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
                 return
             uid = int(user.id)
             _rehydrate_checkout_await_states_for_user(uid)
-            if not _user_may_confirm_saved_delivery(uid, order_id):
+            resolved_oid = _find_user_order_awaiting_delivery_confirm(uid, order_id)
+            if not resolved_oid:
                 await q.answer("Сначала пришлите скриншот чека", show_alert=True)
                 return
+            order_id = resolved_oid
             _ensure_delivery_confirm_state(uid, order_id)
+            proof_id = _get_order_proof_file_id(order_id, uid)
+            if proof_id:
+                _ensure_bot_order_proof_file_id(order_id, uid, proof_id)
             saved = _get_saved_delivery_text(uid)
             if not saved or not _delivery_text_acceptable(saved):
                 await q.answer("Нет сохранённых данных", show_alert=True)
@@ -5029,17 +5123,16 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
             if owner_id is None or uid != int(owner_id):
                 await q.answer("Это не ваш заказ", show_alert=True)
                 return
-            _load_bot_orders()
-            bot_rec = BOT_ORDERS.get(order_id)
+            bot_rec = _order_rec_for_user(uid, order_id)
             if isinstance(bot_rec, dict):
                 bot_st = str(bot_rec.get("status") or "").strip().lower()
                 if bot_st == "proof_submitted":
                     await q.answer("Заказ уже передан администратору")
                     _clear_awaiting_checkout(uid)
                     return
-                if not bot_rec.get("proof_file_id"):
-                    await q.answer("Сначала пришлите скриншот чека", show_alert=True)
-                    return
+            if not _get_order_proof_file_id(order_id, uid):
+                await q.answer("Сначала пришлите скриншот чека", show_alert=True)
+                return
             await q.answer("Передаём заказ")
             try:
                 await q.edit_message_reply_markup(reply_markup=None)
@@ -5066,9 +5159,11 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
                 return
             uid = int(user.id)
             _rehydrate_checkout_await_states_for_user(uid)
-            if not _user_may_confirm_saved_delivery(uid, order_id):
+            resolved_oid = _find_user_order_awaiting_delivery_confirm(uid, order_id)
+            if not resolved_oid:
                 await q.answer("Сначала пришлите скриншот чека", show_alert=True)
                 return
+            order_id = resolved_oid
             _ensure_delivery_confirm_state(uid, order_id)
             order = await _load_order_for_callback(order_id, uid)
             if not order:

@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import { useAuth } from "@/app/context/AuthContext";
+import { pollLoginWait } from "@/app/lib/completeTelegramWebLoginClient";
 import {
   completeLoginWaitIfReady,
   redirectAfterTelegramLogin,
@@ -12,8 +13,8 @@ import {
   TG_LOGIN_WAIT_STARTED_EVENT,
 } from "@/app/lib/telegramLoginWaitStorage";
 
-const POLL_MS = 1200;
-const MAX_MS = 8 * 60 * 1000;
+const POLL_MS = 800;
+const MAX_MS = 10 * 60 * 1000;
 
 declare global {
   interface Window {
@@ -28,6 +29,8 @@ export function TelegramLoginWaitPoller() {
   const { establishSessionFromTelegramUserId } = useAuth();
   const startedAt = useRef<number | null>(null);
   const completing = useRef(false);
+  const establishRef = useRef(establishSessionFromTelegramUserId);
+  establishRef.current = establishSessionFromTelegramUserId;
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -50,15 +53,16 @@ export function TelegramLoginWaitPoller() {
         return;
       }
       if (startedAt.current == null) startedAt.current = Date.now();
-      if (Date.now() - startedAt.current > MAX_MS) {
-        return;
-      }
+      if (Date.now() - startedAt.current > MAX_MS) return;
+
+      const poll = await pollLoginWait(waitId);
+      if (!poll.ready || poll.user_id == null || poll.user_id <= 0) return;
 
       completing.current = true;
       try {
         const result = await completeLoginWaitIfReady(
           waitId,
-          establishSessionFromTelegramUserId,
+          establishRef.current,
         );
         if (result.ok) {
           closePopup();
@@ -77,7 +81,7 @@ export function TelegramLoginWaitPoller() {
     };
 
     const onWake = () => {
-      void tick();
+      if (document.visibilityState === "visible") void tick();
     };
 
     const id = window.setInterval(() => void tick(), POLL_MS);
@@ -94,7 +98,7 @@ export function TelegramLoginWaitPoller() {
       window.removeEventListener("pageshow", onWake);
       window.removeEventListener(TG_LOGIN_WAIT_STARTED_EVENT, onWake);
     };
-  }, [establishSessionFromTelegramUserId]);
+  }, []);
 
   return null;
 }

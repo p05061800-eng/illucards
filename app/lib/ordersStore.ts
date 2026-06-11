@@ -119,6 +119,83 @@ async function readUserOrderIdsFromRedis(userId: number): Promise<string[] | nul
   return j.result.filter((x): x is string => typeof x === "string");
 }
 
+async function redisListAllOrderKeys(): Promise<string[]> {
+  const j = await redisCommand(["KEYS", "illucards:order:*"]);
+  if (!j || j.error || !Array.isArray(j.result)) return [];
+  return j.result.filter((x): x is string => typeof x === "string");
+}
+
+/** Заказы в Redis с user_id, но без записи в ZSET пользователя (после сбоев индекса). */
+async function redisScanOrderIdsForUser(userId: number): Promise<string[]> {
+  if (!redisRestCredentials()) return [];
+  const uid = Math.floor(userId);
+  const keys = await redisListAllOrderKeys();
+  const out: string[] = [];
+  for (const key of keys) {
+    const id = key.replace(/^illucards:order:/, "").trim();
+    if (!id || id.length > 200 || /[/\\]/.test(id) || id.includes("..")) continue;
+    const record = await readOrderRecordFromRedis(id);
+    if (!record || record.user_id !== uid) continue;
+    out.push(id);
+  }
+  return out;
+}
+
+async function ensureOrderIndexedForUser(
+  userId: number,
+  orderId: string,
+  record: OrderRecord,
+): Promise<void> {
+  if (!redisRestCredentials()) return;
+  const uid = Math.floor(userId);
+  if (record.user_id !== uid) return;
+  await redisCommand([
+    "ZADD",
+    REDIS_USER_ORDERS_KEY(uid),
+    String(Date.now()),
+    orderId,
+  ]);
+}
+
+/** Привязать заказ к Telegram-пользователю, если user_id ещё не задан (синк из бота). */
+export async function attachOrderOwnerIfMissing(
+  orderId: string,
+  userId: number,
+  username?: string | null,
+): Promise<OrderRecord | null> {
+  const id = sanitizeOrderIdForPath(orderId);
+  if (!id) return null;
+  const uid = Math.floor(userId);
+  if (uid <= 0) return null;
+  const existing = await getOrder(id);
+  if (!existing) return null;
+  if (existing.user_id != null && existing.user_id > 0) return existing;
+
+  const updated: OrderRecord = {
+    ...existing,
+    user_id: uid,
+    ...(username != null && username.trim()
+      ? { username: username.replace(/^@/, "").trim() || null }
+      : {}),
+  };
+  ORDERS[id] = updated;
+  await persistOrderRecordToRedis(id, updated);
+  const filePath = path.join(ORDERS_DIR, `${id}.json`);
+  try {
+    const text = await fs.readFile(filePath, "utf-8");
+    const parsed: unknown = JSON.parse(text);
+    if (typeof parsed === "object" && parsed !== null) {
+      const raw = parsed as Record<string, unknown>;
+      raw.user_id = uid;
+      if (username?.trim()) raw.username = username.replace(/^@/, "").trim();
+      await fs.writeFile(filePath, JSON.stringify(raw, null, 2), "utf-8");
+    }
+  } catch {
+    /* ignore */
+  }
+  return updated;
+}
+
 async function readHiddenOrderIdsForUser(userId: number): Promise<Set<string>> {
   const j = await redisCommand(["SMEMBERS", REDIS_USER_HIDDEN_ORDERS_KEY(Math.floor(userId))]);
   if (!j || j.error || !Array.isArray(j.result)) return new Set();
@@ -298,6 +375,9 @@ async function collectOrderIdsForUser(userId: number): Promise<string[]> {
   const redisIds = await readUserOrderIdsFromRedis(uid);
   if (redisIds) {
     for (const id of redisIds) push(id);
+  }
+  for (const id of await redisScanOrderIdsForUser(uid)) {
+    push(id);
   }
 
   let files: string[] = [];
@@ -1006,52 +1086,32 @@ export async function listOrdersForUser(
   const uid = Math.floor(userId);
   await ensureBuyerSeqsForUser(uid);
   const hidden = await readHiddenOrderIdsForUser(uid);
-  const redisIds = await readUserOrderIdsFromRedis(uid);
-  if (redisIds && redisIds.length > 0) {
-    const rows: OrderListSummary[] = [];
-    const seen = new Set<string>();
-    const catalogMap = await catalogImageByCardId();
-    for (const id of redisIds) {
-      if (!id || id.length > 200 || /[/\\]/.test(id) || id.includes("..")) continue;
-      if (hidden.has(id)) continue;
-      const record = await getOrder(id);
-      if (!record || record.user_id !== uid) continue;
-      seen.add(id);
-      rows.push(orderSummaryFromRecord(id, record, catalogMap));
-    }
-    rows.push(...(await listBotOrderSummariesForUser(uid, catalogMap, seen, hidden)));
-    return rows;
-  }
-
-  let files: string[] = [];
-  try {
-    files = await fs.readdir(ORDERS_DIR);
-  } catch {
-    files = [];
-  }
-  const rows: Array<OrderListSummary & { mtime: number }> = [];
   const catalogMap = await catalogImageByCardId();
-  for (const f of files) {
-    if (!f.toLowerCase().endsWith(".json")) continue;
-    const id = f.replace(/\.json$/i, "");
+  const candidateIds = await collectOrderIdsForUser(uid);
+  const rows: Array<OrderListSummary & { sortKey: number }> = [];
+  const seen = new Set<string>();
+
+  for (const id of candidateIds) {
     if (!id || id.length > 200 || /[/\\]/.test(id) || id.includes("..")) continue;
-    if (hidden.has(id)) continue;
+    if (hidden.has(id) || seen.has(id)) continue;
     const record = await getOrder(id);
     if (!record || record.user_id !== uid) continue;
-    let mtime = 0;
-    try {
-      const st = await fs.stat(path.join(ORDERS_DIR, f));
-      mtime = st.mtimeMs;
-    } catch {
-      /* ignore */
-    }
+    seen.add(id);
+    void ensureOrderIndexedForUser(uid, id, record);
     rows.push({
       ...orderSummaryFromRecord(id, record, catalogMap),
-      mtime,
+      sortKey: record.buyer_seq ?? 0,
     });
   }
-  rows.push(...(await listBotOrderSummariesForUser(uid, catalogMap, new Set(rows.map((r) => r.id)), hidden)));
-  rows.sort((a, b) => b.mtime - a.mtime);
+
+  for (const extra of await listBotOrderSummariesForUser(uid, catalogMap, seen, hidden)) {
+    rows.push({
+      ...extra,
+      sortKey: extra.buyer_seq ?? extra.mtime ?? 0,
+    });
+  }
+
+  rows.sort((a, b) => b.sortKey - a.sortKey);
   return rows.map((row) => ({
     id: row.id,
     displayRef: row.displayRef,

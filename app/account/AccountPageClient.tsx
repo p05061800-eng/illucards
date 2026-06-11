@@ -23,6 +23,7 @@ import {
   completeLoginWaitIfReady,
   redirectAfterTelegramLogin,
 } from "@/app/lib/runTelegramLoginWaitCompletion";
+import { pollLoginWait } from "@/app/lib/completeTelegramWebLoginClient";
 import {
   persistTelegramUserIdentity,
   readTelegramPrimaryUserId,
@@ -48,7 +49,7 @@ type LsGate = "pending" | "ok" | "no_telegram";
 
 const PREVIEW_LIMIT = 5;
 
-const LOGIN_WAIT_POLL_MS = 1200;
+const LOGIN_WAIT_POLL_MS = 800;
 const LOGIN_WAIT_MAX_MS = 8 * 60 * 1000;
 
 export default function AccountPageClient() {
@@ -150,6 +151,11 @@ export default function AccountPageClient() {
 
       loginCompleting.current = true;
       try {
+        const poll = await pollLoginWait(waitId);
+        if (!poll.ready || poll.user_id == null || poll.user_id <= 0) {
+          return;
+        }
+
         const result = await completeLoginWaitIfReady(
           waitId,
           establishSessionFromTelegramUserId,
@@ -172,7 +178,7 @@ export default function AccountPageClient() {
     };
 
     const onWake = () => {
-      void tick();
+      if (document.visibilityState === "visible") void tick();
     };
 
     const id = window.setInterval(() => void tick(), LOGIN_WAIT_POLL_MS);
@@ -224,8 +230,17 @@ export default function AccountPageClient() {
           setOrders([]);
           return;
         }
-        const data = (await ordersRes.json()) as { orders?: OrderListSummary[] };
+        const data = (await ordersRes.json()) as {
+          orders?: OrderListSummary[];
+          bonus_points?: unknown;
+        };
         setOrders(Array.isArray(data.orders) ? data.orders : []);
+        if (
+          typeof data.bonus_points === "number" &&
+          Number.isFinite(data.bonus_points)
+        ) {
+          setBonusPointsBalance(Math.max(0, Math.floor(data.bonus_points)));
+        }
       })
       .catch(() => {
         setOrdersError("Ошибка сети");
@@ -323,6 +338,9 @@ export default function AccountPageClient() {
             <p>Ждём подтверждение в Telegram…</p>
             <p className="mt-2 text-xs text-zinc-600">
               Подтвердите вход в боте и вернитесь на эту вкладку — вход завершится автоматически.
+            </p>
+            <p className="mt-2 text-xs text-zinc-500">
+              Или нажмите в боте «Открыть личный кабинет» — вход произойдёт сразу.
             </p>
             <button
               type="button"

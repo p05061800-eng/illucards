@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { parseOrderPaymentMethod } from "@/app/lib/orderPayment";
 import { parseOrderStatusInput } from "@/app/lib/orderStatus";
 import {
+  attachOrderOwnerIfMissing,
   getOrder,
   markOrderTelegramBuyerNotified,
   updateOrderDeliveryDetails,
@@ -86,6 +87,16 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: created.error }, { status: created.status });
       }
       existing = await getOrder(orderId);
+    }
+  } else {
+    const patchUid = parseOptionalTelegramUserId(o.user_id ?? o.telegramUserId);
+    if (patchUid != null) {
+      existing =
+        (await attachOrderOwnerIfMissing(
+          orderId,
+          patchUid,
+          parseOptionalUsername(o.username),
+        )) ?? existing;
     }
   }
 

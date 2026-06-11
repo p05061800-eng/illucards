@@ -1441,6 +1441,14 @@ def _resolve_admin_chat_id() -> int:
 PRODUCTS_API = "https://www.illucards.by/api/products"
 # База сайта для GET /api/order/{id} (тот же хост, что и витрина)
 DEFAULT_SITE_ORIGIN = os.getenv("ILLUCARDS_SITE_ORIGIN", "https://www.illucards.by").rstrip("/")
+
+
+def _site_origin() -> str:
+    """Базовый URL API сайта. Apex illucards.by отдаёт 307 — для POST это ломает тело запроса."""
+    raw = (os.getenv("ILLUCARDS_SITE_ORIGIN") or DEFAULT_SITE_ORIGIN).rstrip("/")
+    if raw.endswith("://illucards.by") or raw == "http://illucards.by":
+        return "https://www.illucards.by"
+    return raw
 PROMO_SLIDES_PATH = REPO_ROOT / "data" / "promo-slides.json"
 # Ссылка «вход на сайт» (?user_id=<telegram id>) — по умолчанию на www-домен.
 SITE_LOGIN_ORIGIN = os.getenv("ILLUCARDS_SITE_LOGIN_ORIGIN", "https://www.illucards.by").rstrip("/")
@@ -1788,7 +1796,7 @@ def _load_promo_slides_local() -> list[dict[str, Any]]:
 
 
 async def _fetch_promo_slides_api() -> list[dict[str, Any]] | None:
-    base = os.getenv("ILLUCARDS_SITE_ORIGIN", DEFAULT_SITE_ORIGIN).rstrip("/")
+    base = _site_origin()
     url = f"{base}/api/promo-slides"
     timeout = aiohttp.ClientTimeout(total=20)
     try:
@@ -2002,7 +2010,7 @@ def _order_id_from_start_args(args: list[str]) -> str | None:
 
 async def _fetch_site_order_http(order_id: str) -> tuple[dict[str, Any] | None, int | None]:
     """(body, http_status). body only on 200 + valid JSON dict. http_status from response, or None on transport error."""
-    base = os.getenv("ILLUCARDS_SITE_ORIGIN", DEFAULT_SITE_ORIGIN).rstrip("/")
+    base = _site_origin()
     url = f"{base}/api/order/{order_id}"
     secret = (os.getenv("ILLUCARDS_ORDER_UPDATE_SECRET") or "").strip()
     headers: dict[str, str] = {"Accept": "application/json"}
@@ -2076,7 +2084,7 @@ async def fetch_site_user_orders_list(telegram_user_id: int) -> list[dict[str, A
     uid = int(telegram_user_id)
     if uid <= 0:
         return []
-    base = os.getenv("ILLUCARDS_SITE_ORIGIN", DEFAULT_SITE_ORIGIN).rstrip("/")
+    base = _site_origin()
     url = f"{base}/api/orders?user_id={uid}"
     secret = (os.getenv("ILLUCARDS_ORDER_UPDATE_SECRET") or "").strip()
     headers: dict[str, str] = {"Accept": "application/json"}
@@ -2129,7 +2137,7 @@ async def _sync_user_orders_from_site(telegram_user_id: int) -> int:
 
 async def fetch_site_user_state(telegram_user_id: int) -> dict[str, Any] | None:
     """Получить синхронизированные с сайта корзину и избранное пользователя."""
-    base = os.getenv("ILLUCARDS_SITE_ORIGIN", DEFAULT_SITE_ORIGIN).rstrip("/")
+    base = _site_origin()
     secret = (os.getenv("ILLUCARDS_USER_STATE_SYNC_SECRET") or "").strip()
     if not secret:
         return None
@@ -2190,7 +2198,7 @@ async def _cart_snapshot_for_user(
 
 async def post_site_order_bot_delete(order_id: str, telegram_user_id: int) -> bool:
     """Legacy: заказы не удаляются — только отмена статуса new → cancelled."""
-    base = os.getenv("ILLUCARDS_SITE_ORIGIN", DEFAULT_SITE_ORIGIN).rstrip("/")
+    base = _site_origin()
     url = f"{base}/api/order/update"
     secret = os.getenv("ILLUCARDS_ORDER_UPDATE_SECRET", "").strip()
     headers: dict[str, str] = {
@@ -2226,7 +2234,7 @@ async def post_site_mark_buyer_notified(
     order: dict[str, Any] | None = None,
     owner_id: int | None = None,
 ) -> bool:
-    base = os.getenv("ILLUCARDS_SITE_ORIGIN", DEFAULT_SITE_ORIGIN).rstrip("/")
+    base = _site_origin()
     url = f"{base}/api/order/update"
     secret = os.getenv("ILLUCARDS_ORDER_UPDATE_SECRET", "").strip()
     headers: dict[str, str] = {
@@ -2268,7 +2276,7 @@ async def post_site_order_payment_method(
     owner_id: int | None = None,
 ) -> bool:
     """POST /api/order/update — сохранить способ оплаты."""
-    base = os.getenv("ILLUCARDS_SITE_ORIGIN", DEFAULT_SITE_ORIGIN).rstrip("/")
+    base = _site_origin()
     url = f"{base}/api/order/update"
     secret = os.getenv("ILLUCARDS_ORDER_UPDATE_SECRET", "").strip()
     headers: dict[str, str] = {
@@ -2314,7 +2322,7 @@ async def post_site_order_status(
     owner_id: int | None = None,
 ) -> bool:
     """POST /api/order/update — синхронизация статуса с сайтом (при смене в боте)."""
-    base = os.getenv("ILLUCARDS_SITE_ORIGIN", DEFAULT_SITE_ORIGIN).rstrip("/")
+    base = _site_origin()
     url = f"{base}/api/order/update"
     secret = os.getenv("ILLUCARDS_ORDER_UPDATE_SECRET", "").strip()
     headers: dict[str, str] = {
@@ -2371,7 +2379,7 @@ async def post_site_order_delivery_details(
     text = str(delivery_details or "").strip()
     if not text:
         return False
-    base = os.getenv("ILLUCARDS_SITE_ORIGIN", DEFAULT_SITE_ORIGIN).rstrip("/")
+    base = _site_origin()
     url = f"{base}/api/order/update"
     secret = os.getenv("ILLUCARDS_ORDER_UPDATE_SECRET", "").strip()
     headers: dict[str, str] = {
@@ -2448,7 +2456,7 @@ async def _backfill_delivery_details_to_site() -> None:
 
 async def post_site_admin_message_id(order_id: str, message_id: int) -> bool:
     """POST /api/order/admin-message — сохранить message_id уведомления админу на сайте."""
-    base = os.getenv("ILLUCARDS_SITE_ORIGIN", DEFAULT_SITE_ORIGIN).rstrip("/")
+    base = _site_origin()
     url = f"{base}/api/order/admin-message"
     secret = os.getenv("ILLUCARDS_ORDER_UPDATE_SECRET", "").strip()
     headers: dict[str, str] = {
@@ -2519,7 +2527,30 @@ async def post_site_order_from_bot(
         return None
     goods_byn = sum(float(it["priceByn"]) * int(it["quantity"]) for it in items)
     total_byn = round(goods_byn + _delivery_charge_byn(delivery_code), 2)
-    base = os.getenv("ILLUCARDS_SITE_ORIGIN", DEFAULT_SITE_ORIGIN).rstrip("/")
+    return await _post_site_order_from_bot_payload(
+        telegram_user_id,
+        username,
+        items,
+        total_byn,
+        _delivery_price_code(delivery_code),
+        order_id=order_id,
+        status="confirmed",
+    )
+
+
+async def _post_site_order_from_bot_payload(
+    telegram_user_id: int,
+    username: str | None,
+    items: list[dict[str, Any]],
+    total_byn: float,
+    delivery_code: str,
+    *,
+    order_id: str | None = None,
+    status: str = "confirmed",
+) -> dict[str, Any] | None:
+    if not items:
+        return None
+    base = _site_origin()
     url = f"{base}/api/order/from-bot"
     secret = os.getenv("ILLUCARDS_ORDER_UPDATE_SECRET", "").strip()
     headers: dict[str, str] = {
@@ -2528,13 +2559,13 @@ async def post_site_order_from_bot(
     }
     if secret:
         headers["Authorization"] = f"Bearer {secret}"
-    payload = {
+    payload: dict[str, Any] = {
         "user_id": int(telegram_user_id),
         "username": username,
         "items": items,
         "total": total_byn,
-        "delivery": _delivery_price_code(delivery_code),
-        "status": "confirmed",
+        "delivery": delivery_code,
+        "status": status,
     }
     if order_id:
         payload["order_id"] = order_id
@@ -2550,6 +2581,31 @@ async def post_site_order_from_bot(
     except (aiohttp.ClientError, asyncio.TimeoutError, OSError, json.JSONDecodeError, ValueError) as e:
         logger.warning("POST order/from-bot: %s", e)
         return None
+
+
+async def post_site_order_upsert_snapshot(
+    order_id: str,
+    order: dict[str, Any],
+    owner_id: int,
+    status: str,
+) -> bool:
+    """Повторно записать заказ на сайт из снимка (если order/update не прошёл)."""
+    items = _order_items_list(order)
+    if not items:
+        return False
+    username = str(order.get("username") or "").strip().lstrip("@") or None
+    delivery = _delivery_price_code(str(order.get("delivery") or "BY"))
+    total = _order_total_byn(order)
+    data = await _post_site_order_from_bot_payload(
+        int(owner_id),
+        username,
+        items,
+        total,
+        delivery,
+        order_id=order_id,
+        status=status,
+    )
+    return isinstance(data, dict) and data.get("ok") is True
 
 
 def _bonus_points_to_earn(order: dict[str, Any]) -> int:
@@ -3456,24 +3512,36 @@ async def _sync_login_code_to_site(
     if "code" not in payload and "wait_id" not in payload:
         return False
     timeout = aiohttp.ClientTimeout(total=15)
-    try:
-        async with aiohttp.ClientSession(timeout=timeout) as session:
-            async with session.post(
-                url,
-                headers={
-                    "Authorization": f"Bearer {secret}",
-                    "Content-Type": "application/json",
-                },
-                json=payload,
-            ) as resp:
-                if resp.status != 200:
+    last_err: str | None = None
+    for attempt in range(3):
+        try:
+            async with aiohttp.ClientSession(timeout=timeout) as session:
+                async with session.post(
+                    url,
+                    headers={
+                        "Authorization": f"Bearer {secret}",
+                        "Content-Type": "application/json",
+                    },
+                    json=payload,
+                ) as resp:
+                    if resp.status == 200:
+                        return True
                     text = (await resp.text())[:400]
-                    logger.warning("sync-login-code HTTP %s: %s", resp.status, text)
-                    return False
-                return True
-    except Exception as e:
-        logger.warning("sync-login-code: %s", e)
-        return False
+                    last_err = f"HTTP {resp.status}: {text}"
+                    logger.warning(
+                        "sync-login-code attempt %s/%s %s",
+                        attempt + 1,
+                        3,
+                        last_err,
+                    )
+        except Exception as e:
+            last_err = str(e)
+            logger.warning("sync-login-code attempt %s/3: %s", attempt + 1, e)
+        if attempt < 2:
+            await asyncio.sleep(1.5)
+    if last_err:
+        logger.warning("sync-login-code failed: %s url=%s", last_err, url)
+    return False
 
 
 def _login_sync_required() -> bool:
@@ -4312,7 +4380,7 @@ async def _show_promo_message(
         raise ValueError("no promo slides")
     idx = int(context.user_data.get("promo_index") or 0) % len(slides)
     context.user_data["promo_index"] = idx
-    origin = os.getenv("ILLUCARDS_SITE_ORIGIN", DEFAULT_SITE_ORIGIN).rstrip("/")
+    origin = _site_origin()
     s = slides[idx]
     photo = _absolute_asset_url(origin, str(s.get("imageUrl") or ""))
     cap = f"🔥 Акции на главной — {idx + 1}/{len(slides)}"
@@ -4863,8 +4931,15 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
             if not await post_site_order_status(order_id, "paid", order, owner_id):
                 logger.warning("admin confirm: site paid failed order=%s", order_id)
             if not await post_site_order_status(order_id, "confirmed", order, owner_id):
-                await q.answer("Не удалось обновить на сайте", show_alert=True)
-                return
+                if not await post_site_order_upsert_snapshot(
+                    order_id, order, int(owner_id), "confirmed"
+                ):
+                    await q.answer("Не удалось обновить на сайте", show_alert=True)
+                    return
+                logger.warning(
+                    "admin confirm: order/update failed, upserted via from-bot order=%s",
+                    order_id,
+                )
 
             await _sync_user_orders_from_site(int(owner_id))
 

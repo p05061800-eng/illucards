@@ -1,4 +1,12 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "framework": "nextjs"
+  "framework": "nextjs",
+  "redirects": [
+    {
+      "source": "/:path*",
+      "has": [{ "type": "host", "value": "illucards.by" }],
+      "destination": "https://www.illucards.by/:path*",
+      "permanent": true
+    }
+  ]
 }

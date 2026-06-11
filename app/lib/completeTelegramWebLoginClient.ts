@@ -118,7 +118,7 @@ export async function pollLoginWait(
       apiUrl(
         `/api/telegram-login-wait?wait_id=${encodeURIComponent(id)}&_=${Date.now()}`,
       ),
-      { cache: "no-store", credentials: "same-origin" },
+      { cache: "no-store", credentials: "omit", mode: "cors" },
     );
     if (!res.ok) return { ready: false };
     const data = (await res.json()) as {

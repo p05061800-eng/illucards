@@ -2,6 +2,7 @@
 
 import type { ReactNode } from "react";
 import { Suspense } from "react";
+import { CanonicalHostRedirect } from "./components/CanonicalHostRedirect";
 import { CartDrawer } from "./components/CartDrawer";
 import { CurrencyPrompt } from "./components/CurrencyPrompt";
 import { TelegramLoginWaitPoller } from "./components/TelegramLoginWaitPoller";
@@ -18,6 +19,7 @@ import { CategoryFramesProvider } from "./context/CategoryFramesContext";
 export function Providers({ children }: { children: ReactNode }) {
   return (
     <AuthProvider>
+      <CanonicalHostRedirect />
       <Suspense fallback={null}>
         <TelegramUserQueryAuth />
       </Suspense>

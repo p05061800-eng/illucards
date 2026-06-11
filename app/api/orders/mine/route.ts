@@ -1,7 +1,8 @@
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 import { COOKIE_TELEGRAM_USER_ID } from "@/app/lib/telegramUserIdentity";
-import { listOrdersForUser } from "@/app/lib/ordersStore";
+import { listOrdersForUser, reconcileBonusPointsForUser } from "@/app/lib/ordersStore";
+import { getTelegramUserState } from "@/app/lib/telegramUserStateStore";
 
 /**
  * GET /api/orders/mine — список заказов текущего пользователя (cookie telegram_user_id).
@@ -13,6 +14,11 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "Требуется вход через Telegram" }, { status: 401 });
   }
   const userId = Math.floor(n);
+  await reconcileBonusPointsForUser(userId).catch(() => undefined);
   const orders = await listOrdersForUser(userId);
-  return NextResponse.json({ orders });
+  const state = await getTelegramUserState(userId);
+  return NextResponse.json({
+    orders,
+    ...(state ? { bonus_points: state.bonus_points } : {}),
+  });
 }

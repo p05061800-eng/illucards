@@ -30,7 +30,7 @@ export default function AccountOrdersPageClient() {
   useEffect(() => {
     const id = readTelegramPrimaryUserId();
     if (id == null) {
-      router.replace("/");
+      router.replace("/account");
       setLsGate("no_telegram");
       return;
     }
@@ -42,7 +42,7 @@ export default function AccountOrdersPageClient() {
     try {
       const res = await fetch("/api/orders/mine", { credentials: "include" });
       if (res.status === 401) {
-        router.replace("/");
+        router.replace("/account");
         return;
       }
       if (!res.ok) {

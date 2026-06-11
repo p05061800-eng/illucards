@@ -97,7 +97,7 @@ export default function AccountOrderDetailClient({ orderId }: { orderId: string 
   useEffect(() => {
     const id = readTelegramPrimaryUserId();
     if (id == null) {
-      router.replace("/");
+      router.replace("/account");
       setLsGate("no_telegram");
       return;
     }
@@ -126,7 +126,7 @@ export default function AccountOrderDetailClient({ orderId }: { orderId: string 
         if (cancelled) return;
         const uid = data.user_id;
         if (uid == null || Math.floor(uid) !== myId) {
-          router.replace("/");
+          router.replace("/account");
           return;
         }
         setOrder(data);

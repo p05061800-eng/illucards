@@ -21,9 +21,28 @@ function isPageReload(): boolean {
 
 const isDev = process.env.NODE_ENV === "development";
 
+function pathAllowsRefresh(pathname: string): boolean {
+  if (pathname === "/") return true;
+  const keep = [
+    "/account",
+    "/checkout",
+    "/cart",
+    "/admin",
+    "/collection",
+    "/favorites",
+    "/contacts",
+    "/offer",
+    "/privacy",
+  ];
+  if (keep.some((p) => pathname === p || pathname.startsWith(`${p}/`))) return true;
+  if (pathname.startsWith("/card/")) return true;
+  return false;
+}
+
 /**
  * После полного обновления (F5), только в production:
- * — не главная → переход на `/` (как просили ранее).
+ * — каталог и прочие «витринные» URL → переход на `/`.
+ * — личный кабинет, checkout, карточка и т.п. → остаёмся на текущей странице.
  * — главная с якорем → убрать # и скролл к герою.
  *
  * В development не трогаем путь: иначе любая перезагрузка/HMR считается «reload»
@@ -36,7 +55,7 @@ export function RefreshToHome() {
     const path = window.location.pathname;
     const hash = window.location.hash;
 
-    if (!isDev && path !== "/") {
+    if (!isDev && !pathAllowsRefresh(path)) {
       window.location.replace("/");
       return;
     }

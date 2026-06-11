@@ -40,7 +40,7 @@ from db import init_db, recompute_user_order_stats, sync_all_users_order_stats, 
 logging.basicConfig(format="%(asctime)s %(levelname)s %(message)s", level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-BOT_BUILD_ID = "2026-06-11-delivery-two-msgs-after-proof-v1"
+BOT_BUILD_ID = "2026-06-11-accept-proof-without-paid-btn-v1"
 
 REPLY_MENU_TEXTS = frozenset(
     {"💬 Связь", "📦 Мои заказы", "📜 Мои заказы", "🚚 Доставка", "⭐ Бонусы"}
@@ -2963,8 +2963,8 @@ PAY_PROOF_NEED_SCREENSHOT_TEXT = (
 )
 
 PAY_PROOF_NEED_PAID_BUTTON_TEXT = (
-    "Сначала нажмите кнопку «✅ Оплатил …» под реквизитами, "
-    "затем пришлите скриншот чека."
+    "Не найден заказ, ожидающий оплату. Выберите способ оплаты под заказом "
+    "или нажмите «✅ Оплатил …», затем пришлите скриншот чека."
 )
 
 PAY_DELIVERY_CONFIRM_HINT_TEXT = (
@@ -3225,6 +3225,18 @@ def _format_admin_proof_caption(
     return base[:1020] + "…"
 
 
+def _order_eligible_for_payment_proof(rec: dict[str, Any]) -> bool:
+    pm = str(rec.get("payment_method") or "").strip().lower()
+    if pm not in ("card", "crypto", "phone"):
+        return False
+    st = str(rec.get("status") or "new").strip().lower()
+    if st in ("cancelled", "canceled", "confirmed", "proof_submitted"):
+        return False
+    if rec.get("proof_file_id"):
+        return False
+    return True
+
+
 def _resolve_payment_proof_order_id(uid: int) -> str | None:
     pending = _AWAIT_PAYMENT_PROOF.get(int(uid))
     if pending:
@@ -3232,6 +3244,16 @@ def _resolve_payment_proof_order_id(uid: int) -> str | None:
         if oid:
             return oid
     _load_bot_orders()
+    user_pending = _PENDING_ORDER_BY_USER.get(int(uid))
+    if user_pending:
+        rec = BOT_ORDERS.get(user_pending)
+        if isinstance(rec, dict):
+            try:
+                owner = int(rec.get("user_id") or 0)
+            except (TypeError, ValueError):
+                owner = 0
+            if owner == int(uid) and _order_eligible_for_payment_proof(rec):
+                return str(user_pending).strip()
     found: str | None = None
     for oid, rec in BOT_ORDERS.items():
         if not isinstance(rec, dict):
@@ -3242,11 +3264,7 @@ def _resolve_payment_proof_order_id(uid: int) -> str | None:
             continue
         if owner != int(uid):
             continue
-        pm = str(rec.get("payment_method") or "").strip().lower()
-        if pm not in ("card", "crypto", "phone"):
-            continue
-        st = str(rec.get("status") or "new").strip().lower()
-        if st in ("cancelled", "canceled", "confirmed"):
+        if not _order_eligible_for_payment_proof(rec):
             continue
         found = str(oid).strip()
     return found or None
@@ -3951,11 +3969,11 @@ async def payment_proof_handler(
         await msg.reply_text(_pay_delivery_reminder_text())
         return
 
-    order_id = _AWAIT_PAYMENT_PROOF.get(uid)
+    order_id = _resolve_payment_proof_order_id(uid)
     if not order_id:
         await msg.reply_text(PAY_PROOF_NEED_PAID_BUTTON_TEXT)
         return
-    order_id = str(order_id).strip()
+    _AWAIT_PAYMENT_PROOF[uid] = order_id
 
     order = await _load_order_for_callback(order_id, uid)
     if not order:

@@ -76,11 +76,13 @@ export async function POST(request: NextRequest) {
     total: result.totalByn,
     delivery,
     username: username ?? null,
-    skipBuyerNotify: true,
+    // Бот шлёт заказ в чат, если сайт не отправил сам (как в 54b1ddb).
+    skipBuyerNotify: false,
   };
 
-  // Синк до ответа: after() на Vercel часто не успевает до редиректа в Telegram.
+  // Синк до ответа: пользователь должен увидеть заказ в Telegram сразу после checkout.
   let botSyncOk = false;
+  let buyerNotified = false;
   try {
     await syncOrderToTelegramBot(syncInput);
     await recordAndNotifyTelegramOrder({
@@ -91,6 +93,7 @@ export async function POST(request: NextRequest) {
       delivery,
     });
     botSyncOk = true;
+    buyerNotified = true;
   } catch (error: unknown) {
     console.warn("[checkout] bot sync failed before redirect", {
       order_id: result.orderId,
@@ -126,7 +129,7 @@ export async function POST(request: NextRequest) {
     order_id: result.orderId,
     total: result.totalByn,
     telegram_recorded: botSyncOk,
-    telegram_sent: false,
+    telegram_sent: buyerNotified,
     telegram_bot_start: `order_${result.orderId}`,
   });
 }

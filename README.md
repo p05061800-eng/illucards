@@ -46,7 +46,7 @@ npm run lint
 
 ### Vercel (рекомендуемый путь из репозитория)
 
-В корне есть `vercel.json` (`framework: nextjs`). Скрипты:
+В корне репозитория есть `vercel.json` (`framework: nextjs`). **Root Directory** в Vercel — корень репозитория (`.`). Скрипты:
 
 ```bash
 npm run vercel:link    # один раз: привязка к проекту Vercel
@@ -72,7 +72,7 @@ npm run vercel:deploy  # прод: npx vercel deploy --prod
 
 ### Telegram-бот
 
-Каталог **`telegram_bot/`** — отдельный Python-сервис (`requirements.txt`). Деплой на свой хостинг (например Render); URL и секреты должны совпадать с тем, что настроено в Next (синк заказов, коды входа и т.д.).
+Код бота — в отдельном репозитории **[telegram-bot](https://github.com/p05061800-eng/telegram-bot)**. Деплой на Render (или другой хостинг); URL и секреты должны совпадать с тем, что настроено в Next (синк заказов, коды входа и т.д.).
 
 #### Checkout → Telegram (для разработчика сайта)
 

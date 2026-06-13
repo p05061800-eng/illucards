@@ -30,10 +30,11 @@ function botBase(): string {
 async function postBotSyncCart(
   body: Record<string, unknown>,
   label: string,
+  timeoutMs = 5000,
 ): Promise<void> {
   const url = `${botBase()}/api/sync/cart`;
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), 5000);
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
   try {
     const res = await fetch(url, {
       method: "POST",
@@ -155,9 +156,11 @@ export async function syncOrderToTelegramBot(
   await postBotSyncCart(
     {
       cart: input.items,
+      items: input.items,
       user_id: input.userId,
       telegram_user_id: input.userId,
       order_id: input.orderId,
+      deliveryCountry: input.delivery,
       order,
       session: {
         source: "vercel_order_create",
@@ -166,5 +169,6 @@ export async function syncOrderToTelegramBot(
       ...(input.skipBuyerNotify ? { skip_buyer_notify: true } : {}),
     },
     "order",
+    20_000,
   );
 }

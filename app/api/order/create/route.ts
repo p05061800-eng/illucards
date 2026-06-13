@@ -79,6 +79,25 @@ export async function POST(request: NextRequest) {
     skipBuyerNotify: true,
   };
 
+  // Синк до ответа: after() на Vercel часто не успевает до редиректа в Telegram.
+  let botSyncOk = false;
+  try {
+    await syncOrderToTelegramBot(syncInput);
+    await recordAndNotifyTelegramOrder({
+      orderId: result.orderId,
+      userId,
+      items,
+      total: result.totalByn,
+      delivery,
+    });
+    botSyncOk = true;
+  } catch (error: unknown) {
+    console.warn("[checkout] bot sync failed before redirect", {
+      order_id: result.orderId,
+      error: error instanceof Error ? error.message : error,
+    });
+  }
+
   after(async () => {
     try {
       const state = await getTelegramUserState(userId);
@@ -90,16 +109,8 @@ export async function POST(request: NextRequest) {
           deliveryCountry: state.deliveryCountry,
         });
       }
-      await syncOrderToTelegramBot(syncInput);
-      await recordAndNotifyTelegramOrder({
-        orderId: result.orderId,
-        userId,
-        items,
-        total: result.totalByn,
-        delivery,
-      });
     } catch (error: unknown) {
-      console.warn("[checkout] post-create sync failed", {
+      console.warn("[checkout] post-create state sync failed", {
         order_id: result.orderId,
         error: error instanceof Error ? error.message : error,
       });
@@ -114,7 +125,7 @@ export async function POST(request: NextRequest) {
   return NextResponse.json({
     order_id: result.orderId,
     total: result.totalByn,
-    telegram_recorded: true,
+    telegram_recorded: botSyncOk,
     telegram_sent: false,
     telegram_bot_start: `order_${result.orderId}`,
   });

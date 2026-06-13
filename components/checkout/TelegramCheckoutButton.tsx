@@ -75,7 +75,7 @@ export function TelegramCheckoutButton({
       }
 
       const controller = new AbortController();
-      const timer = setTimeout(() => controller.abort(), 25_000);
+      const timer = setTimeout(() => controller.abort(), 30_000);
       let res: Response;
       try {
         res = await fetch("/api/order/create", {

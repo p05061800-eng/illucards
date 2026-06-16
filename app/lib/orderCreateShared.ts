@@ -86,6 +86,7 @@ export type PersistOrderResult =
       ok: true;
       orderId: string;
       totalByn: number;
+      buyerSeq?: number;
     }
   | { ok: false; error: string; status: number };
 

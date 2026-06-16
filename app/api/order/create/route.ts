@@ -84,6 +84,7 @@ export async function POST(request: NextRequest) {
   // Синк до ответа: пользователь должен увидеть заказ в Telegram сразу после checkout.
   let botSyncOk = false;
   let buyerNotified = false;
+  let botSyncError: string | undefined;
   try {
     await syncOrderToTelegramBot(syncInput);
     await recordAndNotifyTelegramOrder({
@@ -96,9 +97,10 @@ export async function POST(request: NextRequest) {
     botSyncOk = true;
     buyerNotified = true;
   } catch (error: unknown) {
+    botSyncError = error instanceof Error ? error.message : String(error);
     console.warn("[checkout] bot sync failed before redirect", {
       order_id: result.orderId,
-      error: error instanceof Error ? error.message : error,
+      error: botSyncError,
     });
     const fallback = await botNotify({
       target: "customer",
@@ -146,5 +148,6 @@ export async function POST(request: NextRequest) {
     telegram_recorded: botSyncOk,
     telegram_sent: buyerNotified,
     telegram_bot_start: `order_${result.orderId}`,
+    ...(botSyncError ? { telegram_sync_error: botSyncError } : {}),
   });
 }

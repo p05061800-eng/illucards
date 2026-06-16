@@ -66,6 +66,15 @@ async function postBotSyncCart(
       }
       return;
     }
+    if (data?.success === false) {
+      const msg =
+        typeof data?.error === "string" ? data.error : "sync/cart rejected";
+      console.warn(`[telegram-bot] ${label} sync/cart rejected:`, msg, body);
+      if (strict) {
+        throw new TelegramBotSyncError(msg);
+      }
+      return;
+    }
     console.info(`[telegram-bot] ${label} sync/cart ok`, {
       status: res.status,
       user_id: body.user_id,
@@ -76,10 +85,7 @@ async function postBotSyncCart(
       throw error;
     }
     const msg = error instanceof Error ? error.message : "network error";
-    console.warn(
-      `[telegram-bot] ${label} sync/cart unavailable:`,
-      msg,
-    );
+    console.warn(`[telegram-bot] ${label} sync/cart unavailable:`, msg);
     if (strict) {
       throw new TelegramBotSyncError(msg);
     }
@@ -123,6 +129,7 @@ export async function syncCartToTelegramBotAfterVerify(
       user_id: input.userId,
       items,
       deliveryCountry: input.deliveryCountry,
+      skip_buyer_notify: true,
       ...(input.grandTotal != null ? { grandTotal: input.grandTotal } : {}),
     },
     "verify",

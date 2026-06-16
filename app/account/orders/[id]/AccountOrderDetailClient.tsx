@@ -325,6 +325,7 @@ export default function AccountOrderDetailClient({ orderId }: { orderId: string 
     });
   const st = orderStatusFromStorage(order.status);
   const canCancelOnSite = st === "new";
+  const canHideFromList = st !== "new";
   const flowKind = orderAccountFlowKind(st);
   const statusText = orderAccountFlowLabel(st);
   const badgeClass = orderAccountFlowBadgeClass(flowKind);
@@ -498,15 +499,21 @@ export default function AccountOrderDetailClient({ orderId }: { orderId: string 
             <MessageCircle className="h-5 w-5 shrink-0" strokeWidth={2} aria-hidden />
             Написать в поддержку
           </a>
-          <button
-            type="button"
-            onClick={() => void handleDeleteOrder()}
-            disabled={deleteBusy}
-            className="flex min-h-[3.25rem] w-full items-center justify-center gap-2 rounded-xl border-2 border-red-300/90 bg-red-50 px-4 text-base font-semibold text-red-900 shadow-sm transition hover:bg-red-100 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-50 sm:min-h-14"
-          >
-            <Trash2 className="h-5 w-5 shrink-0" strokeWidth={2} aria-hidden />
-            {deleteBusy ? "Скрываем…" : "Скрыть из списка"}
-          </button>
+          {canHideFromList ? (
+            <button
+              type="button"
+              onClick={() => void handleDeleteOrder()}
+              disabled={deleteBusy}
+              className="flex min-h-[3.25rem] w-full items-center justify-center gap-2 rounded-xl border-2 border-red-300/90 bg-red-50 px-4 text-base font-semibold text-red-900 shadow-sm transition hover:bg-red-100 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-50 sm:min-h-14"
+            >
+              <Trash2 className="h-5 w-5 shrink-0" strokeWidth={2} aria-hidden />
+              {deleteBusy ? "Скрываем…" : "Скрыть из списка"}
+            </button>
+          ) : (
+            <p className="rounded-xl border border-zinc-200/90 bg-white px-3 py-2 text-center text-xs text-zinc-600">
+              Заказ останется в списке, пока администратор не подтвердит его в Telegram.
+            </p>
+          )}
           <button
             type="button"
             onClick={handleRepeat}

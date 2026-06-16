@@ -923,6 +923,15 @@ export async function hideOrderForOwner(
     return { ok: false, error: "Нет доступа к этому заказу", status: 403 };
   }
 
+  if (order.status === "new") {
+    return {
+      ok: false,
+      error:
+        "Заказ ещё не подтверждён администратором — скрыть из списка пока нельзя.",
+      status: 409,
+    };
+  }
+
   const uid = Math.floor(userId);
   await redisCommand(["SADD", REDIS_USER_HIDDEN_ORDERS_KEY(uid), id]);
   await redisCommand(["ZREM", REDIS_USER_ORDERS_KEY(uid), id]);

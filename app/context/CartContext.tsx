@@ -253,6 +253,8 @@ type CartContextValue = {
   removeFromCart: (id: string) => void;
   setQuantity: (id: string, quantity: number) => void;
   clearCart: () => void;
+  /** Пометить корзину как изменённую локально (например, перед checkout). */
+  markCartActive: () => void;
   /**
    * Повтор заказа: добавить позиции в корзину (совпадающие id — суммируем quantity),
    * опционально выставить страну доставки. Обложка из заказа, иначе заглушка.
@@ -291,8 +293,12 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const toggleCart = useCallback(() => setCartOpen((o) => !o), []);
 
   useEffect(() => {
-    setCartItems(loadFromStorage());
+    const loaded = loadFromStorage();
+    setCartItems(loaded);
     setDeliveryCountryState(loadDeliveryCountry());
+    if (loaded.length > 0) {
+      touchLocalCartModifiedAt();
+    }
     setHydrated(true);
   }, []);
 
@@ -367,27 +373,26 @@ export function CartProvider({ children }: { children: ReactNode }) {
           : 0;
       const prevSeenClear = readClientSeenCartClearedAt();
       const localModified = readLocalCartModifiedAt();
-      const serverClearedCart =
-        cartClearedAt > prevSeenClear ||
-        (serverCart.length === 0 &&
-          cartClearedAt > 0 &&
-          localModified <= cartClearedAt);
 
-      if (cartClearedAt > prevSeenClear) {
-        writeClientSeenCartClearedAt(cartClearedAt);
-      }
       if (ts > 0) {
         writeClientSeenServerUpdatedAt(ts);
       }
 
-      if (serverClearedCart && localModified <= Math.max(cartClearedAt, prevSeenClear)) {
-        setCartItems([]);
-        applyLocalCartClear(Math.max(cartClearedAt, prevSeenClear) || Date.now());
+      // Очищаем локальную корзину только при новом cartClearedAt с сервера
+      // (после подтверждения заказа админом), и только если пользователь
+      // не менял корзину после этого момента.
+      if (cartClearedAt > prevSeenClear) {
+        writeClientSeenCartClearedAt(cartClearedAt);
+        if (
+          serverCart.length === 0 &&
+          localModified > 0 &&
+          localModified <= cartClearedAt
+        ) {
+          setCartItems([]);
+          applyLocalCartClear(cartClearedAt);
+        }
       } else if (serverCart.length > 0) {
         setCartItems((prev) => (prev.length === 0 ? serverCart : prev));
-      } else if (cartClearedAt > 0 || prevSeenClear > 0) {
-        setCartItems([]);
-        applyLocalCartClear(Math.max(cartClearedAt, prevSeenClear) || Date.now());
       }
     } catch {
       /* ignore */
@@ -520,6 +525,10 @@ export function CartProvider({ children }: { children: ReactNode }) {
     touchLocalCartModifiedAt();
     setCartItems([]);
     applyLocalCartClear(Date.now());
+  }, []);
+
+  const markCartActive = useCallback(() => {
+    touchLocalCartModifiedAt();
   }, []);
 
   const PLACEHOLDER_IMAGE = "/file.svg";
@@ -672,6 +681,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
       removeFromCart,
       setQuantity,
       clearCart,
+      markCartActive,
       repeatOrderToCart,
     }),
     [
@@ -694,6 +704,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
       removeFromCart,
       setQuantity,
       clearCart,
+      markCartActive,
       repeatOrderToCart,
     ]
   );

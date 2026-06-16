@@ -34,6 +34,7 @@ export function TelegramCheckoutButton({
     hydrated,
     deliveryCountry,
     orderTotalByn,
+    markCartActive,
   } = useCart();
   const { primaryTelegramUserId, user } = useAuth();
   const [submitting, setSubmitting] = useState(false);
@@ -51,6 +52,7 @@ export function TelegramCheckoutButton({
 
     setError(null);
     setSubmitting(true);
+    markCartActive();
 
     try {
       const items = cartItems.map((l) => ({
@@ -97,6 +99,17 @@ export function TelegramCheckoutButton({
         typeof (data as { order_id: unknown }).order_id === "string"
           ? (data as { order_id: string }).order_id.trim()
           : "";
+      const telegramSent =
+        data &&
+        typeof data === "object" &&
+        (data as { telegram_sent?: unknown }).telegram_sent === true;
+      const syncError =
+        data &&
+        typeof data === "object" &&
+        typeof (data as { telegram_sync_error?: unknown }).telegram_sync_error ===
+          "string"
+          ? (data as { telegram_sync_error: string }).telegram_sync_error.trim()
+          : "";
       if (!res.ok || !orderId) {
         const msg =
           data &&
@@ -117,7 +130,15 @@ export function TelegramCheckoutButton({
 
       const bot = getTelegramOrderBotUsername();
       const botUrl = `https://t.me/${encodeURIComponent(bot)}?start=${encodeURIComponent(`order_${orderId}`)}`;
-      console.info("[checkout] redirect telegram", { order_id: orderId, botUrl });
+      console.info("[checkout] redirect telegram", {
+        order_id: orderId,
+        botUrl,
+        telegram_sent: telegramSent,
+        sync_error: syncError || undefined,
+      });
+      if (!telegramSent && syncError) {
+        console.warn("[checkout] bot did not receive order before redirect", syncError);
+      }
       onBeforeNavigate?.();
       window.location.href = botUrl;
     } catch (error: unknown) {
@@ -133,6 +154,7 @@ export function TelegramCheckoutButton({
     cartItems,
     deliveryCountry,
     hydrated,
+    markCartActive,
     onBeforeNavigate,
     orderTotalByn,
     primaryTelegramUserId,

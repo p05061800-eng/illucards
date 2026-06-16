@@ -1,6 +1,6 @@
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
-import { getOrder, updateOrderStatus } from "@/app/lib/ordersStore";
+import { getOrder } from "@/app/lib/ordersStore";
 
 /**
  * POST /api/order/bot-delete — legacy endpoint from бота.
@@ -46,15 +46,16 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Нет доступа к этому заказу" }, { status: 403 });
   }
 
-  if (order.status === "cancelled") {
-    return NextResponse.json({ ok: true, status: "cancelled", deleted: false });
+  if (order.status === "new") {
+    return NextResponse.json({
+      ok: true,
+      status: "new",
+      deleted: false,
+      message: "Заказ в обработке — удаление отключено до подтверждения администратором",
+    });
   }
 
-  if (order.status === "new") {
-    const result = await updateOrderStatus(orderId, "cancelled");
-    if (!result.ok) {
-      return NextResponse.json({ error: result.error }, { status: result.status });
-    }
+  if (order.status === "cancelled") {
     return NextResponse.json({ ok: true, status: "cancelled", deleted: false });
   }
 

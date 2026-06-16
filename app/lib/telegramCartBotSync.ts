@@ -5,6 +5,13 @@ import {
   telegramBotSyncHeaders,
 } from "@/app/lib/telegramBotRenderApi";
 
+export class TelegramBotSyncError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "TelegramBotSyncError";
+  }
+}
+
 export type SyncOrderToTelegramBotInput = {
   orderId: string;
   userId: number;
@@ -31,10 +38,12 @@ async function postBotSyncCart(
   body: Record<string, unknown>,
   label: string,
   timeoutMs = 5000,
+  opts: { strict?: boolean } = {},
 ): Promise<void> {
   const url = `${botBase()}/api/sync/cart`;
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
+  const strict = opts.strict === true;
   try {
     const res = await fetch(url, {
       method: "POST",
@@ -45,11 +54,16 @@ async function postBotSyncCart(
     });
     const data = (await res.json().catch(() => null)) as {
       error?: unknown;
+      success?: unknown;
+      ok?: unknown;
     } | null;
     if (!res.ok) {
       const msg =
         typeof data?.error === "string" ? data.error : `HTTP ${res.status}`;
       console.warn(`[telegram-bot] ${label} sync/cart failed:`, msg, body);
+      if (strict) {
+        throw new TelegramBotSyncError(msg);
+      }
       return;
     }
     console.info(`[telegram-bot] ${label} sync/cart ok`, {
@@ -58,10 +72,17 @@ async function postBotSyncCart(
       order_id: body.order_id,
     });
   } catch (error: unknown) {
+    if (error instanceof TelegramBotSyncError) {
+      throw error;
+    }
+    const msg = error instanceof Error ? error.message : "network error";
     console.warn(
       `[telegram-bot] ${label} sync/cart unavailable:`,
-      error instanceof Error ? error.message : error,
+      msg,
     );
+    if (strict) {
+      throw new TelegramBotSyncError(msg);
+    }
   } finally {
     clearTimeout(timer);
   }
@@ -153,22 +174,43 @@ export async function syncOrderToTelegramBot(
     ...(input.username ? { username: input.username } : {}),
   };
 
-  await postBotSyncCart(
-    {
-      cart: input.items,
-      items: input.items,
-      user_id: input.userId,
-      telegram_user_id: input.userId,
-      order_id: input.orderId,
-      deliveryCountry: input.delivery,
-      order,
-      session: {
-        source: "vercel_order_create",
-        created_at: Date.now(),
-      },
-      ...(input.skipBuyerNotify ? { skip_buyer_notify: true } : {}),
+  const payload = {
+    cart: input.items,
+    items: input.items,
+    user_id: input.userId,
+    telegram_user_id: input.userId,
+    order_id: input.orderId,
+    deliveryCountry: input.delivery,
+    order,
+    session: {
+      source: "vercel_order_create",
+      created_at: Date.now(),
     },
-    "order",
-    20_000,
-  );
+    ...(input.skipBuyerNotify ? { skip_buyer_notify: true } : {}),
+  };
+
+  const attempts = [0, 2500];
+  let lastError: TelegramBotSyncError | null = null;
+  for (const delayMs of attempts) {
+    if (delayMs > 0) {
+      await new Promise((resolve) => setTimeout(resolve, delayMs));
+    }
+    try {
+      await postBotSyncCart(payload, "order", 25_000, { strict: true });
+      return;
+    } catch (error: unknown) {
+      lastError =
+        error instanceof TelegramBotSyncError
+          ? error
+          : new TelegramBotSyncError(
+              error instanceof Error ? error.message : "sync failed",
+            );
+      console.warn("[telegram-bot] order sync retry", {
+        order_id: input.orderId,
+        delayMs,
+        error: lastError.message,
+      });
+    }
+  }
+  throw lastError ?? new TelegramBotSyncError("sync/cart failed");
 }

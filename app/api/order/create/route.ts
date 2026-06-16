@@ -9,6 +9,7 @@ import {
 } from "@/app/lib/orderCreateShared";
 import { syncOrderToTelegramBot } from "@/app/lib/telegramCartBotSync";
 import { recordAndNotifyTelegramOrder } from "@/app/lib/telegramOrderNotify";
+import { botNotify } from "@/app/lib/telegramBotRenderApi";
 import { notifyTelegramWebhookUserState } from "@/app/lib/telegramStateBotSync";
 import { getTelegramUserState } from "@/app/lib/telegramUserStateStore";
 
@@ -99,6 +100,20 @@ export async function POST(request: NextRequest) {
       order_id: result.orderId,
       error: error instanceof Error ? error.message : error,
     });
+    const fallback = await botNotify({
+      target: "customer",
+      telegramUserId: userId,
+      text:
+        "Заказ оформлен на сайте IlluCards.\n\n"
+        + `Откройте бота и отправьте команду:\n/start order_${result.orderId}`,
+    });
+    if (fallback.ok) {
+      buyerNotified = true;
+      console.info("[checkout] bot notify fallback ok", {
+        order_id: result.orderId,
+        user_id: userId,
+      });
+    }
   }
 
   after(async () => {

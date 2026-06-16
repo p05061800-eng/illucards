@@ -1,20 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
+import { botApiAuthRequired, botBearerAuthorized } from "@/app/lib/botApiAuth";
 import { listOrdersForUser } from "@/app/lib/ordersStore";
-
-function botBearerAuthorized(request: NextRequest): boolean {
-  const secret = process.env.ILLUCARDS_ORDER_UPDATE_SECRET?.trim();
-  if (!secret) return false;
-  const auth = request.headers.get("authorization");
-  return auth === `Bearer ${secret}`;
-}
 
 /**
  * GET /api/orders?user_id=123
  * Список заказов пользователя (Telegram user_id). Только для бота (Bearer secret).
  */
 export async function GET(request: NextRequest) {
-  const secret = process.env.ILLUCARDS_ORDER_UPDATE_SECRET?.trim();
-  if (secret && !botBearerAuthorized(request)) {
+  if (botApiAuthRequired() && !botBearerAuthorized(request)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 

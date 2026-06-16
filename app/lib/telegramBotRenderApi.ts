@@ -25,26 +25,28 @@ export function telegramBotApiUrl(): string {
   return raw || DEFAULT_BOT_API;
 }
 
-function syncSecret(): string {
-  return (
-    process.env.TELEGRAM_SYNC_API_SECRET?.trim() ||
-    process.env.ILLUCARDS_LOGIN_CODE_SYNC_SECRET?.trim() ||
-    process.env.ILLUCARDS_ORDER_UPDATE_SECRET?.trim() ||
-    ""
-  );
-}
-
 export function telegramBotSyncHeaders(
   extra: Record<string, string> = {},
 ): Record<string, string> {
-  const secret = syncSecret();
-  return {
+  const orderSecret = process.env.ILLUCARDS_ORDER_UPDATE_SECRET?.trim() || "";
+  const syncSecretVal =
+    process.env.TELEGRAM_SYNC_API_SECRET?.trim() ||
+    process.env.ILLUCARDS_LOGIN_CODE_SYNC_SECRET?.trim() ||
+    "";
+  const headers: Record<string, string> = {
     "Content-Type": "application/json",
-    ...(secret
-      ? { Authorization: `Bearer ${secret}`, "X-Sync-Secret": secret }
-      : {}),
     ...extra,
   };
+  const bearer = orderSecret || syncSecretVal;
+  if (bearer) {
+    headers.Authorization = `Bearer ${bearer}`;
+  }
+  if (syncSecretVal) {
+    headers["X-Sync-Secret"] = syncSecretVal;
+  } else if (orderSecret) {
+    headers["X-Sync-Secret"] = orderSecret;
+  }
+  return headers;
 }
 
 type JsonRecord = Record<string, unknown>;

@@ -19,8 +19,13 @@ export type SyncOrderToTelegramBotInput = {
   total: number;
   delivery: DeliveryCountry;
   username?: string | null;
+  buyerSeq?: number;
   /** Сайт уже отправил сообщение покупателю — бот не дублирует. */
   skipBuyerNotify?: boolean;
+};
+
+export type SyncOrderToTelegramBotResult = {
+  checkoutPushed: boolean;
 };
 
 export type SyncCartAfterVerifyInput = {
@@ -39,7 +44,7 @@ async function postBotSyncCart(
   label: string,
   timeoutMs = 5000,
   opts: { strict?: boolean } = {},
-): Promise<void> {
+): Promise<{ checkoutPushed?: boolean }> {
   const url = `${botBase()}/api/sync/cart`;
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
@@ -56,6 +61,7 @@ async function postBotSyncCart(
       error?: unknown;
       success?: unknown;
       ok?: unknown;
+      checkout_pushed?: unknown;
     } | null;
     if (!res.ok) {
       const msg =
@@ -64,7 +70,7 @@ async function postBotSyncCart(
       if (strict) {
         throw new TelegramBotSyncError(msg);
       }
-      return;
+      return {};
     }
     if (data?.success === false) {
       const msg =
@@ -73,13 +79,17 @@ async function postBotSyncCart(
       if (strict) {
         throw new TelegramBotSyncError(msg);
       }
-      return;
+      return {};
     }
     console.info(`[telegram-bot] ${label} sync/cart ok`, {
       status: res.status,
       user_id: body.user_id,
       order_id: body.order_id,
+      checkout_pushed: data?.checkout_pushed === true,
     });
+    return {
+      checkoutPushed: data?.checkout_pushed === true,
+    };
   } catch (error: unknown) {
     if (error instanceof TelegramBotSyncError) {
       throw error;
@@ -89,6 +99,7 @@ async function postBotSyncCart(
     if (strict) {
       throw new TelegramBotSyncError(msg);
     }
+    return {};
   } finally {
     clearTimeout(timer);
   }
@@ -169,7 +180,7 @@ export async function notifyBotAwaitOrderDetails(
 
 export async function syncOrderToTelegramBot(
   input: SyncOrderToTelegramBotInput,
-): Promise<void> {
+): Promise<SyncOrderToTelegramBotResult> {
   const order = {
     id: input.orderId,
     order_id: input.orderId,
@@ -179,6 +190,9 @@ export async function syncOrderToTelegramBot(
     user_id: input.userId,
     status: "new",
     ...(input.username ? { username: input.username } : {}),
+    ...(input.buyerSeq != null && input.buyerSeq > 0
+      ? { buyer_seq: input.buyerSeq }
+      : {}),
   };
 
   const payload = {
@@ -203,8 +217,10 @@ export async function syncOrderToTelegramBot(
       await new Promise((resolve) => setTimeout(resolve, delayMs));
     }
     try {
-      await postBotSyncCart(payload, "order", 25_000, { strict: true });
-      return;
+      const result = await postBotSyncCart(payload, "order", 25_000, {
+        strict: true,
+      });
+      return { checkoutPushed: result.checkoutPushed === true };
     } catch (error: unknown) {
       lastError =
         error instanceof TelegramBotSyncError

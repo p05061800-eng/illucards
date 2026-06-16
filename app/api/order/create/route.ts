@@ -78,6 +78,7 @@ export async function POST(request: NextRequest) {
     total: result.totalByn,
     delivery,
     username: username ?? null,
+    buyerSeq: result.buyerSeq,
     // Бот шлёт заказ в чат, если сайт не отправил сам (как в 54b1ddb).
     skipBuyerNotify: false,
   };
@@ -87,7 +88,7 @@ export async function POST(request: NextRequest) {
   let buyerNotified = false;
   let botSyncError: string | undefined;
   try {
-    await syncOrderToTelegramBot(syncInput);
+    const syncResult = await syncOrderToTelegramBot(syncInput);
     await recordAndNotifyTelegramOrder({
       orderId: result.orderId,
       userId,
@@ -96,19 +97,39 @@ export async function POST(request: NextRequest) {
       delivery,
     });
     botSyncOk = true;
-    buyerNotified = true;
+    buyerNotified = syncResult.checkoutPushed;
+    if (!buyerNotified) {
+      const startTok = telegramOrderStartPayload(
+        result.orderId,
+        result.buyerSeq,
+      );
+      const hint = await botNotify({
+        target: "customer",
+        telegramUserId: userId,
+        text:
+          "Заказ оформлен на сайте IlluCards.\n\n"
+          + `Откройте бота и отправьте команду:\n/start ${startTok}`,
+      });
+      if (hint.ok) {
+        buyerNotified = true;
+      }
+    }
   } catch (error: unknown) {
     botSyncError = error instanceof Error ? error.message : String(error);
     console.warn("[checkout] bot sync failed before redirect", {
       order_id: result.orderId,
       error: botSyncError,
     });
+    const startTok = telegramOrderStartPayload(
+      result.orderId,
+      result.buyerSeq,
+    );
     const fallback = await botNotify({
       target: "customer",
       telegramUserId: userId,
       text:
         "Заказ оформлен на сайте IlluCards.\n\n"
-        + `Откройте бота и отправьте команду:\n/start order_${result.orderId}`,
+        + `Откройте бота и отправьте команду:\n/start ${startTok}`,
     });
     if (fallback.ok) {
       buyerNotified = true;

@@ -9,6 +9,7 @@ import {
 } from "@/app/lib/orderCreateShared";
 import { syncOrderToTelegramBot } from "@/app/lib/telegramCartBotSync";
 import { recordAndNotifyTelegramOrder } from "@/app/lib/telegramOrderNotify";
+import { telegramOrderStartPayload } from "@/app/lib/telegramOrderStartPayload";
 import { botNotify } from "@/app/lib/telegramBotRenderApi";
 import { notifyTelegramWebhookUserState } from "@/app/lib/telegramStateBotSync";
 import { getTelegramUserState } from "@/app/lib/telegramUserStateStore";
@@ -145,9 +146,13 @@ export async function POST(request: NextRequest) {
   return NextResponse.json({
     order_id: result.orderId,
     total: result.totalByn,
+    ...(result.buyerSeq != null ? { buyer_seq: result.buyerSeq } : {}),
     telegram_recorded: botSyncOk,
     telegram_sent: buyerNotified,
-    telegram_bot_start: `order_${result.orderId}`,
+    telegram_bot_start: telegramOrderStartPayload(
+      result.orderId,
+      result.buyerSeq,
+    ),
     ...(botSyncError ? { telegram_sync_error: botSyncError } : {}),
   });
 }

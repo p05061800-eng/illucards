@@ -139,5 +139,6 @@ export async function persistOrder(
     ok: true,
     orderId,
     totalByn: orderBynCharged,
+    buyerSeq: buyer_seq != null && buyer_seq > 0 ? buyer_seq : undefined,
   };
 }

@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/app/context/AuthContext";
 import { useCart } from "@/app/context/CartContext";
 import { getTelegramOrderBotUsername } from "@/app/lib/telegramOrderBotUsername";
+import { telegramOrderBotUrl } from "@/app/lib/telegramOrderStartPayload";
 import { startTelegramWebLoginWithWait } from "@/app/lib/startTelegramWebLoginClient";
 import { telegramWebLoginDeepLink } from "@/app/lib/telegramWebLoginUrl";
 
@@ -99,6 +100,12 @@ export function TelegramCheckoutButton({
         typeof (data as { order_id: unknown }).order_id === "string"
           ? (data as { order_id: string }).order_id.trim()
           : "";
+      const buyerSeq =
+        data &&
+        typeof data === "object" &&
+        typeof (data as { buyer_seq?: unknown }).buyer_seq === "number"
+          ? Math.floor((data as { buyer_seq: number }).buyer_seq)
+          : undefined;
       const telegramSent =
         data &&
         typeof data === "object" &&
@@ -129,9 +136,10 @@ export function TelegramCheckoutButton({
       }
 
       const bot = getTelegramOrderBotUsername();
-      const botUrl = `https://t.me/${encodeURIComponent(bot)}?start=${encodeURIComponent(`order_${orderId}`)}`;
+      const botUrl = telegramOrderBotUrl(bot, orderId, buyerSeq);
       console.info("[checkout] redirect telegram", {
         order_id: orderId,
+        buyer_seq: buyerSeq,
         botUrl,
         telegram_sent: telegramSent,
         sync_error: syncError || undefined,

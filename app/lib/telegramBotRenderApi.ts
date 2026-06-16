@@ -4,19 +4,31 @@
 
 /** Активный сервис на Render (не старый illucards-telegram-bot). */
 const DEFAULT_BOT_API = "https://illucards.onrender.com";
+/** Мёртвый сервис — если в Vercel остался старый URL, подменяем на активный. */
+const DEAD_BOT_API_HOST = "illucards-telegram-bot.onrender.com";
 
 export function telegramBotApiUrl(): string {
-  return (
+  const raw = (
     process.env.TELEGRAM_BOT_API_URL?.trim() ||
     process.env.TELEGRAM_BOT_SYNC_URL?.trim() ||
     process.env.TELEGRAM_SYNC_API_URL?.trim() ||
     DEFAULT_BOT_API
   ).replace(/\/+$/, "");
+  if (raw.includes(DEAD_BOT_API_HOST)) {
+    console.warn(
+      "[telegram-bot] TELEGRAM_BOT_API_URL указывает на неактивный Render (%s) — используем %s",
+      DEAD_BOT_API_HOST,
+      DEFAULT_BOT_API,
+    );
+    return DEFAULT_BOT_API;
+  }
+  return raw || DEFAULT_BOT_API;
 }
 
 function syncSecret(): string {
   return (
     process.env.TELEGRAM_SYNC_API_SECRET?.trim() ||
+    process.env.ILLUCARDS_LOGIN_CODE_SYNC_SECRET?.trim() ||
     process.env.ILLUCARDS_ORDER_UPDATE_SECRET?.trim() ||
     ""
   );

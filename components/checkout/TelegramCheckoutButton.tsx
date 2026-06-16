@@ -138,6 +138,15 @@ export function TelegramCheckoutButton({
       });
       if (!telegramSent && syncError) {
         console.warn("[checkout] bot did not receive order before redirect", syncError);
+        setError(
+          `Заказ сохранён (${orderId}), но бот не ответил: ${syncError}. `
+          + "Откройте Telegram — должна открыться ссылка с заказом.",
+        );
+        setSubmitting(false);
+        // Всё равно даём перейти в бот по deep link.
+        onBeforeNavigate?.();
+        window.location.href = botUrl;
+        return;
       }
       onBeforeNavigate?.();
       window.location.href = botUrl;

@@ -27,6 +27,7 @@ import { isTmntCategory } from "@/app/lib/tmntCollections";
 import { useCoarsePointerOrHoverNone } from "@/app/lib/useCoarsePointerOrHoverNone";
 import { useIntrinsicImageAspect } from "@/app/lib/useIntrinsicImageAspect";
 import { AdultContentBlurGate } from "@/app/components/AdultContentBlurGate";
+import { useAdultContentGateOptional } from "@/app/context/AdultContentContext";
 import { cardRequiresAgeConfirmation } from "@/app/lib/cardRequiresAgeConfirmation";
 import { FrontHoverMotionOverlay } from "@/app/components/FrontHoverMotionOverlay";
 import { effectiveHoverMotionUrl } from "@/app/lib/frontHoverMotionUrl";
@@ -99,6 +100,10 @@ export function CardStackVisual({
   /** На главной с тачем: не тянуть 3D-наклон — только vario (меньше лагов) */
   const coarseTouchHeroRef = useRef(false);
   const coarsePointerOrHoverNone = useCoarsePointerOrHoverNone();
+  const adultGate = useAdultContentGateOptional();
+  const adultLocked =
+    cardRequiresAgeConfirmation(card) &&
+    !(adultGate?.isAdultConfirmed(card.id) ?? false);
 
   /** Две разные картинки → варио в каталоге и герое (не только при effect===vario в JSON). */
   const hasVario = useMemo(() => {
@@ -165,7 +170,7 @@ export function CardStackVisual({
   const idleTranslateZ = catalogStack ? 4 : 8;
 
   /** Vario и наклон — везде одна логика глубины (см. `applyTilt`). */
-  const interactiveTilt = true;
+  const interactiveTilt = !adultLocked;
 
   const { visible: tiltHintVisible, dismiss: dismissTiltHint } =
     useFirstVisitCardTiltHint(Boolean(heroStack));

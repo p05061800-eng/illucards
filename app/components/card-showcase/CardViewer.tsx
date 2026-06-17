@@ -6,8 +6,11 @@ import {
   useCallback,
   useEffect,
   type KeyboardEvent as ReactKeyboardEvent,
+  type MouseEvent as ReactMouseEvent,
 } from "react";
 import type { StoredCard } from "../../api/cards/route";
+import { useAdultContentGateOptional } from "../../context/AdultContentContext";
+import { cardRequiresAgeConfirmation } from "../../lib/cardRequiresAgeConfirmation";
 import { ultraOrHeroBgUrl } from "../../lib/cardUltraBg";
 import { CardStackVisual } from "@/components/hero/CardStackVisual";
 
@@ -125,26 +128,41 @@ export function CardViewer({
   onCardClick,
 }: Props) {
   const router = useRouter();
+  const adultGate = useAdultContentGateOptional();
   const n = browseCards.length;
   const rawIdx = browseCards.findIndex((c) => c.id === activeCard.id);
   const idx = rawIdx >= 0 ? rawIdx : 0;
   const active = browseCards[idx] ?? browseCards[0];
   const clickable = Boolean(onCardClick);
+  const adultLocked =
+    Boolean(active) &&
+    cardRequiresAgeConfirmation(active) &&
+    !(adultGate?.isAdultConfirmed(active.id) ?? false);
 
-  const handleCardClick = useCallback(() => {
-    if (!active || !clickable) return;
-    onCardClick?.(active.id);
-  }, [active, clickable, onCardClick]);
+  const handleCardClick = useCallback(
+    (e?: ReactMouseEvent<HTMLElement>) => {
+      if (!active || !clickable) return;
+      if (
+        e?.target &&
+        (e.target as HTMLElement).closest?.("[data-adult-age-gate]")
+      ) {
+        return;
+      }
+      if (adultLocked) return;
+      onCardClick?.(active.id);
+    },
+    [active, adultLocked, clickable, onCardClick],
+  );
 
   const onCardKeyDown = useCallback(
     (e: ReactKeyboardEvent<HTMLDivElement>) => {
-      if (!clickable) return;
+      if (!clickable || adultLocked) return;
       if (e.key === "Enter" || e.key === " ") {
         e.preventDefault();
         handleCardClick();
       }
     },
-    [clickable, handleCardClick]
+    [adultLocked, clickable, handleCardClick]
   );
 
   const go = useCallback(
@@ -214,7 +232,7 @@ export function CardViewer({
           role={clickable ? "button" : undefined}
           tabIndex={clickable ? 0 : undefined}
           className={`relative z-0 flex w-full min-h-0 overflow-visible ${hideNavigation ? "items-start justify-center" : "justify-center"} ${layout === "product" ? "max-w-full px-2 pb-2 pt-0 sm:px-4 sm:pb-4" : "max-w-full"} ${clickable ? "pointer-events-auto cursor-pointer" : ""}`}
-          onClick={clickable ? handleCardClick : undefined}
+          onClick={clickable ? (e) => handleCardClick(e) : undefined}
           onKeyDown={clickable ? onCardKeyDown : undefined}
         >
           <CardStackVisual

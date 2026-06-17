@@ -270,7 +270,7 @@ export default function HeroSection({
       const target = e.target as HTMLElement | null;
       if (
         target?.closest?.(
-          "[data-novelty-hero-chrome], [data-hero-novelty-flank-nav]"
+          "[data-novelty-hero-chrome], [data-hero-novelty-flank-nav], [data-adult-age-gate]"
         )
       )
         return;

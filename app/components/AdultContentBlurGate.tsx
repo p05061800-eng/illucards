@@ -117,11 +117,14 @@ export function AdultContentBlurGate({
       {blurWrap}
       {locked ? (
         <div
+          data-adult-age-gate
           className="absolute inset-0 z-[120] flex flex-col items-center justify-center gap-3 rounded-[inherit] p-4 text-center"
           role="dialog"
           aria-modal="true"
           aria-labelledby={titleId}
           aria-describedby={descId}
+          onPointerDown={(e) => e.stopPropagation()}
+          onClick={(e) => e.stopPropagation()}
         >
           <div
             className="absolute inset-0 rounded-[inherit] bg-black/65 backdrop-blur-[3px]"
@@ -143,6 +146,7 @@ export function AdultContentBlurGate({
             </p>
             <button
               type="button"
+              data-adult-age-gate
               onClick={(e) => {
                 e.preventDefault();
                 e.stopPropagation();

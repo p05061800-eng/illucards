@@ -831,8 +831,8 @@ export async function updateOrderStatus(
     /* нет файла или FS только для чтения — статус уже в ORDERS */
   }
   if (
-    status === "confirmed" &&
-    existing.status !== "confirmed" &&
+    (status === "confirmed" || status === "paid") &&
+    existing.status !== status &&
     existing.user_id != null &&
     existing.user_id > 0
   ) {

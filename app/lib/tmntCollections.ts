@@ -62,7 +62,7 @@ export type CatalogCollectionSection = {
   sectionKey: string;
   heading: string;
   eyebrow?: string;
-  /** TMNT-подколлекции — только текстовый заголовок, без баннера категории. */
+  /** TMNT-подколлекции — текстовый заголовок; плашка родителя — один раз на блок TMNT. */
   titleMode: CatalogSectionTitleMode;
   parentCategory: string;
   tmntCollectionId?: TmntCollectionId;
@@ -176,6 +176,11 @@ export function catalogSectionDomId(section: CatalogCollectionSection): string {
     return tmntCollectionSectionId(section.tmntCollectionId);
   }
   return collectionSectionId(section.parentCategory);
+}
+
+/** Якорь общей плашки TMNT на витрине (`#collection-tmnt`). */
+export function tmntParentBannerDomId(): string {
+  return collectionSectionId(TMNT_PARENT_CATEGORY);
 }
 
 export function parseSubcategoryForCategory(

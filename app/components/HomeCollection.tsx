@@ -44,6 +44,7 @@ import {
   catalogSectionDomId,
   catalogSectionIdForCard,
   TMNT_PARENT_CATEGORY,
+  tmntParentBannerDomId,
   type CatalogCollectionSection,
 } from "../lib/tmntCollections";
 import { CardPreview } from "./CardPreview";
@@ -130,13 +131,25 @@ function CollectionTextHeading({
   heading,
   sectionId,
   compact,
+  afterParentBanner,
 }: {
   heading: string;
   sectionId: string;
   compact?: boolean;
+  afterParentBanner?: boolean;
 }) {
   return (
-    <header className={compact ? "pb-1 pt-1" : "pb-2 pt-2 sm:pt-4"}>
+    <header
+      className={
+        compact
+          ? afterParentBanner
+            ? "pb-1 pt-3"
+            : "pb-1 pt-1"
+          : afterParentBanner
+            ? "pb-2 pt-5 sm:pt-6"
+            : "pb-2 pt-2 sm:pt-4"
+      }
+    >
       <h2
         id={`${sectionId}-heading`}
         className={`mx-auto max-w-4xl text-balance text-center font-bold uppercase tracking-[0.14em] text-transparent bg-gradient-to-b from-white via-violet-50 to-violet-200/90 bg-clip-text drop-shadow-[0_0_28px_rgba(167,139,250,0.35)] ${
@@ -357,6 +370,19 @@ export function HomeCollection({
     }
     return base.filter((s) => s.parentCategory === filter);
   }, [apiOrder, orphanNames, categoryFilter]);
+
+  /** Одна плашка TMNT перед первой видимой подколлекцией. */
+  const catalogRows = useMemo(() => {
+    let tmntBannerPlaced = false;
+    return sections.map((section) => {
+      const isTmntSub =
+        section.parentCategory === TMNT_PARENT_CATEGORY &&
+        section.titleMode === "text";
+      const showTmntParentBanner = isTmntSub && !tmntBannerPlaced;
+      if (showTmntParentBanner) tmntBannerPlaced = true;
+      return { section, showTmntParentBanner };
+    });
+  }, [sections]);
 
   const hasActiveFilters =
     search.trim() !== "" ||
@@ -722,8 +748,8 @@ export function HomeCollection({
         </p>
       ) : (
         <div ref={collectionMeasureRef} className={sectionStack}>
-          {sections
-            .map((section) => {
+          {catalogRows
+            .map(({ section, showTmntParentBanner }) => {
               const rawSection = filteredSorted.filter((c) =>
                 cardBelongsToCatalogSection(c, section),
               );
@@ -731,13 +757,13 @@ export function HomeCollection({
                 priceSort === "default"
                   ? sortSectionCardsForDefaultCatalog(rawSection, cards)
                   : rawSection;
-              return { section, sectionCards };
+              return { section, sectionCards, showTmntParentBanner };
             })
             .filter(
               ({ sectionCards }) =>
                 sectionCards.length > 0 || !hasActiveFilters
             )
-            .map(({ section, sectionCards }) => {
+            .map(({ section, sectionCards, showTmntParentBanner }) => {
             const sectionId = catalogSectionDomId(section);
             const expanded = expandedCategoryRows[section.sectionKey] ?? false;
             const canCollapseRow =
@@ -759,13 +785,28 @@ export function HomeCollection({
                 className="scroll-mt-24"
                 aria-labelledby={`${sectionId}-heading`}
               >
+                {showTmntParentBanner ? (
+                  <div
+                    id={tmntParentBannerDomId()}
+                    className="relative z-0 -mx-6 w-[calc(100%+3rem)] max-w-none scroll-mt-24 sm:-mx-10 sm:w-[calc(100%+5rem)]"
+                    role="presentation"
+                  >
+                    <CategoryRowBanner
+                      banner={section.banner}
+                      heading={TMNT_PARENT_CATEGORY}
+                      sectionId={tmntParentBannerDomId()}
+                      compact={viewportCompact}
+                    />
+                  </div>
+                ) : null}
                 {section.titleMode === "text" ? (
                   <CollectionTextHeading
                     heading={section.heading}
                     sectionId={sectionId}
                     compact={viewportCompact}
+                    afterParentBanner={showTmntParentBanner}
                   />
-                ) : (
+                ) : section.titleMode === "banner" ? (
                   <div
                     className="relative z-0 -mx-6 w-[calc(100%+3rem)] max-w-none sm:-mx-10 sm:w-[calc(100%+5rem)]"
                     role="presentation"
@@ -778,7 +819,7 @@ export function HomeCollection({
                       compact={viewportCompact}
                     />
                   </div>
-                )}
+                ) : null}
 
                 {sectionCards.length > 0 ? (
                   <>

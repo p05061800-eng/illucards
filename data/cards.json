@@ -4,7 +4,7 @@
     "title": "Огненный Ниндзя",
     "description": "🔥 Огненный Ниндзя Фут — опасный боец клана Фут, владеющий запретными техниками огня.\r\nОн выполняет приказы Шреддера без колебаний, превращая поле боя в пылающую ловушку.\r\nИспользуя огненные приёмы, он создаёт защитные щиты и атакует врагов на расстоянии, не давая им приблизиться. Быстрый, скрытный и беспощадный, этот ниндзя — настоящая угроза даже для опытных бойцов.\r\n🔥 Клан: Фут\r\n⚔️ Стиль боя: дальний, агрессивный\r\n💀 Опасность: высокая",
     "category": "TMNT",
-    "subcategory": "",
+    "subcategory": "turtles",
     "frontImage": "/uploads/1776036749364-3b61a7e8.webp",
     "backImage": "/uploads/1776036753048-6767e339.webp",
     "price": 25,
@@ -6640,7 +6640,7 @@
     "title": "Шреддер пепел надежды",
     "description": "Шреддер — величайший враг Черепашек-ниндзя и безжалостный лидер клана Фут. Возродившись из пепла своих поражений, он стал ещё сильнее и опаснее. Его мастерство в боевых искусствах, железная воля и жажда власти делают его одним из самых грозных злодеев во вселенной Черепашек-ниндзя.",
     "category": "TMNT",
-    "subcategory": "",
+    "subcategory": "foes",
     "frontImage": "/uploads/1781656032371-9750af23.webp",
     "backImage": "/uploads/1781656046181-ea66a363.webp",
     "price": 25,
@@ -6692,9 +6692,9 @@
     "title": "Сплинтерсс мечом тенге",
     "description": "Сплинтер — мудрый наставник Черепашек-ниндзя и один из величайших мастеров ниндзюцу. Вооружившись легендарным Мечом Тенгу, он получил силу противостоять древней магии и самым опасным врагам. Его опыт, мудрость и непревзойдённое мастерство делают его настоящей опорой для своих учеников и защитником мира.",
     "category": "TMNT",
-    "subcategory": "turtles",
-    "frontImage": "/uploads/1781656801031-0562783a.webp",
-    "backImage": "/uploads/1781656823187-b8f5cb52.webp",
+    "subcategory": "foes",
+    "frontImage": "/uploads/1781657490284-ecb29a60.webp",
+    "backImage": "/uploads/1781657503232-918764cc.webp",
     "price": 25,
     "rarity": "novelty",
     "stats": {
@@ -6703,13 +6703,18 @@
       "intelligence": 50,
       "magic": 50
     },
-    "effect": "vario",
     "isNew": false,
     "isPopular": false,
     "isSale": false,
     "inStock": true,
     "ratingAvg": 5,
     "reviewCount": 0,
+    "rarities": [
+      "common",
+      "novelty"
+    ],
+    "noveltySince": "2026-06-17T00:41:01.632Z",
+    "effect": "vario",
     "categoryBg": "/uploads/1781656775171-64233127.webp",
     "frontImageFocus": {
       "x": 50,
@@ -6719,7 +6724,7 @@
       "x": 50,
       "y": 50
     },
-    "middleImage": "/uploads/1781656816529-acd61dc9.webp",
+    "middleImage": "/uploads/1781657497987-108031a0.webp",
     "middleImageFocus": {
       "x": 50,
       "y": 50
@@ -6728,15 +6733,576 @@
       "x": 50,
       "y": 50
     },
-    "categoryOrder": 37,
     "priceRub": 750,
+    "categoryOrder": 37,
     "varioSmoothing": 0.18,
     "frontImageWidth": 761,
-    "frontImageHeight": 1024,
+    "frontImageHeight": 1024
+  },
+  {
+    "id": "c436d7c0-1fc7-4b2b-8f6f-d2a645f3fd4f",
+    "title": "Ночной репортаж",
+    "description": "Эйприл О'Нил выходит на след таинственного заговора, скрытого в тенях Нью-Йорка. Вооружённая лишь камерой и своей смелостью, она отправляется на самое опасное расследование в жизни. К счастью, рядом всегда готовы прийти на помощь Черепашки-ниндзя.",
+    "category": "TMNT",
+    "subcategory": "turtles",
+    "frontImage": "/uploads/1781657699977-2dfa4658.webp",
+    "backImage": "/uploads/1781657704625-6ba8e5e1.webp",
+    "price": 40,
+    "rarity": "adult",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "isNew": false,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": true,
+    "ratingAvg": 5,
+    "reviewCount": 0,
+    "rarities": [
+      "limited",
+      "adult"
+    ],
+    "effect": "vario",
+    "categoryBg": "/uploads/1781657665655-07e2214e.webp",
+    "frontImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "backImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "priceRub": 1000,
+    "categoryOrder": 10,
+    "varioSmoothing": 0.18,
+    "frontImageWidth": 761,
+    "frontImageHeight": 1024
+  },
+  {
+    "id": "71587652-a5c3-4f2b-becd-65861ef030e1",
+    "title": "Шреддер — Наносит ответный удар",
+    "description": "После тяжёлых поражений Шреддер не сломался, а стал ещё опаснее. Собрав остатки сил клана Фут, он готовит сокрушительный ответный удар по своим врагам. Его ярость, хитрость и безжалостность превращают каждую схватку в смертельное испытание для Черепашек-ниндзя.",
+    "category": "TMNT",
+    "subcategory": "foes",
+    "frontImage": "/uploads/1781657882807-957dfd1e.webp",
+    "backImage": "/uploads/1781657942306-ea1309f8.webp",
+    "price": 25,
+    "rarity": "novelty",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "isNew": false,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": true,
+    "ratingAvg": 5,
+    "reviewCount": 0,
     "rarities": [
       "common",
       "novelty"
     ],
-    "noveltySince": "2026-06-17T00:41:01.632Z"
+    "noveltySince": "2026-06-17T00:58:33.938Z",
+    "effect": "vario",
+    "categoryBg": "/uploads/1781657855718-ccd85cba.webp",
+    "frontImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "backImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "middleImage": "/uploads/1781657900699-a5312286.webp",
+    "middleImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "priceRub": 750,
+    "categoryOrder": 46,
+    "varioSmoothing": 0.18,
+    "frontImageWidth": 761,
+    "frontImageHeight": 1024
+  },
+  {
+    "id": "4b04ae73-501f-4a52-aea4-0aa25b4789da",
+    "title": "Паучья ловушка",
+    "description": "Даже самые опытные Люди-пауки могут попасть в тщательно подготовленную западню. Неожиданная приманка отвлекает героев, заставляя их на мгновение забыть о миссии. Но каждая секунда промедления может стоить победы над врагом.",
+    "category": "Marvel",
+    "subcategory": "",
+    "frontImage": "/uploads/1781658118564-5fd87478.webp",
+    "backImage": "/uploads/1781658125034-707b3053.webp",
+    "price": 40,
+    "rarity": "adult",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "isNew": false,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": true,
+    "ratingAvg": 5,
+    "reviewCount": 0,
+    "rarities": [
+      "limited",
+      "novelty",
+      "adult"
+    ],
+    "noveltySince": "2026-06-17T01:02:35.756Z",
+    "effect": "vario",
+    "categoryBg": "/uploads/1781658083682-f9b39a0c.webp",
+    "frontImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "backImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "priceRub": 1000,
+    "categoryOrder": 180,
+    "varioSmoothing": 0.18,
+    "frontImageWidth": 600,
+    "frontImageHeight": 900
+  },
+  {
+    "id": "ccbb31e1-6000-443e-b146-07e5b2ef4d5a",
+    "title": "Homelander (Хоумлендер)",
+    "description": "Лидер Семёрки и главный символ Vought. Когда глаза Хоумлендера вспыхивают красным светом, даже самые сильные суперы понимают — спасения не будет. Его мощь практически не знает границ, а страх является его главным оружием.",
+    "category": "The Boys",
+    "subcategory": "",
+    "frontImage": "/uploads/1781658839005-c725fb05.webp",
+    "backImage": "/uploads/1781658843105-5241b8f7.webp",
+    "price": 25,
+    "rarity": "novelty",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "isNew": false,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": true,
+    "ratingAvg": 5,
+    "reviewCount": 0,
+    "rarities": [
+      "common",
+      "novelty"
+    ],
+    "noveltySince": "2026-06-17T01:14:10.038Z",
+    "effect": "vario",
+    "categoryBg": "/uploads/1781658817652-47cb1aba.webp",
+    "frontImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "backImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "priceRub": 750,
+    "categoryOrder": 1,
+    "varioSmoothing": 0.18,
+    "frontImageWidth": 600,
+    "frontImageHeight": 900
+  },
+  {
+    "id": "b3859fa4-2694-45e3-ac68-d662e5137691",
+    "title": "A-Train (Экспресс)",
+    "description": "Самый быстрый супер во вселенной Vought. Экспресс превращает скорость в смертоносное оружие, оставляя за собой лишь вспышку света и ударную волну. Пока противники пытаются понять, что произошло, бой уже закончен.",
+    "category": "The Boys",
+    "subcategory": "",
+    "frontImage": "/uploads/1781658922665-c9a6db77.webp",
+    "backImage": "",
+    "price": 25,
+    "rarity": "common",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "isNew": false,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": true,
+    "ratingAvg": 5,
+    "reviewCount": 0,
+    "effect": "3d-horizontal",
+    "categoryBg": "/uploads/1781658900299-0d5edfcd.webp",
+    "frontImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "priceRub": 750,
+    "categoryOrder": 4,
+    "frontImageWidth": 600,
+    "frontImageHeight": 900
+  },
+  {
+    "id": "96bbc613-f457-4f3c-867a-20174a1c4818",
+    "title": "Billy Butcher (Бутчер)",
+    "description": "Человек, объявивший войну суперам. Без сверхспособностей, но с безграничной решимостью, Бутчер готов пойти на любые меры ради своей цели. Его боятся даже те, кто считает себя непобедимым.",
+    "category": "The Boys",
+    "subcategory": "",
+    "frontImage": "/uploads/1781658962378-dd15e373.webp",
+    "backImage": "",
+    "price": 25,
+    "rarity": "common",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "isNew": false,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": true,
+    "ratingAvg": 5,
+    "reviewCount": 0,
+    "effect": "3d-horizontal",
+    "categoryBg": "/uploads/1781659326770-eb5c0c4e.webp",
+    "frontImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "priceRub": 750,
+    "categoryOrder": 5,
+    "frontImageWidth": 600,
+    "frontImageHeight": 900
+  },
+  {
+    "id": "02e4b3e8-3f86-45f4-930e-fdc8541659b2",
+    "title": "The Deep (Глубина)",
+    "description": "Единственный супергерой, который может говорить с обитателями океана... хотя далеко не всегда они хотят его слушать. Глубина мечтает о славе лидера, но чаще оказывается героем самых нелепых и странных историй в Семёрке.",
+    "category": "The Boys",
+    "subcategory": "",
+    "frontImage": "/uploads/1781659020001-1d86415c.webp",
+    "backImage": "/uploads/1781659024509-156ce6f8.webp",
+    "price": 25,
+    "rarity": "common",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "isNew": false,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": true,
+    "ratingAvg": 5,
+    "reviewCount": 0,
+    "effect": "vario",
+    "categoryBg": "/uploads/1781658989736-51a80f80.webp",
+    "frontImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "backImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "priceRub": 750,
+    "categoryOrder": 6,
+    "varioSmoothing": 0.18,
+    "frontImageWidth": 600,
+    "frontImageHeight": 900
+  },
+  {
+    "id": "35604a64-dd66-49f3-8888-9e6730ee8785",
+    "title": "Солдатик (Soldier Boy)",
+    "description": "Первая легенда супергероев и символ целой эпохи. Солдатик пережил войны, предательство и десятилетия заточения, сохранив невероятную силу и несокрушимую волю. Его энергетический взрыв способен уничтожать даже самых могущественных суперов.",
+    "category": "The Boys",
+    "subcategory": "",
+    "frontImage": "/uploads/1781659093375-119915d2.webp",
+    "backImage": "/uploads/1781659099265-47975de2.webp",
+    "price": 25,
+    "rarity": "limited",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "isNew": false,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": true,
+    "ratingAvg": 5,
+    "reviewCount": 0,
+    "effect": "vario",
+    "categoryBg": "/uploads/1781659124909-c7809dad.webp",
+    "frontImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "backImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "priceRub": 750,
+    "categoryOrder": 10,
+    "varioSmoothing": 0.18,
+    "frontImageWidth": 600,
+    "frontImageHeight": 900
+  },
+  {
+    "id": "4a030c22-32d1-4c3d-a7d2-8d95ebf81ea0",
+    "title": "Старлайт",
+    "description": "За образом идеальной супергероини скрывается человек, который не боится идти против системы. Старлайт управляет мощной световой энергией, превращая электричество в разрушительные вспышки и ослепительные удары. Её сила растёт там, где другие теряют надежду.",
+    "category": "The Boys",
+    "subcategory": "",
+    "frontImage": "/uploads/1781659285553-6268a648.webp",
+    "backImage": "/uploads/1781659290969-8cfe3249.webp",
+    "price": 30,
+    "rarity": "adult",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "isNew": false,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": true,
+    "ratingAvg": 5,
+    "reviewCount": 0,
+    "rarities": [
+      "common",
+      "adult",
+      "novelty"
+    ],
+    "noveltySince": "2026-06-17T01:21:44.251Z",
+    "effect": "vario",
+    "categoryBg": "/uploads/1781659242646-b86f9c30.webp",
+    "frontImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "backImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "priceRub": 800,
+    "categoryOrder": 11,
+    "varioSmoothing": 0.18,
+    "frontImageWidth": 600,
+    "frontImageHeight": 900
+  },
+  {
+    "id": "db84cbd4-d720-4a27-9681-e4df28f6bae9",
+    "title": "Хьюи Кэмпбелл",
+    "description": "Обычный человек, оказавшийся в мире, где супергерои давно перестали быть символами справедливости. После трагедии, изменившей его жизнь, Хьюи присоединяется к борьбе против могущественной корпорации и её суперов. Его главное оружие — не сила, а решимость идти до конца.",
+    "category": "The Boys",
+    "subcategory": "",
+    "frontImage": "/uploads/1781659379493-46f64d05.webp",
+    "backImage": "/uploads/1781659384553-b23db1e0.webp",
+    "price": 25,
+    "rarity": "common",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "isNew": false,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": true,
+    "ratingAvg": 5,
+    "reviewCount": 0,
+    "effect": "vario",
+    "categoryBg": "/uploads/1781659346917-62e17698.webp",
+    "frontImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "backImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "priceRub": 750,
+    "categoryOrder": 12,
+    "varioSmoothing": 0.18,
+    "frontImageWidth": 600,
+    "frontImageHeight": 900
+  },
+  {
+    "id": "af190d33-ad11-48e6-bbe7-45a1d5136a42",
+    "title": "Штормфронт",
+    "description": "Одна из самых опасных суперов своего времени. Штормфронт управляет разрушительными молниями, способна летать и выдерживать удары, которые уничтожили бы любого обычного человека. За харизматичной улыбкой скрывается безжалостная сила, готовая смести всё на своём пути.",
+    "category": "The Boys",
+    "subcategory": "",
+    "frontImage": "/uploads/1781659508520-2b6e7e26.webp",
+    "backImage": "/uploads/1781659529692-7b0b112b.webp",
+    "price": 25,
+    "rarity": "common",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "isNew": false,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": true,
+    "ratingAvg": 5,
+    "reviewCount": 0,
+    "effect": "vario",
+    "categoryBg": "/uploads/1781659556197-042cff0f.webp",
+    "frontImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "backImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "priceRub": 750,
+    "categoryOrder": 13,
+    "varioSmoothing": 0.18,
+    "frontImageWidth": 600,
+    "frontImageHeight": 900
+  },
+  {
+    "id": "305f30ee-c820-4707-89cf-8a5f410431c3",
+    "title": "Queen Maeve (Королева Мэйв)",
+    "description": "Одна из сильнейших участниц Семёрки и единственный супергерой, который не боится говорить правду. За образом легендарной воительницы скрывается несгибаемый характер, готовый бросить вызов даже самым опасным противникам.",
+    "category": "The Boys",
+    "subcategory": "",
+    "frontImage": "/uploads/1781659650685-565741ec.webp",
+    "backImage": "/uploads/1781659654576-f52dfa95.webp",
+    "price": 30,
+    "rarity": "adult",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "isNew": false,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": true,
+    "ratingAvg": 5,
+    "reviewCount": 0,
+    "rarities": [
+      "common",
+      "adult"
+    ],
+    "effect": "vario",
+    "categoryBg": "/uploads/1781659627192-750d3067.webp",
+    "frontImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "backImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "priceRub": 800,
+    "categoryOrder": 3,
+    "varioSmoothing": 0.18,
+    "frontImageWidth": 600,
+    "frontImageHeight": 900
+  },
+  {
+    "id": "c4c1cc16-01ec-48df-acb2-cb02ded738d1",
+    "title": "Коллекционный бустер по сериалу \"Пацаны\"",
+    "description": "Откройте мир «Пацанов» по-новому. Каждый бустер содержит одну уникальную 3D-карточку с эффектным варио-эффектом. Герои, злодеи и самые запоминающиеся персонажи культового сериала ждут своего места в вашей коллекции.\r\nМир суперов гораздо опаснее, чем кажется. В каждом бустере скрыта одна случайная 3D-карточка с героями и злодеями из сериала «Пацаны». Соберите полную коллекцию легендарных персонажей, откройте редкие карты и узнайте, кто окажется внутри следующего бустера.\r\nВ каждом бустере — 1 случайная 3D-карточка по сериалу «Пацаны». Собирайте любимых персонажей, находите редкие карты и создавайте свою коллекцию суперов.",
+    "category": "The Boys",
+    "subcategory": "",
+    "frontImage": "/uploads/1781659788620-84ab951f.webp",
+    "backImage": "",
+    "price": 20,
+    "rarity": "common",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "effect": "3d-horizontal",
+    "isNew": false,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": true,
+    "ratingAvg": 5,
+    "reviewCount": 0,
+    "categoryBg": "/uploads/1781659775365-68661f6c.webp",
+    "frontImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryOrder": 14,
+    "priceRub": 600,
+    "frontImageWidth": 600,
+    "frontImageHeight": 900
   }
 ]

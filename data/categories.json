@@ -38,13 +38,19 @@
       "y": 50
     },
     "tmntSubcollections": [
-      { "id": "turtles", "name": "Последний урок" },
-      { "id": "foes", "name": "Наследие Хамато" }
+      {
+        "id": "turtles",
+        "name": "Последний урок"
+      },
+      {
+        "id": "foes",
+        "name": "Наследие Хамато"
+      }
     ]
   },
   {
     "name": "Stranger Things",
-    "image": "/uploads/1776034678871-66c8491c.webp",
+    "image": "/uploads/1781660033601-6eb2be27.webp",
     "imageFocus": {
       "x": 50,
       "y": 50
@@ -76,19 +82,6 @@
       "y": 50
     },
     "plateImage": "/uploads/1775839355372-40b2b161.webp",
-    "plateImageFocus": {
-      "x": 50,
-      "y": 50
-    }
-  },
-  {
-    "name": "Pokemon",
-    "image": "/uploads/1775832262314-bf7f7635.webp",
-    "imageFocus": {
-      "x": 50,
-      "y": 50
-    },
-    "plateImage": "/uploads/1775831825547-f713e27e.webp",
     "plateImageFocus": {
       "x": 50,
       "y": 50

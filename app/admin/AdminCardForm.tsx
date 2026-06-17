@@ -632,21 +632,25 @@ export function AdminCardForm({
           className="block w-full text-xs text-zinc-300 file:mr-2 file:rounded-md file:border-0 file:bg-purple-600 file:px-2.5 file:py-1.5 file:text-xs file:font-medium file:text-white hover:file:bg-purple-500"
         />
         {categoryBgUrl ? (
-          <div
-            className={`${productImagePreviewRowClass} max-h-[min(36vh,280px)] overflow-y-auto`}
-          >
+          <div className={productImagePreviewRowClass}>
             <div className={productImagePreviewFrameClass}>
-              {/*
-                Не используем рамку лица карточки: фон категории — отдельный файл
-                (постер, баннер); без aspect + cover превью целиком по файлу.
-              */}
               <DraggableImageFrame
+                key={`catbg-${resolvedCardArtAspectCss}`}
                 src={categoryBgUrl}
                 value={categoryBgFocus}
                 onChange={setCategoryBgFocus}
+                aspectRatioCss={
+                  category === "TMNT" ? resolvedCardArtAspectCss : undefined
+                }
+                objectFit={category === "TMNT" ? adminPreviewObjectFit : undefined}
+                imageStyle={
+                  category === "TMNT"
+                    ? categoryFocusCoverStyle(categoryBgFocus)
+                    : undefined
+                }
                 hint={
                   category === "TMNT"
-                    ? "Для TMNT файл сохраняется как постер 761×1024 (обложка). Фокус — для витрины."
+                    ? "Для TMNT — тот же кадр 761×1024, что лицо и оборот. Фокус — для витрины."
                     : "По размеру файла, без обрезки. Фокус в данных — для витрины."
                 }
               />

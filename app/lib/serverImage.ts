@@ -15,7 +15,7 @@ export async function imageBufferTo34Webp(buffer: Buffer): Promise<Buffer> {
     .toBuffer();
 }
 
-/** Фон категории для TMNT — как постер-референс (761×1024). */
+/** Фон категории для TMNT — тот же постер 761×1024, что лицо карточки. */
 export async function imageBufferToTmntPosterWebp(
   buffer: Buffer,
 ): Promise<Buffer> {

@@ -23,6 +23,7 @@ import {
   categoryFocusContainStyle,
   categoryFocusCoverStyle,
 } from "@/app/lib/imageFocus";
+import { isTmntCategory } from "@/app/lib/tmntCollections";
 import { useCoarsePointerOrHoverNone } from "@/app/lib/useCoarsePointerOrHoverNone";
 import { useIntrinsicImageAspect } from "@/app/lib/useIntrinsicImageAspect";
 import { AdultContentBlurGate } from "@/app/components/AdultContentBlurGate";
@@ -568,17 +569,19 @@ export function CardStackVisual({
   /** Герой и каталог: без lazy на лице/обороте/ultra — иначе чёрный фон до decode. */
   const eagerFaceImages = catalogStack || heroStack;
 
-  /** Третий слой: при источнике из «Фон категории» — тот же кадр, что в админке. */
+  /** Третий слой: для TMNT фон категории заполняет ту же рамку 761×1024, что лицо. */
   const ultraLayerImgStyle: CSSProperties = useMemo(() => {
-    if (productFaceCoversFrame) {
-      const cat = card.categoryBg?.trim();
-      if (cat && ultraBgUrl === cat) {
+    const cat = card.categoryBg?.trim();
+    const fromCategoryBg = Boolean(cat && ultraBgUrl === cat);
+    const tmntCover = isTmntCategory(card.category);
+
+    if (productFaceCoversFrame || tmntCover) {
+      if (fromCategoryBg) {
         return categoryFocusCoverStyle(card.categoryBgFocus);
       }
       return categoryFocusCoverStyle(card.frontImageFocus);
     }
-    const cat = card.categoryBg?.trim();
-    if (cat && ultraBgUrl === cat) {
+    if (fromCategoryBg) {
       return categoryFocusContainStyle(card.categoryBgFocus);
     }
     if (fixedCatalogFrame) {
@@ -589,6 +592,7 @@ export function CardStackVisual({
     productFaceCoversFrame,
     fixedCatalogFrame,
     ultraBgUrl,
+    card.category,
     card.categoryBg,
     card.categoryBgFocus,
     card.cardArtFramePreset,

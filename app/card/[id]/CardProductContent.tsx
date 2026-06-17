@@ -17,7 +17,6 @@ import {
   EMPTY_TYPE_FILTER,
   filterCollectionCards,
   sortCardsByPrice,
-  sortCardsForGalleryBrowse,
   sortSectionCardsForDefaultCatalog,
 } from "@/app/lib/collectionFilter";
 import {
@@ -312,17 +311,22 @@ export default function CardProductContent({
   }, [setFiltersOpen]);
 
   /**
-   * Листание стрелками: тот же порядок, что в каталоге, плюс фильтры из шапки/панели
-   * (категория, тип, цена, поиск). Если текущая карточка не попадает в фильтр — остаётся
-   * первой в списке, дальше листаются только отфильтрованные.
+   * Листание стрелками: только карточки выбранной категории (или категории текущей карточки),
+   * с учётом фильтров из шапки.
    */
   const galleryBrowseCards = useMemo(() => {
+    const scopeCategory =
+      categoryFilter.trim() || card.category?.trim() || "";
+    const inCategory = scopeCategory
+      ? allCards.filter((c) => (c.category?.trim() ?? "") === scopeCategory)
+      : categoryCards.length > 0
+        ? categoryCards
+        : [card];
+
     const base =
-      allCards.length > 1
-        ? sortCardsForGalleryBrowse([...allCards], allCards)
-        : categoryCards.length > 1
-          ? sortSectionCardsForDefaultCatalog([...categoryCards], allCards)
-          : [card];
+      inCategory.length > 0
+        ? sortSectionCardsForDefaultCatalog([...inCategory], allCards)
+        : [card];
 
     const filtered = filterCollectionCards(base, {
       search,

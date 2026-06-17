@@ -18,6 +18,7 @@ import { apiUrl } from "@/app/lib/apiUrl";
 import { collectionSectionId } from "@/app/lib/collectionAnchor";
 import { categoryFocusToStyle } from "@/app/lib/imageFocus";
 import { buildNoveltiesCarouselCards } from "@/app/lib/noveltiesHeroCarousel";
+import { sortSectionCardsForDefaultCatalog } from "@/app/lib/collectionFilter";
 import {
   CardViewer,
   PRODUCT_CARD_NAV_ARROW_CLASS,
@@ -105,37 +106,45 @@ export default function HeroSection({
 
   const displayCard = filteredCards[0] ?? cards[0] ?? null;
 
-  const [noveltyIndex, setNoveltyIndex] = useState(0);
+  /** Карточки выбранной категории в порядке витрины. */
+  const heroBrowseCards = useMemo(() => {
+    const base = filteredCards.length > 0 ? filteredCards : cards;
+    return sortSectionCardsForDefaultCatalog(base, cards);
+  }, [filteredCards, cards]);
 
-  const noveltiesCards = useMemo(
-    () => buildNoveltiesCarouselCards(cards),
-    [cards]
+  /** Новинки только внутри выбранной категории. */
+  const categoryNoveltiesCards = useMemo(
+    () => buildNoveltiesCarouselCards(heroBrowseCards),
+    [heroBrowseCards],
   );
 
-  const noveltiesCarouselKey = useMemo(
-    () => noveltiesCards.map((c) => c.id).join(","),
-    [noveltiesCards]
+  const showNoveltiesHeroChrome = categoryNoveltiesCards.length > 0;
+
+  const activeBrowseCards = showNoveltiesHeroChrome
+    ? categoryNoveltiesCards
+    : heroBrowseCards;
+
+  const [browseIndex, setBrowseIndex] = useState(0);
+
+  const browseCarouselKey = useMemo(
+    () => activeBrowseCards.map((c) => c.id).join(","),
+    [activeBrowseCards],
   );
 
-  const heroBrowseNonNovelty = useMemo(
-    () => (filteredCards.length > 0 ? filteredCards : cards),
-    [filteredCards, cards]
-  );
-
-  const onNoveltyBrowseNavigate = useCallback(
+  const onHeroBrowseNavigate = useCallback(
     (nextId: string) => {
-      const j = noveltiesCards.findIndex((c) => c.id === nextId);
-      if (j >= 0) setNoveltyIndex(j);
+      const j = activeBrowseCards.findIndex((c) => c.id === nextId);
+      if (j >= 0) setBrowseIndex(j);
     },
-    [noveltiesCards]
+    [activeBrowseCards],
   );
 
   useEffect(() => {
-    noveltiesLenRef.current = noveltiesCards.length;
-  }, [noveltiesCards.length]);
+    noveltiesLenRef.current = activeBrowseCards.length;
+  }, [activeBrowseCards.length]);
 
   useEffect(() => {
-    if (noveltiesCards.length < 2) return;
+    if (!showNoveltiesHeroChrome || activeBrowseCards.length < 2) return;
     if (typeof window === "undefined") return;
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
       return;
@@ -146,32 +155,31 @@ export default function HeroSection({
       if (document.visibilityState !== "visible") return;
       const n = noveltiesLenRef.current;
       if (n < 2) return;
-      setNoveltyIndex((i) => (i + 1) % n);
+      setBrowseIndex((i) => (i + 1) % n);
     };
 
     const id = window.setInterval(tick, NOVELTY_AUTO_ADVANCE_MS);
     return () => window.clearInterval(id);
-  }, [noveltiesCards.length]);
+  }, [showNoveltiesHeroChrome, activeBrowseCards.length]);
 
   useEffect(() => {
-    setNoveltyIndex(0);
-  }, [noveltiesCarouselKey]);
+    setBrowseIndex(0);
+  }, [browseCarouselKey, selectedCategoryName]);
 
   useEffect(() => {
-    setNoveltyIndex((i) => {
-      if (noveltiesCards.length === 0) return 0;
-      return Math.min(i, noveltiesCards.length - 1);
+    setBrowseIndex((i) => {
+      if (activeBrowseCards.length === 0) return 0;
+      return Math.min(i, activeBrowseCards.length - 1);
     });
-  }, [noveltiesCards.length]);
+  }, [activeBrowseCards.length]);
 
   const focusCard = useMemo((): StoredCard | null => {
     if (!displayCard) return null;
-    /** Справа карусель новинок (категория «Новинки» или флаги новинки), пока есть что показывать. */
-    if (noveltiesCards.length > 0) {
-      return noveltiesCards[noveltyIndex % noveltiesCards.length]!;
+    if (activeBrowseCards.length > 0) {
+      return activeBrowseCards[browseIndex % activeBrowseCards.length]!;
     }
     return displayCard;
-  }, [displayCard, noveltiesCards, noveltyIndex]);
+  }, [displayCard, activeBrowseCards, browseIndex]);
 
   /** Герой без «пустой» карточки: первый кандидат с непустым лицом. */
   const heroShowcaseCard = useMemo((): StoredCard | null => {
@@ -180,31 +188,29 @@ export default function HeroSection({
     return (
       ok(focusCard) ??
       ok(displayCard) ??
-      noveltiesCards.find((c) => ok(c)) ??
+      activeBrowseCards.find((c) => ok(c)) ??
       filteredCards.find((c) => ok(c)) ??
       cards.find((c) => ok(c)) ??
       null
     );
-  }, [focusCard, displayCard, noveltiesCards, filteredCards, cards]);
+  }, [focusCard, displayCard, activeBrowseCards, filteredCards, cards]);
 
   const noCardsInCategory =
     selectedCategoryName != null &&
     filteredCards.length === 0 &&
     cards.length > 0;
 
-  const showNoveltiesHeroChrome = noveltiesCards.length > 0;
+  const canCycleWithArrows = activeBrowseCards.length > 1;
 
-  const canCycleNoveltiesWithArrows = noveltiesCards.length > 1;
-
-  const stepNoveltyIndex = useCallback(
+  const stepBrowseIndex = useCallback(
     (delta: number) => {
-      if (noveltiesCards.length < 2) return;
-      setNoveltyIndex((i) => {
-        const n = noveltiesCards.length;
+      if (activeBrowseCards.length < 2) return;
+      setBrowseIndex((i) => {
+        const n = activeBrowseCards.length;
         return (i + delta + n * 16) % n;
       });
     },
-    [noveltiesCards.length]
+    [activeBrowseCards.length],
   );
 
   const onNoveltyAutoPauseEnter = useCallback(() => {
@@ -217,21 +223,21 @@ export default function HeroSection({
 
   const onNoveltyArrowKeyDown = useCallback(
     (e: KeyboardEvent<HTMLButtonElement>) => {
-      if (noveltiesCards.length < 2) return;
+      if (activeBrowseCards.length < 2) return;
       if (e.key === "ArrowLeft") {
         e.preventDefault();
-        stepNoveltyIndex(-1);
+        stepBrowseIndex(-1);
       } else if (e.key === "ArrowRight") {
         e.preventDefault();
-        stepNoveltyIndex(1);
+        stepBrowseIndex(1);
       }
     },
-    [noveltiesCards.length, stepNoveltyIndex]
+    [activeBrowseCards.length, stepBrowseIndex]
   );
 
   const applyNoveltySwipeFromDelta = useCallback(
     (start: { x: number; y: number }, endX: number, endY: number) => {
-      if (noveltiesCards.length < 2) {
+      if (activeBrowseCards.length < 2) {
         return;
       }
       const dx = endX - start.x;
@@ -244,21 +250,21 @@ export default function HeroSection({
       }
       blockHeroCardLinkClickRef.current = true;
       if (dx < 0) {
-        setNoveltyIndex((i) => (i + 1) % noveltiesCards.length);
+        setBrowseIndex((i) => (i + 1) % activeBrowseCards.length);
       } else {
-        setNoveltyIndex(
-          (i) => (i - 1 + noveltiesCards.length) % noveltiesCards.length
+        setBrowseIndex(
+          (i) => (i - 1 + activeBrowseCards.length) % activeBrowseCards.length
         );
       }
     },
-    [noveltiesCards.length]
+    [activeBrowseCards.length]
   );
 
   const onNoveltyPointerDown = useCallback(
     (e: PointerEvent<HTMLDivElement>) => {
       if (e.pointerType !== "mouse" && e.pointerType !== "pen") return;
       if (e.button !== 0) return;
-      if (noveltiesCards.length < 2) {
+      if (activeBrowseCards.length < 2) {
         return;
       }
       const target = e.target as HTMLElement | null;
@@ -275,7 +281,7 @@ export default function HeroSection({
         /* ignore */
       }
     },
-    [noveltiesCards.length]
+    [activeBrowseCards.length]
   );
 
   const onNoveltyPointerUp = useCallback(
@@ -491,12 +497,12 @@ export default function HeroSection({
                               : "md:max-w-[min(100%,47rem)]"
                         }`}
                       >
-                        {canCycleNoveltiesWithArrows ? (
+                        {canCycleWithArrows ? (
                           <button
                             type="button"
                             data-hero-novelty-flank-nav
-                            aria-label="Предыдущая новинка"
-                            onClick={() => stepNoveltyIndex(-1)}
+                            aria-label="Предыдущая карточка"
+                            onClick={() => stepBrowseIndex(-1)}
                             onKeyDown={onNoveltyArrowKeyDown}
                             className={`arrow arrow--left hero-novelty-side-arrow hero-novelty-arrow--prev ${PRODUCT_CARD_NAV_ARROW_CLASS}`}
                           >
@@ -516,20 +522,20 @@ export default function HeroSection({
                           <CardViewer
                             layout="product"
                             activeCard={stackCard}
-                            browseCards={noveltiesCards}
-                            onNavigate={onNoveltyBrowseNavigate}
+                            browseCards={activeBrowseCards}
+                            onNavigate={onHeroBrowseNavigate}
                             hideNavigation
                             productCenterConstrained={true}
                             onCardClick={openCardPage}
                           />
                         </div>
 
-                        {canCycleNoveltiesWithArrows ? (
+                        {canCycleWithArrows ? (
                           <button
                             type="button"
                             data-hero-novelty-flank-nav
-                            aria-label="Следующая новинка"
-                            onClick={() => stepNoveltyIndex(1)}
+                            aria-label="Следующая карточка"
+                            onClick={() => stepBrowseIndex(1)}
                             onKeyDown={onNoveltyArrowKeyDown}
                             className={`arrow arrow--right hero-novelty-side-arrow hero-novelty-arrow--next ${PRODUCT_CARD_NAV_ARROW_CLASS}`}
                           >
@@ -584,14 +590,43 @@ export default function HeroSection({
                             : "max-w-[min(100%,30rem)] sm:max-w-[min(100%,34rem)] md:max-w-[min(100%,38rem)] lg:max-w-[min(100%,40rem)] xl:max-w-[min(100%,42rem)]",
                         ].join(" ")}
                       >
-                        <CardViewer
-                          layout="product"
-                          activeCard={stackCard}
-                          browseCards={heroBrowseNonNovelty}
-                          hideNavigation
-                          productCenterConstrained={true}
-                          onCardClick={openCardPage}
-                        />
+                        <div
+                          className={`relative flex w-full items-center justify-center gap-2 md:gap-3 ${
+                            canCycleWithArrows ? "px-0 md:px-2" : ""
+                          }`}
+                        >
+                          {canCycleWithArrows ? (
+                            <button
+                              type="button"
+                              aria-label="Предыдущая карточка"
+                              onClick={() => stepBrowseIndex(-1)}
+                              className={PRODUCT_CARD_NAV_ARROW_CLASS}
+                            >
+                              <ProductCardNavArrowIcon direction="prev" />
+                            </button>
+                          ) : null}
+                          <div className="min-w-0 flex-1">
+                            <CardViewer
+                              layout="product"
+                              activeCard={stackCard}
+                              browseCards={activeBrowseCards}
+                              onNavigate={onHeroBrowseNavigate}
+                              hideNavigation
+                              productCenterConstrained={true}
+                              onCardClick={openCardPage}
+                            />
+                          </div>
+                          {canCycleWithArrows ? (
+                            <button
+                              type="button"
+                              aria-label="Следующая карточка"
+                              onClick={() => stepBrowseIndex(1)}
+                              className={PRODUCT_CARD_NAV_ARROW_CLASS}
+                            >
+                              <ProductCardNavArrowIcon direction="next" />
+                            </button>
+                          ) : null}
+                        </div>
                       </div>
                       </div>
                       <HeroCatalogCardFooter

@@ -6,8 +6,8 @@ export const TMNT_PARENT_CATEGORY = "TMNT";
 
 /** Две коллекции внутри TMNT на витрине и в админке. */
 export const TMNT_COLLECTIONS = [
-  { id: "turtles", name: "Черепашки-ниндзя" },
-  { id: "foes", name: "Враги и союзники" },
+  { id: "turtles", name: "Последний урок" },
+  { id: "foes", name: "Наследие Хамато" },
 ] as const;
 
 export type TmntCollectionId = (typeof TMNT_COLLECTIONS)[number]["id"];
@@ -56,10 +56,14 @@ export function catalogSectionIdForCard(
   return tmntCollectionSectionId(resolveTmntCollectionId(card.subcategory));
 }
 
+export type CatalogSectionTitleMode = "banner" | "text";
+
 export type CatalogCollectionSection = {
   sectionKey: string;
   heading: string;
   eyebrow?: string;
+  /** TMNT-подколлекции — только текстовый заголовок, без баннера категории. */
+  titleMode: CatalogSectionTitleMode;
   parentCategory: string;
   tmntCollectionId?: TmntCollectionId;
   banner: CategoryTile;
@@ -95,7 +99,7 @@ export function buildCatalogCollectionSections(
         out.push({
           sectionKey: `${TMNT_PARENT_CATEGORY}:${col.id}`,
           heading: col.name,
-          eyebrow: TMNT_PARENT_CATEGORY,
+          titleMode: "text",
           parentCategory: TMNT_PARENT_CATEGORY,
           tmntCollectionId: col.id,
           banner: tile,
@@ -107,6 +111,7 @@ export function buildCatalogCollectionSections(
     out.push({
       sectionKey: name,
       heading: name,
+      titleMode: "banner",
       parentCategory: name,
       banner: tile,
     });
@@ -125,6 +130,7 @@ export function buildCatalogCollectionSections(
     out.push({
       sectionKey: name,
       heading: name,
+      titleMode: "banner",
       parentCategory: name,
       banner: { name, image: "" },
     });

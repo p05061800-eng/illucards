@@ -125,6 +125,38 @@ function useCollectionPreviewColumns(
   return cols;
 }
 
+/** TMNT-подколлекции: заголовок капсом без баннера категории. */
+function CollectionTextHeading({
+  heading,
+  sectionId,
+  compact,
+}: {
+  heading: string;
+  sectionId: string;
+  compact?: boolean;
+}) {
+  return (
+    <header className={compact ? "pb-1 pt-1" : "pb-2 pt-2 sm:pt-4"}>
+      <h2
+        id={`${sectionId}-heading`}
+        className={`mx-auto max-w-4xl text-balance text-center font-bold uppercase tracking-[0.14em] text-transparent bg-gradient-to-b from-white via-violet-50 to-violet-200/90 bg-clip-text drop-shadow-[0_0_28px_rgba(167,139,250,0.35)] ${
+          compact
+            ? "text-sm sm:text-base"
+            : "text-lg sm:text-xl md:text-[1.65rem] md:tracking-[0.16em]"
+        }`}
+      >
+        {heading}
+      </h2>
+      <div
+        className={`mx-auto bg-gradient-to-r from-transparent via-violet-400/50 to-transparent ${
+          compact ? "mt-2 h-px max-w-[9rem]" : "mt-3 h-px max-w-[14rem] sm:mt-4"
+        }`}
+        aria-hidden
+      />
+    </header>
+  );
+}
+
 /** Баннер строки категории: высота по изображению, скруглённые углы. */
 function CategoryRowBanner({
   banner,
@@ -727,21 +759,26 @@ export function HomeCollection({
                 className="scroll-mt-24"
                 aria-labelledby={`${sectionId}-heading`}
               >
-                {/*
-                  Плашка на всю ширину контентной колонки: выход из px-6 / sm:px-10 без 100vw (нет гориз. скролла).
-                */}
-                <div
-                  className="relative z-0 -mx-6 w-[calc(100%+3rem)] max-w-none sm:-mx-10 sm:w-[calc(100%+5rem)]"
-                  role="presentation"
-                >
-                  <CategoryRowBanner
-                    banner={section.banner}
+                {section.titleMode === "text" ? (
+                  <CollectionTextHeading
                     heading={section.heading}
-                    eyebrow={section.eyebrow}
                     sectionId={sectionId}
                     compact={viewportCompact}
                   />
-                </div>
+                ) : (
+                  <div
+                    className="relative z-0 -mx-6 w-[calc(100%+3rem)] max-w-none sm:-mx-10 sm:w-[calc(100%+5rem)]"
+                    role="presentation"
+                  >
+                    <CategoryRowBanner
+                      banner={section.banner}
+                      heading={section.heading}
+                      eyebrow={section.eyebrow}
+                      sectionId={sectionId}
+                      compact={viewportCompact}
+                    />
+                  </div>
+                )}
 
                 {sectionCards.length > 0 ? (
                   <>
@@ -749,7 +786,9 @@ export function HomeCollection({
                       className={`collection-card-grid min-w-0 ${
                         viewportCompact
                           ? "collection-card-grid--viewport-compact mt-2"
-                          : "mt-8"
+                          : section.titleMode === "text"
+                            ? "mt-6 sm:mt-8"
+                            : "mt-8"
                       }`}
                     >
                       {cardsToRender.map((card) => (

@@ -10,6 +10,11 @@ import {
 } from "@/app/lib/imageFocus";
 import { useCategoryFramesRefresh } from "@/app/context/CategoryFramesContext";
 import { apiUrl } from "@/app/lib/apiUrl";
+import {
+  defaultTmntSubcollectionsForEditor,
+  ensureTmntSubcollectionsOnTile,
+  TMNT_PARENT_CATEGORY,
+} from "@/app/lib/tmntCollections";
 
 type Props = {
   /** Во вкладке админки — без ссылки «назад». */
@@ -32,7 +37,11 @@ export function AdminCategoriesEditor({ variant = "page" }: Props) {
       .then((data: unknown) => {
         if (cancelled) return;
         if (Array.isArray(data)) {
-          setCats(data as CategoryTile[]);
+          setCats(
+            (data as CategoryTile[]).map((tile) =>
+              ensureTmntSubcollectionsOnTile(tile),
+            ),
+          );
         }
       })
       .catch(() => {
@@ -186,6 +195,40 @@ export function AdminCategoriesEditor({ variant = "page" }: Props) {
               className="min-w-[200px] rounded-lg border border-white/20 bg-black p-2 text-white"
             />
           </div>
+
+          {cat.name.trim() === TMNT_PARENT_CATEGORY ? (
+            <div className="flex w-full flex-col gap-3 rounded-xl border border-emerald-500/20 bg-emerald-950/15 p-4 lg:basis-full">
+              <p className="text-xs font-medium text-emerald-200/90">
+                Подколлекции TMNT (названия на витрине и в форме карточки)
+              </p>
+              <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+                {(cat.tmntSubcollections ??
+                  defaultTmntSubcollectionsForEditor()).map((sub, subIdx) => (
+                  <div key={sub.id} className="flex min-w-[200px] flex-col gap-1">
+                    <span className="text-xs text-zinc-500">
+                      {sub.id === "turtles"
+                        ? "Коллекция 1"
+                        : "Коллекция 2"}
+                    </span>
+                    <input
+                      value={sub.name}
+                      onChange={(e) => {
+                        setCats((prev) => {
+                          const next = structuredClone(prev);
+                          const tile = ensureTmntSubcollectionsOnTile(next[i]);
+                          const subs = tile.tmntSubcollections!;
+                          subs[subIdx] = { ...subs[subIdx], name: e.target.value };
+                          next[i] = { ...tile, tmntSubcollections: subs };
+                          return next;
+                        });
+                      }}
+                      className="min-w-[200px] rounded-lg border border-white/20 bg-black p-2 text-white"
+                    />
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : null}
 
           <div className="flex min-w-0 flex-col gap-2">
             <span className="text-xs text-zinc-500">Баннер раздела</span>

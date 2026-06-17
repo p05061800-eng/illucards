@@ -4,15 +4,26 @@ import { collectionSectionId } from "@/app/lib/collectionAnchor";
 
 export const TMNT_PARENT_CATEGORY = "TMNT";
 
-/** Две коллекции внутри TMNT на витрине и в админке. */
-export const TMNT_COLLECTIONS = [
+export const TMNT_COLLECTION_IDS = ["turtles", "foes"] as const;
+
+export type TmntCollectionId = (typeof TMNT_COLLECTION_IDS)[number];
+
+export type TmntCollectionDef = {
+  id: TmntCollectionId;
+  name: string;
+};
+
+/** Значения по умолчанию, если в `categories.json` у TMNT нет `tmntSubcollections`. */
+export const DEFAULT_TMNT_COLLECTIONS: readonly TmntCollectionDef[] = [
   { id: "turtles", name: "Последний урок" },
   { id: "foes", name: "Наследие Хамато" },
 ] as const;
 
-export type TmntCollectionId = (typeof TMNT_COLLECTIONS)[number]["id"];
+/** @deprecated Используйте `resolveTmntCollections(categoryTiles)`. */
+export const TMNT_COLLECTIONS = DEFAULT_TMNT_COLLECTIONS;
 
-export const TMNT_DEFAULT_COLLECTION_ID: TmntCollectionId = TMNT_COLLECTIONS[0].id;
+export const TMNT_DEFAULT_COLLECTION_ID: TmntCollectionId =
+  DEFAULT_TMNT_COLLECTIONS[0].id;
 
 export function isTmntCategory(category: string | undefined): boolean {
   return (category?.trim() ?? "") === TMNT_PARENT_CATEGORY;
@@ -23,7 +34,7 @@ export function normalizeTmntCollectionId(
 ): TmntCollectionId | undefined {
   const s = typeof raw === "string" ? raw.trim().toLowerCase() : "";
   if (!s) return undefined;
-  return TMNT_COLLECTIONS.find((c) => c.id === s)?.id;
+  return TMNT_COLLECTION_IDS.find((id) => id === s);
 }
 
 export function resolveTmntCollectionId(
@@ -32,9 +43,43 @@ export function resolveTmntCollectionId(
   return normalizeTmntCollectionId(raw) ?? TMNT_DEFAULT_COLLECTION_ID;
 }
 
-export function tmntCollectionName(id: string | undefined): string {
-  const hit = TMNT_COLLECTIONS.find((c) => c.id === id);
-  return hit?.name ?? TMNT_COLLECTIONS[0].name;
+/** Названия подколлекций TMNT из вкладки «Категории» (`tmntSubcollections`). */
+export function resolveTmntCollections(
+  categoryTiles?: readonly CategoryTile[],
+): TmntCollectionDef[] {
+  const tmntTile = categoryTiles?.find(
+    (t) => t.name.trim() === TMNT_PARENT_CATEGORY,
+  );
+  const raw = tmntTile?.tmntSubcollections;
+  if (!raw?.length) {
+    return DEFAULT_TMNT_COLLECTIONS.map((c) => ({ ...c }));
+  }
+
+  const names = new Map<TmntCollectionId, string>(
+    DEFAULT_TMNT_COLLECTIONS.map((c) => [c.id, c.name]),
+  );
+  for (const row of raw) {
+    const id = normalizeTmntCollectionId(row.id);
+    const name = typeof row.name === "string" ? row.name.trim() : "";
+    if (id && name) names.set(id, name);
+  }
+
+  return DEFAULT_TMNT_COLLECTIONS.map((c) => ({
+    id: c.id,
+    name: names.get(c.id) ?? c.name,
+  }));
+}
+
+export function tmntCollectionName(
+  id: string | undefined,
+  collections: readonly TmntCollectionDef[] = DEFAULT_TMNT_COLLECTIONS,
+): string {
+  const want = resolveTmntCollectionId(id);
+  return (
+    collections.find((c) => c.id === want)?.name ??
+    collections[0]?.name ??
+    DEFAULT_TMNT_COLLECTIONS[0].name
+  );
 }
 
 export function tmntCollectionSectionId(collectionId: string): string {
@@ -85,6 +130,9 @@ export function cardBelongsToCatalogSection(
 export function buildCatalogCollectionSections(
   categoryTiles: readonly CategoryTile[],
   orphanCategoryNames: readonly string[],
+  tmntCollections: readonly TmntCollectionDef[] = resolveTmntCollections(
+    categoryTiles,
+  ),
 ): CatalogCollectionSection[] {
   const seen = new Set<string>();
   const out: CatalogCollectionSection[] = [];
@@ -95,7 +143,7 @@ export function buildCatalogCollectionSections(
     seen.add(name);
 
     if (name === TMNT_PARENT_CATEGORY) {
-      for (const col of TMNT_COLLECTIONS) {
+      for (const col of tmntCollections) {
         out.push({
           sectionKey: `${TMNT_PARENT_CATEGORY}:${col.id}`,
           heading: col.name,
@@ -155,13 +203,16 @@ export function maxCategoryOrderInTmntCollection(
   return max;
 }
 
-export function adminGroupKeyForCard(card: StoredCard): string {
+export function adminGroupKeyForCard(
+  card: StoredCard,
+  collections: readonly TmntCollectionDef[] = DEFAULT_TMNT_COLLECTIONS,
+): string {
   if (!isTmntCategory(card.category)) {
     const raw = card.category?.trim();
     return raw && raw.length > 0 ? raw : "Без категории";
   }
   const col = resolveTmntCollectionId(card.subcategory);
-  return `${TMNT_PARENT_CATEGORY} · ${tmntCollectionName(col)}`;
+  return `${TMNT_PARENT_CATEGORY} · ${tmntCollectionName(col, collections)}`;
 }
 
 export function findCatalogSectionForCard(
@@ -191,4 +242,19 @@ export function parseSubcategoryForCategory(
   return resolveTmntCollectionId(
     typeof raw === "string" ? raw : undefined,
   );
+}
+
+/** Подколлекции TMNT для редактора категорий (всегда две строки с id). */
+export function defaultTmntSubcollectionsForEditor(): TmntCollectionDef[] {
+  return DEFAULT_TMNT_COLLECTIONS.map((c) => ({ ...c }));
+}
+
+export function ensureTmntSubcollectionsOnTile(
+  tile: CategoryTile,
+): CategoryTile {
+  if (tile.name.trim() !== TMNT_PARENT_CATEGORY) return tile;
+  const subs = tile.tmntSubcollections?.length
+    ? tile.tmntSubcollections
+    : defaultTmntSubcollectionsForEditor();
+  return { ...tile, tmntSubcollections: subs.map((c) => ({ ...c })) };
 }

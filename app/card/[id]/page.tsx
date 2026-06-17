@@ -4,6 +4,9 @@ import path from "path";
 import { notFound } from "next/navigation";
 import type { StoredCard } from "../../api/cards/route";
 import { parseCardsJson } from "../../lib/cardsJson";
+import type { CategoryTile } from "@/app/lib/categoriesJson";
+import { parseCategoriesJson } from "@/app/lib/categoriesJson";
+import { resolveTmntCollections } from "@/app/lib/tmntCollections";
 import CardProductContent from "./CardProductContent";
 
 export const dynamic = "force-dynamic";
@@ -46,6 +49,16 @@ export default async function CardPage({ params }: PageProps) {
       ? all.filter((c) => (c.category?.trim() ?? "") === cat)
       : [card];
 
+  let categoryTiles: CategoryTile[] = [];
+  try {
+    const categoriesPath = path.join(process.cwd(), "data", "categories.json");
+    const raw = fs.readFileSync(categoriesPath, "utf-8");
+    categoryTiles = parseCategoriesJson(JSON.parse(raw));
+  } catch {
+    categoryTiles = [];
+  }
+  const tmntCollections = resolveTmntCollections(categoryTiles);
+
   return (
     <main className="main relative overflow-x-hidden text-white">
       <div
@@ -65,6 +78,7 @@ export default async function CardPage({ params }: PageProps) {
         card={card}
         categoryCards={categoryCards}
         allCards={all}
+        tmntCollections={tmntCollections}
       />
     </main>
   );

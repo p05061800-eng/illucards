@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { categories } from "@/data/categories";
+import { useCategoryTiles } from "@/app/context/CategoryFramesContext";
 import { DraggableImageFrame } from "./components/DraggableImageFrame";
 import type { StoredCard } from "../api/cards/route";
 import {
@@ -11,10 +11,11 @@ import {
 } from "../lib/cardRarityTags";
 import { maxCategoryOrderInCategory } from "../lib/adminCategoryOrder";
 import {
-  TMNT_COLLECTIONS,
   TMNT_DEFAULT_COLLECTION_ID,
+  TMNT_PARENT_CATEGORY,
   maxCategoryOrderInTmntCollection,
   resolveTmntCollectionId,
+  resolveTmntCollections,
   type TmntCollectionId,
 } from "../lib/tmntCollections";
 import { resolveCardArtBoxAspectCss } from "../lib/cardAspectRatio";
@@ -95,12 +96,11 @@ export function AdminCardForm({
   onSuccess,
 }: AdminCardFormProps) {
   const isEdit = Boolean(editingCard);
+  const categoryTiles = useCategoryTiles();
   const [categoryOrderInput, setCategoryOrderInput] = useState("");
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
-  const [category, setCategory] = useState<string>(
-    categories[0]?.name ?? "Marvel"
-  );
+  const [category, setCategory] = useState<string>("Marvel");
   const [tmntCollection, setTmntCollection] = useState<TmntCollectionId>(
     TMNT_DEFAULT_COLLECTION_ID,
   );
@@ -138,6 +138,22 @@ export function AdminCardForm({
   const [middleFocus, setMiddleFocus] = useState(DEFAULT_IMAGE_FOCUS);
   const [backFocus, setBackFocus] = useState(DEFAULT_IMAGE_FOCUS);
   const [categoryBgFocus, setCategoryBgFocus] = useState(DEFAULT_IMAGE_FOCUS);
+
+  const tmntCollections = useMemo(
+    () => resolveTmntCollections(categoryTiles),
+    [categoryTiles],
+  );
+
+  const categoryOptions = useMemo(() => {
+    const fromApi = categoryTiles.map((c) => c.name.trim()).filter(Boolean);
+    const merged = [...fromApi];
+    for (const c of allCards) {
+      const n = c.category?.trim();
+      if (n && !merged.includes(n)) merged.push(n);
+    }
+    return merged;
+  }, [categoryTiles, allCards]);
+
   useEffect(() => {
     if (!editingCard) {
       setFrontImageUrl(null);
@@ -155,10 +171,12 @@ export function AdminCardForm({
     setTitle(editingCard.title ?? "");
     setDescription(editingCard.description ?? "");
     const cat = editingCard.category?.trim() ?? "";
-    const catOk = categories.some((c) => c.name === cat);
-    setCategory(catOk && cat ? cat : categories[0].name);
+    const catOk = categoryOptions.some((name) => name === cat);
+    setCategory(
+      catOk && cat ? cat : categoryOptions[0] ?? TMNT_PARENT_CATEGORY,
+    );
     setTmntCollection(
-      cat === "TMNT"
+      cat === TMNT_PARENT_CATEGORY
         ? resolveTmntCollectionId(editingCard.subcategory)
         : TMNT_DEFAULT_COLLECTION_ID,
     );
@@ -211,11 +229,11 @@ export function AdminCardForm({
     );
     setStatus("idle");
     setMessage("");
-  }, [editingCard]);
+  }, [editingCard, categoryOptions]);
 
   useEffect(() => {
     if (editingCard) return;
-    if (category === "TMNT") {
+    if (category === TMNT_PARENT_CATEGORY) {
       setCategoryOrderInput(
         String(maxCategoryOrderInTmntCollection(allCards, tmntCollection) + 1),
       );
@@ -272,11 +290,11 @@ export function AdminCardForm({
     setMessage("Загрузка MP4…");
     try {
       const { url, transcoded } = await uploadVideoFile(file, {
-        cardCategory: category === "TMNT" ? "TMNT" : undefined,
+        cardCategory: category === TMNT_PARENT_CATEGORY ? "TMNT" : undefined,
       });
       setHoverMotionUrl(url);
       setStatus("idle");
-      if (category === "TMNT") {
+      if (category === TMNT_PARENT_CATEGORY) {
         setMessage(
           transcoded
             ? "Ролик перекодирован в кадр 761×1024 (как фон)."
@@ -299,7 +317,7 @@ export function AdminCardForm({
     setMessage("Загрузка лицевой стороны…");
     try {
       const url = await uploadImageFile(file, {
-        cardCategory: category === "TMNT" ? "TMNT" : undefined,
+        cardCategory: category === TMNT_PARENT_CATEGORY ? "TMNT" : undefined,
       });
       setFrontImageUrl(url);
       setFrontFocus(DEFAULT_IMAGE_FOCUS);
@@ -319,7 +337,7 @@ export function AdminCardForm({
     setMessage("Загрузка средней стороны…");
     try {
       const url = await uploadImageFile(file, {
-        cardCategory: category === "TMNT" ? "TMNT" : undefined,
+        cardCategory: category === TMNT_PARENT_CATEGORY ? "TMNT" : undefined,
       });
       setMiddleImageUrl(url);
       setMiddleFocus(DEFAULT_IMAGE_FOCUS);
@@ -339,7 +357,7 @@ export function AdminCardForm({
     setMessage("Загрузка оборота…");
     try {
       const url = await uploadImageFile(file, {
-        cardCategory: category === "TMNT" ? "TMNT" : undefined,
+        cardCategory: category === TMNT_PARENT_CATEGORY ? "TMNT" : undefined,
       });
       setBackImageUrl(url);
       setBackFocus(DEFAULT_IMAGE_FOCUS);
@@ -357,7 +375,7 @@ export function AdminCardForm({
     if (!file) return;
     try {
       const url = await uploadImageFile(file, {
-        cardCategory: category === "TMNT" ? "TMNT" : undefined,
+        cardCategory: category === TMNT_PARENT_CATEGORY ? "TMNT" : undefined,
       });
       setCategoryBgUrl(url);
       setCategoryBgFocus(DEFAULT_IMAGE_FOCUS);
@@ -414,7 +432,7 @@ export function AdminCardForm({
     fd.set("title", title);
     fd.set("description", description);
     fd.set("category", category);
-    if (category === "TMNT") {
+    if (category === TMNT_PARENT_CATEGORY) {
       fd.set("subcategory", tmntCollection);
     }
     fd.set("effect", effect);
@@ -474,7 +492,7 @@ export function AdminCardForm({
       if (!isEdit) {
         setTitle("");
         setDescription("");
-        setCategory(categories[0].name);
+        setCategory(categoryOptions[0] ?? TMNT_PARENT_CATEGORY);
         setTmntCollection(TMNT_DEFAULT_COLLECTION_ID);
         setCategoryBgUrl(null);
         setEffect("3d-horizontal");
@@ -495,7 +513,12 @@ export function AdminCardForm({
         setBackFocus(DEFAULT_IMAGE_FOCUS);
         setCategoryBgFocus(DEFAULT_IMAGE_FOCUS);
         setCategoryOrderInput(
-          String(maxCategoryOrderInCategory(allCards, categories[0].name) + 1)
+          String(
+            maxCategoryOrderInCategory(
+              allCards,
+              categoryOptions[0] ?? TMNT_PARENT_CATEGORY,
+            ) + 1,
+          ),
         );
         setVarioSmoothBlend(false);
         setVarioSmoothing("0.18");
@@ -558,15 +581,15 @@ export function AdminCardForm({
           onChange={(e) => setCategory(e.target.value)}
           className={selectClass}
         >
-          {categories.map((c) => (
-            <option key={c.slug} value={c.name}>
-              {c.name}
+          {categoryOptions.map((name) => (
+            <option key={name} value={name}>
+              {name}
             </option>
           ))}
         </select>
         </div>
 
-        {category === "TMNT" ? (
+        {category === TMNT_PARENT_CATEGORY ? (
           <div>
             <label htmlFor="tmntCollection" className={fieldLabelClass}>
               Коллекция TMNT
@@ -580,7 +603,7 @@ export function AdminCardForm({
               }
               className={selectClass}
             >
-              {TMNT_COLLECTIONS.map((col) => (
+              {tmntCollections.map((col) => (
                 <option key={col.id} value={col.id}>
                   {col.name}
                 </option>
@@ -640,16 +663,16 @@ export function AdminCardForm({
                 value={categoryBgFocus}
                 onChange={setCategoryBgFocus}
                 aspectRatioCss={
-                  category === "TMNT" ? resolvedCardArtAspectCss : undefined
+                  category === TMNT_PARENT_CATEGORY ? resolvedCardArtAspectCss : undefined
                 }
-                objectFit={category === "TMNT" ? adminPreviewObjectFit : undefined}
+                objectFit={category === TMNT_PARENT_CATEGORY ? adminPreviewObjectFit : undefined}
                 imageStyle={
-                  category === "TMNT"
+                  category === TMNT_PARENT_CATEGORY
                     ? categoryFocusCoverStyle(categoryBgFocus)
                     : undefined
                 }
                 hint={
-                  category === "TMNT"
+                  category === TMNT_PARENT_CATEGORY
                     ? "Для TMNT — тот же кадр 761×1024, что лицо и оборот. Фокус — для витрины."
                     : "По размеру файла, без обрезки. Фокус в данных — для витрины."
                 }
@@ -880,7 +903,7 @@ export function AdminCardForm({
               Загрузите файл только если нужно заменить изображение
             </span>
           ) : null}
-          {category === "TMNT" ? (
+          {category === TMNT_PARENT_CATEGORY ? (
             <span className="mt-0.5 block text-xs font-normal text-zinc-500">
               Для TMNT изображение сохраняется как 761×1024 (как фон категории).
             </span>
@@ -922,7 +945,7 @@ export function AdminCardForm({
             Необязательно. Тот же кадр, что у лицевой картинки — при наведении на
             карточку в 3D показывается короткий ролик. Формат MP4 (загрузка в{" "}
             <code className="text-zinc-400">/uploads/videos/</code>).
-            {category === "TMNT"
+            {category === TMNT_PARENT_CATEGORY
               ? " Для TMNT ролик по возможности перекодируется в кадр 761×1024 (как фон); нужен ffmpeg в системе."
               : ""}
           </span>
@@ -995,7 +1018,7 @@ export function AdminCardForm({
             Необязательно. На витрине при движении курсора: лицо → середина →
             оборот (при включённом плавном смешении с ultra — четыре слоя по
             горизонтали).
-            {category === "TMNT"
+            {category === TMNT_PARENT_CATEGORY
               ? " Для TMNT файл сохраняется как 761×1024 (как фон категории)."
               : ""}
           </span>
@@ -1052,7 +1075,7 @@ export function AdminCardForm({
               Загрузите файл только если нужно заменить изображение
             </span>
           ) : null}
-          {category === "TMNT" ? (
+          {category === TMNT_PARENT_CATEGORY ? (
             <span className="mt-0.5 block text-xs font-normal text-zinc-500">
               Для TMNT изображение сохраняется как 761×1024 (как фон категории).
             </span>

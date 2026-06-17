@@ -28,7 +28,9 @@ import { collectionSectionId } from "../../lib/collectionAnchor";
 import {
   catalogSectionIdForCard,
   isTmntCategory,
+  resolveTmntCollections,
   tmntCollectionName,
+  type TmntCollectionDef,
 } from "../../lib/tmntCollections";
 import {
   cardArtFaceFitStyle,
@@ -217,12 +219,14 @@ type Props = {
   categoryCards: StoredCard[];
   /** Весь каталог — для листания галереи и сортировки «ещё из категории». */
   allCards?: StoredCard[];
+  tmntCollections?: readonly TmntCollectionDef[];
 };
 
 export default function CardProductContent({
   card,
   categoryCards,
   allCards = [],
+  tmntCollections = resolveTmntCollections(),
 }: Props) {
   const [favoritePopup, setFavoritePopup] = useState(false);
   const { isFavorite, toggleFavorite } = useFavorites();
@@ -501,7 +505,7 @@ export default function CardProductContent({
               </Link>
               {isTmntCategory(card.category) ? (
                 <span className="text-zinc-500">
-                  · {tmntCollectionName(card.subcategory)}
+                  · {tmntCollectionName(card.subcategory, tmntCollections)}
                 </span>
               ) : card.subcategory?.trim() ? (
                 <span className="text-zinc-500">· {card.subcategory.trim()}</span>

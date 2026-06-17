@@ -43,6 +43,7 @@ import {
   cardBelongsToCatalogSection,
   catalogSectionDomId,
   catalogSectionIdForCard,
+  resolveTmntCollections,
   TMNT_PARENT_CATEGORY,
   tmntParentBannerDomId,
   type CatalogCollectionSection,
@@ -362,7 +363,12 @@ export function HomeCollection({
   );
 
   const sections: CatalogCollectionSection[] = useMemo(() => {
-    const base = buildCatalogCollectionSections(apiOrder, orphanNames);
+    const tmntCollections = resolveTmntCollections(apiOrder);
+    const base = buildCatalogCollectionSections(
+      apiOrder,
+      orphanNames,
+      tmntCollections,
+    );
     const filter = categoryFilter.trim();
     if (!filter) return base;
     if (filter === TMNT_PARENT_CATEGORY) {

@@ -1,6 +1,17 @@
 import { parseImageFocus, type ImageFocus } from "@/app/lib/imageFocus";
 import { bucketCardArtFrameAspectCssFromDimensions } from "@/app/lib/cardAspectRatio";
 
+export type TmntSubcollectionTile = {
+  id: "turtles" | "foes";
+  name: string;
+};
+
+function parseTmntSubcollectionId(raw: unknown): TmntSubcollectionTile["id"] | undefined {
+  const s = typeof raw === "string" ? raw.trim().toLowerCase() : "";
+  if (s === "turtles" || s === "foes") return s;
+  return undefined;
+}
+
 export type CategoryTile = {
   name: string;
   /** Горизонтальный баннер раздела в коллекции. */
@@ -9,6 +20,8 @@ export type CategoryTile = {
   /** Квадратная плашка в герое; если пусто — подставляется `image`. */
   plateImage?: string;
   plateImageFocus?: ImageFocus;
+  /** Названия подколлекций TMNT (только для категории TMNT). */
+  tmntSubcollections?: TmntSubcollectionTile[];
   /**
    * Эталонные пиксели рамки карточек витрины для этой категории (соотношение сторон).
    * Если не задано — общий fallback (файл лица / пресет карточки).
@@ -35,6 +48,17 @@ export function parseCategoriesJson(raw: unknown): CategoryTile[] {
     const pf = parseImageFocus(o.plateImageFocus);
     if (pf) {
       tile.plateImageFocus = pf;
+    }
+    if (Array.isArray(o.tmntSubcollections)) {
+      const subs: TmntSubcollectionTile[] = [];
+      for (const row of o.tmntSubcollections) {
+        if (!row || typeof row !== "object" || Array.isArray(row)) continue;
+        const r = row as Record<string, unknown>;
+        const id = parseTmntSubcollectionId(r.id);
+        const name = typeof r.name === "string" ? r.name.trim() : "";
+        if (id && name) subs.push({ id, name });
+      }
+      if (subs.length > 0) tile.tmntSubcollections = subs;
     }
     const cw = Number(o.cardFrameWidth);
     const ch = Number(o.cardFrameHeight);

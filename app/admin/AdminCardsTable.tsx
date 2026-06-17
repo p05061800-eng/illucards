@@ -4,24 +4,26 @@ import Link from "next/link";
 import { Search } from "lucide-react";
 import { useMemo, useState } from "react";
 import type { StoredCard } from "../api/cards/route";
+import { useCategoryTiles } from "@/app/context/CategoryFramesContext";
 import { ultraOrHeroBgUrl } from "../lib/cardUltraBg";
 import { categoryLabel } from "../lib/categoryLabels";
-import { adminGroupKeyForCard } from "../lib/tmntCollections";
-import { categories } from "../../data/categories";
+import {
+  adminGroupKeyForCard,
+  resolveTmntCollections,
+} from "../lib/tmntCollections";
 import { CardStackVisual } from "@/components/hero/CardStackVisual";
 
-const CATEGORY_SORT_INDEX = new Map<string, number>(
-  categories.map((c, i) => [c.name, i]),
-);
-
-function orderedCategoryKeys(keys: string[]): string[] {
+function orderedCategoryKeys(
+  keys: string[],
+  categorySortIndex: Map<string, number>,
+): string[] {
   return [...keys].sort((a, b) => {
     if (a === "Без категории") return 1;
     if (b === "Без категории") return -1;
     const parentA = a.split(" · ")[0] ?? a;
     const parentB = b.split(" · ")[0] ?? b;
-    const ia = CATEGORY_SORT_INDEX.get(parentA) ?? 1000;
-    const ib = CATEGORY_SORT_INDEX.get(parentB) ?? 1000;
+    const ia = categorySortIndex.get(parentA) ?? 1000;
+    const ib = categorySortIndex.get(parentB) ?? 1000;
     if (ia !== ib) return ia - ib;
     return a.localeCompare(b, "ru");
   });
@@ -127,6 +129,20 @@ type Props = {
 
 export function AdminCardsTable({ cards, deleteCard, onEdit }: Props) {
   const [query, setQuery] = useState("");
+  const categoryTiles = useCategoryTiles();
+
+  const tmntCollections = useMemo(
+    () => resolveTmntCollections(categoryTiles),
+    [categoryTiles],
+  );
+
+  const categorySortIndex = useMemo(
+    () =>
+      new Map<string, number>(
+        categoryTiles.map((c, i) => [c.name.trim(), i]),
+      ),
+    [categoryTiles],
+  );
 
   const filteredCards = useMemo(() => {
     const n = query.trim().toLowerCase();
@@ -137,15 +153,15 @@ export function AdminCardsTable({ cards, deleteCard, onEdit }: Props) {
   const groups = useMemo(() => {
     const m = new Map<string, StoredCard[]>();
     for (const c of filteredCards) {
-      const key = adminGroupKeyForCard(c);
+      const key = adminGroupKeyForCard(c, tmntCollections);
       if (!m.has(key)) m.set(key, []);
       m.get(key)!.push(c);
     }
-    return orderedCategoryKeys([...m.keys()]).map((name) => ({
+    return orderedCategoryKeys([...m.keys()], categorySortIndex).map((name) => ({
       name,
       cards: sortCardsInCategory(m.get(name)!),
     }));
-  }, [filteredCards]);
+  }, [filteredCards, tmntCollections, categorySortIndex]);
 
   if (cards.length === 0) {
     return (

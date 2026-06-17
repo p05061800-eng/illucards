@@ -36,7 +36,11 @@
     "plateImageFocus": {
       "x": 50,
       "y": 50
-    }
+    },
+    "tmntSubcollections": [
+      { "id": "turtles", "name": "Последний урок" },
+      { "id": "foes", "name": "Наследие Хамато" }
+    ]
   },
   {
     "name": "Stranger Things",

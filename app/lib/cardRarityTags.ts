@@ -1,7 +1,4 @@
-/**
- * Несколько меток редкости на карточке (`rarities` в JSON) + одно поле `rarity`
- * как каноническое значение для обратной совместимости.
- */
+import { withoutExpiredNovelty } from "@/app/lib/noveltyExpiry";
 
 export type CardRarity =
   | "common"
@@ -64,14 +61,20 @@ export function canonicalRarityFromTags(tags: CardRarity[]): CardRarity {
 export type CardRaritySource = {
   rarity?: string;
   rarities?: readonly string[] | readonly CardRarity[];
+  noveltySince?: string | number;
+  frontImage?: string;
 };
 
 /** Все активные теги редкости (из `rarities` или одно поле `rarity`). */
 export function cardRarityTags(card: CardRaritySource): CardRarity[] {
   const fromArr = normalizeRarityArrayFromJson(card.rarities as unknown);
-  if (fromArr?.length) return fromArr;
-  return [parseCardRarity(card.rarity)];
+  const base =
+    fromArr && fromArr.length > 0 ? fromArr : [parseCardRarity(card.rarity)];
+  const active = withoutExpiredNovelty(base, card);
+  return active.length > 0 ? active : ["common"];
 }
+
+export { isNoveltyActive, noveltySinceIsoNow } from "@/app/lib/noveltyExpiry";
 
 export function cardHasRarityTag(card: CardRaritySource, tag: CardRarity): boolean {
   return cardRarityTags(card).includes(tag);

@@ -14,6 +14,10 @@ import {
   normalizeRarityArrayFromJson,
   parseCardRarity,
 } from "@/app/lib/cardRarityTags";
+import {
+  parseNoveltySinceMs,
+  withoutExpiredNovelty,
+} from "@/app/lib/noveltyExpiry";
 import { parseImageFocus } from "@/app/lib/imageFocus";
 import { isSafeUploadPublicPath } from "@/app/lib/serverImage";
 
@@ -227,16 +231,30 @@ function normalizeCard(raw: Record<string, unknown>): StoredCard {
   const countFromReviews = reviewsParsed?.length ?? 0;
   const tagsMulti = normalizeRarityArrayFromJson(raw.rarities);
   const singular = parseCardRarity(raw.rarity);
-  const rarityTags =
+  const rarityTagsRaw =
     tagsMulti && tagsMulti.length > 0 ? tagsMulti : [singular];
-  const rarityValue = canonicalRarityFromTags(rarityTags);
+  const noveltySinceRaw =
+    typeof raw.noveltySince === "string" && raw.noveltySince.trim()
+      ? raw.noveltySince.trim()
+      : parseNoveltySinceMs(raw.noveltySince) != null
+        ? new Date(parseNoveltySinceMs(raw.noveltySince)!).toISOString()
+        : undefined;
+  const timing = {
+    noveltySince: noveltySinceRaw,
+    frontImage: front,
+  };
+  const rarityTags = withoutExpiredNovelty(rarityTagsRaw, timing);
+  const rarityValue = canonicalRarityFromTags(
+    rarityTags.length > 0 ? rarityTags : ["common"],
+  );
   const card: StoredCard = {
     id: String(raw.id ?? ""),
     title: String(raw.title ?? ""),
     description: String(raw.description ?? ""),
     category:
       typeof raw.category === "string" ? raw.category : "",
-    subcategory: "",
+    subcategory:
+      typeof raw.subcategory === "string" ? raw.subcategory.trim() : "",
     frontImage: front,
     backImage: back,
     price: parsePrice(raw.priceByn ?? raw.price),
@@ -257,6 +275,9 @@ function normalizeCard(raw: Record<string, unknown>): StoredCard {
   };
   if (rarityTags.length > 1) {
     card.rarities = rarityTags;
+  }
+  if (noveltySinceRaw) {
+    card.noveltySince = noveltySinceRaw;
   }
   if (reviewsParsed) {
     card.reviews = reviewsParsed;

@@ -10,6 +10,13 @@ import {
   canonicalRarityFromTags,
 } from "../lib/cardRarityTags";
 import { maxCategoryOrderInCategory } from "../lib/adminCategoryOrder";
+import {
+  TMNT_COLLECTIONS,
+  TMNT_DEFAULT_COLLECTION_ID,
+  maxCategoryOrderInTmntCollection,
+  resolveTmntCollectionId,
+  type TmntCollectionId,
+} from "../lib/tmntCollections";
 import { resolveCardArtBoxAspectCss } from "../lib/cardAspectRatio";
 import {
   categoryFocusCoverStyle,
@@ -94,6 +101,9 @@ export function AdminCardForm({
   const [category, setCategory] = useState<string>(
     categories[0]?.name ?? "Marvel"
   );
+  const [tmntCollection, setTmntCollection] = useState<TmntCollectionId>(
+    TMNT_DEFAULT_COLLECTION_ID,
+  );
   const [categoryBgUrl, setCategoryBgUrl] = useState<string | null>(null);
   const [effect, setEffect] = useState<
     "vario" | "morphing" | "3d-horizontal"
@@ -147,6 +157,11 @@ export function AdminCardForm({
     const cat = editingCard.category?.trim() ?? "";
     const catOk = categories.some((c) => c.name === cat);
     setCategory(catOk && cat ? cat : categories[0].name);
+    setTmntCollection(
+      cat === "TMNT"
+        ? resolveTmntCollectionId(editingCard.subcategory)
+        : TMNT_DEFAULT_COLLECTION_ID,
+    );
     const rawEff = editingCard.effect?.trim().toLowerCase() ?? "";
     const eff: "vario" | "morphing" | "3d-horizontal" =
       rawEff === "vario"
@@ -200,10 +215,16 @@ export function AdminCardForm({
 
   useEffect(() => {
     if (editingCard) return;
+    if (category === "TMNT") {
+      setCategoryOrderInput(
+        String(maxCategoryOrderInTmntCollection(allCards, tmntCollection) + 1),
+      );
+      return;
+    }
     setCategoryOrderInput(
       String(maxCategoryOrderInCategory(allCards, category) + 1)
     );
-  }, [editingCard, category, allCards]);
+  }, [editingCard, category, tmntCollection, allCards]);
 
   const { aspectRatioCss: frontFileAspect } = useIntrinsicImageAspect(
     frontImageUrl?.trim() || undefined,
@@ -393,6 +414,9 @@ export function AdminCardForm({
     fd.set("title", title);
     fd.set("description", description);
     fd.set("category", category);
+    if (category === "TMNT") {
+      fd.set("subcategory", tmntCollection);
+    }
     fd.set("effect", effect);
     fd.set("price", price.trim() === "" ? "0" : price.trim());
     fd.set("priceRub", priceRub.trim());
@@ -451,6 +475,7 @@ export function AdminCardForm({
         setTitle("");
         setDescription("");
         setCategory(categories[0].name);
+        setTmntCollection(TMNT_DEFAULT_COLLECTION_ID);
         setCategoryBgUrl(null);
         setEffect("3d-horizontal");
         setPrice("");
@@ -540,6 +565,29 @@ export function AdminCardForm({
           ))}
         </select>
         </div>
+
+        {category === "TMNT" ? (
+          <div>
+            <label htmlFor="tmntCollection" className={fieldLabelClass}>
+              Коллекция TMNT
+            </label>
+            <select
+              id="tmntCollection"
+              name="subcategory"
+              value={tmntCollection}
+              onChange={(e) =>
+                setTmntCollection(e.target.value as TmntCollectionId)
+              }
+              className={selectClass}
+            >
+              {TMNT_COLLECTIONS.map((col) => (
+                <option key={col.id} value={col.id}>
+                  {col.name}
+                </option>
+              ))}
+            </select>
+          </div>
+        ) : null}
 
         <div>
         <label htmlFor="categoryOrder" className={fieldLabelClass}>

@@ -37,8 +37,15 @@ import {
   parseCatalogCardIdFromHash,
   peekCatalogReturnCardId,
 } from "../lib/catalogScrollRestore";
-import { collectionSectionId } from "../lib/collectionAnchor";
 import { categoryFocusToStyle } from "../lib/imageFocus";
+import {
+  buildCatalogCollectionSections,
+  cardBelongsToCatalogSection,
+  catalogSectionDomId,
+  catalogSectionIdForCard,
+  TMNT_PARENT_CATEGORY,
+  type CatalogCollectionSection,
+} from "../lib/tmntCollections";
 import { CardPreview } from "./CardPreview";
 
 type Props = {
@@ -120,24 +127,28 @@ function useCollectionPreviewColumns(
 
 /** Баннер строки категории: высота по изображению, скруглённые углы. */
 function CategoryRowBanner({
-  cat,
+  banner,
+  heading,
   sectionId,
   compact,
+  eyebrow,
 }: {
-  cat: CategoryTile;
+  banner: CategoryTile;
+  heading: string;
   sectionId: string;
   compact?: boolean;
+  eyebrow?: string;
 }) {
   return (
     <div className="category-row-banner-card relative w-full overflow-hidden rounded-2xl bg-zinc-950">
-      {cat.image ? (
+      {banner.image ? (
         <>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
-            src={cat.image}
+            src={banner.image}
             alt=""
             className="pointer-events-none"
-            style={categoryFocusToStyle(cat.imageFocus)}
+            style={categoryFocusToStyle(banner.imageFocus)}
             draggable={false}
           />
         </>
@@ -156,10 +167,17 @@ function CategoryRowBanner({
         className={`absolute left-0 right-0 z-[2] max-w-none truncate px-4 font-bold tracking-tight text-white drop-shadow-md sm:px-6 ${
           compact
             ? "bottom-1 text-xs sm:bottom-1.5 sm:text-sm"
-            : "bottom-2 text-base sm:bottom-3 sm:px-10 sm:text-lg md:text-xl"
+            : eyebrow
+              ? "bottom-2 text-sm sm:bottom-3 sm:text-base md:text-lg"
+              : "bottom-2 text-base sm:bottom-3 sm:px-10 sm:text-lg md:text-xl"
         }`}
       >
-        {cat.name}
+        {eyebrow ? (
+          <span className="block truncate text-[10px] font-semibold uppercase tracking-[0.2em] text-white/75 sm:text-xs">
+            {eyebrow}
+          </span>
+        ) : null}
+        <span className="block truncate">{heading}</span>
       </h2>
     </div>
   );
@@ -298,13 +316,14 @@ export function HomeCollection({
     [filteredRaw, priceSort]
   );
 
-  const sections: CategoryTile[] = useMemo(() => {
-    const base = [
-      ...apiOrder,
-      ...orphanNames.map((name) => ({ name, image: "" })),
-    ];
-    if (!categoryFilter.trim()) return base;
-    return base.filter((s) => s.name === categoryFilter.trim());
+  const sections: CatalogCollectionSection[] = useMemo(() => {
+    const base = buildCatalogCollectionSections(apiOrder, orphanNames);
+    const filter = categoryFilter.trim();
+    if (!filter) return base;
+    if (filter === TMNT_PARENT_CATEGORY) {
+      return base.filter((s) => s.parentCategory === TMNT_PARENT_CATEGORY);
+    }
+    return base.filter((s) => s.parentCategory === filter);
   }, [apiOrder, orphanNames, categoryFilter]);
 
   const hasActiveFilters =
@@ -366,7 +385,7 @@ export function HomeCollection({
       clearCatalogReturnCardId();
       stripCatalogHash();
       pendingCatalogScrollIdRef.current = null;
-      const sec = collectionSectionId(meta.category?.trim() ?? "");
+      const sec = catalogSectionIdForCard(meta);
       document.getElementById(sec)?.scrollIntoView({
         block: "start",
         behavior: "auto",
@@ -374,9 +393,15 @@ export function HomeCollection({
       return;
     }
 
-    const catName = meta.category?.trim() ?? "";
-    const rawSection = filteredSorted.filter(
-      (c) => (c.category?.trim() ?? "") === catName,
+    const metaSection = sections.find((s) =>
+      cardBelongsToCatalogSection(meta, s),
+    );
+    const sectionKey =
+      metaSection?.sectionKey ?? meta.category?.trim() ?? "";
+    const rawSection = filteredSorted.filter((c) =>
+      metaSection
+        ? cardBelongsToCatalogSection(c, metaSection)
+        : (c.category?.trim() ?? "") === (meta.category?.trim() ?? ""),
     );
     const sectionCards =
       priceSort === "default"
@@ -385,10 +410,10 @@ export function HomeCollection({
     const idx = sectionCards.findIndex((c) => c.id === targetId);
     const canCollapseRow =
       useCategoryRowPreview && sectionCards.length > previewCols;
-    const expanded = expandedCategoryRows[catName] ?? false;
+    const expanded = expandedCategoryRows[sectionKey] ?? false;
     if (canCollapseRow && !expanded && idx >= previewCols) {
       pendingCatalogScrollIdRef.current = targetId;
-      setCategoryExpanded(catName, true);
+      setCategoryExpanded(sectionKey, true);
       return;
     }
 
@@ -411,6 +436,7 @@ export function HomeCollection({
     previewCols,
     expandedCategoryRows,
     setCategoryExpanded,
+    sections,
   ]);
 
   useEffect(() => {
@@ -665,23 +691,23 @@ export function HomeCollection({
       ) : (
         <div ref={collectionMeasureRef} className={sectionStack}>
           {sections
-            .map((cat) => {
-              const rawSection = filteredSorted.filter(
-                (c) => (c.category?.trim() ?? "") === cat.name
+            .map((section) => {
+              const rawSection = filteredSorted.filter((c) =>
+                cardBelongsToCatalogSection(c, section),
               );
               const sectionCards =
                 priceSort === "default"
                   ? sortSectionCardsForDefaultCatalog(rawSection, cards)
                   : rawSection;
-              return { cat, sectionCards };
+              return { section, sectionCards };
             })
             .filter(
               ({ sectionCards }) =>
                 sectionCards.length > 0 || !hasActiveFilters
             )
-            .map(({ cat, sectionCards }) => {
-            const sectionId = collectionSectionId(cat.name);
-            const expanded = expandedCategoryRows[cat.name] ?? false;
+            .map(({ section, sectionCards }) => {
+            const sectionId = catalogSectionDomId(section);
+            const expanded = expandedCategoryRows[section.sectionKey] ?? false;
             const canCollapseRow =
               useCategoryRowPreview &&
               sectionCards.length > previewCols;
@@ -696,7 +722,7 @@ export function HomeCollection({
 
             return (
               <section
-                key={cat.name}
+                key={section.sectionKey}
                 id={sectionId}
                 className="scroll-mt-24"
                 aria-labelledby={`${sectionId}-heading`}
@@ -709,7 +735,9 @@ export function HomeCollection({
                   role="presentation"
                 >
                   <CategoryRowBanner
-                    cat={cat}
+                    banner={section.banner}
+                    heading={section.heading}
+                    eyebrow={section.eyebrow}
                     sectionId={sectionId}
                     compact={viewportCompact}
                   />
@@ -739,7 +767,9 @@ export function HomeCollection({
                         {expanded ? (
                           <button
                             type="button"
-                            onClick={() => setCategoryExpanded(cat.name, false)}
+                            onClick={() =>
+                              setCategoryExpanded(section.sectionKey, false)
+                            }
                             className="rounded-xl border border-white/12 bg-white/[0.04] px-6 py-2 text-sm font-medium text-zinc-200 transition hover:border-violet-400/40 hover:bg-violet-500/10 hover:text-white"
                           >
                             Свернуть
@@ -747,7 +777,9 @@ export function HomeCollection({
                         ) : (
                           <button
                             type="button"
-                            onClick={() => setCategoryExpanded(cat.name, true)}
+                            onClick={() =>
+                              setCategoryExpanded(section.sectionKey, true)
+                            }
                             className="rounded-xl border border-violet-500/35 bg-violet-950/35 px-6 py-2 text-sm font-semibold text-violet-100 shadow-[0_0_24px_rgba(139,92,246,0.15)] transition hover:border-violet-400/55 hover:bg-violet-900/45"
                           >
                             Смотреть ещё

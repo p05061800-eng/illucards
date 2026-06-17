@@ -24,6 +24,8 @@ import {
   parseCardRarity,
   type CardRarity,
 } from "@/app/lib/cardRarityTags";
+import { resolveNoveltySinceOnAdminSave } from "@/app/lib/noveltyExpiry";
+import { parseSubcategoryForCategory } from "@/app/lib/tmntCollections";
 
 export type { CardRarity } from "@/app/lib/cardRarityTags";
 
@@ -133,7 +135,7 @@ export type StoredCard = {
   description: string;
   /** Тематика витрины: marvel, tmnt, anime и т.д. */
   category: string;
-  /** Уточнение: spiderman, naruto и т.д. */
+  /** Уточнение: для TMNT — id коллекции (`turtles` | `foes`). */
   subcategory: string;
   frontImage: string;
   backImage: string;
@@ -179,6 +181,8 @@ export type StoredCard = {
   rarity: CardRarity;
   /** Несколько меток редкости (если одна — поле не пишется, только `rarity`). */
   rarities?: CardRarity[];
+  /** Когда карточке назначили «Новинки» — метка скрывается через 7 дней. */
+  noveltySince?: string;
   stats: CardStats;
   effect?: string;
   /** Пиксели лица на диске (заполняется API при сохранении) — рамка без клиентского замера. */
@@ -452,12 +456,16 @@ export async function POST(req: NextRequest) {
   }
 
   const cards = await readCards();
+  const subcategory = parseSubcategoryForCategory(
+    category,
+    formData.get("subcategory"),
+  );
   const newCard: StoredCard = {
     id: randomUUID(),
     title,
     description,
     category,
-    subcategory: "",
+    subcategory,
     frontImage: frontImagePath,
     backImage: backImagePath,
     price,
@@ -588,6 +596,10 @@ export async function POST(req: NextRequest) {
   if (rarityTagsPost.length > 1) {
     newCard.rarities = rarityTagsPost;
   }
+  const noveltySincePost = resolveNoveltySinceOnAdminSave(null, rarityTagsPost);
+  if (noveltySincePost) {
+    newCard.noveltySince = noveltySincePost;
+  }
 
   cards.push(newCard);
   await fs.writeFile(DATA_PATH, JSON.stringify(cards, null, 2), "utf-8");
@@ -691,12 +703,16 @@ export async function PATCH(req: NextRequest) {
   const categoryBgUrlPatch = String(formData.get("categoryBgUrl") ?? "").trim();
   const categoryBgUpload = formData.get("categoryBgFile");
 
+  const subcategory = parseSubcategoryForCategory(
+    category,
+    formData.get("subcategory"),
+  );
   const updated: StoredCard = {
     ...existing,
     title,
     description,
     category,
-    subcategory: "",
+    subcategory,
     frontImage: frontImagePath,
     backImage: backImagePath,
     price,
@@ -708,6 +724,15 @@ export async function PATCH(req: NextRequest) {
     updated.rarities = rarityTagsPatch;
   } else {
     delete updated.rarities;
+  }
+  const noveltySincePatch = resolveNoveltySinceOnAdminSave(
+    existing,
+    rarityTagsPatch,
+  );
+  if (noveltySincePatch) {
+    updated.noveltySince = noveltySincePatch;
+  } else {
+    delete updated.noveltySince;
   }
 
   if (effect === "vario") {

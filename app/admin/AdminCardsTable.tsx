@@ -6,6 +6,7 @@ import { useMemo, useState } from "react";
 import type { StoredCard } from "../api/cards/route";
 import { ultraOrHeroBgUrl } from "../lib/cardUltraBg";
 import { categoryLabel } from "../lib/categoryLabels";
+import { adminGroupKeyForCard } from "../lib/tmntCollections";
 import { categories } from "../../data/categories";
 import { CardStackVisual } from "@/components/hero/CardStackVisual";
 
@@ -17,8 +18,10 @@ function orderedCategoryKeys(keys: string[]): string[] {
   return [...keys].sort((a, b) => {
     if (a === "Без категории") return 1;
     if (b === "Без категории") return -1;
-    const ia = CATEGORY_SORT_INDEX.get(a) ?? 1000;
-    const ib = CATEGORY_SORT_INDEX.get(b) ?? 1000;
+    const parentA = a.split(" · ")[0] ?? a;
+    const parentB = b.split(" · ")[0] ?? b;
+    const ia = CATEGORY_SORT_INDEX.get(parentA) ?? 1000;
+    const ib = CATEGORY_SORT_INDEX.get(parentB) ?? 1000;
     if (ia !== ib) return ia - ib;
     return a.localeCompare(b, "ru");
   });
@@ -134,8 +137,7 @@ export function AdminCardsTable({ cards, deleteCard, onEdit }: Props) {
   const groups = useMemo(() => {
     const m = new Map<string, StoredCard[]>();
     for (const c of filteredCards) {
-      const raw = c.category?.trim();
-      const key = raw && raw.length > 0 ? raw : "Без категории";
+      const key = adminGroupKeyForCard(c);
       if (!m.has(key)) m.set(key, []);
       m.get(key)!.push(c);
     }
@@ -189,7 +191,7 @@ export function AdminCardsTable({ cards, deleteCard, onEdit }: Props) {
                 id={`admin-category-${sectionIdx}`}
                 className="truncate text-xs font-semibold text-zinc-200"
               >
-                {categoryLabel(name)}
+                {name}
               </h3>
               <span className="shrink-0 text-[10px] tabular-nums text-zinc-500">
                 {rows.length} шт.

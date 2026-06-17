@@ -326,7 +326,7 @@
     "frontImage": "/uploads/1776101984000-246336bd.webp",
     "backImage": "/uploads/1776101992054-0650e8c8.webp",
     "price": 25,
-    "rarity": "novelty",
+    "rarity": "common",
     "stats": {
       "power": 50,
       "speed": 50,
@@ -923,7 +923,7 @@
     "frontImage": "/uploads/1776165778069-deb4d1b8.webp",
     "backImage": "/uploads/1776165782816-44b2b286.webp",
     "price": 25,
-    "rarity": "novelty",
+    "rarity": "common",
     "stats": {
       "power": 50,
       "speed": 50,
@@ -2144,7 +2144,7 @@
     "frontImage": "/uploads/1776683396725-0cf0549d.webp",
     "backImage": "/uploads/1776713296931-4ad047f0.webp",
     "price": 25,
-    "rarity": "novelty",
+    "rarity": "common",
     "stats": {
       "power": 50,
       "speed": 50,
@@ -2307,7 +2307,7 @@
     "frontImage": "/uploads/1776710403082-0676d94b.webp",
     "backImage": "/uploads/1776710407016-18d0d4fa.webp",
     "price": 25,
-    "rarity": "novelty",
+    "rarity": "common",
     "stats": {
       "power": 50,
       "speed": 50,
@@ -2320,10 +2320,6 @@
     "inStock": true,
     "ratingAvg": 5,
     "reviewCount": 0,
-    "rarities": [
-      "common",
-      "novelty"
-    ],
     "effect": "vario",
     "categoryBg": "/uploads/1776710388829-b504e8e7.webp",
     "frontImageFocus": {
@@ -2972,7 +2968,7 @@
     "frontImage": "/uploads/1776712923508-6d2fc155.webp",
     "backImage": "/uploads/1776712940604-80fdb9af.webp",
     "price": 25,
-    "rarity": "novelty",
+    "rarity": "common",
     "stats": {
       "power": 50,
       "speed": 50,
@@ -2985,10 +2981,6 @@
     "inStock": true,
     "ratingAvg": 5,
     "reviewCount": 0,
-    "rarities": [
-      "common",
-      "novelty"
-    ],
     "effect": "vario",
     "categoryBg": "/uploads/1776712901487-671ad847.webp",
     "frontImageFocus": {
@@ -3062,7 +3054,7 @@
     "frontImage": "/uploads/1776713421807-ab447223.webp",
     "backImage": "/uploads/1776713428240-9163380b.webp",
     "price": 25,
-    "rarity": "novelty",
+    "rarity": "common",
     "stats": {
       "power": 50,
       "speed": 50,
@@ -3075,10 +3067,6 @@
     "inStock": true,
     "ratingAvg": 5,
     "reviewCount": 0,
-    "rarities": [
-      "common",
-      "novelty"
-    ],
     "effect": "vario",
     "categoryBg": "/uploads/1776713449064-b664295e.webp",
     "frontImageFocus": {
@@ -3159,10 +3147,6 @@
     "inStock": true,
     "ratingAvg": 5,
     "reviewCount": 0,
-    "rarities": [
-      "limited",
-      "novelty"
-    ],
     "frontHoverGif": "/uploads/videos/9bd42cc2-73d0-4428-b509-2e1c474b2a25.mp4",
     "effect": "3d-horizontal",
     "categoryBg": "/uploads/1776713665377-a7452716.webp",
@@ -3706,7 +3690,7 @@
     "subcategory": "",
     "frontImage": "/uploads/1776718867620-d5fd533c.webp",
     "backImage": "/uploads/1776718886750-b58c1482.webp",
-    "price": 35,
+    "price": 30,
     "rarity": "adult",
     "stats": {
       "power": 50,
@@ -3866,8 +3850,8 @@
     "subcategory": "",
     "frontImage": "/uploads/1776720048848-b5346192.webp",
     "backImage": "/uploads/1776720052213-10e57e20.webp",
-    "price": 35,
-    "rarity": "adult",
+    "price": 25,
+    "rarity": "common",
     "stats": {
       "power": 50,
       "speed": 50,
@@ -3894,7 +3878,7 @@
       "x": 50,
       "y": 50
     },
-    "priceRub": 800,
+    "priceRub": 750,
     "categoryOrder": 22,
     "varioSmoothing": 0.18,
     "frontImageWidth": 600,
@@ -3983,7 +3967,7 @@
     "subcategory": "",
     "frontImage": "/uploads/1776720447357-79e2cade.webp",
     "backImage": "/uploads/1776720455109-108cfd72.webp",
-    "price": 35,
+    "price": 30,
     "rarity": "adult",
     "stats": {
       "power": 50,
@@ -4374,7 +4358,7 @@
     "subcategory": "",
     "frontImage": "/uploads/1776721101536-cde0657b.webp",
     "backImage": "/uploads/1776721108912-0f7cd44d.webp",
-    "price": 35,
+    "price": 30,
     "rarity": "adult",
     "stats": {
       "power": 50,
@@ -4501,7 +4485,7 @@
     "frontImage": "/uploads/1776722762680-e3595b05.webp",
     "backImage": "/uploads/1776722799983-62f0af54.webp",
     "price": 25,
-    "rarity": "novelty",
+    "rarity": "common",
     "stats": {
       "power": 50,
       "speed": 50,
@@ -4514,10 +4498,6 @@
     "inStock": true,
     "ratingAvg": 5,
     "reviewCount": 0,
-    "rarities": [
-      "common",
-      "novelty"
-    ],
     "effect": "vario",
     "categoryBg": "/uploads/1776722742640-3e70c189.webp",
     "frontImageFocus": {
@@ -4955,10 +4935,6 @@
     "inStock": true,
     "ratingAvg": 5,
     "reviewCount": 0,
-    "rarities": [
-      "novelty",
-      "limited"
-    ],
     "effect": "vario",
     "categoryBg": "/uploads/1777206520076-a39feb3d.webp",
     "frontImageFocus": {
@@ -5001,10 +4977,6 @@
     "inStock": true,
     "ratingAvg": 5,
     "reviewCount": 0,
-    "rarities": [
-      "novelty",
-      "limited"
-    ],
     "effect": "vario",
     "categoryBg": "/uploads/1777207080763-d7a5b10c.webp",
     "frontImageFocus": {
@@ -5034,7 +5006,7 @@
     "frontImage": "/uploads/1777207369104-fb528784.webp",
     "backImage": "/uploads/1777207375237-6857cecb.webp",
     "price": 25,
-    "rarity": "novelty",
+    "rarity": "common",
     "stats": {
       "power": 50,
       "speed": 50,
@@ -5076,7 +5048,7 @@
     "frontImage": "/uploads/1777207480349-6ffd499b.webp",
     "backImage": "",
     "price": 25,
-    "rarity": "novelty",
+    "rarity": "common",
     "stats": {
       "power": 50,
       "speed": 50,
@@ -5126,10 +5098,6 @@
     "inStock": true,
     "ratingAvg": 5,
     "reviewCount": 0,
-    "rarities": [
-      "limited",
-      "novelty"
-    ],
     "effect": "3d-horizontal",
     "categoryBg": "/uploads/1777207665910-ce5dc3a4.webp",
     "frontImageFocus": {
@@ -5167,10 +5135,6 @@
     "inStock": true,
     "ratingAvg": 5,
     "reviewCount": 0,
-    "rarities": [
-      "novelty",
-      "limited"
-    ],
     "effect": "vario",
     "categoryBg": "/uploads/1777207745616-2da1a4bc.webp",
     "frontImageFocus": {
@@ -5200,7 +5164,7 @@
     "frontImage": "/uploads/1777207862296-daaeca91.webp",
     "backImage": "/uploads/1777207865644-0b606467.webp",
     "price": 25,
-    "rarity": "novelty",
+    "rarity": "common",
     "stats": {
       "power": 50,
       "speed": 50,
@@ -5257,8 +5221,7 @@
     "reviewCount": 0,
     "rarities": [
       "limited",
-      "common",
-      "novelty"
+      "common"
     ],
     "effect": "3d-horizontal",
     "categoryBg": "/uploads/1778514082963-1387028d.webp",
@@ -5278,7 +5241,7 @@
   {
     "id": "a35617b5-28d2-4523-86de-fe429a4862c0",
     "title": "Леди Хаос",
-    "description": "Огненный взгляд, молниеносные атаки и энергия, которую невозможно остановить. Леди Хаос врывается в бой как красный шторм, сметая всё на своём пути и оставляя после себя только разрушение и страх.\r\nСтоит ей появиться на поле боя — и атмосфера меняется мгновенно. Воздух становится тяжелее, враги начинают паниковать, а исход битвы уже предрешён. Леди Хаос приходит только за победой.",
+    "description": "Леди Хаос — опасная и непредсказуемая воительница, способная изменить ход любого сражения. Её невероятная скорость, смертоносная точность и внезапные атаки делают её грозным противником для любого врага.\r\nПоявляясь словно из ниоткуда, Леди Хаос наносит молниеносные удары и не оставляет противникам шанса на ответ.",
     "category": "Marvel",
     "subcategory": "",
     "frontImage": "/uploads/1779063843009-479360a2.webp",
@@ -5299,8 +5262,7 @@
     "reviewCount": 0,
     "rarities": [
       "limited",
-      "adult",
-      "novelty"
+      "adult"
     ],
     "effect": "vario",
     "categoryBg": "/uploads/1779064173453-c6cef88d.webp",
@@ -5318,6 +5280,7 @@
     },
     "priceRub": 800,
     "categoryOrder": 54,
+    "varioSmoothBlend": true,
     "varioSmoothing": 0.18,
     "frontImageWidth": 600,
     "frontImageHeight": 900
@@ -5398,5 +5361,1382 @@
     "categoryOrder": 31,
     "frontImageWidth": 761,
     "frontImageHeight": 1024
+  },
+  {
+    "id": "a66dd95f-471a-4339-9c0e-ed8641b361cc",
+    "title": "Майлз Моралес",
+    "description": "Майлз Моралес — молодой герой нового поколения. Благодаря уникальным способностям, включая невидимость и биоэлектрический удар, он защищает город и доказывает, что каждый может стать Человеком-пауком.\r\nПолучив силы после укуса генетически изменённого паука, Майлз стал новым Человеком-пауком. Его невидимость, биоэлектрический удар и невероятная ловкость помогают ему защищать город от любых угроз.",
+    "category": "Marvel",
+    "subcategory": "",
+    "frontImage": "/uploads/1781649228015-4dd49b8e.webp",
+    "backImage": "/uploads/1781649233432-879dba21.webp",
+    "price": 25,
+    "rarity": "novelty",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "isNew": false,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": true,
+    "ratingAvg": 5,
+    "reviewCount": 0,
+    "rarities": [
+      "common",
+      "novelty"
+    ],
+    "effect": "vario",
+    "categoryBg": "/uploads/1781649188261-536d985b.webp",
+    "frontImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "backImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "priceRub": 750,
+    "categoryOrder": 53,
+    "varioSmoothing": 0.18,
+    "frontImageWidth": 600,
+    "frontImageHeight": 900
+  },
+  {
+    "id": "34c3fcd1-1a27-4fbf-ae49-a6ade38717ed",
+    "title": "Доктор Стрэндж",
+    "description": "Доктор Стрэндж владеет древними мистическими искусствами и способен управлять пространством, временем и магической энергией. Его знания и могущество помогают противостоять самым опасным угрозам мультивселенной.",
+    "category": "Marvel",
+    "subcategory": "",
+    "frontImage": "/uploads/1781650158920-8b596e71.webp",
+    "backImage": "/uploads/1781650162690-af64722a.webp",
+    "price": 25,
+    "rarity": "novelty",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "isNew": false,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": true,
+    "ratingAvg": 5,
+    "reviewCount": 0,
+    "rarities": [
+      "common",
+      "novelty"
+    ],
+    "noveltySince": "2026-06-16T22:49:24.721Z",
+    "effect": "vario",
+    "categoryBg": "/uploads/1781649413376-f3ffe71f.webp",
+    "frontImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "backImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "priceRub": 750,
+    "categoryOrder": 55,
+    "varioSmoothing": 0.18,
+    "frontImageWidth": 600,
+    "frontImageHeight": 900
+  },
+  {
+    "id": "c6dbbb5a-11fa-4ea3-a977-2b6ed48d363c",
+    "title": "Шельма",
+    "description": "Шельма — могущественный мутант, способный поглощать силу, способности и воспоминания других людей через прикосновение. Благодаря своему уникальному дару она становится всё сильнее с каждым противником и остаётся одной из самых опасных героинь команды Людей Икс.",
+    "category": "Marvel",
+    "subcategory": "",
+    "frontImage": "/uploads/1781649837902-5a8126a0.webp",
+    "backImage": "/uploads/1781649842249-8bb30c8c.webp",
+    "price": 30,
+    "rarity": "adult",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "isNew": false,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": true,
+    "ratingAvg": 5,
+    "reviewCount": 0,
+    "rarities": [
+      "novelty",
+      "adult"
+    ],
+    "noveltySince": "2026-06-16T22:47:14.456Z",
+    "effect": "vario",
+    "categoryBg": "/uploads/1781649801090-55d23a98.webp",
+    "frontImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "backImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "priceRub": 800,
+    "categoryOrder": 56,
+    "varioSmoothing": 0.18,
+    "frontImageWidth": 600,
+    "frontImageHeight": 900
+  },
+  {
+    "id": "627a8c6b-27ef-4b2a-b28c-2fde458cb876",
+    "title": "Часовой/Мрак",
+    "description": "Часовой — один из самых могущественных героев Marvel, обладающий силой, способной соперничать с энергией миллионов солнц. Его невероятные способности делают его живым оружием космического масштаба, но вместе с великой силой приходит и опасность, скрытая глубоко внутри него.\r\nМрак — тёмная сущность, живущая внутри Часового и являющаяся воплощением его самых страшных страхов и разрушительных инстинктов. Его появление несёт хаос и уничтожение, превращая одного из величайших защитников мира в угрозу для всей вселенной.",
+    "category": "Marvel",
+    "subcategory": "",
+    "frontImage": "/uploads/1781650759142-b57154dc.webp",
+    "backImage": "/uploads/1781650763916-579f6338.webp",
+    "price": 25,
+    "rarity": "novelty",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "isNew": false,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": true,
+    "ratingAvg": 5,
+    "reviewCount": 0,
+    "rarities": [
+      "common",
+      "novelty"
+    ],
+    "noveltySince": "2026-06-16T22:59:29.594Z",
+    "effect": "vario",
+    "frontImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "backImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "priceRub": 750,
+    "categoryOrder": 52,
+    "varioSmoothing": 0.18,
+    "frontImageWidth": 600,
+    "frontImageHeight": 900
+  },
+  {
+    "id": "93c677f8-d452-4c1b-bc25-ae19f3d25624",
+    "title": "Лионель Месси",
+    "description": "Лионель Месси — легенда мирового футбола и один из величайших игроков всех времён. Его невероятный дриблинг, точные передачи и выдающееся голевое чутьё позволили ему завоевать множество трофеев и стать символом футбольного мастерства для миллионов болельщиков по всему миру.",
+    "category": "Football",
+    "subcategory": "",
+    "frontImage": "/uploads/1781651197990-9f356360.webp",
+    "backImage": "/uploads/1781651203545-369f68fc.webp",
+    "price": 40,
+    "rarity": "limited",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "isNew": false,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": true,
+    "ratingAvg": 5,
+    "reviewCount": 0,
+    "effect": "vario",
+    "categoryBg": "/uploads/1781651150568-870f8676.webp",
+    "frontImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "backImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "priceRub": 1000,
+    "categoryOrder": 10,
+    "varioSmoothing": 0.18,
+    "frontImageWidth": 600,
+    "frontImageHeight": 900
+  },
+  {
+    "id": "7c350963-d34a-4978-8edb-f81307d67b59",
+    "title": "Ламин Ямаль",
+    "description": "Ламин Ямаль — один из самых талантливых молодых футболистов современности. Его техника, скорость и уверенность в игре позволяют ему создавать опасные моменты даже против самых сильных соперников. Несмотря на юный возраст, он уже стал важной частью клуба и сборной, подтверждая статус будущей звезды мирового футбола.",
+    "category": "Football",
+    "subcategory": "",
+    "frontImage": "/uploads/1781651434938-5dff2eb6.webp",
+    "backImage": "/uploads/1781651441166-ff0fc5f4.webp",
+    "price": 30,
+    "rarity": "common",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "isNew": false,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": true,
+    "ratingAvg": 5,
+    "reviewCount": 0,
+    "effect": "vario",
+    "categoryBg": "/uploads/1781651453905-6156753b.webp",
+    "frontImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "backImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "priceRub": 800,
+    "categoryOrder": 9,
+    "varioSmoothing": 0.18,
+    "frontImageWidth": 600,
+    "frontImageHeight": 900
+  },
+  {
+    "id": "efc09c04-a99b-46e7-a37c-819558aa7682",
+    "title": "Кевин Де Брёйне",
+    "description": "Кевин Де Брёйне — один из лучших полузащитников своего поколения и настоящий дирижёр атак своей команды. Его выдающееся видение поля, точные передачи и умение создавать голевые моменты делают его ключевым игроком в любом матче. Благодаря своему мастерству и лидерским качествам он заслуженно считается одним из сильнейших футболистов современности.",
+    "category": "Football",
+    "subcategory": "",
+    "frontImage": "/uploads/1781651511985-923203e5.webp",
+    "backImage": "/uploads/1781651517746-2b2fc2b4.webp",
+    "price": 20,
+    "rarity": "common",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "isNew": false,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": true,
+    "ratingAvg": 5,
+    "reviewCount": 0,
+    "effect": "vario",
+    "categoryBg": "/uploads/1781651493663-a4d17b1d.webp",
+    "frontImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "backImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "priceRub": 600,
+    "categoryOrder": 8,
+    "varioSmoothing": 0.18,
+    "frontImageWidth": 600,
+    "frontImageHeight": 900
+  },
+  {
+    "id": "116df002-f99a-4757-8b71-9ae340b17c28",
+    "title": "Криштиану Роналду",
+    "description": "Криштиану Роналду — один из величайших нападающих в истории футбола. Его феноменальная результативность, выдающаяся физическая подготовка и стремление к победе позволили ему установить множество рекордов и стать настоящей легендой мирового спорта.",
+    "category": "Football",
+    "subcategory": "",
+    "frontImage": "/uploads/1781651637321-b057e1a1.webp",
+    "backImage": "/uploads/1781651645018-64611cf1.webp",
+    "price": 40,
+    "rarity": "limited",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "isNew": false,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": true,
+    "ratingAvg": 5,
+    "reviewCount": 0,
+    "rarities": [
+      "limited",
+      "novelty"
+    ],
+    "noveltySince": "2026-06-16T23:24:02.343Z",
+    "effect": "vario",
+    "categoryBg": "/uploads/1781651609641-6cf018b4.webp",
+    "frontImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "backImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "priceRub": 1000,
+    "categoryOrder": 7,
+    "varioSmoothing": 0.18,
+    "frontImageWidth": 600,
+    "frontImageHeight": 900
+  },
+  {
+    "id": "9970cb76-725d-40c9-8cc6-b84f21e9ee39",
+    "title": "Роберт Левандовски",
+    "description": "Роберт Левандовски — один из самых результативных форвардов своего поколения. Благодаря отличному голевому чутью, точным ударам и умению находить свободное пространство он на протяжении многих лет остаётся одним из лучших бомбардиров мирового футбола.",
+    "category": "Football",
+    "subcategory": "",
+    "frontImage": "/uploads/1781651705586-afb755a0.webp",
+    "backImage": "/uploads/1781651709792-d155656c.webp",
+    "price": 20,
+    "rarity": "common",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "isNew": false,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": true,
+    "ratingAvg": 5,
+    "reviewCount": 0,
+    "effect": "vario",
+    "categoryBg": "/uploads/1781651723080-2478a589.webp",
+    "frontImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "backImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "priceRub": 600,
+    "categoryOrder": 6,
+    "varioSmoothing": 0.18,
+    "frontImageWidth": 600,
+    "frontImageHeight": 900
+  },
+  {
+    "id": "7332c8f2-66bd-4f09-9404-3dcff768ee6f",
+    "title": "Винисиус Жуниор",
+    "description": "Винисиус Жуниор — один из самых ярких и опасных атакующих игроков современного футбола. Его невероятная скорость, техника и умение обыгрывать соперников один в один делают его постоянной угрозой для любой защиты. Выступая за клуб и сборную Бразилии, он продолжает подтверждать статус одной из главных звёзд мирового футбола.",
+    "category": "Football",
+    "subcategory": "",
+    "frontImage": "/uploads/1781651855801-4915e9bc.webp",
+    "backImage": "/uploads/1781651859747-8d2befe1.webp",
+    "price": 20,
+    "rarity": "common",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "isNew": false,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": true,
+    "ratingAvg": 5,
+    "reviewCount": 0,
+    "effect": "vario",
+    "categoryBg": "/uploads/1781652107533-dc21d173.webp",
+    "frontImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "backImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "priceRub": 600,
+    "categoryOrder": 5,
+    "varioSmoothing": 0.18,
+    "frontImageWidth": 600,
+    "frontImageHeight": 900
+  },
+  {
+    "id": "8e66aa7b-6746-4a38-8992-5a43406255a2",
+    "title": "Эдуардо Камавинга",
+    "description": "Эдуардо Камавинга — универсальный полузащитник нового поколения, сочетающий отличную технику, скорость и высокий игровой интеллект. Он одинаково уверенно действует как в обороне, так и в атаке, помогая своей команде контролировать ход матча. Благодаря своему таланту и трудолюбию Камавинга уже стал одним из самых перспективных игроков мирового футбола.",
+    "category": "Football",
+    "subcategory": "",
+    "frontImage": "/uploads/1781651904071-b27dee60.webp",
+    "backImage": "/uploads/1781651908559-32d7818e.webp",
+    "price": 0,
+    "rarity": "common",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "isNew": false,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": true,
+    "ratingAvg": 5,
+    "reviewCount": 0,
+    "effect": "vario",
+    "categoryBg": "/uploads/1781652162008-295a0c56.webp",
+    "frontImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "backImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryOrder": 4,
+    "varioSmoothing": 0.18,
+    "frontImageWidth": 600,
+    "frontImageHeight": 900
+  },
+  {
+    "id": "975f531f-08f0-44a6-b44e-ff1ada5b801e",
+    "title": "Педри",
+    "description": "Педри — один из самых талантливых полузащитников современного футбола. Его великолепное видение поля, точные передачи и умение контролировать темп игры делают его ключевым игроком как для клуба, так и для сборной Испании. Несмотря на молодой возраст, он уже заслужил репутацию одного из лучших созидателей нового поколения.",
+    "category": "Football",
+    "subcategory": "",
+    "frontImage": "/uploads/1781651958617-5c43c8e1.webp",
+    "backImage": "/uploads/1781651961853-f334c0bd.webp",
+    "price": 20,
+    "rarity": "common",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "isNew": false,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": true,
+    "ratingAvg": 5,
+    "reviewCount": 0,
+    "effect": "vario",
+    "categoryBg": "/uploads/1781652085705-f796ec88.webp",
+    "frontImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "backImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "priceRub": 600,
+    "categoryOrder": 3,
+    "varioSmoothing": 0.18,
+    "frontImageWidth": 600,
+    "frontImageHeight": 900
+  },
+  {
+    "id": "6a93bce7-c0f5-4cd1-9f3f-e07f877fc37b",
+    "title": "Эрлинг Холанд",
+    "description": "Эрлинг Холанд — один из самых грозных нападающих современного футбола. Его мощь, скорость и невероятное голевое чутьё позволяют ему регулярно поражать ворота соперников и решать исход самых важных матчей. Благодаря своим выдающимся качествам он уже стал одной из главных звёзд мирового футбола и продолжает устанавливать новые рекорды.",
+    "category": "Football",
+    "subcategory": "",
+    "frontImage": "/uploads/1781652026217-46740573.webp",
+    "backImage": "/uploads/1781652051218-3843bbc7.webp",
+    "price": 30,
+    "rarity": "common",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "isNew": false,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": true,
+    "ratingAvg": 5,
+    "reviewCount": 0,
+    "effect": "vario",
+    "categoryBg": "/uploads/1781652013901-f4690898.webp",
+    "frontImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "backImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "priceRub": 800,
+    "categoryOrder": 2,
+    "varioSmoothing": 0.18,
+    "frontImageWidth": 600,
+    "frontImageHeight": 900
+  },
+  {
+    "id": "f20bb5e9-d0d8-4328-81f9-17edbd26e003",
+    "title": "Килиан Мбаппе",
+    "description": "Килиан Мбаппе — один из лучших футболистов современности и лидер нового поколения мировых звёзд. Его феноменальная скорость, техника и голевое чутьё позволяют ему решать исход матчей на самом высоком уровне. Выступая за клуб и сборную Франции, Мбаппе продолжает устанавливать новые достижения и укреплять свой статус одного из самых опасных нападающих в мире.",
+    "category": "Football",
+    "subcategory": "",
+    "frontImage": "/uploads/1781652211745-7e850b11.webp",
+    "backImage": "/uploads/1781652214685-d82298fd.webp",
+    "price": 40,
+    "rarity": "limited",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "isNew": false,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": true,
+    "ratingAvg": 5,
+    "reviewCount": 0,
+    "effect": "vario",
+    "categoryBg": "/uploads/1781652221482-25241336.webp",
+    "frontImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "backImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "priceRub": 1000,
+    "categoryOrder": 1,
+    "varioSmoothing": 0.18,
+    "frontImageWidth": 600,
+    "frontImageHeight": 900
+  },
+  {
+    "id": "b679b71c-654f-402e-84a8-bea42f841dfc",
+    "title": "Гарри Кейн",
+    "description": "Гарри Кейн — один из самых результативных нападающих современного футбола и лидер своих команд на протяжении многих лет. Его точные удары, умение выбирать позицию и высокий футбольный интеллект позволяют ему регулярно забивать важнейшие голы. Благодаря стабильности и мастерству Кейн заслуженно входит в число лучших форвардов мирового футбола.",
+    "category": "Football",
+    "subcategory": "",
+    "frontImage": "/uploads/1781652550110-54756f5c.webp",
+    "backImage": "/uploads/1781652554391-07bef5a5.webp",
+    "price": 20,
+    "rarity": "common",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "isNew": false,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": true,
+    "ratingAvg": 5,
+    "reviewCount": 0,
+    "effect": "vario",
+    "categoryBg": "/uploads/1781652454469-b994aabe.webp",
+    "frontImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "backImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "priceRub": 600,
+    "categoryOrder": 12,
+    "varioSmoothing": 0.18,
+    "frontImageWidth": 600,
+    "frontImageHeight": 900
+  },
+  {
+    "id": "23589c3a-1149-4184-805b-4264b79df68f",
+    "title": "Родри",
+    "description": "Родри — один из лучших опорных полузащитников современного футбола и настоящий лидер центра поля. Его умение контролировать игру, читать действия соперников и принимать правильные решения делает его незаменимым игроком для клуба и сборной Испании. Благодаря стабильности, интеллекту и универсальности Родри заслуженно считается одним из сильнейших футболистов своего поколения.",
+    "category": "Football",
+    "subcategory": "",
+    "frontImage": "/uploads/1781652635011-3a0eef1b.webp",
+    "backImage": "/uploads/1781652639256-9744573d.webp",
+    "price": 20,
+    "rarity": "common",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "isNew": false,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": true,
+    "ratingAvg": 5,
+    "reviewCount": 0,
+    "effect": "vario",
+    "categoryBg": "/uploads/1781652621374-3c23e1d6.webp",
+    "frontImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "backImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "priceRub": 600,
+    "categoryOrder": 13,
+    "varioSmoothing": 0.18,
+    "frontImageWidth": 600,
+    "frontImageHeight": 900
+  },
+  {
+    "id": "109055e7-2c71-4499-b469-c9456b468ebd",
+    "title": "Мануэль Нойер",
+    "description": "Мануэль Нойер — легендарный немецкий вратарь, который изменил представление о своей позиции благодаря уверенной игре ногами и умению действовать далеко за пределами штрафной площади. Его реакция, лидерские качества и хладнокровие в решающие моменты помогли выиграть множество трофеев на клубном и международном уровне. Нойер по праву считается одним из величайших голкиперов в истории футбола.",
+    "category": "Football",
+    "subcategory": "",
+    "frontImage": "/uploads/1781652726055-0711d2cd.webp",
+    "backImage": "/uploads/1781652730818-ae89926d.webp",
+    "price": 30,
+    "rarity": "common",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "isNew": false,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": true,
+    "ratingAvg": 5,
+    "reviewCount": 0,
+    "effect": "vario",
+    "categoryBg": "/uploads/1781652715157-fa7c4e53.webp",
+    "frontImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "backImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "priceRub": 800,
+    "categoryOrder": 14,
+    "varioSmoothing": 0.18,
+    "frontImageWidth": 600,
+    "frontImageHeight": 900
+  },
+  {
+    "id": "c0e7973c-f4d2-405d-91ba-25858f80f8fa",
+    "title": "Бруну Фернандеш",
+    "description": "Бруну Фернандеш — один из самых креативных полузащитников своего поколения, известный выдающимся видением поля, точными передачами и умением решать исход матчей. Будучи капитаном команды, он сочетает лидерские качества с высокой результативностью, регулярно создавая голевые моменты и забивая важнейшие мячи. Его энергия, характер и футбольный интеллект делают его ключевой фигурой как в клубе, так и в сборной Португалии.",
+    "category": "Football",
+    "subcategory": "",
+    "frontImage": "/uploads/1781653034077-2de6d37f.webp",
+    "backImage": "/uploads/1781653039188-ec66314b.webp",
+    "price": 20,
+    "rarity": "common",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "isNew": false,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": true,
+    "ratingAvg": 5,
+    "reviewCount": 0,
+    "effect": "vario",
+    "categoryBg": "/uploads/1781653602660-c2ac42dc.webp",
+    "frontImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "backImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "priceRub": 600,
+    "categoryOrder": 15,
+    "varioSmoothing": 0.18,
+    "frontImageWidth": 600,
+    "frontImageHeight": 900
+  },
+  {
+    "id": "3d981986-836c-4fa2-8f83-17c1c8b7069e",
+    "title": "Хулиан Альварес",
+    "description": "Хулиан Альварес — универсальный нападающий, сочетающий высокую скорость, работоспособность и отличное голевое чутьё. Он одинаково опасен как в завершении атак, так и в командной игре, постоянно создавая давление на защиту соперника. Благодаря своему характеру, самоотдаче и умению проявлять себя в важнейших матчах, Альварес стал одним из самых перспективных форвардов современного футбола.",
+    "category": "Football",
+    "subcategory": "",
+    "frontImage": "/uploads/1781653124108-8b247066.webp",
+    "backImage": "/uploads/1781653129110-72247821.webp",
+    "price": 20,
+    "rarity": "common",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "isNew": false,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": true,
+    "ratingAvg": 5,
+    "reviewCount": 0,
+    "effect": "vario",
+    "categoryBg": "/uploads/1781653138846-f5d635d6.webp",
+    "frontImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "backImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "priceRub": 600,
+    "categoryOrder": 16,
+    "varioSmoothing": 0.18,
+    "frontImageWidth": 600,
+    "frontImageHeight": 900
+  },
+  {
+    "id": "d6e31590-ec6a-49a2-967d-7997c029c83d",
+    "title": "Марк-Андре тер Штеген",
+    "description": "Марк-Андре тер Штеген — один из самых надёжных вратарей современного футбола, известный великолепной реакцией, уверенностью на линии ворот и выдающейся игрой ногами. Его спокойствие под давлением и умение начинать атаки из глубины делают его важнейшим элементом любой команды. Благодаря стабильности, лидерским качествам и множеству спасений в ключевых матчах, тер Штеген заслужил репутацию одного из лучших голкиперов своего поколения.",
+    "category": "Football",
+    "subcategory": "",
+    "frontImage": "/uploads/1781653184221-83067804.webp",
+    "backImage": "/uploads/1781653192622-233378b2.webp",
+    "price": 30,
+    "rarity": "common",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "isNew": false,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": true,
+    "ratingAvg": 5,
+    "reviewCount": 0,
+    "effect": "vario",
+    "categoryBg": "/uploads/1781653203131-d5e513dd.webp",
+    "frontImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "backImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "priceRub": 800,
+    "categoryOrder": 17,
+    "varioSmoothing": 0.18,
+    "frontImageWidth": 600,
+    "frontImageHeight": 900
+  },
+  {
+    "id": "7781eef2-b460-4ee6-a918-7fa858e12e58",
+    "title": "Джамал Мусиала",
+    "description": "Джамал Мусиала — один из самых талантливых молодых полузащитников мира, обладающий выдающимся дриблингом, техникой и футбольным интеллектом. Его умение обыгрывать соперников один в один и находить нестандартные решения делает его постоянной угрозой для любой обороны. Несмотря на молодой возраст, Мусиала уже стал ключевым игроком как на клубном уровне, так и в сборной Германии, демонстрируя зрелую и уверенную игру в самых важных матчах.",
+    "category": "Football",
+    "subcategory": "",
+    "frontImage": "/uploads/1781653301483-84f47ebc.webp",
+    "backImage": "/uploads/1781653306080-09240d1c.webp",
+    "price": 20,
+    "rarity": "common",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "isNew": false,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": true,
+    "ratingAvg": 5,
+    "reviewCount": 0,
+    "effect": "vario",
+    "categoryBg": "/uploads/1781653311655-1dff59a8.webp",
+    "frontImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "backImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "priceRub": 600,
+    "categoryOrder": 18,
+    "varioSmoothing": 0.18,
+    "frontImageWidth": 600,
+    "frontImageHeight": 900
+  },
+  {
+    "id": "630fcd4c-4465-465e-abb0-fea211af633b",
+    "title": "Сон Хын Мин",
+    "description": "Сон Хын Мин — один из самых ярких и универсальных нападающих современного футбола, сочетающий взрывную скорость, точный удар с обеих ног и выдающуюся работоспособность. Он способен одинаково эффективно завершать атаки и создавать моменты для партнёров, оставаясь лидером как на поле, так и за его пределами. Благодаря стабильной результативности, профессионализму и преданности игре Сон стал настоящей легендой азиатского футбола и символом сборной Южной Кореи.",
+    "category": "Football",
+    "subcategory": "",
+    "frontImage": "/uploads/1781653500065-fd3c62da.webp",
+    "backImage": "/uploads/1781653508419-72dc1376.webp",
+    "price": 20,
+    "rarity": "common",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "isNew": false,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": true,
+    "ratingAvg": 5,
+    "reviewCount": 0,
+    "effect": "vario",
+    "categoryBg": "/uploads/1781653518899-a80e6f91.webp",
+    "frontImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "backImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "priceRub": 600,
+    "categoryOrder": 19,
+    "varioSmoothing": 0.18,
+    "frontImageWidth": 600,
+    "frontImageHeight": 900
+  },
+  {
+    "id": "7b4ef4a9-026f-4145-b201-71948fcd73a3",
+    "title": "Мартин Эдегор",
+    "description": "Мартин Эдегор — один из самых техничных и интеллектуальных полузащитников своего поколения. Его выдающееся видение поля, точные передачи и способность контролировать темп игры делают его настоящим дирижёром атак. Эдегор одинаково опасен как в создании голевых моментов, так и в завершении атак, сочетая креативность, лидерские качества и высокий футбольный интеллект. Благодаря стабильной игре и капитанскому характеру он стал ключевой фигурой клуба и сборной Норвегии.",
+    "category": "Football",
+    "subcategory": "",
+    "frontImage": "/uploads/1781653815926-142093eb.webp",
+    "backImage": "/uploads/1781653819669-e4e3a6a3.webp",
+    "price": 20,
+    "rarity": "common",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "isNew": false,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": true,
+    "ratingAvg": 5,
+    "reviewCount": 0,
+    "effect": "vario",
+    "categoryBg": "/uploads/1781653677336-8bebe15f.webp",
+    "frontImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "backImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "priceRub": 600,
+    "categoryOrder": 20,
+    "varioSmoothing": 0.18,
+    "frontImageWidth": 600,
+    "frontImageHeight": 900
+  },
+  {
+    "id": "14ce9b0b-fa2d-455a-8f44-897559725937",
+    "title": "Вирджил ван Дейк",
+    "description": "Вирджил ван Дейк — один из лучших центральных защитников своего поколения, сочетающий выдающуюся физическую мощь, лидерские качества и футбольный интеллект. Благодаря отличному выбору позиции, игре в воздухе и уверенности в единоборствах он долгие годы остаётся опорой обороны клуба и сборной Нидерландов. Ван Дейк способен не только надёжно защищаться, но и начинать атаки точными длинными передачами, задавая темп игре своей команды. Его спокойствие, опыт и харизма делают его настоящим лидером на поле.",
+    "category": "Football",
+    "subcategory": "",
+    "frontImage": "/uploads/1781653874257-47d593f5.webp",
+    "backImage": "/uploads/1781653879317-50f15656.webp",
+    "price": 30,
+    "rarity": "common",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "isNew": false,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": true,
+    "ratingAvg": 5,
+    "reviewCount": 0,
+    "effect": "vario",
+    "categoryBg": "/uploads/1781653885019-a56656cb.webp",
+    "frontImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "backImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "priceRub": 800,
+    "categoryOrder": 21,
+    "varioSmoothing": 0.18,
+    "frontImageWidth": 600,
+    "frontImageHeight": 900
+  },
+  {
+    "id": "bd4410fa-490b-47d3-93e9-3f0a4189feb4",
+    "title": "Федерико Вальверде",
+    "description": "Федерико Вальверде — универсальный полузащитник мирового уровня, известный своей невероятной работоспособностью, скоростью и мощным ударом. Он одинаково эффективно действует как в обороне, так и в атаке, покрывая огромные расстояния и помогая команде на каждом участке поля. Благодаря своему футбольному интеллекту, лидерским качествам и стабильности Вальверде стал ключевой фигурой клуба и сборной Уругвая. Его энергия, самоотдача и способность решать исход матчей делают его одним из самых ценных игроков современного футбола.",
+    "category": "Football",
+    "subcategory": "",
+    "frontImage": "/uploads/1781653943057-f3ff0840.webp",
+    "backImage": "/uploads/1781653948318-29b1c07f.webp",
+    "price": 20,
+    "rarity": "common",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "isNew": false,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": true,
+    "ratingAvg": 5,
+    "reviewCount": 0,
+    "effect": "vario",
+    "categoryBg": "/uploads/1781653917265-69cd9360.webp",
+    "frontImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "backImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "priceRub": 600,
+    "categoryOrder": 22,
+    "varioSmoothing": 0.18,
+    "frontImageWidth": 600,
+    "frontImageHeight": 900
+  },
+  {
+    "id": "38add2d9-3733-46e2-ba66-f442e36bcd69",
+    "title": "Флориан Вирц",
+    "description": "Флориан Вирц — один из самых ярких молодых полузащитников современного футбола, обладающий выдающейся техникой, креативностью и футбольным интеллектом. Он великолепно видит поле, создаёт голевые моменты для партнёров и способен самостоятельно решать исход матчей благодаря точным ударам и нестандартным решениям. Несмотря на молодой возраст, Вирц уже стал ключевым игроком клуба и сборной Германии, демонстрируя зрелую и уверенную игру на самом высоком уровне. Его талант, универсальность и стремление к развитию делают его одной из главных звёзд нового поколения.",
+    "category": "Football",
+    "subcategory": "",
+    "frontImage": "/uploads/1781654786253-2dba298c.webp",
+    "backImage": "/uploads/1781654792711-6634e060.webp",
+    "price": 20,
+    "rarity": "limited",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "isNew": false,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": true,
+    "ratingAvg": 5,
+    "reviewCount": 0,
+    "effect": "vario",
+    "categoryBg": "/uploads/1781654443324-72b00213.webp",
+    "frontImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "backImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "priceRub": 600,
+    "categoryOrder": 23,
+    "varioSmoothing": 0.18,
+    "frontImageWidth": 600,
+    "frontImageHeight": 900
+  },
+  {
+    "id": "504030e4-40e0-4a00-8997-dc6bef8b334f",
+    "title": "Усман Дембеле",
+    "description": "Усман Дембеле — один из самых непредсказуемых и техничных нападающих современного футбола. Его взрывная скорость, великолепный дриблинг и умение одинаково эффективно играть обеими ногами делают его крайне опасным для любой обороны. Дембеле способен в одиночку создавать голевые моменты, обыгрывая соперников на ограниченном пространстве и отдавая точные передачи партнёрам. Благодаря своему таланту, креативности и нестандартному стилю игры он остаётся важной фигурой как для клуба, так и для сборной Франции.",
+    "category": "Football",
+    "subcategory": "",
+    "frontImage": "/uploads/1781654840305-7c9010bb.webp",
+    "backImage": "/uploads/1781654850973-899a1eb7.webp",
+    "price": 30,
+    "rarity": "common",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "isNew": false,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": true,
+    "ratingAvg": 5,
+    "reviewCount": 0,
+    "effect": "vario",
+    "categoryBg": "/uploads/1781654829031-1d1a2fda.webp",
+    "frontImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "backImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "priceRub": 800,
+    "categoryOrder": 24,
+    "varioSmoothing": 0.18,
+    "frontImageWidth": 600,
+    "frontImageHeight": 900
+  },
+  {
+    "id": "d4006949-7449-41b0-8be0-f934ea29d260",
+    "title": "Мохамед Салах",
+    "description": "Мохамед Салах — один из величайших футболистов своего поколения и настоящий символ современного египетского футбола. Благодаря невероятной скорости, филигранному контролю мяча и исключительному голевому чутью он стал одним из самых опасных нападающих мира. Салах регулярно решает исход важнейших матчей, сочетая результативность с командной игрой и трудолюбием. Его достижения в европейском футболе сделали его национальным героем Египта и вдохновением для миллионов болельщиков по всему миру.",
+    "category": "Football",
+    "subcategory": "",
+    "frontImage": "/uploads/1781655443213-289b7de4.webp",
+    "backImage": "/uploads/1781655454262-617cd0a0.webp",
+    "price": 30,
+    "rarity": "common",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "isNew": false,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": true,
+    "ratingAvg": 5,
+    "reviewCount": 0,
+    "effect": "vario",
+    "categoryBg": "/uploads/1781655427222-bd8d7d4d.webp",
+    "frontImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "backImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "priceRub": 800,
+    "categoryOrder": 25,
+    "varioSmoothing": 0.18,
+    "frontImageWidth": 600,
+    "frontImageHeight": 900
+  },
+  {
+    "id": "f8b4b469-823c-4dad-b356-e6ebefefd94d",
+    "title": "Неймар",
+    "description": "Неймар — один из самых ярких и техничных футболистов XXI века. Его невероятный дриблинг, скорость, креативность и умение решать судьбу матчей сделали его мировой суперзвездой. За карьеру он добился успеха как в европейском футболе, так и в составе сборной Бразилии, став одним из лучших бомбардиров в её истории. Неймар известен не только результативностью, но и зрелищным стилем игры, благодаря которому миллионы болельщиков по всему миру восхищаются его мастерством.",
+    "category": "Football",
+    "subcategory": "",
+    "frontImage": "/uploads/1781655496106-a800e1e9.webp",
+    "backImage": "/uploads/1781655517933-a70364ac.webp",
+    "price": 30,
+    "rarity": "common",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "isNew": false,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": true,
+    "ratingAvg": 5,
+    "reviewCount": 0,
+    "effect": "vario",
+    "categoryBg": "/uploads/1781655511167-a7dd66af.webp",
+    "frontImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "backImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "priceRub": 800,
+    "categoryOrder": 26,
+    "varioSmoothing": 0.18,
+    "frontImageWidth": 600,
+    "frontImageHeight": 900
+  },
+  {
+    "id": "dae4f488-ec6e-4781-9abb-d39efd8e1347",
+    "title": "Коллекционный бустер к чемпионату мира по футболу 2026",
+    "description": "FIFA Legends World Cup 2026 — коллекционный бустер с VARIO-карточкой\r\nПогрузитесь в мир легенд мирового футбола! В каждом бустере находится 1 случайная премиальная 3D VARIO-карточка с известным футболистом. Благодаря варио-эффекту изображение меняется при наклоне карточки, показывая игрока в клубной и национальной форме.\r\n⚽ 1 случайная 3D VARIO-карточка в каждом бустере\r\n🏆 Легенды и звёзды мирового футбола\r\n✨ Яркий объёмный варио-эффект\r\n🎁 Отличный подарок для коллекционеров и фанатов футбола\r\n⭐ Ограниченная коллекционная серия\r\nСоберите полную коллекцию лучших футболистов мира и найдите самых редких игроков!\r\nВажно: содержимое бустера случайное, конкретная карточка заранее неизвестна.",
+    "category": "Football",
+    "subcategory": "",
+    "frontImage": "/uploads/1781655740678-00b2536f.webp",
+    "backImage": "",
+    "price": 15,
+    "rarity": "common",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "isNew": false,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": true,
+    "ratingAvg": 5,
+    "reviewCount": 0,
+    "effect": "3d-horizontal",
+    "categoryBg": "/uploads/1781655733717-8c8252f9.webp",
+    "frontImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "priceRub": 500,
+    "categoryOrder": 27,
+    "frontImageWidth": 600,
+    "frontImageHeight": 900
+  },
+  {
+    "id": "ec5e9444-9c3f-4667-83a2-2cc2d5881b45",
+    "title": "Шреддер пепел надежды",
+    "description": "Шреддер — величайший враг Черепашек-ниндзя и безжалостный лидер клана Фут. Возродившись из пепла своих поражений, он стал ещё сильнее и опаснее. Его мастерство в боевых искусствах, железная воля и жажда власти делают его одним из самых грозных злодеев во вселенной Черепашек-ниндзя.",
+    "category": "TMNT",
+    "subcategory": "",
+    "frontImage": "/uploads/1781656032371-9750af23.webp",
+    "backImage": "/uploads/1781656046181-ea66a363.webp",
+    "price": 25,
+    "rarity": "novelty",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "isNew": false,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": true,
+    "ratingAvg": 5,
+    "reviewCount": 0,
+    "rarities": [
+      "common",
+      "novelty"
+    ],
+    "noveltySince": "2026-06-17T00:28:48.943Z",
+    "effect": "vario",
+    "categoryBg": "/uploads/1781656010054-fa67b69f.webp",
+    "frontImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "backImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "middleImage": "/uploads/1781656040126-ac8a0053.webp",
+    "middleImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "priceRub": 750,
+    "categoryOrder": 45,
+    "varioSmoothing": 0.18,
+    "frontImageWidth": 761,
+    "frontImageHeight": 1024
+  },
+  {
+    "id": "5b2f7dcf-50d2-46e7-b10a-0a8252c7c37e",
+    "title": "Сплинтерсс мечом тенге",
+    "description": "Сплинтер — мудрый наставник Черепашек-ниндзя и один из величайших мастеров ниндзюцу. Вооружившись легендарным Мечом Тенгу, он получил силу противостоять древней магии и самым опасным врагам. Его опыт, мудрость и непревзойдённое мастерство делают его настоящей опорой для своих учеников и защитником мира.",
+    "category": "TMNT",
+    "subcategory": "turtles",
+    "frontImage": "/uploads/1781656801031-0562783a.webp",
+    "backImage": "/uploads/1781656823187-b8f5cb52.webp",
+    "price": 25,
+    "rarity": "novelty",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "effect": "vario",
+    "isNew": false,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": true,
+    "ratingAvg": 5,
+    "reviewCount": 0,
+    "categoryBg": "/uploads/1781656775171-64233127.webp",
+    "frontImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "backImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "middleImage": "/uploads/1781656816529-acd61dc9.webp",
+    "middleImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryOrder": 37,
+    "priceRub": 750,
+    "varioSmoothing": 0.18,
+    "frontImageWidth": 761,
+    "frontImageHeight": 1024,
+    "rarities": [
+      "common",
+      "novelty"
+    ],
+    "noveltySince": "2026-06-17T00:41:01.632Z"
   }
 ]

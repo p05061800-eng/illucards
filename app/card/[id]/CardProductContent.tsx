@@ -26,6 +26,11 @@ import {
 } from "../../lib/catalogScrollRestore";
 import { collectionSectionId } from "../../lib/collectionAnchor";
 import {
+  catalogSectionIdForCard,
+  isTmntCategory,
+  tmntCollectionName,
+} from "../../lib/tmntCollections";
+import {
   cardArtFaceFitStyle,
   cardArtFaceObjectFitClass,
 } from "../../lib/imageFocus";
@@ -489,12 +494,16 @@ export default function CardProductContent({
 
             <div className="mb-4 flex flex-wrap items-center gap-x-2.5 gap-y-1 text-xs text-zinc-400 sm:text-sm">
               <Link
-                href={`/#${collectionSectionId(card.category)}`}
+                href={`/#${isTmntCategory(card.category) ? catalogSectionIdForCard(card) : collectionSectionId(card.category)}`}
                 className="font-medium text-violet-300/95 transition hover:text-violet-200 hover:underline"
               >
                 {card.category}
               </Link>
-              {card.subcategory?.trim() ? (
+              {isTmntCategory(card.category) ? (
+                <span className="text-zinc-500">
+                  · {tmntCollectionName(card.subcategory)}
+                </span>
+              ) : card.subcategory?.trim() ? (
                 <span className="text-zinc-500">· {card.subcategory.trim()}</span>
               ) : null}
               {card.effect ? (

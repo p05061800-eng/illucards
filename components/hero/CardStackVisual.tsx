@@ -6,6 +6,7 @@ import {
   useLayoutEffect,
   useMemo,
   useRef,
+  useState,
   type CSSProperties,
   type PointerEvent,
   type ReactNode,
@@ -97,9 +98,9 @@ export function CardStackVisual({
   const rafRef = useRef(0);
   const pendingRef = useRef<{ cx: number; cy: number } | null>(null);
   const reduceMotionRef = useRef(false);
-  /** На главной с тачем: не тянуть 3D-наклон — только vario (меньше лагов) */
-  const coarseTouchHeroRef = useRef(false);
   const coarsePointerOrHoverNone = useCoarsePointerOrHoverNone();
+  /** Пока палец/курсор на карточке — показываем hover-видео (гибриды с pointer:fine). */
+  const [hoverMotionEngaged, setHoverMotionEngaged] = useState(false);
   const adultGate = useAdultContentGateOptional();
   const adultLocked =
     cardRequiresAgeConfirmation(card) &&
@@ -184,20 +185,6 @@ export function CardStackVisual({
     mq.addEventListener("change", fn);
     return () => mq.removeEventListener("change", fn);
   }, []);
-
-  useEffect(() => {
-    if (!heroStack) {
-      coarseTouchHeroRef.current = false;
-      return;
-    }
-    const mq = window.matchMedia("(hover: none), (pointer: coarse)");
-    const sync = () => {
-      coarseTouchHeroRef.current = mq.matches;
-    };
-    sync();
-    mq.addEventListener("change", sync);
-    return () => mq.removeEventListener("change", sync);
-  }, [heroStack]);
 
   useEffect(
     () => () => {
@@ -293,7 +280,7 @@ export function CardStackVisual({
       }
       const lent = lenticularRef.current;
       const liteLenticular =
-        heroStack && coarseTouchHeroRef.current ? false : true;
+        heroStack && coarsePointerOrHoverNone ? false : true;
       /* В сетке каталога много карточек — не трогаем lenticular (лишние стили на каждом move) */
       if (
         lent &&
@@ -309,17 +296,19 @@ export function CardStackVisual({
     const tilt = tiltRef.current;
     const skip3dTilt =
       reduceMotionRef.current ||
-      (heroStack && coarseTouchHeroRef.current && hasVario);
+      (heroStack && coarsePointerOrHoverNone && hasVario);
     if (skip3dTilt || !tilt) {
       if (tilt && skip3dTilt) {
         const zLift =
-          heroStack && coarseTouchHeroRef.current ? idleTranslateZ + 6 : idleTranslateZ;
+          heroStack && coarsePointerOrHoverNone
+            ? idleTranslateZ + 6
+            : idleTranslateZ;
         tilt.style.transform = `rotateX(0deg) rotateY(0deg) translateZ(${zLift}px)`;
       }
       if (holoGlare && skip3dTilt) {
         /* На таче без 3D-наклона — лёгкий блик вместо полного отключения */
         holoGlare.style.opacity =
-          heroStack && coarseTouchHeroRef.current ? "0.14" : "0";
+          heroStack && coarsePointerOrHoverNone ? "0.14" : "0";
       }
       return;
     }
@@ -351,6 +340,7 @@ export function CardStackVisual({
     catalogStack,
     heroStack,
     morphActive,
+    coarsePointerOrHoverNone,
   ]);
 
   const onPointerMove = useCallback(
@@ -367,6 +357,7 @@ export function CardStackVisual({
 
   const onPointerEnter = useCallback(
     (e: PointerEvent<HTMLDivElement>) => {
+      setHoverMotionEngaged(true);
       void hoverMotionVideoRef.current?.play()?.catch(() => {});
       if (heroStack && e.pointerType === "touch") return;
       pendingRef.current = { cx: e.clientX, cy: e.clientY };
@@ -383,6 +374,7 @@ export function CardStackVisual({
    */
   const onPointerDown = useCallback((e: PointerEvent<HTMLDivElement>) => {
     dismissTiltHint();
+    setHoverMotionEngaged(true);
     void hoverMotionVideoRef.current?.play()?.catch(() => {});
     if (!heroStack && (e.pointerType === "touch" || e.pointerType === "pen")) {
       try {
@@ -408,6 +400,7 @@ export function CardStackVisual({
 
   /** Сброс наклона/vario после ухода курсора или при смене карточки (без remount всего стека). */
   const resetInteractiveState = useCallback(() => {
+    setHoverMotionEngaged(false);
     pendingRef.current = null;
     if (rafRef.current !== 0) {
       cancelAnimationFrame(rafRef.current);
@@ -520,12 +513,14 @@ export function CardStackVisual({
    * во время жеста. Нативные touch-события дают координаты; passive — не блокируем клик по Link.
    */
   useEffect(() => {
-    if (!hasVario) return;
+    if (!interactiveTilt) return;
     const el = tiltZoneRef.current;
     if (!el) return;
 
     const syncFromTouch = (e: TouchEvent) => {
       dismissTiltHint();
+      setHoverMotionEngaged(true);
+      void hoverMotionVideoRef.current?.play()?.catch(() => {});
       if (e.touches.length === 0) return;
       const t = e.touches[0];
       pendingRef.current = { cx: t.clientX, cy: t.clientY };
@@ -536,6 +531,9 @@ export function CardStackVisual({
     const syncFromTouchEnd = (e: TouchEvent) => {
       const t = e.changedTouches[0];
       if (!t) return;
+      if (e.touches.length === 0) {
+        setHoverMotionEngaged(false);
+      }
       pendingRef.current = { cx: t.clientX, cy: t.clientY };
       if (rafRef.current !== 0) cancelAnimationFrame(rafRef.current);
       rafRef.current = requestAnimationFrame(applyTilt);
@@ -552,7 +550,7 @@ export function CardStackVisual({
       el.removeEventListener("touchend", syncFromTouchEnd);
       el.removeEventListener("touchcancel", syncFromTouchEnd);
     };
-  }, [hasVario, applyTilt, card.id, dismissTiltHint]);
+  }, [interactiveTilt, applyTilt, card.id, dismissTiltHint]);
 
   /** Тач / без hover — подстраховка `play()` после монтирования (вместе с `autoPlay` на `<video>`). */
   useEffect(() => {
@@ -560,12 +558,12 @@ export function CardStackVisual({
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
     const hm = effectiveHoverMotionUrl(card.frontHoverGif);
     if (!hm) return;
-    if (!coarsePointerOrHoverNone) return;
+    if (!coarsePointerOrHoverNone && !hoverMotionEngaged) return;
     const id = requestAnimationFrame(() => {
       void hoverMotionVideoRef.current?.play()?.catch(() => {});
     });
     return () => cancelAnimationFrame(id);
-  }, [card.frontHoverGif, card.id, coarsePointerOrHoverNone]);
+  }, [card.frontHoverGif, card.id, coarsePointerOrHoverNone, hoverMotionEngaged]);
 
   const faceCls = cardArtFaceObjectFitClass(card.cardArtFramePreset);
   const fixedShell = cardArtFixedFrameShellClass(fixedCatalogFrame);
@@ -640,7 +638,9 @@ export function CardStackVisual({
     ? categoryFocusCoverStyle(card.frontImageFocus)
     : frontPosStyle;
 
-  const hoverMotionLayerClass = coarsePointerOrHoverNone
+  const showHoverMotionLayer =
+    coarsePointerOrHoverNone || hoverMotionEngaged;
+  const hoverMotionLayerClass = showHoverMotionLayer
     ? "pointer-events-none absolute inset-0 z-[4] flex min-h-0 min-w-0 items-center justify-center overflow-hidden rounded-2xl bg-black opacity-100 transition-opacity duration-200 motion-reduce:opacity-0"
     : [
         "pointer-events-none absolute inset-0 z-[4] flex min-h-0 min-w-0 items-center justify-center overflow-hidden rounded-2xl bg-black",
@@ -718,7 +718,9 @@ export function CardStackVisual({
           className={`${
             interactiveTilt ? "card-stack-tilt-zone " : ""
           }absolute inset-0 z-30 ${
-            heroStack ? "touch-manipulation" : "touch-none"
+            heroStack || heroDiagonalLayout
+              ? "touch-manipulation"
+              : "touch-none"
           } ${interactiveTilt ? "" : "pointer-events-none"}`}
           onPointerEnter={interactiveTilt ? onPointerEnter : undefined}
           onPointerDown={interactiveTilt ? onPointerDown : undefined}
@@ -876,7 +878,7 @@ export function CardStackVisual({
                               className={hoverMotionLayerClass}
                               style={hoverMotionMediaStyle}
                               fillFaceFrame={catalogOrProductHoverFillsFace}
-                              autoPlay={coarsePointerOrHoverNone}
+                              autoPlay={showHoverMotionLayer}
                             />
                           ) : null}
                         </div>
@@ -926,7 +928,7 @@ export function CardStackVisual({
                             className={hoverMotionLayerClass}
                             style={hoverMotionMediaStyle}
                             fillFaceFrame={catalogOrProductHoverFillsFace}
-                            autoPlay={coarsePointerOrHoverNone}
+                            autoPlay={showHoverMotionLayer}
                           />
                         ) : null}
                       </div>

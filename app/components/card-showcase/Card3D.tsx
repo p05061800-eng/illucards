@@ -173,7 +173,10 @@ export function Card3D({ card }: Props) {
 
   const [flipped, setFlipped] = useState(false);
   const [reduceMotion, setReduceMotion] = useState(false);
+  const [hoverMotionEngaged, setHoverMotionEngaged] = useState(false);
   const coarsePointerOrHoverNone = useCoarsePointerOrHoverNone();
+  const showHoverMotionLayer =
+    coarsePointerOrHoverNone || hoverMotionEngaged;
 
   useEffect(() => {
     flippedRef.current = flipped;
@@ -192,12 +195,12 @@ export function Card3D({ card }: Props) {
     if (reduceMotion) return;
     const hm = effectiveHoverMotionUrl(card.frontHoverGif);
     if (!hm || !isFrontHoverVideoUrl(hm)) return;
-    if (!coarsePointerOrHoverNone) return;
+    if (!coarsePointerOrHoverNone && !hoverMotionEngaged) return;
     const id = requestAnimationFrame(() => {
       void hoverMotionVideoRef.current?.play()?.catch(() => {});
     });
     return () => cancelAnimationFrame(id);
-  }, [reduceMotion, card.frontHoverGif, card.id, coarsePointerOrHoverNone]);
+  }, [reduceMotion, card.frontHoverGif, card.id, coarsePointerOrHoverNone, hoverMotionEngaged]);
 
   useEffect(() => {
     const el = audioRef.current;
@@ -425,6 +428,7 @@ export function Card3D({ card }: Props) {
 
   const handleMouseEnter = () => {
     hoveringRef.current = true;
+    setHoverMotionEngaged(true);
     void hoverMotionVideoRef.current?.play()?.catch(() => {});
     if (reduceMotion) return;
     playHover();
@@ -435,6 +439,7 @@ export function Card3D({ card }: Props) {
 
   const handleMouseLeave = () => {
     hoveringRef.current = false;
+    setHoverMotionEngaged(false);
     const hv = hoverMotionVideoRef.current;
     if (hv) {
       hv.pause();
@@ -482,7 +487,7 @@ export function Card3D({ card }: Props) {
     (card.effect === "vario" || card.effect === "morphing") &&
     Boolean(backSrc);
 
-  const hoverMotionLayerClass = coarsePointerOrHoverNone
+  const hoverMotionLayerClass = showHoverMotionLayer
     ? "pointer-events-none absolute inset-0 z-[5] flex min-h-0 min-w-0 items-center justify-center overflow-hidden rounded-2xl bg-black opacity-100 transition-opacity duration-200 motion-reduce:opacity-0"
     : [
         "pointer-events-none absolute inset-0 z-[5] flex min-h-0 min-w-0 items-center justify-center overflow-hidden rounded-2xl bg-black",
@@ -541,6 +546,12 @@ export function Card3D({ card }: Props) {
                 onMouseEnter={handleMouseEnter}
                 onMouseMove={handleMouseMove}
                 onMouseLeave={handleMouseLeave}
+                onPointerDown={() => {
+                  setHoverMotionEngaged(true);
+                  void hoverMotionVideoRef.current?.play()?.catch(() => {});
+                }}
+                onPointerUp={() => setHoverMotionEngaged(false)}
+                onPointerCancel={() => setHoverMotionEngaged(false)}
                 onClick={canFlip ? toggleFlip : undefined}
                 onKeyDown={canFlip ? onKeyDown : undefined}
               >
@@ -580,7 +591,7 @@ export function Card3D({ card }: Props) {
                           ? `${fixedImg} rounded-2xl ${faceCls}`
                           : `h-full w-full object-cover rounded-2xl ${faceCls}`
                       }${
-                        hoverVideoSrc && !reduceMotion && !coarsePointerOrHoverNone
+                        hoverVideoSrc && !reduceMotion && !showHoverMotionLayer
                           ? " opacity-0 transition-opacity duration-200 [@media(hover:hover)_and_(pointer:fine)]:opacity-100 [@media(hover:hover)_and_(pointer:fine)]:group-hover/card3d:opacity-0"
                           : ""
                       }`}
@@ -612,7 +623,7 @@ export function Card3D({ card }: Props) {
                           : categoryFocusCoverStyle(card.frontImageFocus)
                       }
                       fillFaceFrame={!fixedCatalogFrame}
-                      autoPlay={coarsePointerOrHoverNone}
+                      autoPlay={showHoverMotionLayer}
                     />
                   ) : null}
                 </div>

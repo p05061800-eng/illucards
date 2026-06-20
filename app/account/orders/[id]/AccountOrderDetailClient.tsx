@@ -497,7 +497,7 @@ export default function AccountOrderDetailClient({ orderId }: { orderId: string 
             className="flex min-h-[3.25rem] w-full items-center justify-center gap-2 rounded-xl border-2 border-zinc-300/90 bg-white px-4 text-base font-semibold text-zinc-900 shadow-sm transition hover:bg-zinc-50 active:scale-[0.99] sm:min-h-14"
           >
             <MessageCircle className="h-5 w-5 shrink-0" strokeWidth={2} aria-hidden />
-            Связь в боте
+            Написать в поддержку
           </a>
           {canHideFromList ? (
             <button

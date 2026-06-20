@@ -7284,13 +7284,13 @@
       "intelligence": 50,
       "magic": 50
     },
-    "effect": "3d-horizontal",
     "isNew": false,
     "isPopular": false,
     "isSale": false,
     "inStock": true,
     "ratingAvg": 5,
     "reviewCount": 0,
+    "effect": "3d-horizontal",
     "categoryBg": "/uploads/1781659775365-68661f6c.webp",
     "frontImageFocus": {
       "x": 50,
@@ -7300,8 +7300,332 @@
       "x": 50,
       "y": 50
     },
-    "categoryOrder": 14,
     "priceRub": 600,
+    "categoryOrder": 14,
+    "frontImageWidth": 600,
+    "frontImageHeight": 900
+  },
+  {
+    "id": "4b73c763-2835-446c-ada8-01ec9b1c3eb5",
+    "title": "Сакура Харуно / Sakura Haruno",
+    "description": "Сакура Харуно — одна из сильнейших куноичи Конохи, прославившаяся выдающимися навыками медицинского ниндзюцу и невероятной физической силой. Благодаря упорству, мужеству и преданности своим друзьям она стала легендой мира шиноби и сыграла важную роль в Четвёртой мировой войне ниндзя. На этой карточке Сакура представлена в образе будущего Хокаге — мудрого и могущественного лидера Деревни Скрытого Листа. 🌸👑",
+    "category": "Naruto",
+    "subcategory": "",
+    "frontImage": "/uploads/1781987205275-3bdf4eca.webp",
+    "backImage": "/uploads/1781987224247-51dd1141.webp",
+    "price": 30,
+    "rarity": "adult",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "isNew": false,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": true,
+    "ratingAvg": 5,
+    "reviewCount": 0,
+    "rarities": [
+      "adult",
+      "common",
+      "novelty"
+    ],
+    "noveltySince": "2026-06-20T20:27:10.727Z",
+    "effect": "vario",
+    "categoryBg": "/uploads/1781987185494-ef8d6997.webp",
+    "frontImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "backImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "priceRub": 800,
+    "categoryOrder": 1,
+    "varioSmoothing": 0.18,
+    "frontImageWidth": 600,
+    "frontImageHeight": 900
+  },
+  {
+    "id": "64d534a7-9e0a-4f3d-940d-81bbe00fbf6f",
+    "title": "Тентен / Tenten",
+    "description": "Тентен  — талантливая куноичи Деревни Скрытого Листа, известная своим непревзойдённым мастерством владения оружием и боевыми инструментами. Благодаря упорным тренировкам и стремлению стать великой ниндзя, она заслужила репутацию одного из лучших специалистов по вооружению своего поколения. На этой карточке Тентен представлена в образе будущего Хокаге — уверенного лидера, сочетающего силу, опыт и решительность. 🌸⚔️👑",
+    "category": "Naruto",
+    "subcategory": "",
+    "frontImage": "/uploads/1781987308170-a96d6353.webp",
+    "backImage": "/uploads/1781987317021-05bf5009.webp",
+    "price": 30,
+    "rarity": "adult",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "isNew": false,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": true,
+    "ratingAvg": 5,
+    "reviewCount": 0,
+    "rarities": [
+      "adult",
+      "common"
+    ],
+    "effect": "vario",
+    "categoryBg": "/uploads/1781987292845-bdd9a5a1.webp",
+    "frontImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "backImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "priceRub": 800,
+    "categoryOrder": 2,
+    "varioSmoothing": 0.18,
+    "frontImageWidth": 600,
+    "frontImageHeight": 900
+  },
+  {
+    "id": "ab9e5588-feeb-4fe2-aa68-b5c00b20a1a2",
+    "title": "Ино Яманака / Ino Yamanaka",
+    "description": "Ино Яманака (Ino Yamanaka) — талантливая куноичи клана Яманака, известная своими уникальными техниками управления сознанием и выдающимися сенсорными способностями. Ум, харизма и лидерские качества сделали её одним из ключевых шиноби Конохи, способных координировать союзников даже в самых сложных сражениях. На этой карточке Ино представлена в образе будущего Хокаге — мудрого лидера, сочетающего стратегическое мышление, силу духа и преданность своей деревне. 🌸👑✨",
+    "category": "Naruto",
+    "subcategory": "",
+    "frontImage": "/uploads/1781987398738-c73357cd.webp",
+    "backImage": "/uploads/1781987416295-d716a6e0.webp",
+    "price": 30,
+    "rarity": "adult",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "isNew": false,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": true,
+    "ratingAvg": 5,
+    "reviewCount": 0,
+    "rarities": [
+      "adult",
+      "common"
+    ],
+    "effect": "vario",
+    "categoryBg": "/uploads/1781987410559-88a1e1ce.webp",
+    "frontImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "backImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "priceRub": 800,
+    "categoryOrder": 3,
+    "varioSmoothing": 0.18,
+    "frontImageWidth": 600,
+    "frontImageHeight": 900
+  },
+  {
+    "id": "e90de57a-36a3-4922-8820-96cafbf1190d",
+    "title": "Темари Нара / Temari Nara",
+    "description": "Темари Нара (Temari Nara) — могущественная куноичи из Деревни Скрытого Песка, прославившаяся мастерским владением гигантским веером и разрушительными техниками стихии Ветра. Благодаря хладнокровию, стратегическому мышлению и лидерским качествам она заслужила уважение как союзников, так и противников. На этой карточке Темари представлена в образе будущего Хокаге — сильного лидера, способного принимать сложные решения и защищать свою деревню в самые трудные времена. 🌪️👑✨",
+    "category": "Naruto",
+    "subcategory": "",
+    "frontImage": "/uploads/1781987556160-b46cf2d8.webp",
+    "backImage": "/uploads/1781987561716-47838557.webp",
+    "price": 30,
+    "rarity": "adult",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "isNew": false,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": true,
+    "ratingAvg": 5,
+    "reviewCount": 0,
+    "rarities": [
+      "common",
+      "adult"
+    ],
+    "effect": "vario",
+    "categoryBg": "/uploads/1781987542683-f933ed9a.webp",
+    "frontImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "backImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "priceRub": 800,
+    "categoryOrder": 5,
+    "varioSmoothing": 0.18,
+    "frontImageWidth": 600,
+    "frontImageHeight": 900
+  },
+  {
+    "id": "9f9ff56a-fa66-4018-9def-5b242ec397bf",
+    "title": "Кагуя Ооцуцуки / Kaguya Otsutsuki",
+    "description": "Кагуя Ооцуцуки (Kaguya Otsutsuki) — прародительница чакры и одно из самых могущественных существ во вселенной Naruto. Обладая невероятной силой, способностью изменять пространство и временем, а также легендарным Бьякуганом, она стала фигурой, навсегда изменившей историю мира шиноби. На этой карточке Кагуя предстаёт как величественная правительница, олицетворяющая абсолютную мощь, тайну и божественное происхождение клана Ооцуцуки. 🌙👑✨",
+    "category": "Naruto",
+    "subcategory": "",
+    "frontImage": "/uploads/1781987781360-5e08b011.webp",
+    "backImage": "/uploads/1781987785742-8c82cf5a.webp",
+    "price": 30,
+    "rarity": "adult",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "isNew": false,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": true,
+    "ratingAvg": 5,
+    "reviewCount": 0,
+    "rarities": [
+      "adult",
+      "common"
+    ],
+    "effect": "vario",
+    "frontImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "backImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "priceRub": 800,
+    "categoryOrder": 4,
+    "varioSmoothing": 0.18,
+    "frontImageWidth": 600,
+    "frontImageHeight": 900,
+    "categoryBg": "/uploads/1781987985800-bb8ff385.webp",
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    }
+  },
+  {
+    "id": "ff7c18d4-1d62-45c0-86d1-466676941557",
+    "title": "Хината Хьюга / Hinata Hyuga",
+    "description": "Хината Хьюга (Hinata Hyuga) — наследница легендарного клана Хьюга, известная своей добротой, стойкостью и мастерским владением техникой Мягкого Кулака. Несмотря на природную скромность, Хината неоднократно проявляла невероятное мужество, защищая близких и следуя своим убеждениям. На этой карточке она представлена как символ внутренней силы и благородства — одна из самых уважаемых куноичи Деревни Скрытого Листа. 💜👑✨",
+    "category": "Naruto",
+    "subcategory": "",
+    "frontImage": "/uploads/1781987873505-9787178b.webp",
+    "backImage": "/uploads/1781987878781-dd30f5d5.webp",
+    "price": 30,
+    "rarity": "adult",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "isNew": false,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": true,
+    "ratingAvg": 5,
+    "reviewCount": 0,
+    "rarities": [
+      "common",
+      "adult"
+    ],
+    "effect": "vario",
+    "categoryBg": "/uploads/1781987859514-595295d1.webp",
+    "frontImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "backImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "priceRub": 800,
+    "categoryOrder": 6,
+    "varioSmoothing": 0.18,
+    "frontImageWidth": 600,
+    "frontImageHeight": 900
+  },
+  {
+    "id": "eb2304a4-2b6b-4b29-a67f-d015cb0b3db5",
+    "title": "Цунаде Сэнджу / Tsunade Senju",
+    "description": "Цунаде Сэнджу (Tsunade Senju) — легендарная куноичи Конохи, внучка Первого Хокаге и одна из величайших медицинских ниндзя в истории. Её невероятная физическая сила, выдающиеся способности к лечению и многолетний опыт позволили ей стать Пятым Хокаге и символом стойкости Деревни Скрытого Листа. На этой карточке Цунаде изображена как воплощение мудрости, силы и лидерства — легенда, чьё имя навсегда вошло в историю мира шиноби. 🍃💎👑",
+    "category": "Naruto",
+    "subcategory": "",
+    "frontImage": "/uploads/1781987941433-4158c496.webp",
+    "backImage": "/uploads/1781987946614-a2e72876.webp",
+    "price": 30,
+    "rarity": "adult",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "isNew": false,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": true,
+    "ratingAvg": 5,
+    "reviewCount": 0,
+    "rarities": [
+      "adult",
+      "common"
+    ],
+    "effect": "vario",
+    "categoryBg": "/uploads/1781987934838-7bab62fd.webp",
+    "frontImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "backImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "priceRub": 800,
+    "categoryOrder": 7,
+    "varioSmoothing": 0.18,
     "frontImageWidth": 600,
     "frontImageHeight": 900
   }

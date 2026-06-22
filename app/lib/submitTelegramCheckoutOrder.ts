@@ -79,10 +79,11 @@ export async function submitTelegramCheckoutOrder(input: {
     typeof (data as { buyer_seq?: unknown }).buyer_seq === "number"
       ? Math.floor((data as { buyer_seq: number }).buyer_seq)
       : undefined;
-  const telegramSent =
+  const telegramSent = Boolean(
     data &&
-    typeof data === "object" &&
-    (data as { telegram_sent?: unknown }).telegram_sent === true;
+      typeof data === "object" &&
+      (data as { telegram_sent?: unknown }).telegram_sent === true,
+  );
   const syncError =
     data &&
     typeof data === "object" &&

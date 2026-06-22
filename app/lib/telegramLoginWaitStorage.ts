@@ -2,6 +2,7 @@ import {
   TG_LOGIN_WAIT_STORAGE_KEY,
   isValidLoginWaitId,
 } from "@/app/lib/telegramLoginWaitKeys";
+import { clearPendingTelegramCheckout } from "@/app/lib/pendingTelegramCheckout";
 
 const WAIT_TTL_MS = 10 * 60 * 1000;
 
@@ -99,6 +100,7 @@ export function notifyLoginWaitStarted(): void {
 /** Сброс «зависшего» ожидания (logout / отмена). */
 export function resetTelegramLoginWaitClientState(): void {
   clearLoginWaitId();
+  clearPendingTelegramCheckout();
   try {
     sessionStorage.removeItem("illucards_tg_login_auto_error");
   } catch {

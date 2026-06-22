@@ -18,6 +18,7 @@ import {
   completeLoginWaitIfReady,
   redirectAfterTelegramLogin,
 } from "@/app/lib/runTelegramLoginWaitCompletion";
+import { completePendingTelegramCheckoutAfterLogin } from "@/app/lib/completePendingTelegramCheckoutAfterLogin";
 import { pollLoginWait } from "@/app/lib/completeTelegramWebLoginClient";
 import {
   persistTelegramUserIdentity,
@@ -157,6 +158,11 @@ export default function AccountPageClient() {
         if (result.ok) {
           setLsGate("ok");
           setAutoLoginPending(false);
+          const checkout = await completePendingTelegramCheckoutAfterLogin(
+            result.user_id,
+            poll.username,
+          );
+          if (checkout === "redirected" || checkout === "in_progress") return;
           redirectAfterTelegramLogin();
           return;
         }

@@ -8,6 +8,7 @@ import {
   redirectAfterTelegramLogin,
   stashTelegramLoginAutoError,
 } from "@/app/lib/runTelegramLoginWaitCompletion";
+import { completePendingTelegramCheckoutAfterLogin } from "@/app/lib/completePendingTelegramCheckoutAfterLogin";
 import {
   readLoginWaitId,
   TG_LOGIN_WAIT_STARTED_EVENT,
@@ -67,6 +68,11 @@ export function TelegramLoginWaitPoller() {
         if (result.ok) {
           closePopup();
           window.setTimeout(closePopup, 120);
+          const checkout = await completePendingTelegramCheckoutAfterLogin(
+            result.user_id,
+            poll.username,
+          );
+          if (checkout === "redirected" || checkout === "in_progress") return;
           redirectAfterTelegramLogin();
           return;
         }

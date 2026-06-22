@@ -5,8 +5,8 @@ import { useCallback, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/app/context/AuthContext";
 import { useCart } from "@/app/context/CartContext";
-import { getTelegramOrderBotUsername } from "@/app/lib/telegramOrderBotUsername";
-import { telegramOrderBotUrl } from "@/app/lib/telegramOrderStartPayload";
+import { stashPendingTelegramCheckout } from "@/app/lib/pendingTelegramCheckout";
+import { submitTelegramCheckoutOrder } from "@/app/lib/submitTelegramCheckoutOrder";
 import { startTelegramWebLoginWithWait } from "@/app/lib/startTelegramWebLoginClient";
 import { telegramWebLoginDeepLink } from "@/app/lib/telegramWebLoginUrl";
 
@@ -22,13 +22,16 @@ export function TelegramCheckoutButton({
   const router = useRouter();
 
   const openTelegramLogin = useCallback(async () => {
+    if (cartItems.length > 0 && deliveryCountry) {
+      stashPendingTelegramCheckout();
+    }
     router.push("/account");
     router.refresh();
     const ok = await startTelegramWebLoginWithWait();
     if (!ok && typeof window !== "undefined") {
       window.open(telegramWebLoginDeepLink(), "_blank", "noopener,noreferrer");
     }
-  }, [router]);
+  }, [cartItems.length, deliveryCountry, router]);
 
   const {
     cartItems,
@@ -56,115 +59,39 @@ export function TelegramCheckoutButton({
     markCartActive();
 
     try {
-      const items = cartItems.map((l) => ({
-        id: l.id,
-        title: l.title.trim(),
-        quantity: l.quantity,
-        priceByn: l.priceByn,
-        priceRub: l.priceRub,
-        ...(l.frontImage?.trim() ? { frontImage: l.frontImage.trim() } : {}),
-        ...(l.category?.trim() ? { category: l.category.trim() } : {}),
-        ...(l.rarity ? { rarity: l.rarity } : {}),
-      }));
+      const result = await submitTelegramCheckoutOrder({
+        userId: primaryTelegramUserId,
+        username: user?.telegramUsername,
+        cartItems,
+        deliveryCountry,
+        orderTotalByn,
+      });
 
-      const orderPayload: Record<string, unknown> = {
-        items,
-        total: orderTotalByn,
-        delivery: deliveryCountry,
-        user_id: primaryTelegramUserId,
-      };
-      if (user?.telegramUsername) {
-        orderPayload.username = user.telegramUsername;
-      }
-
-      const controller = new AbortController();
-      const timer = setTimeout(() => controller.abort(), 30_000);
-      let res: Response;
-      try {
-        res = await fetch("/api/order/create", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          credentials: "include",
-          body: JSON.stringify(orderPayload),
-          signal: controller.signal,
-        });
-      } finally {
-        clearTimeout(timer);
-      }
-
-      const data: unknown = await res.json().catch(() => null);
-      const orderId =
-        data &&
-        typeof data === "object" &&
-        "order_id" in data &&
-        typeof (data as { order_id: unknown }).order_id === "string"
-          ? (data as { order_id: string }).order_id.trim()
-          : "";
-      const buyerSeq =
-        data &&
-        typeof data === "object" &&
-        typeof (data as { buyer_seq?: unknown }).buyer_seq === "number"
-          ? Math.floor((data as { buyer_seq: number }).buyer_seq)
-          : undefined;
-      const telegramSent =
-        data &&
-        typeof data === "object" &&
-        (data as { telegram_sent?: unknown }).telegram_sent === true;
-      const syncError =
-        data &&
-        typeof data === "object" &&
-        typeof (data as { telegram_sync_error?: unknown }).telegram_sync_error ===
-          "string"
-          ? (data as { telegram_sync_error: string }).telegram_sync_error.trim()
-          : "";
-      if (!res.ok || !orderId) {
-        const msg =
-          data &&
-          typeof data === "object" &&
-          "error" in data &&
-          typeof (data as { error: unknown }).error === "string"
-            ? (data as { error: string }).error
-            : "Не удалось оформить заказ";
-        if (res.status === 401) {
+      if (!result.ok) {
+        if (result.status === 401) {
           setError("Сначала войдите в личный кабинет");
           router.push("/account");
         } else {
-          setError(msg);
+          setError(result.error);
         }
         setSubmitting(false);
         return;
       }
 
-      const bot = getTelegramOrderBotUsername();
-      const botUrl = telegramOrderBotUrl(bot, orderId, buyerSeq);
-      console.info("[checkout] redirect telegram", {
-        order_id: orderId,
-        buyer_seq: buyerSeq,
-        botUrl,
-        telegram_sent: telegramSent,
-        sync_error: syncError || undefined,
-      });
-      if (!telegramSent && syncError) {
-        console.warn("[checkout] bot did not receive order before redirect", syncError);
+      if (!result.telegramSent && result.syncError) {
         setError(
-          `Заказ сохранён (${orderId}), но бот не ответил: ${syncError}. `
+          `Заказ сохранён (${result.orderId}), но бот не ответил: ${result.syncError}. `
           + "Откройте Telegram — должна открыться ссылка с заказом.",
         );
         setSubmitting(false);
-        // Всё равно даём перейти в бот по deep link.
         onBeforeNavigate?.();
-        window.location.href = botUrl;
+        window.location.href = result.botUrl;
         return;
       }
       onBeforeNavigate?.();
-      window.location.href = botUrl;
-    } catch (error: unknown) {
-      const aborted = error instanceof Error && error.name === "AbortError";
-      setError(
-        aborted
-          ? "Сервер долго не отвечает. Попробуйте ещё раз через минуту."
-          : "Сеть недоступна. Попробуйте ещё раз.",
-      );
+      window.location.href = result.botUrl;
+    } catch {
+      setError("Сеть недоступна. Попробуйте ещё раз.");
       setSubmitting(false);
     }
   }, [

@@ -714,6 +714,23 @@ export function CartProvider({ children }: { children: ReactNode }) {
   );
 }
 
+/** Снимок корзины из localStorage (для оформления заказа сразу после входа в Telegram). */
+export function readClientCheckoutSnapshot(): {
+  cartItems: CartLine[];
+  deliveryCountry: DeliveryCountry;
+  orderTotalByn: number;
+} | null {
+  if (typeof window === "undefined") return null;
+  const cartItems = loadFromStorage();
+  const deliveryCountry = loadDeliveryCountry();
+  if (!cartItems.length || !deliveryCountry) return null;
+  const goodsTotal = cartItems.reduce((s, l) => s + l.priceByn * l.quantity, 0);
+  const deliveryByn = deliveryCharge(deliveryCountry).amountByn;
+  const orderTotalByn =
+    Math.round((goodsTotal + deliveryByn) * 100) / 100;
+  return { cartItems, deliveryCountry, orderTotalByn };
+}
+
 export function useCart(): CartContextValue {
   const ctx = useContext(CartContext);
   if (!ctx) {

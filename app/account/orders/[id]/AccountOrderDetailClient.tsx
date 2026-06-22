@@ -22,7 +22,8 @@ import {
   orderAccountFlowLabel,
   orderStatusFromStorage,
 } from "@/app/lib/orderStatus";
-import { TELEGRAM_ORDER_BOT_DEFAULT } from "@/app/lib/telegramOrderCheckout";
+import { TELEGRAM_ORDER_BOT_DEFAULT, telegramOrderStartUrl } from "@/app/lib/telegramOrderCheckout";
+import { getTelegramBotUsername } from "@/app/lib/telegramOrderBotUsername";
 import { readTelegramPrimaryUserId } from "@/app/lib/telegramUserIdentity";
 
 type OrderLineApi = {
@@ -53,14 +54,9 @@ type LsGate = "pending" | "ok" | "no_telegram";
 
 type LoadState = "idle" | "loading" | "notfound" | "ok";
 
-/** Deep link: https://t.me/<bot>?start=support */
+/** Deep link: https://t.me/<bot>?start=support → режим «Связь» в боте */
 function supportTelegramHref(): string {
-  const raw =
-    process.env.NEXT_PUBLIC_TELEGRAM_ORDER_BOT_USERNAME ||
-    process.env.NEXT_PUBLIC_TELEGRAM_BOT_USERNAME ||
-    "";
-  const name = (raw || TELEGRAM_ORDER_BOT_DEFAULT).replace(/^@/, "").trim();
-  return `https://t.me/${name}?start=${encodeURIComponent("support")}`;
+  return telegramOrderStartUrl(getTelegramBotUsername(), "support");
 }
 
 /** Deep link заказа: в боте откроется карточка заказа с кнопками "Подтвердить/Отмена". */

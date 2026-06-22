@@ -15,6 +15,8 @@ export type BotProduct = {
   id: string;
   name: string;
   category: string;
+  /** Номер карточки в категории (как в админке / каталоге). */
+  categoryOrder?: number;
   /** Цена в бел. рублях (как на сайте). */
   priceByn: number;
   /** Legacy fallback (BYN), оставлено для совместимости внешних клиентов. */
@@ -52,6 +54,7 @@ function toProduct(card: StoredCard, origin: string): BotProduct {
     id: card.id,
     name: card.title.trim() || "—",
     category: card.category.trim(),
+    ...(card.categoryOrder != null ? { categoryOrder: card.categoryOrder } : {}),
     priceByn: effectiveCardPriceByn(fields),
     price: effectiveCardPriceByn(fields),
     priceRub: effectiveCardPriceRub(fields),

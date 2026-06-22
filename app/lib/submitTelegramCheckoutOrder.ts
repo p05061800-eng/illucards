@@ -27,8 +27,9 @@ export async function submitTelegramCheckoutOrder(input: {
     priceByn: l.priceByn,
     priceRub: l.priceRub,
     ...(l.frontImage?.trim() ? { frontImage: l.frontImage.trim() } : {}),
-    ...(l.category?.trim() ? { category: l.category.trim() } : {}),
-    ...(l.rarity ? { rarity: l.rarity } : {}),
+        ...(l.category?.trim() ? { category: l.category.trim() } : {}),
+        ...(l.categoryOrder != null ? { categoryOrder: l.categoryOrder } : {}),
+        ...(l.rarity ? { rarity: l.rarity } : {}),
   }));
 
   const orderPayload: Record<string, unknown> = {

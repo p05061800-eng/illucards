@@ -20,6 +20,16 @@ export function TelegramCheckoutButton({
   onBeforeNavigate,
 }: Props) {
   const router = useRouter();
+  const {
+    cartItems,
+    hydrated,
+    deliveryCountry,
+    orderTotalByn,
+    markCartActive,
+  } = useCart();
+  const { primaryTelegramUserId, user } = useAuth();
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const openTelegramLogin = useCallback(async () => {
     if (cartItems.length > 0 && deliveryCountry) {
@@ -32,17 +42,6 @@ export function TelegramCheckoutButton({
       window.open(telegramWebLoginDeepLink(), "_blank", "noopener,noreferrer");
     }
   }, [cartItems.length, deliveryCountry, router]);
-
-  const {
-    cartItems,
-    hydrated,
-    deliveryCountry,
-    orderTotalByn,
-    markCartActive,
-  } = useCart();
-  const { primaryTelegramUserId, user } = useAuth();
-  const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
   const onClick = useCallback(async () => {
     if (!hydrated || cartItems.length === 0 || !deliveryCountry || submitting) {

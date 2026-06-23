@@ -1,6 +1,10 @@
 import type { Metadata } from "next";
 import { LegalPageShell } from "@/app/components/LegalPageShell";
-import { SITE_CONTACT_EMAIL, SITE_OWNER_LINE } from "@/app/lib/siteLegal";
+import {
+  SITE_CONTACT_EMAIL,
+  SITE_OWNER_LINE,
+  SITE_UNP,
+} from "@/app/lib/siteLegal";
 
 export const metadata: Metadata = {
   title: "Контакты — IlluCards",
@@ -10,6 +14,8 @@ export const metadata: Metadata = {
 export default function ContactsPage() {
   return (
     <LegalPageShell title="Контакты">
+      <p className="text-zinc-300">{SITE_OWNER_LINE}</p>
+      <p className="text-zinc-300">УНП {SITE_UNP}</p>
       <p>
         Email:{" "}
         <a
@@ -19,7 +25,6 @@ export default function ContactsPage() {
           {SITE_CONTACT_EMAIL}
         </a>
       </p>
-      <p className="text-zinc-300">Владелец: {SITE_OWNER_LINE}</p>
     </LegalPageShell>
   );
 }

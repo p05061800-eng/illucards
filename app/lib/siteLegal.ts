@@ -1,5 +1,7 @@
-/** Подставьте реквизиты магазина (отображаются в футере и на /contacts). */
-export const SITE_CONTACT_EMAIL = "your@email.com";
+/** Реквизиты магазина (футер, /contacts, оферта). */
+export const SITE_CONTACT_EMAIL = "info.illuminaris@gmail.com";
 
-/** Владелец: ФИО или наименование ИП / юрлица */
-export const SITE_OWNER_LINE = "указать ФИО или ИП";
+export const SITE_OWNER_LINE =
+  "Индивидуальный предприниматель Парфенов Даниил Витальевич";
+
+export const SITE_UNP = "693421317";

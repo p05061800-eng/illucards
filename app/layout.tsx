@@ -1,10 +1,12 @@
 import type { Metadata, Viewport } from "next";
+import { Suspense } from "react";
 import { Bebas_Neue, Geist_Mono, Inter } from "next/font/google";
 import { SiteFooter } from "@/components/SiteFooter";
 import Header from "@/components/Header";
 import { RefreshToHome } from "@/components/RefreshToHome";
 import { FloatingCartFab } from "@/components/FloatingCartFab";
 import { ScrollToTopButton } from "@/components/ScrollToTopButton";
+import { YandexMetrika } from "@/components/YandexMetrika";
 import { ClientStorageBuildMigration } from "@/app/components/ClientStorageBuildMigration";
 import { Providers } from "./providers";
 import "./globals.css";
@@ -75,6 +77,9 @@ export default function RootLayout({
           <FloatingCartFab />
           <ScrollToTopButton />
         </Providers>
+        <Suspense fallback={null}>
+          <YandexMetrika />
+        </Suspense>
       </body>
     </html>
   );

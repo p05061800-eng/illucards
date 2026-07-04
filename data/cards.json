@@ -5559,11 +5559,16 @@
     ],
     "noveltySince": "2026-07-04T20:01:37.994Z",
     "effect": "vario",
+    "categoryBg": "/uploads/1783196430625-b7efec9d.webp",
     "frontImageFocus": {
       "x": 50,
       "y": 50
     },
     "backImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryBgFocus": {
       "x": 50,
       "y": 50
     },

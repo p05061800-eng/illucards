@@ -8,8 +8,8 @@ import { useCart } from "@/app/context/CartContext";
 import { stashPendingTelegramCheckout } from "@/app/lib/pendingTelegramCheckout";
 import { submitTelegramCheckoutOrder } from "@/app/lib/submitTelegramCheckoutOrder";
 import { startTelegramWebLoginWithWait } from "@/app/lib/startTelegramWebLoginClient";
-import { openTelegramUrl, redirectToTelegramUrl } from "@/app/lib/yandexMetrika";
 import { telegramWebLoginDeepLink } from "@/app/lib/telegramWebLoginUrl";
+import { openTelegramUrl, redirectToTelegramUrl } from "@/app/lib/yandexMetrika";
 
 type Props = {
   className?: string;

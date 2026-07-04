@@ -41,6 +41,7 @@ import {
 } from "@/app/lib/telegramLoginWaitStorage";
 import { openTelegramUrl } from "@/app/lib/yandexMetrika";
 import { telegramWebLoginDeepLink } from "@/app/lib/telegramWebLoginUrl";
+import { openTelegramUrl } from "@/app/lib/yandexMetrika";
 
 type LsGate = "pending" | "ok" | "no_telegram";
 

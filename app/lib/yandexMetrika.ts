@@ -16,6 +16,9 @@ export function isTelegramExternalUrl(url: string): boolean {
   if (!raw || raw.startsWith("#") || raw.startsWith("mailto:") || raw.startsWith("tel:")) {
     return false;
   }
+  if (raw.startsWith("tg://")) {
+    return true;
+  }
 
   try {
     const base =
@@ -34,12 +37,8 @@ export function isTelegramExternalUrl(url: string): boolean {
 
 export function trackTelegramClick(): void {
   if (typeof window === "undefined") return;
-  if (typeof window.ym !== "function" || !Number.isFinite(YANDEX_METRIKA_ID)) {
-    return;
-  }
-  if (YANDEX_METRIKA_ID <= 0) return;
-
-  window.ym(YANDEX_METRIKA_ID, "reachGoal", YANDEX_METRIKA_TELEGRAM_GOAL);
+  console.log("telegram_click fired");
+  window.ym?.(YANDEX_METRIKA_ID, "reachGoal", YANDEX_METRIKA_TELEGRAM_GOAL);
 }
 
 export function openTelegramUrl(

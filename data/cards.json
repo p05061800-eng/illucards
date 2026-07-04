@@ -228,11 +228,11 @@
     "title": "Эйприл О`нил (под защитой четверки)",
     "description": "🟢 Эйприл О’Нил — смелая журналистка и верный союзник Черепашек-ниндзя.\r\nДаже в редкие моменты отдыха она остаётся под надёжной защитой четвёрки героев.\r\nЭйприл не участвует в боях напрямую, но её ум, наблюдательность и находчивость не раз помогали спасать ситуацию. Она всегда оказывается в центре событий — с камерой в руках и готовностью раскрыть правду.\r\n🟢 Роль: поддержка и разведка\r\n📸 Особенность: сбор информации\r\n🛡 Защита: под охраной Черепашек\r\n💡 Ценность: ключевой союзник",
     "category": "TMNT",
-    "subcategory": "",
+    "subcategory": "turtles",
     "frontImage": "/uploads/1776085549889-4be4e8cb.webp",
     "backImage": "/uploads/1776085557356-7fe62cac.webp",
     "price": 40,
-    "rarity": "limited",
+    "rarity": "adult",
     "stats": {
       "power": 50,
       "speed": 50,
@@ -245,6 +245,10 @@
     "inStock": false,
     "ratingAvg": 5,
     "reviewCount": 0,
+    "rarities": [
+      "limited",
+      "adult"
+    ],
     "boughtTogetherIds": [
       "9a17e901-20c5-41cb-8515-d3e5d702b70d"
     ],
@@ -757,13 +761,13 @@
   {
     "id": "e80877bb-670b-4f83-9b1d-3beef1fb5cb3",
     "title": "Карай / Под защитой Шреддера",
-    "description": "🔴 Карай / Под защитой Шреддера — лидер клана Фут, чья сила усиливается присутствием элиты.\r\nХолодная, точная и беспощадная, она контролирует поле боя, пока за её спиной стоят лучшие бойцы Шреддера.\r\nВ обычной форме Карай действует как стратег и убийца, нанося быстрые и точные удары. Но под защитой Шреддера она становится центром силы — её атаки усиливаются, а враги оказываются под постоянным давлением со всех сторон.\r\nЭто не просто боец — это командир, за которым стоит армия.\r\n🔴 Форма 1: скорость, точность, тактика\r\n🛡 Форма 2: поддержка элиты, усиление давления\r\n💀 Опасность: максимальная в окружении союзников",
+    "description": "🔴 Карай / Под защитой Шреддера — лидер клана Фут, чья сила усиливается присутствием элиты.\r\nХолодная, точная и беспощадная, она контролирует поле боя, пока за её спиной стоят лучшие бойцы Шреддера.\r\nВ обычной форме Карай действует как стратег и убийца, нанося быстрые и точные удары. Но под защитой Шреддера она становится центром силы — её атаки усиливаются, а враги оказываются под постоянным давлением со всех сторон.\r\nЭто не просто боец — это командир, за которым стоит армия.\r\n💀 Опасность: максимальная в окружении союзников",
     "category": "TMNT",
-    "subcategory": "",
+    "subcategory": "turtles",
     "frontImage": "/uploads/1776103858314-4e54cb3a.webp",
     "backImage": "/uploads/1776103865395-d0f84262.webp",
     "price": 40,
-    "rarity": "limited",
+    "rarity": "adult",
     "stats": {
       "power": 50,
       "speed": 50,
@@ -776,6 +780,10 @@
     "inStock": false,
     "ratingAvg": 5,
     "reviewCount": 0,
+    "rarities": [
+      "limited",
+      "adult"
+    ],
     "boughtTogetherIds": [
       "9a17e901-20c5-41cb-8515-d3e5d702b70d",
       "b1ce562d-71ec-4480-86b0-10ba17d9e26f"
@@ -1218,7 +1226,7 @@
     "frontImage": "/uploads/1776656486180-2c1a309d.webp",
     "backImage": "/uploads/1776656489974-5dc8d98f.webp",
     "price": 25,
-    "rarity": "common",
+    "rarity": "novelty",
     "stats": {
       "power": 50,
       "speed": 50,
@@ -1231,6 +1239,11 @@
     "inStock": true,
     "ratingAvg": 5,
     "reviewCount": 0,
+    "rarities": [
+      "common",
+      "novelty"
+    ],
+    "noveltySince": "2026-07-04T20:04:48.674Z",
     "effect": "vario",
     "categoryBg": "/uploads/1776656462392-a9d97882.webp",
     "frontImageFocus": {
@@ -2022,7 +2035,7 @@
     "frontImage": "/uploads/1776658165102-f2abfdfe.webp",
     "backImage": "/uploads/1776658169748-d21a41e6.webp",
     "price": 25,
-    "rarity": "common",
+    "rarity": "novelty",
     "stats": {
       "power": 50,
       "speed": 50,
@@ -2035,6 +2048,11 @@
     "inStock": true,
     "ratingAvg": 5,
     "reviewCount": 0,
+    "rarities": [
+      "common",
+      "novelty"
+    ],
+    "noveltySince": "2026-07-04T20:04:07.979Z",
     "effect": "vario",
     "categoryBg": "/uploads/1776658151985-80e5df12.webp",
     "frontImageFocus": {
@@ -2106,7 +2124,7 @@
     "frontImage": "/uploads/1776683050626-7638b2bd.webp",
     "backImage": "",
     "price": 25,
-    "rarity": "common",
+    "rarity": "novelty",
     "stats": {
       "power": 50,
       "speed": 50,
@@ -2119,6 +2137,11 @@
     "inStock": true,
     "ratingAvg": 5,
     "reviewCount": 0,
+    "rarities": [
+      "common",
+      "novelty"
+    ],
+    "noveltySince": "2026-07-04T20:00:48.374Z",
     "frontHoverGif": "/uploads/videos/dea65a97-2704-4c1c-86c0-034188f0b016.mp4",
     "effect": "3d-horizontal",
     "categoryBg": "/uploads/1776683038622-fd281ff6.webp",
@@ -2186,7 +2209,7 @@
     "frontImage": "/uploads/1776709771575-d2786264.webp",
     "backImage": "",
     "price": 25,
-    "rarity": "common",
+    "rarity": "novelty",
     "stats": {
       "power": 50,
       "speed": 50,
@@ -2199,6 +2222,11 @@
     "inStock": true,
     "ratingAvg": 5,
     "reviewCount": 0,
+    "rarities": [
+      "common",
+      "novelty"
+    ],
+    "noveltySince": "2026-07-04T20:02:01.721Z",
     "effect": "3d-horizontal",
     "categoryBg": "/uploads/1776721510194-ba8afbba.webp",
     "frontImageFocus": {
@@ -2809,7 +2837,7 @@
     "frontImage": "/uploads/1776712320770-5b5e7cc6.webp",
     "backImage": "/uploads/1776712472493-61484526.webp",
     "price": 40,
-    "rarity": "limited",
+    "rarity": "adult",
     "stats": {
       "power": 50,
       "speed": 50,
@@ -2822,6 +2850,10 @@
     "inStock": false,
     "ratingAvg": 5,
     "reviewCount": 0,
+    "rarities": [
+      "limited",
+      "adult"
+    ],
     "effect": "vario",
     "categoryBg": "/uploads/1776712280723-72c4f7fa.webp",
     "frontImageFocus": {
@@ -3147,6 +3179,11 @@
     "inStock": true,
     "ratingAvg": 5,
     "reviewCount": 0,
+    "rarities": [
+      "limited",
+      "novelty"
+    ],
+    "noveltySince": "2026-07-04T20:00:03.194Z",
     "frontHoverGif": "/uploads/videos/9bd42cc2-73d0-4428-b509-2e1c474b2a25.mp4",
     "effect": "3d-horizontal",
     "categoryBg": "/uploads/1776713665377-a7452716.webp",
@@ -3323,7 +3360,7 @@
   },
   {
     "id": "cf13b821-46ed-4f96-b188-2c9fd2158313",
-    "title": "Мистик",
+    "title": "Перевоплощение Мистик",
     "description": "Она не меняет лица — она стирает границы между ними. Мистик не притворяется… она становится. Сегодня союзник, завтра угроза, и ты никогда не узнаешь, в какой момент всё пошло не так. Там, где другие играют роли, она пишет их заново. Её сила — не в форме, а в обмане, который ты принимаешь за правду. И если ты смотришь ей в глаза… возможно, уже слишком поздно.",
     "category": "Marvel",
     "subcategory": "",
@@ -3371,7 +3408,7 @@
   },
   {
     "id": "96bf295c-a473-4ad2-b288-f2dc19657103",
-    "title": "Циклоп",
+    "title": "Очки Циклопа",
     "description": "Он не прицеливается… он смотрит — и этого достаточно. Он не прицеливается… он смотрит — и этого достаточно. Циклоп не выбирает силу, он сдерживает её каждую секунду. За визором — энергия, способная пробить всё, что встанет на пути. Ошибка здесь стоит слишком дорого, поэтому он не ошибается. Это не просто удар — это линия, которая делит поле боя на «до» и «после». И если он снял контроль… значит, кто-то уже исчез.\r\nЦиклоп не выбирает силу, он сдерживает её каждую секунду. За визором — энергия, способная пробить всё, что встанет на пути. Ошибка здесь стоит слишком дорого, поэтому он не ошибается. Это не просто удар — это линия, которая делит поле боя на «до» и «после». И если он снял контроль… значит, кто-то уже исчез.",
     "category": "Marvel",
     "subcategory": "",
@@ -3530,7 +3567,7 @@
   },
   {
     "id": "9f9376bc-5c49-40d7-b9b0-d06a5fde653d",
-    "title": "Меченый",
+    "title": "Меченный",
     "description": "Он не целится — он уже попал. Меченый не промахивается, потому что для него нет «мимо». Любая вещь в его руках — это приговор, который уже летит к цели. Ты можешь спрятаться, уклониться, убежать… но это лишь отсрочка. Его точность — это не навык, это правило, которое нельзя нарушить. И если он выбрал тебя — вопрос не «попадёт ли», а «когда».",
     "category": "Marvel",
     "subcategory": "",
@@ -3605,7 +3642,7 @@
   },
   {
     "id": "ea987edb-8984-4363-8fb5-e743a760b8fa",
-    "title": "Росомаха",
+    "title": "Когти Росомахи",
     "description": "Он не просит — он берёт. Эти когти не просто оружие, это продолжение его ярости. Каждый удар — как приговор, каждый шаг — как вызов. Росомаха не ищет лёгких путей: он идёт напролом, ломая всё на своём пути. И если когти вышли — бой уже проигран… просто ты ещё об этом не знаешь.",
     "category": "Marvel",
     "subcategory": "",
@@ -3684,7 +3721,7 @@
   },
   {
     "id": "2634d5d3-bd75-4264-a07d-561575490d90",
-    "title": "Мэри Джейн",
+    "title": "Обаяние Мэри Джейн",
     "description": "Её сила — не в ударах, а в том, как она меняет ход игры. Мэри Джейн — это момент тишины перед бурей, точка, где герой вспоминает, за что сражается. Она не выходит на поле боя, но именно она даёт ясность и холодный расчёт. Иногда победа — это не сила… а правильная мысль в нужный момент.",
     "category": "Marvel",
     "subcategory": "",
@@ -3844,7 +3881,7 @@
   },
   {
     "id": "24ad1924-2c80-4e6f-aea7-0dd5ca072e53",
-    "title": "Женщина-неведимка",
+    "title": "Женщина-невидимка",
     "description": "Её не видно — но именно она держит линию. Сьюзан Шторм не просто исчезает, она контролирует поле боя, превращая пространство в оружие. Щиты, которые не пробить, атаки, которые приходят из ниоткуда — против неё нет прямого решения. Она — защита, о которую ломаются враги… и удар, который они не успевают заметить.",
     "category": "Marvel",
     "subcategory": "",
@@ -4563,7 +4600,7 @@
   },
   {
     "id": "60d2242d-ffee-47eb-8557-6ec72053221c",
-    "title": "Паучье чутьё",
+    "title": "Помощь паучка",
     "description": "Паучье чутьё не подводит.\r\nСпайди предугадывает опасность и действует первым.\r\nДаже в безвыходной ситуации он находит путь к победе.",
     "category": "Marvel",
     "subcategory": "",
@@ -5291,10 +5328,10 @@
     "description": "Бустер — это шанс открыть редкую 3D-карточку из вселенной Marvel. Внутри тебя ждут легендарные герои, опасные злодеи и уникальные коллекционные дизайны с эффектом объёма, которые выглядят как кадр из настоящего фильма. Никогда не знаешь, кто попадётся следующим: Человек-Паук, Веном, Майлз Моралес или эксклюзивная лимитированная карта. Собери собственную коллекцию, обменивайся карточками и открой самых редких персонажей серии.»",
     "category": "Marvel",
     "subcategory": "",
-    "frontImage": "/uploads/1779064072943-081d3be2.webp",
+    "frontImage": "/uploads/1783167650581-3089b119.webp",
     "backImage": "",
     "price": 20,
-    "rarity": "limited",
+    "rarity": "common",
     "stats": {
       "power": 50,
       "speed": 50,
@@ -5371,7 +5408,7 @@
     "frontImage": "/uploads/1781649228015-4dd49b8e.webp",
     "backImage": "/uploads/1781649233432-879dba21.webp",
     "price": 25,
-    "rarity": "novelty",
+    "rarity": "common",
     "stats": {
       "power": 50,
       "speed": 50,
@@ -5384,10 +5421,6 @@
     "inStock": true,
     "ratingAvg": 5,
     "reviewCount": 0,
-    "rarities": [
-      "common",
-      "novelty"
-    ],
     "effect": "vario",
     "categoryBg": "/uploads/1781649188261-536d985b.webp",
     "frontImageFocus": {
@@ -5417,7 +5450,7 @@
     "frontImage": "/uploads/1781650158920-8b596e71.webp",
     "backImage": "/uploads/1781650162690-af64722a.webp",
     "price": 25,
-    "rarity": "novelty",
+    "rarity": "common",
     "stats": {
       "power": 50,
       "speed": 50,
@@ -5430,10 +5463,6 @@
     "inStock": true,
     "ratingAvg": 5,
     "reviewCount": 0,
-    "rarities": [
-      "common",
-      "novelty"
-    ],
     "noveltySince": "2026-06-16T22:49:24.721Z",
     "effect": "vario",
     "categoryBg": "/uploads/1781649413376-f3ffe71f.webp",
@@ -5478,10 +5507,10 @@
     "ratingAvg": 5,
     "reviewCount": 0,
     "rarities": [
-      "novelty",
-      "adult"
+      "adult",
+      "novelty"
     ],
-    "noveltySince": "2026-06-16T22:47:14.456Z",
+    "noveltySince": "2026-07-04T20:00:17.355Z",
     "effect": "vario",
     "categoryBg": "/uploads/1781649801090-55d23a98.webp",
     "frontImageFocus": {
@@ -5528,7 +5557,7 @@
       "common",
       "novelty"
     ],
-    "noveltySince": "2026-06-16T22:59:29.594Z",
+    "noveltySince": "2026-07-04T20:01:37.994Z",
     "effect": "vario",
     "frontImageFocus": {
       "x": 50,
@@ -5948,6 +5977,11 @@
     "inStock": true,
     "ratingAvg": 5,
     "reviewCount": 0,
+    "rarities": [
+      "limited",
+      "novelty"
+    ],
+    "noveltySince": "2026-07-04T20:05:21.336Z",
     "effect": "vario",
     "categoryBg": "/uploads/1781652221482-25241336.webp",
     "frontImageFocus": {
@@ -6661,7 +6695,7 @@
       "common",
       "novelty"
     ],
-    "noveltySince": "2026-06-17T00:28:48.943Z",
+    "noveltySince": "2026-07-04T20:02:11.628Z",
     "effect": "vario",
     "categoryBg": "/uploads/1781656010054-fa67b69f.webp",
     "frontImageFocus": {
@@ -6689,7 +6723,7 @@
   },
   {
     "id": "5b2f7dcf-50d2-46e7-b10a-0a8252c7c37e",
-    "title": "Сплинтерсс мечом тенге",
+    "title": "Сплинтер с мечом тенгу",
     "description": "Сплинтер — мудрый наставник Черепашек-ниндзя и один из величайших мастеров ниндзюцу. Вооружившись легендарным Мечом Тенгу, он получил силу противостоять древней магии и самым опасным врагам. Его опыт, мудрость и непревзойдённое мастерство делают его настоящей опорой для своих учеников и защитником мира.",
     "category": "TMNT",
     "subcategory": "foes",
@@ -6713,7 +6747,7 @@
       "common",
       "novelty"
     ],
-    "noveltySince": "2026-06-17T00:41:01.632Z",
+    "noveltySince": "2026-07-04T20:02:38.326Z",
     "effect": "vario",
     "categoryBg": "/uploads/1781656775171-64233127.webp",
     "frontImageFocus": {
@@ -6811,7 +6845,7 @@
       "common",
       "novelty"
     ],
-    "noveltySince": "2026-06-17T00:58:33.938Z",
+    "noveltySince": "2026-07-04T20:03:25.818Z",
     "effect": "vario",
     "categoryBg": "/uploads/1781657855718-ccd85cba.webp",
     "frontImageFocus": {
@@ -6832,7 +6866,7 @@
       "y": 50
     },
     "priceRub": 750,
-    "categoryOrder": 46,
+    "categoryOrder": 31,
     "varioSmoothing": 0.18,
     "frontImageWidth": 761,
     "frontImageHeight": 1024
@@ -6861,8 +6895,8 @@
     "reviewCount": 0,
     "rarities": [
       "limited",
-      "novelty",
-      "adult"
+      "adult",
+      "novelty"
     ],
     "noveltySince": "2026-06-17T01:02:35.756Z",
     "effect": "vario",
@@ -6941,7 +6975,7 @@
     "frontImage": "/uploads/1781658922665-c9a6db77.webp",
     "backImage": "",
     "price": 25,
-    "rarity": "common",
+    "rarity": "novelty",
     "stats": {
       "power": 50,
       "speed": 50,
@@ -6954,6 +6988,11 @@
     "inStock": true,
     "ratingAvg": 5,
     "reviewCount": 0,
+    "rarities": [
+      "common",
+      "novelty"
+    ],
+    "noveltySince": "2026-07-04T20:04:18.541Z",
     "effect": "3d-horizontal",
     "categoryBg": "/uploads/1781658900299-0d5edfcd.webp",
     "frontImageFocus": {
@@ -7469,8 +7508,10 @@
     "reviewCount": 0,
     "rarities": [
       "common",
-      "adult"
+      "adult",
+      "novelty"
     ],
+    "noveltySince": "2026-07-04T20:03:36.212Z",
     "effect": "vario",
     "categoryBg": "/uploads/1781987542683-f933ed9a.webp",
     "frontImageFocus": {
@@ -7518,6 +7559,7 @@
       "common"
     ],
     "effect": "vario",
+    "categoryBg": "/uploads/1781987985800-bb8ff385.webp",
     "frontImageFocus": {
       "x": 50,
       "y": 50
@@ -7526,16 +7568,15 @@
       "x": 50,
       "y": 50
     },
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    },
     "priceRub": 800,
     "categoryOrder": 4,
     "varioSmoothing": 0.18,
     "frontImageWidth": 600,
-    "frontImageHeight": 900,
-    "categoryBg": "/uploads/1781987985800-bb8ff385.webp",
-    "categoryBgFocus": {
-      "x": 50,
-      "y": 50
-    }
+    "frontImageHeight": 900
   },
   {
     "id": "ff7c18d4-1d62-45c0-86d1-466676941557",

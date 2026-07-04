@@ -1194,9 +1194,10 @@ body::after {
   }
 
   .hero-right-side--novelty .hero-novelty-card-wrap {
-    width: 100%;
-    max-width: 100%;
-    flex: 1 1 auto;
+    width: 88%;
+    max-width: 88%;
+    flex: 0 1 auto;
+    margin-inline: auto;
   }
 
   .hero-right-side--novelty .hero-novelty-card-wrap .hero-stack-max,
@@ -2155,8 +2156,8 @@ body::after {
   }
 
   .hero-main-desktop > .hero-right-side--novelty .hero-cell-card.hero-card {
-    max-width: 100%;
-    width: 100%;
+    max-width: 88%;
+    width: 88%;
   }
 
   .hero-main-desktop > .hero-right-side .hero-novelty-card-stage {
@@ -2174,8 +2175,8 @@ body::after {
   }
 
   .hero .hero-card.hero-novelty-card-wrap {
-    width: 100%;
-    max-width: 100%;
+    width: 88%;
+    max-width: 88%;
     margin-inline: auto;
   }
 

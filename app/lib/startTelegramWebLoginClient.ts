@@ -4,6 +4,7 @@ import {
   notifyLoginWaitStarted,
   persistLoginWaitId,
 } from "@/app/lib/telegramLoginWaitStorage";
+import { openTelegramUrl } from "@/app/lib/yandexMetrika";
 import { telegramWebLoginDeepLink } from "@/app/lib/telegramWebLoginUrl";
 
 declare global {
@@ -30,7 +31,7 @@ export async function startTelegramWebLoginWithWait(): Promise<boolean> {
     persistLoginWaitId(id);
     notifyLoginWaitStarted();
     const url = telegramWebLoginDeepLink(id);
-    const popup = window.open(
+    const popup = openTelegramUrl(
       url,
       "_blank",
       "popup=yes,width=520,height=820,menubar=no,toolbar=no,location=yes,status=no,scrollbars=yes,resizable=yes",
@@ -41,7 +42,7 @@ export async function startTelegramWebLoginWithWait(): Promise<boolean> {
       return true;
     }
     // Popup blocked — новая вкладка; poller на этой вкладке продолжит ждать.
-    window.open(url, "_blank", "noopener,noreferrer");
+    openTelegramUrl(url, "_blank", "noopener,noreferrer");
     return true;
   } catch {
     return false;

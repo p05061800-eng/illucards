@@ -4,6 +4,7 @@ import {
   readPendingTelegramCheckout,
 } from "@/app/lib/pendingTelegramCheckout";
 import { submitTelegramCheckoutOrder } from "@/app/lib/submitTelegramCheckoutOrder";
+import { redirectToTelegramUrl } from "@/app/lib/yandexMetrika";
 import { TG_LOGIN_AUTO_ERROR_KEY } from "@/app/lib/telegramLoginWaitKeys";
 import { readTelegramUserLink } from "@/app/lib/telegramUserIdentity";
 
@@ -79,7 +80,7 @@ export async function completePendingTelegramCheckoutAfterLogin(
       );
     }
 
-    window.location.href = result.botUrl;
+    redirectToTelegramUrl(result.botUrl);
     return "redirected";
   } finally {
     pendingCheckoutInFlight = false;

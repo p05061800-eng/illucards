@@ -39,6 +39,7 @@ import {
   clearLoginWaitId,
   resetTelegramLoginWaitClientState,
 } from "@/app/lib/telegramLoginWaitStorage";
+import { openTelegramUrl } from "@/app/lib/yandexMetrika";
 import { telegramWebLoginDeepLink } from "@/app/lib/telegramWebLoginUrl";
 
 type LsGate = "pending" | "ok" | "no_telegram";
@@ -291,7 +292,7 @@ export default function AccountPageClient() {
     const ok = await startTelegramWebLoginWithWait();
     if (!ok && typeof window !== "undefined") {
       setAutoLoginPending(false);
-      window.open(telegramWebLoginDeepLink(), "_blank", "noopener,noreferrer");
+      openTelegramUrl(telegramWebLoginDeepLink(), "_blank", "noopener,noreferrer");
     }
   }, []);
 

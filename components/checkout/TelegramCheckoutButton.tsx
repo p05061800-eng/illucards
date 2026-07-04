@@ -8,6 +8,7 @@ import { useCart } from "@/app/context/CartContext";
 import { stashPendingTelegramCheckout } from "@/app/lib/pendingTelegramCheckout";
 import { submitTelegramCheckoutOrder } from "@/app/lib/submitTelegramCheckoutOrder";
 import { startTelegramWebLoginWithWait } from "@/app/lib/startTelegramWebLoginClient";
+import { openTelegramUrl, redirectToTelegramUrl } from "@/app/lib/yandexMetrika";
 import { telegramWebLoginDeepLink } from "@/app/lib/telegramWebLoginUrl";
 
 type Props = {
@@ -39,7 +40,7 @@ export function TelegramCheckoutButton({
     router.refresh();
     const ok = await startTelegramWebLoginWithWait();
     if (!ok && typeof window !== "undefined") {
-      window.open(telegramWebLoginDeepLink(), "_blank", "noopener,noreferrer");
+      openTelegramUrl(telegramWebLoginDeepLink(), "_blank", "noopener,noreferrer");
     }
   }, [cartItems.length, deliveryCountry, router]);
 
@@ -84,11 +85,11 @@ export function TelegramCheckoutButton({
         );
         setSubmitting(false);
         onBeforeNavigate?.();
-        window.location.href = result.botUrl;
+        redirectToTelegramUrl(result.botUrl);
         return;
       }
       onBeforeNavigate?.();
-      window.location.href = result.botUrl;
+      redirectToTelegramUrl(result.botUrl);
     } catch {
       setError("Сеть недоступна. Попробуйте ещё раз.");
       setSubmitting(false);

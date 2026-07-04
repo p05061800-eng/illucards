@@ -3,17 +3,11 @@
 import { useEffect } from "react";
 import { usePathname, useSearchParams } from "next/navigation";
 import Script from "next/script";
-
-/** Счётчик Яндекс Метрики (можно переопределить через NEXT_PUBLIC_YANDEX_METRIKA_ID). */
-export const YANDEX_METRIKA_ID = Number(
-  process.env.NEXT_PUBLIC_YANDEX_METRIKA_ID ?? "110372289",
-);
-
-declare global {
-  interface Window {
-    ym?: (counterId: number, method: string, ...args: unknown[]) => void;
-  }
-}
+import {
+  isTelegramExternalUrl,
+  trackTelegramClick,
+  YANDEX_METRIKA_ID,
+} from "@/app/lib/yandexMetrika";
 
 function pageUrl(pathname: string, searchParams: URLSearchParams): string {
   const query = searchParams.toString();
@@ -34,6 +28,28 @@ function YandexMetrikaPageView() {
   useEffect(() => {
     sendHit(pageUrl(pathname, searchParams));
   }, [pathname, searchParams]);
+
+  return null;
+}
+
+/** Отслеживает клики по ссылкам на t.me / telegram.me (соцсети, заказы, поддержка). */
+function YandexMetrikaTelegramClickTracker() {
+  useEffect(() => {
+    const onClick = (event: MouseEvent) => {
+      if (event.defaultPrevented || event.button !== 0) return;
+
+      const anchor = (event.target as Element | null)?.closest("a");
+      if (!anchor) return;
+
+      const href = anchor.getAttribute("href");
+      if (!href || !isTelegramExternalUrl(href)) return;
+
+      trackTelegramClick();
+    };
+
+    document.addEventListener("click", onClick, true);
+    return () => document.removeEventListener("click", onClick, true);
+  }, []);
 
   return null;
 }
@@ -78,6 +94,7 @@ ym(${YANDEX_METRIKA_ID}, "init", {
         </div>
       </noscript>
       <YandexMetrikaPageView />
+      <YandexMetrikaTelegramClickTracker />
     </>
   );
 }

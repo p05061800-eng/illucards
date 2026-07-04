@@ -38,16 +38,13 @@ import { useIntrinsicImageAspect } from "../../lib/useIntrinsicImageAspect";
 const RARITY_FRAME: Record<CardRarity, string> = {
   common:
     "ring-1 ring-zinc-500/45 shadow-[0_0_18px_rgba(161,161,170,0.25)] group-hover/card3d:shadow-[0_0_40px_rgba(161,161,170,0.35)]",
-  limited:
-    "ring-1 ring-amber-400/55 shadow-[0_0_22px_rgba(251,191,36,0.4)] group-hover/card3d:shadow-[0_0_48px_rgba(251,191,36,0.5)]",
-  adult:
-    "ring-1 ring-rose-400/55 shadow-[0_0_22px_rgba(244,63,94,0.4)] group-hover/card3d:shadow-[0_0_48px_rgba(244,63,94,0.5)]",
+  limited: "",
+  adult: "",
   replica:
     "ring-1 ring-sky-400/55 shadow-[0_0_22px_rgba(56,189,248,0.4)] group-hover/card3d:shadow-[0_0_48px_rgba(56,189,248,0.5)]",
   novelty:
     "ring-1 ring-emerald-400/55 shadow-[0_0_22px_rgba(52,211,153,0.4)] group-hover/card3d:shadow-[0_0_48px_rgba(52,211,153,0.5)]",
-  hot_price:
-    "ring-1 ring-fuchsia-400/70 shadow-[0_0_30px_rgba(217,70,239,0.52)] group-hover/card3d:ring-fuchsia-300/85 animate-legendary-card",
+  hot_price: "",
 };
 
 const RARITY_CORNER_BADGE: Record<CardRarity, string> = {
@@ -497,8 +494,8 @@ export function Card3D({ card }: Props) {
   return (
     <article className="group/card3d mx-auto w-full max-w-[min(100%,380px)]">
       <CardRarityGlowShell
-        rarity={rarity}
-        frameClassName={`relative z-10 overflow-visible rounded-2xl ring-1 transition-[box-shadow] duration-500 ease-out ${RARITY_FRAME[rarity]}`}
+        card={card}
+        frameClassName={`relative z-10 overflow-visible rounded-2xl transition-[box-shadow] duration-500 ease-out ${RARITY_FRAME[rarity]}`}
       >
         <div
           className={`mx-auto inline-block max-w-full ${

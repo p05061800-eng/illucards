@@ -27,8 +27,8 @@ import { AgeConfirmDialog } from "./components/AdultContentBlurGate";
 import { useAdultContentGateOptional } from "./context/AdultContentContext";
 import {
   cardRequiresAgeConfirmation,
-  catalogCardFrameClass,
 } from "./lib/cardRequiresAgeConfirmation";
+import { CatalogCardRarityFrame } from "./components/CatalogCardRarityFrame";
 import { useAddToCartWithFeedback } from "./lib/cartUx/useAddToCartWithFeedback";
 import { CardPriceDualRow } from "./components/CardPriceDualRow";
 import { effectiveCardPriceByn } from "./lib/formatPrice";
@@ -182,8 +182,9 @@ function CardItem({
               isList ? "relative w-[104px] shrink-0 sm:w-[118px]" : "relative w-full"
             }
           >
-            <div
-              className={`relative w-full overflow-visible rounded-2xl [transform-style:preserve-3d] ${catalogCardFrameClass(card)}`}
+            <CatalogCardRarityFrame
+              card={card}
+              className="relative w-full overflow-visible rounded-2xl [transform-style:preserve-3d]"
             >
               {needs18 ? (
                 <span className={ADULT_BADGE_CLASS} aria-hidden>
@@ -197,7 +198,7 @@ function CardItem({
                 rootClassName="relative mx-auto w-full max-w-full rounded-2xl"
                 dataCartFlySource
               />
-            </div>
+            </CatalogCardRarityFrame>
           <div
             className={`mt-3 w-full max-w-full animate-fade-up ${isList ? "text-left" : "text-center"}`}
           >

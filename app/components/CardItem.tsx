@@ -10,8 +10,8 @@ import { useMergedRating } from "../context/CardRatingsContext";
 import { useFavorites } from "../context/FavoritesContext";
 import {
   cardRequiresAgeConfirmation,
-  catalogCardFrameClass,
 } from "../lib/cardRequiresAgeConfirmation";
+import { CatalogCardRarityFrame } from "./CatalogCardRarityFrame";
 import { useAddToCartWithFeedback } from "../lib/cartUx/useAddToCartWithFeedback";
 import { ultraOrHeroBgUrl } from "../lib/cardUltraBg";
 import { CardStackVisual } from "@/components/hero/CardStackVisual";
@@ -142,8 +142,9 @@ export function CardItem({ card, hideUltraLayer = false }: Props) {
           touchMovedRef.current = false;
         }}
       >
-        <div
-          className={`relative overflow-visible rounded-t-2xl ${catalogCardFrameClass(card)}`}
+        <CatalogCardRarityFrame
+          card={card}
+          className="relative overflow-visible rounded-t-2xl"
         >
           {needs18 ? (
             <span className={ADULT_BADGE_CLASS} aria-hidden>
@@ -158,7 +159,7 @@ export function CardItem({ card, hideUltraLayer = false }: Props) {
             rootClassName="relative mx-auto max-w-full rounded-t-2xl"
             dataCartFlySource
           />
-        </div>
+        </CatalogCardRarityFrame>
       </Link>
 
       <FavoritePopup show={showPopup} onClose={closePopup} />

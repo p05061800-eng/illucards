@@ -43,8 +43,8 @@ import {
 } from "../../components/AdultContentBlurGate";
 import {
   cardRequiresAgeConfirmation,
-  catalogCardFrameClass,
 } from "../../lib/cardRequiresAgeConfirmation";
+import { CatalogCardRarityFrame } from "../../components/CatalogCardRarityFrame";
 import { useAdultContentGateOptional } from "../../context/AdultContentContext";
 import { ProductReviewsSection } from "../../components/ProductReviewsSection";
 import { CardProductGallery } from "./CardProductGallery";
@@ -149,8 +149,9 @@ function MiniRailCard({ card: c }: { card: StoredCard }) {
           touchStartRef.current = null;
         }}
       >
-        <div
-          className={`relative w-full overflow-visible rounded-t-lg bg-zinc-900 ${catalogCardFrameClass(c)}`}
+        <CatalogCardRarityFrame
+          card={c}
+          className="relative w-full overflow-visible rounded-t-lg bg-zinc-900"
         >
           {needs18 ? (
             <span className={MINI_RAIL_ADULT_BADGE} aria-hidden>
@@ -175,7 +176,7 @@ function MiniRailCard({ card: c }: { card: StoredCard }) {
               />
             </AdultContentBlurGate>
           ) : null}
-        </div>
+        </CatalogCardRarityFrame>
         <div className="flex min-h-[3.5rem] flex-col gap-1.5 p-2">
           <p className="line-clamp-2 text-xs font-medium leading-tight text-zinc-100">
             {c.title}

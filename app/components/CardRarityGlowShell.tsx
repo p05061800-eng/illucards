@@ -1,29 +1,36 @@
 import type { ReactNode } from "react";
-import type { CardRarity } from "../api/cards/route";
-import { RARITY_GLOW } from "../lib/cardRarityUi";
+import type { StoredCard } from "../api/cards/route";
+import {
+  catalogCardFrameClass,
+  catalogCardRarityShellClass,
+} from "../lib/cardRarityUi";
 
 type Props = {
-  rarity: CardRarity;
-  frameClassName: string;
+  card: Pick<StoredCard, "rarity" | "rarities" | "noveltySince" | "frontImage">;
+  frameClassName?: string;
   children: ReactNode;
 };
 
-/** Обёртка: glow по редкости + опциональная градиентная рамка для «Горячая цена». */
+/** Обёртка: светящаяся рамка по тегам редкости (лимит / 18+ / оба / горячая цена). */
 export function CardRarityGlowShell({
-  rarity,
-  frameClassName,
+  card,
+  frameClassName = "",
   children,
 }: Props) {
-  const framed = <div className={frameClassName}>{children}</div>;
-  const withGlow = (
-    <div className={`rounded-2xl p-2 ${RARITY_GLOW[rarity]}`}>{framed}</div>
-  );
-  if (rarity !== "hot_price") {
-    return withGlow;
+  const shellClass = catalogCardRarityShellClass(card);
+  const frameCls = [catalogCardFrameClass(card), frameClassName]
+    .filter(Boolean)
+    .join(" ");
+
+  const framed = <div className={frameCls || undefined}>{children}</div>;
+
+  if (!shellClass) {
+    return framed;
   }
+
   return (
-    <div className="rounded-2xl bg-gradient-to-r from-fuchsia-500 via-purple-500 to-pink-500 p-[2px]">
-      <div className="rounded-[0.9375rem] bg-zinc-950">{withGlow}</div>
+    <div className={`${shellClass} rounded-2xl p-[3px]`}>
+      <div className="rounded-[0.9375rem] bg-zinc-950">{framed}</div>
     </div>
   );
 }

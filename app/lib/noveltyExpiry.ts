@@ -1,7 +1,7 @@
 import type { CardRarity } from "@/app/lib/cardRarityTags";
 
-/** Срок показа метки «Новинки» на карточке. */
-export const NOVELTY_TTL_MS = 7 * 24 * 60 * 60 * 1000;
+/** Срок показа метки «Новинки» на карточке (30 дней). */
+export const NOVELTY_TTL_MS = 30 * 24 * 60 * 60 * 1000;
 
 export type NoveltyTimingSource = {
   noveltySince?: unknown;

@@ -151,9 +151,10 @@ export function CardStackVisual({
 
   const fixedCatalogFrame = isFixedCardArtFramePreset(card.cardArtFramePreset);
   /**
-   * Каталог и страница товара: при «по файлу» — та же рамка по аспекту, картинка целиком
-   * (`contain` + фокус). Герой без этих флагов — прежняя отрисовка. Жёсткий пресет — contain.
+   * Каталог: картинка целиком (`contain` + фокус). Герой / диагональ — `cover`.
+   * Жёсткий пресет — contain через cardArtFaceFitStyle.
    */
+  const catalogFaceContain = catalogStack && !fixedCatalogFrame;
   const productFaceCoversFrame =
     (heroDiagonalLayout || catalogStack) && !fixedCatalogFrame;
   /** Всегда подмешиваем интринсик лица в resolve — спейсер ниже только по `stackBoxAspectCss`. */
@@ -609,15 +610,21 @@ export function CardStackVisual({
 
   const back = card.backImage?.trim() ?? "";
   const middle = card.middleImage?.trim() ?? "";
-  const frontPosStyle: CSSProperties = productFaceCoversFrame
-    ? categoryFocusCoverStyle(card.frontImageFocus)
-    : cardArtFaceFitStyle(card.cardArtFramePreset, card.frontImageFocus);
-  const backPosStyle: CSSProperties = productFaceCoversFrame
-    ? categoryFocusCoverStyle(card.backImageFocus)
-    : cardArtFaceFitStyle(card.cardArtFramePreset, card.backImageFocus);
-  const middlePosStyle: CSSProperties = productFaceCoversFrame
-    ? categoryFocusCoverStyle(card.middleImageFocus)
-    : cardArtFaceFitStyle(card.cardArtFramePreset, card.middleImageFocus);
+  const frontPosStyle: CSSProperties = catalogFaceContain
+    ? categoryFocusContainStyle(card.frontImageFocus)
+    : productFaceCoversFrame
+      ? categoryFocusCoverStyle(card.frontImageFocus)
+      : cardArtFaceFitStyle(card.cardArtFramePreset, card.frontImageFocus);
+  const backPosStyle: CSSProperties = catalogFaceContain
+    ? categoryFocusContainStyle(card.backImageFocus)
+    : productFaceCoversFrame
+      ? categoryFocusCoverStyle(card.backImageFocus)
+      : cardArtFaceFitStyle(card.cardArtFramePreset, card.backImageFocus);
+  const middlePosStyle: CSSProperties = catalogFaceContain
+    ? categoryFocusContainStyle(card.middleImageFocus)
+    : productFaceCoversFrame
+      ? categoryFocusCoverStyle(card.middleImageFocus)
+      : cardArtFaceFitStyle(card.cardArtFramePreset, card.middleImageFocus);
 
   /** Боковые слои vario: заполняют родителя. Лицо: `relative` — якорь для hover-оверлея. */
   const faceSideInnerShellClass = productFaceCoversFrame
@@ -626,16 +633,20 @@ export function CardStackVisual({
   const faceFrontInnerShellClass = productFaceCoversFrame
     ? "relative flex h-full min-h-0 w-full min-w-0 overflow-hidden rounded-2xl"
     : fixedShell;
-  const faceImgClass = productFaceCoversFrame
-    ? `block h-full min-h-0 w-full min-w-0 max-h-full max-w-full rounded-2xl object-cover ${faceCls}`.trim()
-    : `${fixedImg} rounded-2xl ${faceCls}`;
+  const faceImgClass = catalogFaceContain
+    ? `block h-full min-h-0 w-full min-w-0 max-h-full max-w-full rounded-2xl object-contain ${faceCls}`.trim()
+    : productFaceCoversFrame
+      ? `block h-full min-h-0 w-full min-w-0 max-h-full max-w-full rounded-2xl object-cover ${faceCls}`.trim()
+      : `${fixedImg} rounded-2xl ${faceCls}`;
 
-  /** Согласовано с лицом: hover в каталоге/товаре — cover в той же рамке, что лицо. */
+  /** Согласовано с лицом: hover в каталоге/товаре — в той же рамке, что лицо. */
   const catalogOrProductHoverFillsFace =
     ((catalogStack || heroDiagonalLayout) && !fixedCatalogFrame) &&
     Boolean(hoverMotion);
   const hoverMotionMediaStyle = catalogOrProductHoverFillsFace
-    ? categoryFocusCoverStyle(card.frontImageFocus)
+    ? catalogFaceContain
+      ? categoryFocusContainStyle(card.frontImageFocus)
+      : categoryFocusCoverStyle(card.frontImageFocus)
     : frontPosStyle;
 
   const showHoverMotionLayer =
@@ -689,9 +700,11 @@ export function CardStackVisual({
                   src={ultraBgUrl}
                   alt=""
                   className={`card-side-img rounded-2xl ${faceCls} ${
-                    productFaceCoversFrame || !fixedCatalogFrame
-                      ? "h-full min-h-0 w-full min-w-0 max-h-full max-w-full object-cover"
-                      : fixedImg
+                    catalogFaceContain
+                      ? "h-full min-h-0 w-full min-w-0 max-h-full max-w-full object-contain"
+                      : productFaceCoversFrame || !fixedCatalogFrame
+                        ? "h-full min-h-0 w-full min-w-0 max-h-full max-w-full object-cover"
+                        : fixedImg
                   }`.trim()}
                   style={
                     productFaceCoversFrame || !fixedCatalogFrame

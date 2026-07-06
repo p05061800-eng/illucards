@@ -2,6 +2,7 @@ import type { StoredCard } from "@/app/api/cards/route";
 export {
   catalogCardFrameClass,
   catalogCardRarityFrameVariant,
+  catalogCardRarityGlowClass,
 } from "@/app/lib/cardRarityUi";
 import {
   cardHasRarityTag,

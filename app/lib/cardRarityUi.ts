@@ -11,7 +11,7 @@ export const RARITY_STYLES: Record<CardRarity, string> = {
   hot_price: "text-fuchsia-300",
 };
 
-/** @deprecated Используйте `catalogCardFrameClass`. */
+/** @deprecated Используйте `catalogCardRarityGlowClass`. */
 export const RARITY_GLOW: Record<CardRarity, string> = {
   common: "",
   limited: "",
@@ -41,37 +41,33 @@ export function catalogCardRarityFrameVariant(
   return "none";
 }
 
-/** Светящаяся рамка превью: золото (лимит), красное (18+), оба — золото + красное. */
-export function catalogCardFrameClass(
-  card: Pick<StoredCard, "rarity" | "rarities" | "noveltySince" | "frontImage">,
-): string {
+/** Подсветка сзади карточки: золото (лимит), красное (18+), оба, горячая цена. */
+export function catalogCardRarityGlowClass(card: CardRaritySource): string {
   switch (catalogCardRarityFrameVariant(card)) {
     case "limited":
-      return "card-rarity-frame card-rarity-frame--limited";
+      return "card-rarity-glow card-rarity-glow--limited";
     case "adult":
-      return "card-rarity-frame card-rarity-frame--adult";
+      return "card-rarity-glow card-rarity-glow--adult";
     case "limited_adult":
-      return "card-rarity-frame card-rarity-frame--limited-adult";
+      return "card-rarity-glow card-rarity-glow--limited-adult";
     case "hot_price":
-      return "card-rarity-frame card-rarity-frame--hot-price";
+      return "card-rarity-glow card-rarity-glow--hot-price";
     default:
       return "";
   }
 }
 
+/** @deprecated Используйте `catalogCardRarityGlowClass`. */
+export function catalogCardFrameClass(
+  card: Pick<StoredCard, "rarity" | "rarities" | "noveltySince" | "frontImage">,
+): string {
+  return catalogCardRarityGlowClass(card);
+}
+
+/** @deprecated Используйте `catalogCardRarityGlowClass`. */
 export function catalogCardRarityShellClass(
   card: CardRaritySource,
 ): string | null {
-  switch (catalogCardRarityFrameVariant(card)) {
-    case "limited_adult":
-      return "card-rarity-shell card-rarity-shell--limited-adult";
-    case "limited":
-      return "card-rarity-shell card-rarity-shell--limited";
-    case "adult":
-      return "card-rarity-shell card-rarity-shell--adult";
-    case "hot_price":
-      return "card-rarity-shell card-rarity-shell--hot-price";
-    default:
-      return null;
-  }
+  void card;
+  return null;
 }

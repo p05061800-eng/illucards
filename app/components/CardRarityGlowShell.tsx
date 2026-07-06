@@ -1,9 +1,6 @@
 import type { ReactNode } from "react";
 import type { StoredCard } from "../api/cards/route";
-import {
-  catalogCardFrameClass,
-  catalogCardRarityShellClass,
-} from "../lib/cardRarityUi";
+import { catalogCardRarityGlowClass } from "../lib/cardRarityUi";
 
 type Props = {
   card: Pick<StoredCard, "rarity" | "rarities" | "noveltySince" | "frontImage">;
@@ -11,17 +8,13 @@ type Props = {
   children: ReactNode;
 };
 
-/** Обёртка: светящаяся рамка по тегам редкости — glow снаружи, размер карты не меняется. */
+/** Обёртка: мягкая подсветка сзади по тегам редкости. */
 export function CardRarityGlowShell({
   card,
   frameClassName = "",
   children,
 }: Props) {
-  const merged = [
-    catalogCardRarityShellClass(card),
-    catalogCardFrameClass(card),
-    frameClassName,
-  ]
+  const merged = [catalogCardRarityGlowClass(card), frameClassName]
     .filter(Boolean)
     .join(" ");
 

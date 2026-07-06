@@ -2285,285 +2285,137 @@ body::after {
   animation: legendary-card-glow 2.8s ease-in-out infinite;
 }
 
-/* Каталог / витрина: светящиеся рамки по редкости */
-@keyframes card-rarity-gold-pulse {
+/* Каталог / витрина: подсветка сзади по редкости (без рамки по контуру). */
+@keyframes card-rarity-back-gold-pulse {
   0%,
   100% {
-    box-shadow:
-      0 0 0 1px rgba(255, 237, 160, 0.95),
-      0 0 22px rgba(251, 191, 36, 0.72),
-      0 0 44px rgba(245, 158, 11, 0.42),
-      0 0 68px rgba(217, 119, 6, 0.22);
+    opacity: 0.72;
+    transform: scale(0.98);
+    filter: blur(16px) brightness(1);
   }
   50% {
-    box-shadow:
-      0 0 0 1px rgba(255, 251, 235, 1),
-      0 0 34px rgba(252, 211, 77, 0.95),
-      0 0 58px rgba(251, 191, 36, 0.62),
-      0 0 84px rgba(245, 158, 11, 0.38);
+    opacity: 1;
+    transform: scale(1.04);
+    filter: blur(20px) brightness(1.15);
   }
 }
 
-@keyframes card-rarity-red-pulse {
+@keyframes card-rarity-back-red-pulse {
   0%,
   100% {
-    box-shadow:
-      0 0 0 1px rgba(255, 180, 190, 0.95),
-      0 0 22px rgba(244, 63, 94, 0.75),
-      0 0 44px rgba(225, 29, 72, 0.48),
-      0 0 68px rgba(190, 18, 60, 0.26);
+    opacity: 0.7;
+    transform: scale(0.98);
+    filter: blur(16px) brightness(1);
   }
   50% {
-    box-shadow:
-      0 0 0 1px rgba(255, 228, 230, 1),
-      0 0 34px rgba(251, 113, 133, 0.95),
-      0 0 58px rgba(244, 63, 94, 0.68),
-      0 0 84px rgba(225, 29, 72, 0.42);
+    opacity: 1;
+    transform: scale(1.04);
+    filter: blur(20px) brightness(1.12);
   }
 }
 
-@keyframes card-rarity-duo-pulse {
+@keyframes card-rarity-back-duo-pulse {
   0%,
   100% {
-    box-shadow:
-      0 0 0 1px rgba(255, 237, 160, 0.95),
-      0 0 0 4px rgba(255, 120, 140, 0.88),
-      0 0 28px rgba(251, 191, 36, 0.62),
-      0 0 38px rgba(244, 63, 94, 0.52),
-      0 0 64px rgba(225, 29, 72, 0.28);
+    opacity: 0.74;
+    transform: scale(0.98);
+    filter: blur(17px) brightness(1.02);
   }
   50% {
-    box-shadow:
-      0 0 0 1px rgba(255, 251, 235, 1),
-      0 0 0 5px rgba(255, 160, 175, 1),
-      0 0 40px rgba(252, 211, 77, 0.88),
-      0 0 52px rgba(251, 113, 133, 0.72),
-      0 0 80px rgba(244, 63, 94, 0.45);
+    opacity: 1;
+    transform: scale(1.05);
+    filter: blur(22px) brightness(1.14);
   }
 }
 
-@keyframes card-rarity-shell-gold-shift {
+@keyframes card-rarity-back-hot-pulse {
   0%,
   100% {
-    background-position: 0% 50%;
-    filter: brightness(1) saturate(1.05);
+    opacity: 0.68;
+    transform: scale(0.98);
+    filter: blur(16px) brightness(1);
   }
   50% {
-    background-position: 100% 50%;
-    filter: brightness(1.12) saturate(1.2);
+    opacity: 0.95;
+    transform: scale(1.04);
+    filter: blur(20px) brightness(1.1);
   }
 }
 
-@keyframes card-rarity-shell-red-shift {
-  0%,
-  100% {
-    background-position: 0% 50%;
-    filter: brightness(1) saturate(1.05);
-  }
-  50% {
-    background-position: 100% 50%;
-    filter: brightness(1.1) saturate(1.18);
-  }
-}
-
-@keyframes card-rarity-shell-duo-shift {
-  0%,
-  100% {
-    background-position: 0% 50%;
-    filter: brightness(1.02) saturate(1.08);
-  }
-  50% {
-    background-position: 100% 50%;
-    filter: brightness(1.14) saturate(1.22);
-  }
-}
-
-.card-rarity-frame {
-  position: relative;
-  z-index: 0;
-  isolation: isolate;
-  overflow: visible;
-}
-
-.card-rarity-frame--limited::before,
-.card-rarity-frame--adult::before,
-.card-rarity-frame--limited-adult::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  pointer-events: none;
-  z-index: 60;
-}
-
-.card-rarity-frame--limited::before {
-  box-shadow: inset 0 0 0 2px rgba(255, 237, 160, 0.55);
-}
-
-.card-rarity-frame--adult::before {
-  box-shadow: inset 0 0 0 2px rgba(255, 200, 210, 0.55);
-}
-
-.card-rarity-frame--limited-adult::before {
-  box-shadow:
-    inset 0 0 0 2px rgba(255, 237, 160, 0.5),
-    inset 0 0 0 4px rgba(255, 140, 155, 0.45);
-}
-
-.card-rarity-frame--limited {
-  animation: card-rarity-gold-pulse 2.6s ease-in-out infinite;
-}
-
-.card-rarity-frame--adult {
-  animation: card-rarity-red-pulse 2.6s ease-in-out infinite;
-}
-
-.card-rarity-frame--limited-adult {
-  animation: card-rarity-duo-pulse 2.8s ease-in-out infinite;
-}
-
-.card-rarity-frame--hot-price {
-  animation: legendary-card-glow 2.8s ease-in-out infinite;
-}
-
-.card-rarity-shell {
+.card-rarity-glow {
   position: relative;
   isolation: isolate;
   overflow: visible;
 }
 
-/* Градиентное кольцо поверх края — не сжимает превью (без padding-обёртки). */
-.card-rarity-shell--limited::after,
-.card-rarity-shell--adult::after,
-.card-rarity-shell--limited-adult::after,
-.card-rarity-shell--hot-price::after {
+.card-rarity-glow::before {
   content: "";
   position: absolute;
-  inset: 0;
+  inset: -10%;
   border-radius: inherit;
   pointer-events: none;
-  z-index: 61;
-  padding: 3px;
-  -webkit-mask:
-    linear-gradient(#fff 0 0) content-box,
-    linear-gradient(#fff 0 0);
-  -webkit-mask-composite: xor;
-  mask:
-    linear-gradient(#fff 0 0) content-box,
-    linear-gradient(#fff 0 0);
-  mask-composite: exclude;
+  z-index: -1;
 }
 
-.card-rarity-shell--limited {
-  box-shadow:
-    0 0 22px rgba(251, 191, 36, 0.65),
-    0 0 44px rgba(245, 158, 11, 0.38);
-}
-
-.card-rarity-shell--limited::after {
-  background: linear-gradient(
-    135deg,
-    #fde68a 0%,
-    #fbbf24 24%,
-    #f59e0b 50%,
-    #fcd34d 76%,
-    #fde68a 100%
+.card-rarity-glow--limited::before {
+  background: radial-gradient(
+    ellipse 88% 92% at 50% 54%,
+    rgba(252, 211, 77, 0.72) 0%,
+    rgba(251, 191, 36, 0.42) 38%,
+    rgba(245, 158, 11, 0.16) 62%,
+    transparent 78%
   );
-  background-size: 220% 220%;
-  animation: card-rarity-shell-gold-shift 3.2s ease-in-out infinite;
+  animation: card-rarity-back-gold-pulse 2.8s ease-in-out infinite;
 }
 
-.card-rarity-shell--adult {
-  box-shadow:
-    0 0 22px rgba(244, 63, 94, 0.68),
-    0 0 44px rgba(225, 29, 72, 0.42);
-}
-
-.card-rarity-shell--adult::after {
-  background: linear-gradient(
-    135deg,
-    #fda4af 0%,
-    #f43f5e 26%,
-    #e11d48 52%,
-    #fb7185 78%,
-    #fda4af 100%
+.card-rarity-glow--adult::before {
+  background: radial-gradient(
+    ellipse 88% 92% at 50% 54%,
+    rgba(251, 113, 133, 0.7) 0%,
+    rgba(244, 63, 94, 0.4) 38%,
+    rgba(225, 29, 72, 0.15) 62%,
+    transparent 78%
   );
-  background-size: 220% 220%;
-  animation: card-rarity-shell-red-shift 3.2s ease-in-out infinite;
+  animation: card-rarity-back-red-pulse 2.8s ease-in-out infinite;
 }
 
-.card-rarity-shell--limited-adult {
-  box-shadow:
-    0 0 26px rgba(251, 191, 36, 0.55),
-    0 0 34px rgba(244, 63, 94, 0.48),
-    0 0 52px rgba(225, 29, 72, 0.28);
+.card-rarity-glow--limited-adult::before {
+  background:
+    radial-gradient(
+      ellipse 72% 88% at 28% 54%,
+      rgba(252, 211, 77, 0.62) 0%,
+      rgba(251, 191, 36, 0.22) 48%,
+      transparent 72%
+    ),
+    radial-gradient(
+      ellipse 72% 88% at 72% 54%,
+      rgba(251, 113, 133, 0.58) 0%,
+      rgba(244, 63, 94, 0.22) 48%,
+      transparent 72%
+    );
+  animation: card-rarity-back-duo-pulse 3s ease-in-out infinite;
 }
 
-.card-rarity-shell--limited-adult::after {
-  background: linear-gradient(
-    125deg,
-    #fde68a 0%,
-    #fbbf24 18%,
-    #f43f5e 42%,
-    #e11d48 58%,
-    #fbbf24 82%,
-    #fde68a 100%
+.card-rarity-glow--hot-price::before {
+  background: radial-gradient(
+    ellipse 88% 92% at 50% 54%,
+    rgba(232, 121, 249, 0.65) 0%,
+    rgba(168, 85, 247, 0.38) 40%,
+    rgba(236, 72, 153, 0.14) 64%,
+    transparent 78%
   );
-  background-size: 240% 240%;
-  animation: card-rarity-shell-duo-shift 3.6s ease-in-out infinite;
-}
-
-.card-rarity-shell--hot-price {
-  box-shadow:
-    0 0 24px rgba(217, 70, 239, 0.55),
-    0 0 40px rgba(168, 85, 247, 0.32);
-}
-
-.card-rarity-shell--hot-price::after {
-  background: linear-gradient(
-    90deg,
-    #e879f9,
-    #a855f7,
-    #ec4899
-  );
+  animation: card-rarity-back-hot-pulse 2.8s ease-in-out infinite;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .card-rarity-frame--limited,
-  .card-rarity-frame--adult,
-  .card-rarity-frame--limited-adult,
-  .card-rarity-frame--hot-price,
-  .card-rarity-shell--limited,
-  .card-rarity-shell--adult,
-  .card-rarity-shell--limited-adult {
+  .card-rarity-glow--limited::before,
+  .card-rarity-glow--adult::before,
+  .card-rarity-glow--limited-adult::before,
+  .card-rarity-glow--hot-price::before {
     animation: none;
-  }
-
-  .card-rarity-shell--limited::after,
-  .card-rarity-shell--adult::after,
-  .card-rarity-shell--limited-adult::after {
-    animation: none;
-    filter: none;
-  }
-
-  .card-rarity-frame--limited {
-    box-shadow:
-      0 0 0 2px rgba(251, 191, 36, 1),
-      0 0 28px rgba(251, 191, 36, 0.65);
-  }
-
-  .card-rarity-frame--adult {
-    box-shadow:
-      0 0 0 2px rgba(244, 63, 94, 1),
-      0 0 28px rgba(244, 63, 94, 0.65);
-  }
-
-  .card-rarity-frame--limited-adult {
-    box-shadow:
-      0 0 0 2px rgba(251, 191, 36, 1),
-      0 0 0 5px rgba(244, 63, 94, 0.9),
-      0 0 30px rgba(251, 191, 36, 0.5),
-      0 0 36px rgba(244, 63, 94, 0.45);
+    opacity: 0.82;
+    transform: none;
+    filter: blur(14px);
   }
 }
 

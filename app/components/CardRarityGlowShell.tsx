@@ -11,26 +11,19 @@ type Props = {
   children: ReactNode;
 };
 
-/** Обёртка: светящаяся рамка по тегам редкости (лимит / 18+ / оба / горячая цена). */
+/** Обёртка: светящаяся рамка по тегам редкости — glow снаружи, размер карты не меняется. */
 export function CardRarityGlowShell({
   card,
   frameClassName = "",
   children,
 }: Props) {
-  const shellClass = catalogCardRarityShellClass(card);
-  const frameCls = [catalogCardFrameClass(card), frameClassName]
+  const merged = [
+    catalogCardRarityShellClass(card),
+    catalogCardFrameClass(card),
+    frameClassName,
+  ]
     .filter(Boolean)
     .join(" ");
 
-  const framed = <div className={frameCls || undefined}>{children}</div>;
-
-  if (!shellClass) {
-    return framed;
-  }
-
-  return (
-    <div className={`${shellClass} rounded-2xl p-[3px]`}>
-      <div className="rounded-[0.9375rem] bg-zinc-950">{framed}</div>
-    </div>
-  );
+  return <div className={merged || undefined}>{children}</div>;
 }

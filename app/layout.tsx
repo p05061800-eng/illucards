@@ -42,6 +42,10 @@ export const metadata: Metadata = {
   title: "IlluCards — премиальные коллекционные карточки",
   description:
     "Премиальные 3D и Vario коллекционные карточки с голографическими эффектами.",
+  icons: {
+    icon: [{ url: "/icon.png", type: "image/png" }],
+    apple: [{ url: "/apple-icon.png", type: "image/png" }],
+  },
 };
 
 export default function RootLayout({

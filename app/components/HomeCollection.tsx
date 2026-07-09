@@ -261,6 +261,7 @@ export function HomeCollection({
     setPriceSort,
     filtersOpen,
     setFiltersOpen,
+    collapseMobileFilters,
     resetFilters,
   } = useCatalogFilter();
 
@@ -294,12 +295,14 @@ export function HomeCollection({
       const exact = cards.find((c) => c.title.trim().toLowerCase() === lower);
       if (exact) {
         setSearch("");
+        collapseMobileFilters();
         router.push(`/card/${exact.id}`);
         return;
       }
       const byTitle = cards.filter((c) => c.title.toLowerCase().includes(lower));
       if (byTitle.length === 1) {
         setSearch("");
+        collapseMobileFilters();
         router.push(`/card/${byTitle[0].id}`);
         return;
       }
@@ -309,7 +312,7 @@ export function HomeCollection({
     };
     window.addEventListener("illucards:catalog-search-submit", onSubmit);
     return () => window.removeEventListener("illucards:catalog-search-submit", onSubmit);
-  }, [search, cards, router, setSearch]);
+  }, [search, cards, router, setSearch, collapseMobileFilters]);
 
   useEffect(() => {
     let pending = false;

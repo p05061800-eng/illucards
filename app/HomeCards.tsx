@@ -23,11 +23,10 @@ import {
 import { CardDescriptionText } from "./components/CardDescriptionText";
 import { PurchaseModal } from "./components/PurchaseModal";
 import { RARITY_STYLES } from "./lib/cardRarityUi";
-import { AgeConfirmDialog } from "./components/AdultContentBlurGate";
 import { useAdultContentGateOptional } from "./context/AdultContentContext";
-import {
-  cardRequiresAgeConfirmation,
-} from "./lib/cardRequiresAgeConfirmation";
+import { cardRequiresAgeConfirmation } from "./lib/cardRequiresAgeConfirmation";
+import { useCardLinkTouchNav } from "./lib/useCardLinkTouchNav";
+import { isAdultAgeGateTarget } from "./components/AdultContentBlurGate";
 import { CatalogCardRarityFrame } from "./components/CatalogCardRarityFrame";
 import { useAddToCartWithFeedback } from "./lib/cartUx/useAddToCartWithFeedback";
 import { CardPriceDualRow } from "./components/CardPriceDualRow";
@@ -41,9 +40,6 @@ type Props = {
 
 const fieldClass =
   "w-full rounded-xl border border-white/10 bg-zinc-950/90 px-4 py-2.5 text-sm text-zinc-100 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] transition placeholder:text-zinc-600 focus:border-purple-500/45 focus:outline-none focus:ring-2 focus:ring-purple-500/25";
-
-const TAP_MAX_PX = 22;
-const TOUCH_MOVE_CANCEL_PX = 8;
 
 const ADULT_BADGE_CLASS =
   "pointer-events-none absolute right-0.5 top-0.5 z-[130] rounded border border-rose-400/85 bg-rose-950/92 px-1 py-0.5 text-[9px] font-extrabold uppercase leading-none tracking-wide text-rose-50 shadow-[0_0_12px_rgba(244,63,94,0.35)]";
@@ -65,10 +61,6 @@ function CardItem({
     ? (adultGate?.isAdultConfirmed(card.id) ?? false)
     : true;
   const adultBlockedNav = needs18 && !confirmed18;
-  const [ageOpen, setAgeOpen] = useState(false);
-  const pendingNavRef = useRef<string | null>(null);
-  const touchStartRef = useRef<{ x: number; y: number } | null>(null);
-  const touchMovedRef = useRef(false);
   const categoryDisplay = card.category
     ? categoryLabel(card.category)
     : "—";
@@ -78,14 +70,62 @@ function CardItem({
   const isList = variant === "list";
   const cardHref = `/card/${card.id}`;
 
-  function openNav(href: string) {
-    if (adultBlockedNav) {
-      pendingNavRef.current = href;
-      setAgeOpen(true);
-    } else {
-      router.push(href);
-    }
-  }
+  const openNav = useCallback(() => {
+    if (adultBlockedNav) return;
+    router.push(cardHref);
+  }, [adultBlockedNav, cardHref, router]);
+
+  const cardTouchNav = useCardLinkTouchNav(openNav, {
+    shouldIgnoreTarget: isAdultAgeGateTarget,
+  });
+
+  const linkClass = isList
+    ? "group/card flex min-w-0 flex-1 cursor-pointer flex-row gap-4 rounded-xl p-0.5 transition-[filter] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] sm:items-start"
+    : "group/card flex cursor-pointer flex-col gap-2 rounded-2xl p-0.5 transition-[filter] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)]";
+
+  const cardVisual = (
+    <div
+      className={
+        isList ? "relative w-[104px] shrink-0 sm:w-[118px]" : "relative w-full"
+      }
+    >
+      <CatalogCardRarityFrame
+        card={card}
+        className="relative w-full overflow-visible rounded-2xl [transform-style:preserve-3d]"
+      >
+        {needs18 ? (
+          <span className={ADULT_BADGE_CLASS} aria-hidden>
+            18+
+          </span>
+        ) : null}
+        <CardStackVisual
+          card={card}
+          ultraBgUrl={ultraOrHeroBgUrl(card)}
+          catalogStack
+          navigationTapSafe
+          rootClassName="relative mx-auto w-full max-w-full rounded-2xl"
+          dataCartFlySource
+        />
+      </CatalogCardRarityFrame>
+      <div
+        className={`mt-3 w-full max-w-full animate-fade-up ${isList ? "text-left" : "text-center"}`}
+      >
+        <h3 className="text-lg font-semibold text-white">{card.title}</h3>
+        <span
+          className={`mt-0.5 block text-xs uppercase tracking-wide ${RARITY_STYLES[rarityStyleKey]}`}
+        >
+          {rarityLine}
+        </span>
+        <p className="mt-1 line-clamp-2 text-sm text-gray-400 transition animate-fade-up delay-100 group-hover/card:text-gray-200">
+          <CardDescriptionText
+            text={card.description}
+            fallback="Описание скоро появится"
+            className="block"
+          />
+        </p>
+      </div>
+    </div>
+  );
 
   return (
     <article
@@ -101,19 +141,7 @@ function CardItem({
             ? "[transform-style:preserve-3d]"
             : "flex flex-col rounded-2xl [transform-style:preserve-3d]"
       }
-    >
-      <AgeConfirmDialog
-        open={ageOpen}
-        onClose={() => {
-          setAgeOpen(false);
-          pendingNavRef.current = null;
-        }}
-        onConfirm={() => {
-          adultGate?.confirmAdultForCard(card.id);
-          setAgeOpen(false);
-          pendingNavRef.current = null;
-        }}
-      />
+      >
         <div
           className={
             isList
@@ -121,132 +149,27 @@ function CardItem({
               : "flex flex-col"
           }
         >
+        {adultBlockedNav ? (
+          <div className={linkClass} aria-label={`${card.title} — подтвердите 18+`}>
+            {cardVisual}
+          </div>
+        ) : (
         <Link
           href={cardHref}
-          className={`${
-            isList
-              ? "group/card flex min-w-0 flex-1 cursor-pointer flex-row gap-4 rounded-xl p-0.5 transition-[filter] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] sm:items-start"
-              : "group/card flex cursor-pointer flex-col gap-2 rounded-2xl p-0.5 transition-[filter] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)]"
-          }`}
+          className={linkClass}
           onClick={(e) => {
-            if (touchMovedRef.current) {
+            if (cardTouchNav.consumeTouchNavigationClick()) {
               e.preventDefault();
-              touchMovedRef.current = false;
-              return;
-            }
-            if (adultBlockedNav) {
-              e.preventDefault();
-              pendingNavRef.current = cardHref;
-              setAgeOpen(true);
             }
           }}
-          onTouchStartCapture={(e) => {
-            if (e.touches.length === 0) return;
-            const t = e.touches[0];
-            touchStartRef.current = { x: t.clientX, y: t.clientY };
-            touchMovedRef.current = false;
-          }}
-          onTouchMove={(e) => {
-            const start = touchStartRef.current;
-            if (!start || e.touches.length === 0) return;
-            const t = e.touches[0];
-            const dx = Math.abs(t.clientX - start.x);
-            const dy = Math.abs(t.clientY - start.y);
-            if (dx > TOUCH_MOVE_CANCEL_PX || dy > TOUCH_MOVE_CANCEL_PX) {
-              touchMovedRef.current = true;
-            }
-          }}
-          onTouchEnd={(e) => {
-            const start = touchStartRef.current;
-            touchStartRef.current = null;
-            if (!start || e.changedTouches.length === 0) return;
-            const t = e.changedTouches[0];
-            const dx = Math.abs(t.clientX - start.x);
-            const dy = Math.abs(t.clientY - start.y);
-            if (dx > TOUCH_MOVE_CANCEL_PX || dy > TOUCH_MOVE_CANCEL_PX) {
-              touchMovedRef.current = true;
-              return;
-            }
-            if (dx <= TAP_MAX_PX && dy <= TAP_MAX_PX && adultBlockedNav) {
-              e.preventDefault();
-              openNav(cardHref);
-            }
-          }}
-          onTouchCancel={() => {
-            touchStartRef.current = null;
-            touchMovedRef.current = false;
-          }}
+          onTouchStartCapture={cardTouchNav.onTouchStartCapture}
+          onTouchMoveCapture={cardTouchNav.onTouchMoveCapture}
+          onTouchEnd={cardTouchNav.onTouchEnd}
+          onTouchCancel={cardTouchNav.onTouchCancel}
         >
-          <div
-            className={
-              isList ? "relative w-[104px] shrink-0 sm:w-[118px]" : "relative w-full"
-            }
-          >
-            <CatalogCardRarityFrame
-              card={card}
-              className="relative w-full overflow-visible rounded-2xl [transform-style:preserve-3d]"
-            >
-              {needs18 ? (
-                <span className={ADULT_BADGE_CLASS} aria-hidden>
-                  18+
-                </span>
-              ) : null}
-              <CardStackVisual
-                card={card}
-                ultraBgUrl={ultraOrHeroBgUrl(card)}
-                catalogStack
-                rootClassName="relative mx-auto w-full max-w-full rounded-2xl"
-                dataCartFlySource
-              />
-            </CatalogCardRarityFrame>
-          <div
-            className={`mt-3 w-full max-w-full animate-fade-up ${isList ? "text-left" : "text-center"}`}
-          >
-            <h3 className="text-lg font-semibold text-white">
-              {card.title}
-            </h3>
-            <span
-              className={`mt-0.5 block text-xs uppercase tracking-wide ${RARITY_STYLES[rarityStyleKey]}`}
-            >
-              {rarityLine}
-            </span>
-            <p className="mt-1 line-clamp-2 text-sm text-gray-400 transition animate-fade-up delay-100 group-hover/card:text-gray-200">
-              <CardDescriptionText
-                text={card.description}
-                fallback="Описание скоро появится"
-                className="block"
-              />
-            </p>
-          </div>
-        </div>
-
-          <div
-            className={
-              isList
-                ? "min-w-0 flex-1 px-0 text-left transition-[opacity,transform] duration-500 ease-out group-hover/card:translate-y-0"
-                : "px-0.5 text-center transition-[opacity,transform] duration-500 ease-out group-hover/card:translate-y-0"
-            }
-          >
-            <p className="mb-1 text-[10px] font-medium uppercase tracking-wide text-purple-400/90 transition-colors duration-300 group-hover/card:text-purple-300">
-              {categoryDisplay}
-            </p>
-            <div
-              className={
-                isList
-                  ? "mb-0"
-                  : "mb-2.5 text-[11px] leading-normal transition-opacity duration-300 group-hover/card:opacity-100 sm:text-xs"
-              }
-            >
-              <CardPriceDualRow
-                card={card}
-                variant="catalog"
-                className={isList ? "" : "text-[11px] sm:text-xs"}
-                byClassName="bg-gradient-to-r from-purple-200 to-violet-200 bg-clip-text text-transparent"
-                rubClassName="bg-gradient-to-r from-purple-200 to-violet-200 bg-clip-text text-transparent opacity-90"
-              />
-            </div>
-          </div>
+          {cardVisual}
         </Link>
+        )}
 
         <div
           className={

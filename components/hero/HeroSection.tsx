@@ -4,11 +4,13 @@ import { useRouter } from "next/navigation";
 import {
   useCallback,
   useEffect,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
   type KeyboardEvent,
   type PointerEvent,
+  type SetStateAction,
 } from "react";
 import type { StoredCard } from "@/app/api/cards/route";
 import type { CategoryTile } from "@/app/lib/categoriesJson";
@@ -16,6 +18,7 @@ import type { PromoSlide } from "@/app/lib/promoSlidesJson";
 import PromoSlider from "@/components/PromoSlider";
 import { apiUrl } from "@/app/lib/apiUrl";
 import { collectionSectionId } from "@/app/lib/collectionAnchor";
+import { saveCurrentScrollPosition } from "@/app/lib/catalogScrollRestore";
 import { categoryFocusToStyle } from "@/app/lib/imageFocus";
 import { buildNoveltiesCarouselCards } from "@/app/lib/noveltiesHeroCarousel";
 import { sortSectionCardsForDefaultCatalog } from "@/app/lib/collectionFilter";
@@ -57,13 +60,15 @@ export default function HeroSection({
     (cardId: string) => {
       const id = String(cardId || "").trim();
       if (!id) return;
+      saveCurrentScrollPosition();
       router.push(`/card/${id}`);
     },
     [router],
   );
   const heroCardFlyRef = useRef<HTMLDivElement>(null);
-  const noveltyThumbStripRef = useRef<HTMLDivElement>(null);
   const noveltyDragStartRef = useRef<{ x: number; y: number } | null>(null);
+  /** Сохраняем scrollY страницы при смене карточки в «Новинках». */
+  const preservePageScrollRef = useRef<number | null>(null);
   /** После свайпа гасим синтетический click по `<Link>` на карточке. */
   const blockHeroCardLinkClickRef = useRef(false);
   /** Пауза автолистания при наведении на колонку «Новинки». */
@@ -125,7 +130,33 @@ export default function HeroSection({
     ? allNoveltiesCards
     : heroBrowseCards;
 
-  const [browseIndex, setBrowseIndex] = useState(0);
+  const [browseIndex, setBrowseIndexState] = useState(0);
+
+  const setBrowseIndex = useCallback(
+    (value: SetStateAction<number>) => {
+      if (showNoveltiesHeroChrome && typeof window !== "undefined") {
+        preservePageScrollRef.current = window.scrollY;
+      }
+      setBrowseIndexState(value);
+    },
+    [showNoveltiesHeroChrome],
+  );
+
+  useLayoutEffect(() => {
+    if (!showNoveltiesHeroChrome) return;
+    const y = preservePageScrollRef.current;
+    if (y == null) return;
+    preservePageScrollRef.current = null;
+
+    const restore = () => {
+      if (window.scrollY !== y) {
+        window.scrollTo({ top: y, left: 0, behavior: "auto" });
+      }
+    };
+    restore();
+    requestAnimationFrame(restore);
+    requestAnimationFrame(() => requestAnimationFrame(restore));
+  }, [browseIndex, showNoveltiesHeroChrome]);
 
   const browseCarouselKey = useMemo(
     () => activeBrowseCards.map((c) => c.id).join(","),
@@ -173,20 +204,6 @@ export default function HeroSection({
       return Math.min(i, activeBrowseCards.length - 1);
     });
   }, [activeBrowseCards.length]);
-
-  useEffect(() => {
-    if (!showNoveltiesHeroChrome || activeBrowseCards.length < 2) return;
-    const id = activeBrowseCards[browseIndex]?.id;
-    if (!id) return;
-    const thumb = noveltyThumbStripRef.current?.querySelector(
-      `[data-novelty-thumb="${id}"]`,
-    );
-    thumb?.scrollIntoView({
-      inline: "center",
-      block: "nearest",
-      behavior: "smooth",
-    });
-  }, [browseIndex, browseCarouselKey, showNoveltiesHeroChrome, activeBrowseCards]);
 
   const focusCard = useMemo((): StoredCard | null => {
     if (!displayCard) return null;
@@ -589,7 +606,6 @@ export default function HeroSection({
                           }`}
                         >
                           <div
-                            ref={noveltyThumbStripRef}
                             className="hero-novelties-thumb-strip scrollbar-hide flex w-full gap-2 overflow-x-auto overflow-y-hidden py-1"
                             role="tablist"
                             aria-label="Все новинки"

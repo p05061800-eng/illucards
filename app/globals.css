@@ -1429,6 +1429,8 @@ body::after {
 .hero-novelties-thumb-strip {
   -webkit-overflow-scrolling: touch;
   scroll-snap-type: x proximity;
+  overscroll-behavior-x: contain;
+  overscroll-behavior-y: none;
 }
 
 .hero-novelties-thumb {
@@ -1533,6 +1535,7 @@ body::after {
 .hero-right-side--novelty {
   /* <769: компактный слот; ≥769 — ниже; ≥1025 переопределяется на .hero-stage. */
   --hero-novelty-card-slot: min(50vmin, 22rem);
+  overflow-anchor: none;
 }
 
 @media (min-width: 769px) {
@@ -1615,6 +1618,67 @@ body::after {
 
   .hero-right-side--tmnt:not(.hero-right-side--novelty) .hero-novelty-card-shell {
     padding-bottom: clamp(3rem, 4vw, 4rem);
+  }
+}
+
+/*
+ * «Новинки» на ноутбуке: слой 3 — как на телефоне (проценты + ось каталога),
+ * стрелки поверх превью, меньше внутренних отступов стопки — иначе наискосок
+ * перекрывает стрелки и подпись.
+ */
+@media (min-width: 769px) {
+  .hero-right-side--novelty .hero-novelty-card-shell {
+    position: relative;
+    overflow: visible;
+  }
+
+  .hero-right-side--novelty .hero-novelty-card-shell .hero-novelty-side-arrow {
+    position: absolute;
+    top: 38%;
+    transform: translateY(-50%);
+    z-index: 30;
+    flex-shrink: 0;
+    align-self: auto;
+    width: clamp(2rem, 4.5vw, 2.5rem);
+    height: clamp(2rem, 4.5vw, 2.5rem);
+    min-width: clamp(2rem, 4.5vw, 2.5rem);
+    min-height: clamp(2rem, 4.5vw, 2.5rem);
+  }
+
+  .hero-right-side--novelty .hero-novelty-card-shell .hero-novelty-arrow--prev {
+    left: clamp(0px, 0.5vw, 4px);
+    right: auto;
+  }
+
+  .hero-right-side--novelty .hero-novelty-card-shell .hero-novelty-arrow--next {
+    right: clamp(0px, 0.5vw, 4px);
+    left: auto;
+  }
+
+  .hero-right-side--novelty .hero-novelty-card-wrap {
+    width: 100%;
+    max-width: 100%;
+    flex: 1 1 auto;
+    margin-inline: auto;
+    padding-inline: clamp(2rem, 8%, 2.75rem);
+    box-sizing: border-box;
+  }
+
+  .hero-right-side--novelty .product-card-page-stack.hero-card-stack-visual {
+    padding-top: 0.2rem;
+    padding-bottom: 0.35rem;
+  }
+
+  .hero-right-side--novelty .hero-card-stack-visual .card-side {
+    transform: translate3d(-8%, 10%, 0) rotate(-15deg);
+    transform-origin: 44% 68%;
+  }
+}
+
+@media (min-width: 1024px) {
+  .hero-right-side--novelty .hero-card-stack-visual .card-side {
+    transform: translate3d(-7%, 9%, 0) rotate(-14deg);
+    transform-origin: 42% 66%;
   }
 }
 

@@ -25,6 +25,7 @@ import {
   categoryFocusCoverStyle,
 } from "@/app/lib/imageFocus";
 import { isTmntCategory } from "@/app/lib/tmntCollections";
+import { isCardTiltDrag, touchPoint } from "@/app/lib/cardLinkTap";
 import { useCoarsePointerOrHoverNone } from "@/app/lib/useCoarsePointerOrHoverNone";
 import { useIntrinsicImageAspect } from "@/app/lib/useIntrinsicImageAspect";
 import { AdultContentBlurGate } from "@/app/components/AdultContentBlurGate";
@@ -378,6 +379,12 @@ export function CardStackVisual({
    */
   const onPointerDown = useCallback((e: PointerEvent<HTMLDivElement>) => {
     dismissTiltHint();
+    /* На таче внутри ссылки: наклон/vario только после сдвига пальца — иначе первый тап не открывает карточку. */
+    if (e.pointerType === "touch" || e.pointerType === "pen") {
+      if (navigationTapSafe || catalogStack || heroStack || heroDiagonalLayout) {
+        return;
+      }
+    }
     setHoverMotionEngaged(true);
     void hoverMotionVideoRef.current?.play()?.catch(() => {});
     if (!heroStack && !navigationTapSafe && (e.pointerType === "touch" || e.pointerType === "pen")) {
@@ -390,7 +397,7 @@ export function CardStackVisual({
     pendingRef.current = { cx: e.clientX, cy: e.clientY };
     if (rafRef.current !== 0) cancelAnimationFrame(rafRef.current);
     rafRef.current = requestAnimationFrame(applyTilt);
-  }, [applyTilt, dismissTiltHint, heroStack]);
+  }, [applyTilt, dismissTiltHint, heroStack, navigationTapSafe, catalogStack, heroDiagonalLayout]);
 
   const onPointerUp = useCallback((e: PointerEvent<HTMLDivElement>) => {
     if (!heroStack && !navigationTapSafe && (e.pointerType === "touch" || e.pointerType === "pen")) {
@@ -513,48 +520,72 @@ export function CardStackVisual({
   }, [card.id, smoothBlendUltra, hasMiddle, morphActive, resetInteractiveState]);
 
   /**
-   * Vario на телефоне: без pointer capture в герое `pointermove` в WebKit часто не идёт
-   * во время жеста. Нативные touch-события дают координаты; passive — не блокируем клик по Link.
+   * Vario/наклон на телефоне: не на touchstart (иначе первый тап «съедается» 3D),
+   * только после сдвига пальза ≥ CARD_TILT_DRAG_MIN_PX.
    */
   useEffect(() => {
     if (!interactiveTilt) return;
     const el = tiltZoneRef.current;
     if (!el) return;
 
-    const syncFromTouch = (e: TouchEvent) => {
-      dismissTiltHint();
-      setHoverMotionEngaged(true);
-      void hoverMotionVideoRef.current?.play()?.catch(() => {});
+    let touchStart: { x: number; y: number } | null = null;
+    let dragActive = false;
+
+    const applyFromTouch = (clientX: number, clientY: number) => {
+      pendingRef.current = { cx: clientX, cy: clientY };
+      if (rafRef.current !== 0) cancelAnimationFrame(rafRef.current);
+      rafRef.current = requestAnimationFrame(applyTilt);
+    };
+
+    const onTouchStart = (e: TouchEvent) => {
       if (e.touches.length === 0) return;
-      const t = e.touches[0];
-      pendingRef.current = { cx: t.clientX, cy: t.clientY };
-      if (rafRef.current !== 0) cancelAnimationFrame(rafRef.current);
-      rafRef.current = requestAnimationFrame(applyTilt);
+      touchStart = touchPoint(e.touches[0]!);
+      dragActive = false;
     };
 
-    const syncFromTouchEnd = (e: TouchEvent) => {
-      const t = e.changedTouches[0];
-      if (!t) return;
-      if (e.touches.length === 0) {
-        setHoverMotionEngaged(false);
+    const onTouchMove = (e: TouchEvent) => {
+      if (!touchStart || e.touches.length === 0) return;
+      const pt = touchPoint(e.touches[0]!);
+      if (!dragActive) {
+        if (!isCardTiltDrag(touchStart, pt)) return;
+        dragActive = true;
+        dismissTiltHint();
+        setHoverMotionEngaged(true);
+        void hoverMotionVideoRef.current?.play()?.catch(() => {});
       }
-      pendingRef.current = { cx: t.clientX, cy: t.clientY };
-      if (rafRef.current !== 0) cancelAnimationFrame(rafRef.current);
-      rafRef.current = requestAnimationFrame(applyTilt);
+      applyFromTouch(pt.x, pt.y);
     };
 
-    el.addEventListener("touchstart", syncFromTouch, { passive: true });
-    el.addEventListener("touchmove", syncFromTouch, { passive: true });
-    el.addEventListener("touchend", syncFromTouchEnd, { passive: true });
-    el.addEventListener("touchcancel", syncFromTouchEnd, { passive: true });
+    const onTouchEnd = (e: TouchEvent) => {
+      if (dragActive) {
+        const t = e.changedTouches[0];
+        if (t) applyFromTouch(t.clientX, t.clientY);
+        if (e.touches.length === 0) setHoverMotionEngaged(false);
+      } else {
+        resetInteractiveState();
+      }
+      touchStart = null;
+      dragActive = false;
+    };
+
+    el.addEventListener("touchstart", onTouchStart, { passive: true });
+    el.addEventListener("touchmove", onTouchMove, { passive: true });
+    el.addEventListener("touchend", onTouchEnd, { passive: true });
+    el.addEventListener("touchcancel", onTouchEnd, { passive: true });
 
     return () => {
-      el.removeEventListener("touchstart", syncFromTouch);
-      el.removeEventListener("touchmove", syncFromTouch);
-      el.removeEventListener("touchend", syncFromTouchEnd);
-      el.removeEventListener("touchcancel", syncFromTouchEnd);
+      el.removeEventListener("touchstart", onTouchStart);
+      el.removeEventListener("touchmove", onTouchMove);
+      el.removeEventListener("touchend", onTouchEnd);
+      el.removeEventListener("touchcancel", onTouchEnd);
     };
-  }, [interactiveTilt, applyTilt, card.id, dismissTiltHint]);
+  }, [
+    interactiveTilt,
+    applyTilt,
+    card.id,
+    dismissTiltHint,
+    resetInteractiveState,
+  ]);
 
   /** Тач / без hover — подстраховка `play()` после монтирования (вместе с `autoPlay` на `<video>`). */
   useEffect(() => {
@@ -668,7 +699,9 @@ export function CardStackVisual({
         resolvedRoot,
         catalogStack ? "catalog-card-stack overflow-visible" : "",
         heroStack || heroDiagonalLayout ? "hero-card-stack-visual" : "",
-        heroStack && catalogLikeDiagonal ? "hero-stack-catalog-diagonal" : "",
+        (heroStack && catalogLikeDiagonal) || heroDiagonalLayout
+          ? "hero-stack-catalog-diagonal"
+          : "",
       ]
         .filter(Boolean)
         .join(" ")}
@@ -734,7 +767,7 @@ export function CardStackVisual({
           className={`${
             interactiveTilt ? "card-stack-tilt-zone " : ""
           }absolute inset-0 z-30 ${
-            heroStack || heroDiagonalLayout || navigationTapSafe
+            heroStack || heroDiagonalLayout || navigationTapSafe || catalogStack
               ? "touch-manipulation"
               : "touch-none"
           } ${interactiveTilt ? "" : "pointer-events-none"}`}

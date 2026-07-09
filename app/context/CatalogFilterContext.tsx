@@ -7,6 +7,7 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type Dispatch,
   type ReactNode,
@@ -30,6 +31,8 @@ type CatalogFilterContextValue = {
   setPriceSort: Dispatch<SetStateAction<PriceSort>>;
   filtersOpen: boolean;
   setFiltersOpen: Dispatch<SetStateAction<boolean>>;
+  /** Свернуть панель фильтров на телефоне (перед переходом на карточку). */
+  collapseMobileFilters: () => void;
   /** Прокрутить к блоку «Коллекции» на главной или перейти на `/#collection` — без открытия панели фильтров */
   scrollToCollection: () => void;
   /** Открыть панель фильтров и прокрутить к блоку «Коллекции» */
@@ -41,9 +44,15 @@ const CatalogFilterContext = createContext<CatalogFilterContextValue | null>(
   null
 );
 
+function isMobileCatalogViewport(): boolean {
+  if (typeof window === "undefined") return false;
+  return window.matchMedia("(max-width: 768px)").matches;
+}
+
 export function CatalogFilterProvider({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
+  const prevPathnameRef = useRef(pathname);
 
   const [search, setSearch] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("");
@@ -65,8 +74,19 @@ export function CatalogFilterProvider({ children }: { children: ReactNode }) {
 
   /** На странице карточки поиск в шапке не должен держать запрос с главной — иначе при возврате срабатывает автопереход. */
   useEffect(() => {
+    const prev = prevPathnameRef.current;
+    prevPathnameRef.current = pathname;
+    const mobile = isMobileCatalogViewport();
+
     if (pathname.startsWith("/card/")) {
       setSearch("");
+      if (mobile) setFiltersOpen(false);
+      return;
+    }
+
+    /* Мобильный: после просмотра карточки панель фильтров не остаётся развёрнутой. */
+    if (mobile && pathname === "/" && prev.startsWith("/card/")) {
+      setFiltersOpen(false);
     }
   }, [pathname, setSearch]);
 
@@ -87,6 +107,12 @@ export function CatalogFilterProvider({ children }: { children: ReactNode }) {
     scrollToCollection();
   }, [scrollToCollection]);
 
+  const collapseMobileFilters = useCallback(() => {
+    if (isMobileCatalogViewport()) {
+      setFiltersOpen(false);
+    }
+  }, []);
+
   const value = useMemo(
     () => ({
       search,
@@ -100,6 +126,7 @@ export function CatalogFilterProvider({ children }: { children: ReactNode }) {
       setPriceSort,
       filtersOpen,
       setFiltersOpen,
+      collapseMobileFilters,
       scrollToCollection,
       openFiltersAndScrollToCollection,
       resetFilters,
@@ -114,6 +141,7 @@ export function CatalogFilterProvider({ children }: { children: ReactNode }) {
       resetFilters,
       scrollToCollection,
       openFiltersAndScrollToCollection,
+      collapseMobileFilters,
     ]
   );
 

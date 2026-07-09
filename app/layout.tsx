@@ -8,6 +8,7 @@ import { FloatingCartFab } from "@/components/FloatingCartFab";
 import { ScrollToTopButton } from "@/components/ScrollToTopButton";
 import { YandexMetrika } from "@/components/YandexMetrika";
 import { ClientStorageBuildMigration } from "@/app/components/ClientStorageBuildMigration";
+import { ScrollPositionRestore } from "@/app/components/ScrollPositionRestore";
 import { Providers } from "./providers";
 import "./globals.css";
 
@@ -80,6 +81,9 @@ export default function RootLayout({
         <ClientStorageBuildMigration buildId={appBuildId} />
         <Providers>
           <RefreshToHome />
+          <Suspense fallback={null}>
+            <ScrollPositionRestore />
+          </Suspense>
           <Header />
           <div className="wrapper main relative z-0 flex w-full min-w-0 flex-col overflow-x-hidden">
             {children}

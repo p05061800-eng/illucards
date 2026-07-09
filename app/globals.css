@@ -765,29 +765,65 @@ body::after {
  * сетка .hero-stage: строка 1 — логотип (слева) + правая колонка; строка 2 — категории (слева).
  */
 @media (min-width: 1025px) {
+  .hero {
+    padding-top: clamp(4px, 0.6vw, 10px);
+  }
+
   .hero-stage {
     display: grid;
     grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
     grid-template-rows: auto auto;
-    column-gap: clamp(40px, 2.5vw, 56px);
-    row-gap: 24px;
+    column-gap: clamp(28px, 2vw, 44px);
+    row-gap: 12px;
     align-items: start;
     /*
-     * Единая вертикаль: полоса под заголовок «Новинки» + зазор до карточки
-     * = такой же отступ сверху у обычных категорий (без заголовка), чтобы названия
-     * карточек внизу колонки были на одной линии.
+     * Компактный ритм: всё влезает в первый экран — заголовок, карточка,
+     * полоска миниатюр и кнопка.
      */
-    --hero-novelties-title-band: clamp(3.05rem, 5.4vw, 4.95rem);
-    --hero-gap-novelties-title-to-card: clamp(1.05rem, 2vw, 1.65rem);
-    --hero-gap-hero-card-to-name: clamp(0.55rem, 1.05vw, 0.85rem);
-    /* Высота «окна» новинок на ≥1025px — строка названия+кнопки не смещается при смене карты. */
-    --hero-novelty-card-slot: clamp(18rem, 32vh, 30rem);
+    --hero-novelties-title-band: clamp(1.85rem, 2.8vw, 2.35rem);
+    --hero-gap-novelties-title-to-card: clamp(0.35rem, 0.7vw, 0.55rem);
+    --hero-gap-hero-card-to-name: clamp(0.35rem, 0.7vw, 0.55rem);
+    --hero-novelty-card-slot: clamp(11.5rem, 20vh, 15.5rem);
+  }
+
+  .hero-left-side {
+    grid-column: 1;
+    grid-row: 2;
+    width: 100%;
+    max-width: 100%;
+    flex: none;
+    gap: 10px;
   }
 
   .hero-wordmark-row {
     grid-column: 1;
     grid-row: 1;
     min-width: 0;
+    margin-bottom: 0;
+  }
+
+  .hero-scale-wordmark {
+    font-size: clamp(24px, 3.1vw, 42px);
+    line-height: 1.04;
+  }
+
+  .hero-scale-tagline {
+    margin-top: 0.2rem;
+    font-size: clamp(11px, 1.1vw, 14px);
+    letter-spacing: 0.22em;
+  }
+
+  .hero-categories {
+    min-height: clamp(36px, 4.5vw, 52px);
+  }
+
+  .hero-promo-desktop-slot .hero-promo-slider {
+    margin-top: 0;
+  }
+
+  .hero-promo-desktop-slot .hero-promo-slider .aspect-video {
+    height: clamp(9.5rem, 17vh, 13rem);
+    aspect-ratio: auto;
   }
 
   .hero-body {
@@ -797,14 +833,6 @@ body::after {
   .hero-main-desktop {
     display: contents;
     margin-top: 0;
-  }
-
-  .hero-left-side {
-    grid-column: 1;
-    grid-row: 2;
-    width: 100%;
-    max-width: 100%;
-    flex: none;
   }
 
   .hero-right-side {
@@ -892,7 +920,7 @@ body::after {
     justify-items: stretch;
     width: 100%;
     min-height: 0;
-    row-gap: clamp(0.75rem, 1.8vw, 1.75rem);
+    row-gap: clamp(0.25rem, 0.5vw, 0.45rem);
   }
 
   .hero-right-side--novelty .hero-novelty-header {
@@ -900,19 +928,29 @@ body::after {
     position: relative;
     z-index: 25;
     box-sizing: border-box;
-    min-height: var(--hero-novelties-title-band);
+    min-height: 0;
     display: flex;
     align-items: center;
     justify-content: center;
-    margin-bottom: var(--hero-gap-novelties-title-to-card);
+    margin-bottom: clamp(0.2rem, 0.45vw, 0.35rem);
   }
 
-  /* Слот карточки: min-height для ритма, без обрезки лица. */
+  .hero-right-side--novelty .hero-novelties-title.hero-novelties-title--static {
+    font-size: clamp(0.95rem, 1.5vw, 1.15rem);
+    line-height: 1.06;
+  }
+
+  .hero-right-side--novelty .hero-novelties-counter {
+    font-size: 0.65rem;
+    line-height: 1.2;
+  }
+
+  /* Слот карточки: без фиксированной высоты — только натуральный размер уменьшенной карты. */
   .hero-right-side--novelty .hero-novelty-card-shell {
     grid-row: 2;
     align-self: stretch;
     height: auto;
-    min-height: var(--hero-novelty-card-slot);
+    min-height: 0;
     max-height: none;
     width: 100%;
     position: relative;
@@ -921,7 +959,7 @@ body::after {
     align-items: flex-start;
     justify-content: center;
     box-sizing: border-box;
-    padding-bottom: clamp(0.75rem, 2vw, 1.5rem);
+    padding-bottom: clamp(0.35rem, 0.8vw, 0.55rem);
     overflow: visible;
   }
 
@@ -930,20 +968,20 @@ body::after {
     align-self: stretch;
     width: 100%;
     min-width: 0;
-    min-height: 3.75rem;
+    min-height: 2.85rem;
     position: relative;
     z-index: 40;
-    margin-top: clamp(0.75rem, 2vw, 1.25rem);
+    margin-top: clamp(0.2rem, 0.45vw, 0.35rem);
     isolation: isolate;
   }
 
   .hero-right-side--novelty .hero-novelty-meta {
     grid-row: 4;
     align-self: start;
-    margin-top: clamp(0.25rem, 0.9vw, 0.85rem);
-    padding-top: clamp(0.25rem, 0.8vw, 0.65rem);
+    margin-top: clamp(0.15rem, 0.4vw, 0.3rem);
+    padding-top: clamp(0.15rem, 0.35vw, 0.3rem);
     transform: none;
-    min-height: clamp(4.5rem, 16vw, 5.5rem);
+    min-height: clamp(2.5rem, 5.5vw, 3rem);
   }
 
   /*
@@ -961,7 +999,7 @@ body::after {
   .hero-right-side--marvel.hero-right-side--novelty .hero-novelty-card-wrap,
   .hero-right-side--tmnt.hero-right-side--novelty .hero-card.hero-novelty-card-wrap {
     width: 100%;
-    max-width: min(100%, clamp(15.5rem, 94%, 21.5rem));
+    max-width: min(100%, clamp(11.5rem, 90%, 14.5rem));
     margin-inline: auto;
   }
 
@@ -970,34 +1008,51 @@ body::after {
     max-width: 100% !important;
   }
 
+  .hero-right-side--tmnt.hero-right-side--novelty .hero-card.hero-novelty-card-wrap {
+    width: 100%;
+    max-width: min(100%, clamp(11.5rem, 90%, 14.5rem));
+    margin-inline: auto;
+  }
+
   .hero-right-side--novelty .hero-right-product {
-    row-gap: clamp(0.5rem, 1vw, 0.85rem);
+    row-gap: clamp(0.2rem, 0.4vw, 0.35rem);
   }
 
   .hero-right-side--novelty .hero-novelties-thumb-strip-wrap {
     width: 100%;
     max-width: 100%;
-    margin-top: clamp(0.35rem, 0.8vw, 0.65rem);
+    margin-top: clamp(0.15rem, 0.35vw, 0.3rem);
     padding-inline: 0;
   }
 
   .hero-right-side--novelty .hero-novelties-thumb img {
-    height: clamp(3.25rem, 5.5vw, 4rem);
-    width: clamp(2.35rem, 4vw, 2.9rem);
+    height: clamp(2.5rem, 4vw, 3rem);
+    width: clamp(1.85rem, 3vw, 2.2rem);
   }
 
   .hero-right-side--novelty .hero-novelty-meta {
-    margin-top: clamp(0.35rem, 0.75vw, 0.65rem);
-    padding-top: clamp(0.25rem, 0.5vw, 0.45rem);
-    min-height: clamp(3.5rem, 8vw, 4.25rem);
+    margin-top: clamp(0.15rem, 0.35vw, 0.3rem);
+    padding-top: clamp(0.12rem, 0.3vw, 0.25rem);
+    min-height: clamp(2.35rem, 5vw, 2.85rem);
     width: 100%;
     max-width: 100%;
     padding-inline: 0;
   }
 
+  .hero-right-side--novelty .hero-novelty-card-title {
+    font-size: clamp(0.8125rem, 1.1vw, 0.9375rem);
+    line-height: 1.25;
+  }
+
+  .hero-right-side--novelty .hero-novelty-buy-first {
+    min-height: 2.25rem;
+    padding-block: 0.4rem;
+    font-size: 0.75rem;
+  }
+
   .hero-right-side--novelty .product-card-page-stack.hero-card-stack-visual {
-    padding-top: 0.35rem;
-    padding-bottom: clamp(1rem, 2vw, 1.5rem);
+    padding-top: 0.1rem;
+    padding-bottom: 0.25rem;
   }
 
 }
@@ -1792,6 +1847,14 @@ body::after {
   }
 }
 
+@media (min-width: 1025px) {
+  .hero-right-side--tmnt.hero-right-side--novelty .hero-card.hero-novelty-card-wrap {
+    width: 100%;
+    max-width: min(100%, clamp(11.5rem, 90%, 14.5rem));
+    margin-inline: auto;
+  }
+}
+
 .hero-novelty-buy-first {
   white-space: nowrap;
 }
@@ -2220,20 +2283,14 @@ body::after {
     row-gap: 0;
     column-gap: 0;
     margin-top: 0;
-    padding: 10px 8px 12px;
-    padding-left: max(8px, env(safe-area-inset-left, 0px));
-    padding-right: max(8px, env(safe-area-inset-right, 0px));
+    padding: 0;
+    padding-left: max(0px, env(safe-area-inset-left, 0px));
+    padding-right: max(0px, env(safe-area-inset-right, 0px));
     box-sizing: border-box;
     min-width: 0;
-    border-radius: 1rem;
-    border: 1px solid rgba(255, 255, 255, 0.07);
-    background: linear-gradient(
-      165deg,
-      rgba(46, 28, 78, 0.42) 0%,
-      rgba(12, 10, 22, 0.28) 48%,
-      rgba(8, 8, 14, 0.18) 100%
-    );
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+    border: none;
+    background: transparent;
+    box-shadow: none;
   }
 
   .hero-left-side {
@@ -2248,9 +2305,9 @@ body::after {
     min-height: 100%;
     gap: 0;
     order: 1;
-    padding-right: 10px;
-    margin-right: 10px;
-    border-right: 1px solid rgba(255, 255, 255, 0.09);
+    padding-right: 8px;
+    margin-right: 8px;
+    border-right: none;
     box-sizing: border-box;
   }
 

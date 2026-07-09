@@ -777,14 +777,14 @@ body::after {
     row-gap: 14px;
     align-items: stretch;
     min-height: clamp(34rem, 72vh, 46rem);
-    max-height: min(78vh, 52rem);
+    max-height: none;
     /*
-     * Единый ритм: левая и правая колонки на одной высоте; карточки — одна ширина.
+     * Главная карточка крупнее; заголовок, миниатюры и подпись — компактнее.
      */
-    --hero-novelty-card-width: clamp(13.75rem, 88%, 17.25rem);
-    --hero-novelties-title-band: clamp(2.15rem, 3.2vw, 2.85rem);
-    --hero-gap-novelties-title-to-card: clamp(0.55rem, 1vw, 0.85rem);
-    --hero-gap-hero-card-to-name: clamp(0.4rem, 0.8vw, 0.65rem);
+    --hero-novelty-card-width: clamp(16.5rem, 94%, 21rem);
+    --hero-novelties-title-band: clamp(1.7rem, 2.4vw, 2.15rem);
+    --hero-gap-novelties-title-to-card: clamp(0.3rem, 0.55vw, 0.5rem);
+    --hero-gap-hero-card-to-name: clamp(0.3rem, 0.55vw, 0.5rem);
     --hero-novelty-card-slot: clamp(14.5rem, 24vh, 19.5rem);
   }
 
@@ -817,23 +817,13 @@ body::after {
   }
 
   .hero-promo-desktop-slot {
-    flex: 1 1 auto;
-    min-height: 0;
-    display: flex;
+    flex: 0 0 auto;
+    width: 100%;
   }
 
   .hero-promo-desktop-slot .hero-promo-slider {
-    flex: 1;
-    min-height: 0;
     width: 100%;
     margin-top: 0;
-  }
-
-  .hero-promo-desktop-slot .hero-promo-slider .aspect-video {
-    height: 100%;
-    min-height: clamp(8.5rem, 16vh, 12.5rem);
-    max-height: clamp(10rem, 20vh, 14rem);
-    aspect-ratio: auto;
   }
 
   .hero-right-side {
@@ -938,6 +928,16 @@ body::after {
     margin-bottom: var(--hero-gap-novelties-title-to-card);
   }
 
+  .hero-right-side--novelty .hero-novelties-title.hero-novelties-title--static {
+    font-size: clamp(0.95rem, 1.35vw, 1.08rem);
+    line-height: 1.05;
+  }
+
+  .hero-right-side--novelty .hero-novelties-counter {
+    font-size: 0.62rem;
+    line-height: 1.2;
+  }
+
   /* Слот карточки: гибкая середина колонки, единая ширина стопки. */
   .hero-right-side--novelty .hero-novelty-card-shell {
     grid-row: 2;
@@ -962,20 +962,20 @@ body::after {
     align-self: stretch;
     width: 100%;
     min-width: 0;
-    min-height: 3.25rem;
+    min-height: 2.4rem;
     position: relative;
     z-index: 40;
-    margin-top: clamp(0.25rem, 0.55vw, 0.45rem);
+    margin-top: clamp(0.15rem, 0.35vw, 0.3rem);
     isolation: isolate;
   }
 
   .hero-right-side--novelty .hero-novelty-meta {
     grid-row: 4;
     align-self: end;
-    margin-top: clamp(0.2rem, 0.45vw, 0.35rem);
-    padding-top: clamp(0.15rem, 0.35vw, 0.3rem);
+    margin-top: clamp(0.12rem, 0.3vw, 0.25rem);
+    padding-top: clamp(0.1rem, 0.25vw, 0.2rem);
     transform: none;
-    min-height: clamp(3.25rem, 7vw, 3.85rem);
+    min-height: clamp(2.4rem, 5vw, 2.85rem);
   }
 
   /*
@@ -1008,33 +1008,52 @@ body::after {
   }
 
   .hero-right-side--novelty .hero-right-product {
-    row-gap: clamp(0.35rem, 0.65vw, 0.55rem);
+    row-gap: clamp(0.2rem, 0.4vw, 0.35rem);
   }
 
   .hero-right-side--novelty .hero-novelties-thumb-strip-wrap {
     width: 100%;
     max-width: 100%;
-    margin-top: clamp(0.2rem, 0.45vw, 0.35rem);
+    margin-top: clamp(0.1rem, 0.25vw, 0.2rem);
     padding-inline: 0;
   }
 
   .hero-right-side--novelty .hero-novelties-thumb img {
-    height: clamp(3rem, 4.8vw, 3.5rem);
-    width: clamp(2.15rem, 3.4vw, 2.55rem);
+    height: clamp(2.1rem, 3vw, 2.55rem);
+    width: clamp(1.5rem, 2.2vw, 1.85rem);
   }
 
   .hero-right-side--novelty .hero-novelty-meta {
-    margin-top: clamp(0.2rem, 0.45vw, 0.35rem);
-    padding-top: clamp(0.15rem, 0.35vw, 0.3rem);
-    min-height: clamp(3.1rem, 6.5vw, 3.65rem);
+    margin-top: clamp(0.1rem, 0.25vw, 0.2rem);
+    padding-top: clamp(0.08rem, 0.2vw, 0.15rem);
+    min-height: clamp(2.25rem, 4.5vw, 2.75rem);
     width: 100%;
     max-width: 100%;
     padding-inline: 0;
   }
 
+  .hero-right-side--novelty .hero-novelty-card-title {
+    font-size: clamp(0.78rem, 0.95vw, 0.88rem);
+    line-height: 1.22;
+  }
+
+  .hero-right-side--novelty .hero-novelty-buy-first {
+    min-height: 1.95rem;
+    padding-block: 0.3rem;
+    padding-inline: 0.85rem;
+    font-size: 0.68rem;
+  }
+
+  .hero-right-side--novelty .hero-novelty-card-shell .hero-novelty-side-arrow {
+    width: clamp(1.6rem, 2.8vw, 1.95rem);
+    height: clamp(1.6rem, 2.8vw, 1.95rem);
+    min-width: clamp(1.6rem, 2.8vw, 1.95rem);
+    min-height: clamp(1.6rem, 2.8vw, 1.95rem);
+  }
+
   .hero-right-side--novelty .product-card-page-stack.hero-card-stack-visual {
-    padding-top: 0.2rem;
-    padding-bottom: 0.5rem;
+    padding-top: 0.15rem;
+    padding-bottom: 0.35rem;
   }
 
 }

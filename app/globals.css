@@ -781,7 +781,7 @@ body::after {
     --hero-gap-novelties-title-to-card: clamp(1.05rem, 2vw, 1.65rem);
     --hero-gap-hero-card-to-name: clamp(0.55rem, 1.05vw, 0.85rem);
     /* Высота «окна» новинок на ≥1025px — строка названия+кнопки не смещается при смене карты. */
-    --hero-novelty-card-slot: clamp(14rem, 24vh, 22rem);
+    --hero-novelty-card-slot: clamp(18rem, 32vh, 30rem);
   }
 
   .hero-wordmark-row {
@@ -907,13 +907,13 @@ body::after {
     margin-bottom: var(--hero-gap-novelties-title-to-card);
   }
 
-  /* Слот фиксированной высоты: стопка сверху слота + нижний «воздух», название только под слотом. */
+  /* Слот карточки: min-height для ритма, без обрезки лица. */
   .hero-right-side--novelty .hero-novelty-card-shell {
     grid-row: 2;
     align-self: stretch;
-    height: var(--hero-novelty-card-slot);
+    height: auto;
     min-height: var(--hero-novelty-card-slot);
-    max-height: var(--hero-novelty-card-slot);
+    max-height: none;
     width: 100%;
     position: relative;
     z-index: 10;
@@ -922,7 +922,7 @@ body::after {
     justify-content: center;
     box-sizing: border-box;
     padding-bottom: clamp(0.75rem, 2vw, 1.5rem);
-    overflow: hidden;
+    overflow: visible;
   }
 
   .hero-right-side--novelty .hero-novelties-thumb-strip-wrap {
@@ -933,7 +933,7 @@ body::after {
     min-height: 3.75rem;
     position: relative;
     z-index: 40;
-    margin-top: clamp(0.35rem, 1vw, 0.75rem);
+    margin-top: clamp(0.75rem, 2vw, 1.25rem);
     isolation: isolate;
   }
 
@@ -1100,13 +1100,13 @@ body::after {
 
   .hero-right-side--novelty .hero-novelty-card-shell {
     min-height: var(--hero-novelty-card-slot);
-    max-height: var(--hero-novelty-card-slot);
-    height: var(--hero-novelty-card-slot);
+    height: auto;
+    max-height: none;
     align-items: flex-start;
     justify-content: center;
     padding-bottom: 0.75rem;
     margin-bottom: 0.5rem;
-    overflow: hidden;
+    overflow: visible;
     z-index: 10;
   }
 
@@ -1419,19 +1419,22 @@ body::after {
     padding-bottom: clamp(4rem, 5vw, 5rem);
   }
 
-  /* Новинки: одна высота слота на все категории — подпись не прыгает. */
+  /* Новинки: min-height слота — подпись не прыгает; карточку не режем. */
   .hero-right-side--novelty .hero-novelty-card-shell {
     min-height: var(--hero-novelty-card-slot);
-    max-height: var(--hero-novelty-card-slot);
+    max-height: none;
+    height: auto;
     padding-bottom: clamp(2.75rem, 6vw, 4.75rem);
     align-items: flex-start;
     justify-content: center;
     box-sizing: border-box;
+    overflow: visible;
   }
 
   .hero-right-side--novelty .hero-novelty-card-wrap {
     min-height: 0;
-    max-height: 100%;
+    max-height: none;
+    overflow: visible;
   }
 }
 
@@ -1480,7 +1483,7 @@ body::after {
   position: relative;
   z-index: 40;
   isolation: isolate;
-  margin-top: clamp(0.35rem, 1.2vw, 0.85rem);
+  margin-top: clamp(0.75rem, 2vw, 1.35rem);
 }
 
 .hero-novelties-counter {
@@ -1675,7 +1678,7 @@ body::after {
 @media (min-width: 769px) {
   .hero-right-side--novelty .hero-novelty-card-shell {
     position: relative;
-    overflow: hidden;
+    overflow: visible;
   }
 
   .hero-right-side--novelty .hero-novelty-card-shell .hero-novelty-side-arrow {
@@ -2299,9 +2302,10 @@ body::after {
   }
 
   .hero-right-side--novelty .hero-novelty-card-wrap {
-    height: 100%;
-    max-height: 100%;
-    overflow: hidden;
+    width: 100%;
+    max-width: 100%;
+    max-height: none;
+    overflow: visible;
   }
 
   .hero-right-side--novelty .hero-novelties-thumb-strip-wrap {

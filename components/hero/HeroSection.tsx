@@ -536,13 +536,7 @@ export default function HeroSection({
                           e.stopPropagation();
                           blockHeroCardLinkClickRef.current = false;
                         }}
-                        className={`hero-slider hero-novelty-card-shell relative flex w-full max-w-full shrink-0 items-start justify-center gap-2 px-0 md:gap-3 md:px-2 ${
-                          isTmntHeroCard
-                            ? "md:max-w-[min(100%,52rem)]"
-                            : isMarvelHeroCard
-                              ? "md:max-w-[min(100%,58rem)]"
-                              : "md:max-w-[min(100%,47rem)]"
-                        }`}
+                        className="hero-slider hero-novelty-card-shell relative flex w-full max-w-full shrink-0 items-start justify-center gap-2 px-0 md:gap-3 md:px-2"
                       >
                         {canCycleWithArrows ? (
                           <button
@@ -600,15 +594,7 @@ export default function HeroSection({
                       </div>
 
                       {activeBrowseCards.length > 1 ? (
-                        <div
-                          className={`hero-novelties-thumb-strip-wrap w-full shrink-0 px-0 md:px-3 ${
-                            isTmntHeroCard
-                              ? "md:max-w-[min(100%,50rem)]"
-                              : isMarvelHeroCard
-                                ? "md:max-w-[min(100%,50rem)]"
-                                : "md:max-w-[min(100%,42rem)]"
-                          }`}
-                        >
+                        <div className="hero-novelties-thumb-strip-wrap w-full max-w-full shrink-0 px-0 md:px-1">
                           <div
                             className="hero-novelties-thumb-strip scrollbar-hide flex w-full gap-2 overflow-x-auto overflow-y-hidden py-1"
                             role="tablist"
@@ -650,15 +636,7 @@ export default function HeroSection({
                         </div>
                       ) : null}
 
-                      <div
-                        className={`hero-novelty-meta flex w-full max-w-full shrink-0 flex-col gap-2 px-0 text-left max-md:mt-2 md:gap-3 md:px-3 ${
-                          isTmntHeroCard
-                            ? "md:max-w-[min(100%,50rem)]"
-                            : isMarvelHeroCard
-                              ? "md:max-w-[min(100%,50rem)]"
-                              : "md:max-w-[min(100%,42rem)]"
-                        }`}
-                      >
+                      <div className="hero-novelty-meta flex w-full max-w-full shrink-0 flex-col gap-2 px-0 text-left max-md:mt-2 md:gap-3 md:px-1">
                         <div className="hero-novelty-meta-row w-full">
                           <button
                             type="button"

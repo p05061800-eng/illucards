@@ -946,6 +946,60 @@ body::after {
     min-height: clamp(4.5rem, 16vw, 5.5rem);
   }
 
+  /*
+   * Десктоп: правая колонка узкая (2fr) — карточка, полоска и подпись
+   * на всю ширину колонки, без гигантских max-width как на планшете.
+   */
+  .hero-right-side--novelty .hero-novelty-card-shell {
+    min-height: 0;
+    padding-bottom: clamp(0.65rem, 1.2vw, 1rem);
+  }
+
+  .hero-right-side--novelty .hero-novelty-card-wrap,
+  .hero-right-side--novelty:not(.hero-right-side--tmnt):not(.hero-right-side--marvel)
+    .hero-novelty-card-wrap,
+  .hero-right-side--marvel.hero-right-side--novelty .hero-novelty-card-wrap,
+  .hero-right-side--tmnt.hero-right-side--novelty .hero-card.hero-novelty-card-wrap {
+    width: 100%;
+    max-width: min(100%, clamp(15.5rem, 94%, 21.5rem));
+    margin-inline: auto;
+  }
+
+  .hero-right-side--marvel.hero-right-side--novelty .hero-right-product > div,
+  .hero-right-side--tmnt.hero-right-side--novelty .hero-right-product > div {
+    max-width: 100% !important;
+  }
+
+  .hero-right-side--novelty .hero-right-product {
+    row-gap: clamp(0.5rem, 1vw, 0.85rem);
+  }
+
+  .hero-right-side--novelty .hero-novelties-thumb-strip-wrap {
+    width: 100%;
+    max-width: 100%;
+    margin-top: clamp(0.35rem, 0.8vw, 0.65rem);
+    padding-inline: 0;
+  }
+
+  .hero-right-side--novelty .hero-novelties-thumb img {
+    height: clamp(3.25rem, 5.5vw, 4rem);
+    width: clamp(2.35rem, 4vw, 2.9rem);
+  }
+
+  .hero-right-side--novelty .hero-novelty-meta {
+    margin-top: clamp(0.35rem, 0.75vw, 0.65rem);
+    padding-top: clamp(0.25rem, 0.5vw, 0.45rem);
+    min-height: clamp(3.5rem, 8vw, 4.25rem);
+    width: 100%;
+    max-width: 100%;
+    padding-inline: 0;
+  }
+
+  .hero-right-side--novelty .product-card-page-stack.hero-card-stack-visual {
+    padding-top: 0.35rem;
+    padding-bottom: clamp(1rem, 2vw, 1.5rem);
+  }
+
 }
 
 @media (max-width: 1024px) {
@@ -1424,7 +1478,7 @@ body::after {
     min-height: var(--hero-novelty-card-slot);
     max-height: none;
     height: auto;
-    padding-bottom: clamp(2.75rem, 6vw, 4.75rem);
+    padding-bottom: clamp(1.25rem, 2.5vw, 2rem);
     align-items: flex-start;
     justify-content: center;
     box-sizing: border-box;
@@ -1505,9 +1559,16 @@ body::after {
 
   /* У «Новинок» не поднимаем блок вверх transform — зазор только от margin под карточкой. */
   .hero-right-side--novelty .hero-novelty-meta {
-    margin-top: clamp(2rem, 4.5vw, 3.5rem);
-    padding-top: clamp(1rem, 2.2vw, 1.75rem);
+    margin-top: clamp(1rem, 2.2vw, 1.75rem);
+    padding-top: clamp(0.5rem, 1.2vw, 0.85rem);
     transform: none;
+  }
+}
+
+@media (min-width: 769px) and (max-width: 1024px) {
+  .hero-right-side--novelty .hero-novelty-meta {
+    margin-top: clamp(1.25rem, 3vw, 2rem);
+    padding-top: clamp(0.65rem, 1.5vw, 1rem);
   }
 }
 

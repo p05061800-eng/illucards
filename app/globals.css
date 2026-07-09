@@ -1428,18 +1428,29 @@ body::after {
 
 .hero-novelties-title--static {
   background: linear-gradient(
-    180deg,
-    #f8f3ff 0%,
-    #d8c6ff 42%,
-    #a78bfa 72%,
-    #8b5cf6 100%
+    115deg,
+    #7f1d1d 0%,
+    #b91c1c 10%,
+    #dc2626 20%,
+    #ea580c 30%,
+    #f59e0b 40%,
+    #fbbf24 48%,
+    #fef08a 52%,
+    #ffffff 56%,
+    #fde047 62%,
+    #f59e0b 72%,
+    #ef4444 84%,
+    #991b1b 94%,
+    #7f1d1d 100%
   );
+  background-size: 280% 280%;
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
-  text-shadow:
-    0 1px 0 rgba(255, 255, 255, 0.06),
-    0 10px 24px rgba(76, 29, 149, 0.18);
+  animation: hero-novelties-title-shine-move 5.5s ease-in-out infinite;
+  filter: drop-shadow(0 1px 0 rgba(127, 29, 29, 0.35))
+    drop-shadow(0 6px 18px rgba(220, 38, 38, 0.28))
+    drop-shadow(0 10px 28px rgba(245, 158, 11, 0.18));
 }
 
 .hero-novelty-heading-group .hero-novelties-title.hero-novelties-title--static {
@@ -2550,8 +2561,29 @@ body::after {
 }
 
 /*
- * Герой: IlluCards и «Новинки» — один эффект «скользящий блик» по расширенному градиенту;
- * у «Новинки» класс .hero-wordmark-shine--mirror — анимация в обратную сторону (напротив).
+ * «Новинки»: красно-золотой переливающийся блик по заголовку.
+ */
+@keyframes hero-novelties-title-shine-move {
+  0% {
+    background-position: 115% 38%;
+  }
+  50% {
+    background-position: -15% 62%;
+  }
+  100% {
+    background-position: 115% 38%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-novelties-title--static {
+    animation: none;
+    background-position: 42% 50%;
+  }
+}
+
+/*
+ * Герой: IlluCards — скользящий блик по фиолетовому градиенту.
  */
 @keyframes hero-wordmark-shine-move {
   0% {

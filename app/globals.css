@@ -774,7 +774,7 @@ body::after {
     grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
     grid-template-rows: auto auto;
     column-gap: clamp(32px, 2.2vw, 48px);
-    row-gap: clamp(14px, 1.2vw, 20px);
+    row-gap: 0;
     align-items: start;
     /*
      * Главная карточка крупнее; заголовок, миниатюры и подпись — компактнее.
@@ -787,8 +787,8 @@ body::after {
     --hero-novelty-card-slot: clamp(15.5rem, 24vh, 20.5rem);
     --hero-gap-thumbs-to-title: clamp(0.1rem, 0.2vw, 0.2rem);
     --hero-right-col-offset: clamp(1rem, 2vw, 1.75rem);
-    --hero-left-gap-categories-promo: clamp(18px, 1.4vw, 22px);
-    --hero-left-gap-wordmark-categories: clamp(10px, 1vw, 14px);
+    --hero-left-gap-categories-promo: 1cm;
+    --hero-left-gap-wordmark-categories: 1cm;
   }
 
   .hero-wordmark-row {
@@ -824,11 +824,17 @@ body::after {
   .hero-promo-desktop-slot {
     flex: 0 0 auto;
     width: 100%;
+    margin-top: 0;
   }
 
   .hero-promo-desktop-slot .hero-promo-slider {
     width: 100%;
-    margin-top: 0;
+    margin-top: 0 !important;
+  }
+
+  .hero-left-side > .categories.hero-categories-outer {
+    margin-bottom: 0;
+    padding-bottom: 0;
   }
 
   .hero-right-side {

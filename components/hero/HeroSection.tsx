@@ -62,6 +62,7 @@ export default function HeroSection({
     [router],
   );
   const heroCardFlyRef = useRef<HTMLDivElement>(null);
+  const noveltyThumbStripRef = useRef<HTMLDivElement>(null);
   const noveltyDragStartRef = useRef<{ x: number; y: number } | null>(null);
   /** После свайпа гасим синтетический click по `<Link>` на карточке. */
   const blockHeroCardLinkClickRef = useRef(false);
@@ -113,10 +114,10 @@ export default function HeroSection({
   }, [filteredCards, cards]);
 
   /** Все активные новинки из каталога (не зависят от выбранной категории в герое). */
-  const allNoveltiesCards = useMemo(() => {
-    const pool = buildNoveltiesCarouselCards(cards);
-    return sortSectionCardsForDefaultCatalog(pool, cards);
-  }, [cards]);
+  const allNoveltiesCards = useMemo(
+    () => buildNoveltiesCarouselCards(cards),
+    [cards],
+  );
 
   const showNoveltiesHeroChrome = allNoveltiesCards.length > 0;
 
@@ -172,6 +173,20 @@ export default function HeroSection({
       return Math.min(i, activeBrowseCards.length - 1);
     });
   }, [activeBrowseCards.length]);
+
+  useEffect(() => {
+    if (!showNoveltiesHeroChrome || activeBrowseCards.length < 2) return;
+    const id = activeBrowseCards[browseIndex]?.id;
+    if (!id) return;
+    const thumb = noveltyThumbStripRef.current?.querySelector(
+      `[data-novelty-thumb="${id}"]`,
+    );
+    thumb?.scrollIntoView({
+      inline: "center",
+      block: "nearest",
+      behavior: "smooth",
+    });
+  }, [browseIndex, browseCarouselKey, showNoveltiesHeroChrome, activeBrowseCards]);
 
   const focusCard = useMemo((): StoredCard | null => {
     if (!displayCard) return null;
@@ -473,9 +488,20 @@ export default function HeroSection({
                     <div className="hero-right-product flex w-full max-w-none min-w-0 flex-col items-center gap-0 overflow-visible py-0 md:items-stretch md:gap-0 md:py-0">
                       <div className="hero-novelties-mobile-stack flex w-full max-w-full flex-col items-stretch gap-4 max-md:w-full max-md:px-0 md:contents md:max-w-none">
                       <div className="hero-title hero-novelty-header w-full shrink-0 text-center">
-                        <h2 className="hero-novelties-title hero-novelties-title--static mx-auto block w-full max-w-full origin-center text-balance text-center font-bold uppercase tracking-[0.1em]">
-                          Новинки
-                        </h2>
+                        <div className="hero-novelty-header-inner mx-auto flex w-full max-w-full flex-col items-center gap-1">
+                          <h2 className="hero-novelties-title hero-novelties-title--static mx-auto block w-full max-w-full origin-center text-balance text-center font-bold uppercase tracking-[0.1em]">
+                            Новинки
+                          </h2>
+                          {activeBrowseCards.length > 1 ? (
+                            <p
+                              className="hero-novelties-counter text-[0.7rem] font-medium tabular-nums text-violet-200/80 sm:text-xs"
+                              aria-live="polite"
+                            >
+                              {(browseIndex % activeBrowseCards.length) + 1} из{" "}
+                              {activeBrowseCards.length}
+                            </p>
+                          ) : null}
+                        </div>
                       </div>
 
                       <div
@@ -551,6 +577,58 @@ export default function HeroSection({
                           </span>
                         )}
                       </div>
+
+                      {activeBrowseCards.length > 1 ? (
+                        <div
+                          className={`hero-novelties-thumb-strip-wrap w-full shrink-0 px-0 md:px-3 ${
+                            isTmntHeroCard
+                              ? "md:max-w-[min(100%,50rem)]"
+                              : isMarvelHeroCard
+                                ? "md:max-w-[min(100%,50rem)]"
+                                : "md:max-w-[min(100%,42rem)]"
+                          }`}
+                        >
+                          <div
+                            ref={noveltyThumbStripRef}
+                            className="hero-novelties-thumb-strip scrollbar-hide flex w-full gap-2 overflow-x-auto overflow-y-hidden py-1"
+                            role="tablist"
+                            aria-label="Все новинки"
+                          >
+                            {activeBrowseCards.map((c, i) => {
+                              const active = i === browseIndex % activeBrowseCards.length;
+                              const thumb = c.frontImage?.trim();
+                              if (!thumb) return null;
+                              return (
+                                <button
+                                  key={c.id}
+                                  type="button"
+                                  role="tab"
+                                  data-novelty-thumb={c.id}
+                                  aria-selected={active}
+                                  aria-label={c.title}
+                                  onClick={() => setBrowseIndex(i)}
+                                  className={[
+                                    "hero-novelties-thumb shrink-0 overflow-hidden rounded-lg border-2 bg-zinc-900 transition",
+                                    active
+                                      ? "border-violet-400 shadow-[0_0_16px_rgba(168,85,247,0.45)]"
+                                      : "border-white/10 opacity-75 hover:border-violet-300/50 hover:opacity-100",
+                                  ].join(" ")}
+                                >
+                                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                                  <img
+                                    src={thumb}
+                                    alt=""
+                                    className="block h-12 w-9 object-cover object-center sm:h-14 sm:w-10"
+                                    draggable={false}
+                                    loading="lazy"
+                                    decoding="async"
+                                  />
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      ) : null}
 
                       <div
                         className={`hero-novelty-meta flex w-full max-w-full shrink-0 flex-col gap-2 px-0 text-left max-md:mt-2 md:gap-3 md:px-3 ${

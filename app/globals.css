@@ -875,6 +875,7 @@ body::after {
     grid-template-rows:
       auto
       auto
+      auto
       auto;
     align-items: stretch;
     justify-items: stretch;
@@ -911,8 +912,15 @@ body::after {
     padding-bottom: clamp(0.75rem, 2vw, 1.5rem);
   }
 
-  .hero-right-side--novelty .hero-novelty-meta {
+  .hero-right-side--novelty .hero-novelties-thumb-strip-wrap {
     grid-row: 3;
+    align-self: stretch;
+    width: 100%;
+    min-width: 0;
+  }
+
+  .hero-right-side--novelty .hero-novelty-meta {
+    grid-row: 4;
     align-self: start;
     margin-top: clamp(0.25rem, 0.9vw, 0.85rem);
     padding-top: clamp(0.25rem, 0.8vw, 0.65rem);
@@ -1412,6 +1420,23 @@ body::after {
 
 .hero-novelty-card-shell .hero-novelty-side-arrow {
   align-self: center;
+}
+
+.hero-novelty-header-inner {
+  width: 100%;
+}
+
+.hero-novelties-thumb-strip {
+  -webkit-overflow-scrolling: touch;
+  scroll-snap-type: x proximity;
+}
+
+.hero-novelties-thumb {
+  scroll-snap-align: center;
+}
+
+.hero-novelties-counter {
+  letter-spacing: 0.06em;
 }
 
 .hero-novelty-meta {

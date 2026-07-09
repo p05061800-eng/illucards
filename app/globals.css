@@ -616,6 +616,13 @@ body::after {
   padding-bottom: clamp(0.25rem, 0.8vw, 0.75rem);
   padding-left: var(--hero-inline-pad);
   min-width: 0;
+  overflow-anchor: none;
+}
+
+.hero-promo-slider,
+.hero-promo-swiper {
+  overscroll-behavior: contain;
+  overflow-anchor: none;
 }
 
 /* Вертикальный зазор между логотипом и основным рядом — как раньше у .hero gap; на ≥1025px сетка задаёт свои row-gap/column-gap */
@@ -901,7 +908,7 @@ body::after {
     grid-row: 2;
     align-self: stretch;
     height: auto;
-    min-height: 0;
+    min-height: var(--hero-novelty-card-slot);
     width: 100%;
     position: relative;
     z-index: 15;
@@ -1080,7 +1087,7 @@ body::after {
   }
 
   .hero-right-side--novelty .hero-novelty-card-shell {
-    min-height: 0;
+    min-height: var(--hero-novelty-card-slot);
     max-height: none;
     align-items: flex-start;
     justify-content: center;

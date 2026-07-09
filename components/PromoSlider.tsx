@@ -1,10 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Autoplay } from "swiper/modules";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { apiUrl } from "@/app/lib/apiUrl";
+import {
+  capturePageScrollY,
+  restorePageScrollY,
+} from "@/app/lib/preservePageScroll";
 import type { PromoSlide } from "@/app/lib/promoSlidesJson";
 
 import "swiper/css";
@@ -82,6 +86,18 @@ export default function PromoSlider({ initialSlides = [] }: Props) {
   const single = slides.length === 1;
   const loopEnabled = slides.length > 3;
   const autoplayEnabled = !single && !reduceMotion;
+  const pageScrollLockRef = useRef<number | null>(null);
+
+  const lockPageScroll = useCallback(() => {
+    pageScrollLockRef.current = capturePageScrollY();
+  }, []);
+
+  const unlockPageScroll = useCallback(() => {
+    const y = pageScrollLockRef.current;
+    pageScrollLockRef.current = null;
+    if (y == null || y < 96) return;
+    restorePageScrollY(y);
+  }, []);
 
   return (
     <div className="hero-promo-slider relative mt-2 w-full min-w-0 sm:mt-3">
@@ -96,6 +112,11 @@ export default function PromoSlider({ initialSlides = [] }: Props) {
           touchRatio={1}
           shortSwipes
           longSwipesRatio={0.35}
+          touchEventsTarget="container"
+          preventInteractionOnTransition
+          onSlideChangeTransitionStart={lockPageScroll}
+          onSlideChangeTransitionEnd={unlockPageScroll}
+          onResize={unlockPageScroll}
           autoplay={
             autoplayEnabled
               ? {

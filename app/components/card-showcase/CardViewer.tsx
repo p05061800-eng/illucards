@@ -248,7 +248,7 @@ export function CardViewer({
    */
   const stackVisual = (
     <CardStackVisual
-      key={active.id}
+      key={hideNavigation ? "hero-novelty-carousel" : active.id}
       card={active}
       ultraBgUrl={ultraOrHeroBgUrl(active)}
       heroStack={layout !== "product"}

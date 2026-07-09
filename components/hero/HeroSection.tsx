@@ -19,6 +19,7 @@ import PromoSlider from "@/components/PromoSlider";
 import { apiUrl } from "@/app/lib/apiUrl";
 import { collectionSectionId } from "@/app/lib/collectionAnchor";
 import { saveCurrentScrollPosition } from "@/app/lib/catalogScrollRestore";
+import { restorePageScrollY } from "@/app/lib/preservePageScroll";
 import { categoryFocusToStyle } from "@/app/lib/imageFocus";
 import { buildNoveltiesCarouselCards } from "@/app/lib/noveltiesHeroCarousel";
 import { sortSectionCardsForDefaultCatalog } from "@/app/lib/collectionFilter";
@@ -147,15 +148,7 @@ export default function HeroSection({
     const y = preservePageScrollRef.current;
     if (y == null) return;
     preservePageScrollRef.current = null;
-
-    const restore = () => {
-      if (window.scrollY !== y) {
-        window.scrollTo({ top: y, left: 0, behavior: "auto" });
-      }
-    };
-    restore();
-    requestAnimationFrame(restore);
-    requestAnimationFrame(() => requestAnimationFrame(restore));
+    restorePageScrollY(y);
   }, [browseIndex, showNoveltiesHeroChrome]);
 
   const browseCarouselKey = useMemo(

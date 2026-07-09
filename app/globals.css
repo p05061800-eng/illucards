@@ -916,12 +916,13 @@ body::after {
     max-height: var(--hero-novelty-card-slot);
     width: 100%;
     position: relative;
-    z-index: 15;
+    z-index: 10;
     margin-top: 0;
     align-items: flex-start;
     justify-content: center;
     box-sizing: border-box;
     padding-bottom: clamp(0.75rem, 2vw, 1.5rem);
+    overflow: hidden;
   }
 
   .hero-right-side--novelty .hero-novelties-thumb-strip-wrap {
@@ -930,6 +931,10 @@ body::after {
     width: 100%;
     min-width: 0;
     min-height: 3.75rem;
+    position: relative;
+    z-index: 40;
+    margin-top: clamp(0.35rem, 1vw, 0.75rem);
+    isolation: isolate;
   }
 
   .hero-right-side--novelty .hero-novelty-meta {
@@ -1101,6 +1106,17 @@ body::after {
     justify-content: center;
     padding-bottom: 0.75rem;
     margin-bottom: 0.5rem;
+    overflow: hidden;
+    z-index: 10;
+  }
+
+  .hero-right-side--novelty .hero-novelties-thumb-strip-wrap {
+    position: relative;
+    z-index: 40;
+    width: 100%;
+    min-width: 0;
+    margin-top: 0.5rem;
+    isolation: isolate;
   }
 
   /* Стрелки поверх превью — иначе в узкой колонке «съедают» ширину карточки. */
@@ -1446,10 +1462,25 @@ body::after {
   scroll-snap-type: x proximity;
   overscroll-behavior-x: contain;
   overscroll-behavior-y: none;
+  position: relative;
+  z-index: 1;
+  touch-action: pan-x;
+}
+
+.hero-novelties-thumb-strip-wrap {
+  pointer-events: auto;
 }
 
 .hero-novelties-thumb {
   scroll-snap-align: center;
+}
+
+/* Полоса миниатюр — строго под слотом карточки, не под 3D-слоями. */
+.hero-right-side--novelty .hero-novelties-thumb-strip-wrap {
+  position: relative;
+  z-index: 40;
+  isolation: isolate;
+  margin-top: clamp(0.35rem, 1.2vw, 0.85rem);
 }
 
 .hero-novelties-counter {
@@ -1644,7 +1675,7 @@ body::after {
 @media (min-width: 769px) {
   .hero-right-side--novelty .hero-novelty-card-shell {
     position: relative;
-    overflow: visible;
+    overflow: hidden;
   }
 
   .hero-right-side--novelty .hero-novelty-card-shell .hero-novelty-side-arrow {
@@ -2263,6 +2294,14 @@ body::after {
   .hero-right-side--novelty .hero-novelty-card-wrap {
     height: 100%;
     max-height: 100%;
+    overflow: hidden;
+  }
+
+  .hero-right-side--novelty .hero-novelties-thumb-strip-wrap {
+    position: relative;
+    z-index: 40;
+    margin-top: 0.5rem;
+    isolation: isolate;
   }
 
   .hero-novelty-chrome-shift,

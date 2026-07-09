@@ -2197,8 +2197,15 @@ body::after {
     overscroll-behavior: contain;
     -webkit-overflow-scrolling: touch;
     padding-bottom: 4px;
-    padding-right: 2px;
-    scrollbar-width: thin;
+    padding-right: 0;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+
+  .hero-left-side .hero-categories.hero-categories-strip::-webkit-scrollbar {
+    display: none;
+    width: 0;
+    height: 0;
   }
 
   .hero-left-side .hero-categories .category-item {

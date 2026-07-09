@@ -782,10 +782,12 @@ body::after {
      * Главная карточка крупнее; заголовок, миниатюры и подпись — компактнее.
      */
     --hero-novelty-card-width: clamp(16.5rem, 94%, 21rem);
-    --hero-novelties-title-band: clamp(1.7rem, 2.4vw, 2.15rem);
+    --hero-novelty-card-width-tmnt: min(100%, calc(var(--hero-novelty-card-width) * 1.1));
+    --hero-novelties-title-band: clamp(2.35rem, 4vw, 3.65rem);
     --hero-gap-novelties-title-to-card: clamp(0.3rem, 0.55vw, 0.5rem);
     --hero-gap-hero-card-to-name: clamp(0.3rem, 0.55vw, 0.5rem);
-    --hero-novelty-card-slot: clamp(14.5rem, 24vh, 19.5rem);
+    --hero-novelty-card-slot: clamp(15.5rem, 26vh, 21rem);
+    --hero-gap-thumbs-to-title: clamp(0.1rem, 0.2vw, 0.2rem);
   }
 
   .hero-wordmark-row {
@@ -905,7 +907,7 @@ body::after {
     grid-template-columns: minmax(0, 1fr);
     grid-template-rows:
       auto
-      minmax(0, 1fr)
+      var(--hero-novelty-card-slot)
       auto
       auto;
     align-items: stretch;
@@ -913,7 +915,7 @@ body::after {
     width: 100%;
     height: 100%;
     min-height: 0;
-    row-gap: clamp(0.4rem, 0.75vw, 0.65rem);
+    row-gap: clamp(0.2rem, 0.4vw, 0.35rem);
   }
 
   .hero-right-side--novelty .hero-novelty-header {
@@ -929,63 +931,73 @@ body::after {
   }
 
   .hero-right-side--novelty .hero-novelties-title.hero-novelties-title--static {
-    font-size: clamp(0.95rem, 1.35vw, 1.08rem);
-    line-height: 1.05;
+    font-size: clamp(28px, 4vw, 56px);
+    line-height: 1.06;
+    letter-spacing: 0.06em;
   }
 
   .hero-right-side--novelty .hero-novelties-counter {
-    font-size: 0.62rem;
+    font-size: clamp(0.65rem, 0.9vw, 0.75rem);
     line-height: 1.2;
   }
 
-  /* Слот карточки: гибкая середина колонки, единая ширина стопки. */
+  /* Слот карточки: фиксированная высота — полоска миниатюр всегда на одном уровне. */
   .hero-right-side--novelty .hero-novelty-card-shell {
     grid-row: 2;
     align-self: stretch;
-    height: auto;
-    min-height: 0;
-    max-height: none;
+    height: 100%;
+    min-height: var(--hero-novelty-card-slot);
+    max-height: var(--hero-novelty-card-slot);
     width: 100%;
     position: relative;
     z-index: 10;
     margin-top: 0;
     display: flex;
-    align-items: center;
+    align-items: flex-end;
     justify-content: center;
     box-sizing: border-box;
-    padding-bottom: clamp(0.4rem, 0.9vw, 0.65rem);
+    padding-bottom: clamp(0.15rem, 0.35vw, 0.3rem);
     overflow: visible;
   }
 
   .hero-right-side--novelty .hero-novelties-thumb-strip-wrap {
     grid-row: 3;
-    align-self: stretch;
+    align-self: start;
     width: 100%;
     min-width: 0;
     min-height: 2.4rem;
     position: relative;
     z-index: 40;
-    margin-top: clamp(0.15rem, 0.35vw, 0.3rem);
+    margin-top: 0;
     isolation: isolate;
   }
 
   .hero-right-side--novelty .hero-novelty-meta {
     grid-row: 4;
-    align-self: end;
-    margin-top: clamp(0.12rem, 0.3vw, 0.25rem);
-    padding-top: clamp(0.1rem, 0.25vw, 0.2rem);
+    align-self: start;
+    margin-top: var(--hero-gap-thumbs-to-title);
+    padding-top: 0;
     transform: none;
-    min-height: clamp(2.4rem, 5vw, 2.85rem);
+    min-height: clamp(2.85rem, 5.5vw, 3.35rem);
   }
 
   /*
    * Десктоп: одна ширина карточки для Marvel / TMNT / DC и остальных новинок.
    */
+  .hero-right-side--tmnt.hero-right-side--novelty .hero-novelty-card-wrap,
+  .hero-right-side--tmnt.hero-right-side--novelty .hero-card.hero-novelty-card-wrap {
+    width: var(--hero-novelty-card-width-tmnt);
+    max-width: var(--hero-novelty-card-width-tmnt);
+    min-width: 0;
+    margin-inline: auto;
+    padding-inline: 0;
+    flex: 0 0 auto;
+  }
+
   .hero-right-side--novelty .hero-novelty-card-wrap,
   .hero-right-side--novelty:not(.hero-right-side--tmnt):not(.hero-right-side--marvel)
     .hero-novelty-card-wrap,
-  .hero-right-side--marvel.hero-right-side--novelty .hero-novelty-card-wrap,
-  .hero-right-side--tmnt.hero-right-side--novelty .hero-card.hero-novelty-card-wrap {
+  .hero-right-side--marvel.hero-right-side--novelty .hero-novelty-card-wrap {
     width: var(--hero-novelty-card-width);
     max-width: var(--hero-novelty-card-width);
     min-width: 0;
@@ -1014,7 +1026,7 @@ body::after {
   .hero-right-side--novelty .hero-novelties-thumb-strip-wrap {
     width: 100%;
     max-width: 100%;
-    margin-top: clamp(0.1rem, 0.25vw, 0.2rem);
+    margin-top: 0;
     padding-inline: 0;
   }
 
@@ -1024,24 +1036,25 @@ body::after {
   }
 
   .hero-right-side--novelty .hero-novelty-meta {
-    margin-top: clamp(0.1rem, 0.25vw, 0.2rem);
-    padding-top: clamp(0.08rem, 0.2vw, 0.15rem);
-    min-height: clamp(2.25rem, 4.5vw, 2.75rem);
+    margin-top: var(--hero-gap-thumbs-to-title);
+    padding-top: 0;
+    min-height: clamp(2.75rem, 5.5vw, 3.25rem);
     width: 100%;
     max-width: 100%;
     padding-inline: 0;
   }
 
   .hero-right-side--novelty .hero-novelty-card-title {
-    font-size: clamp(0.78rem, 0.95vw, 0.88rem);
-    line-height: 1.22;
+    font-size: clamp(0.95rem, 1.2vw, 1.125rem);
+    line-height: 1.25;
   }
 
   .hero-right-side--novelty .hero-novelty-buy-first {
-    min-height: 1.95rem;
-    padding-block: 0.3rem;
-    padding-inline: 0.85rem;
-    font-size: 0.68rem;
+    min-height: 2.5rem;
+    min-width: 9.5rem;
+    padding-block: 0.5rem;
+    padding-inline: 1.15rem;
+    font-size: 0.8125rem;
   }
 
   .hero-right-side--novelty .hero-novelty-card-shell .hero-novelty-side-arrow {
@@ -1871,11 +1884,17 @@ body::after {
 @media (min-width: 1025px) {
   .hero-right-side--novelty:not(.hero-right-side--tmnt):not(.hero-right-side--marvel)
     .hero-novelty-card-wrap,
-  .hero-right-side--marvel.hero-right-side--novelty .hero-novelty-card-wrap,
-  .hero-right-side--tmnt.hero-right-side--novelty .hero-novelty-card-wrap,
-  .hero-right-side--tmnt.hero-right-side--novelty .hero-card.hero-novelty-card-wrap {
+  .hero-right-side--marvel.hero-right-side--novelty .hero-novelty-card-wrap {
     width: var(--hero-novelty-card-width) !important;
     max-width: var(--hero-novelty-card-width) !important;
+    margin-inline: auto !important;
+    padding-inline: 0 !important;
+  }
+
+  .hero-right-side--tmnt.hero-right-side--novelty .hero-novelty-card-wrap,
+  .hero-right-side--tmnt.hero-right-side--novelty .hero-card.hero-novelty-card-wrap {
+    width: var(--hero-novelty-card-width-tmnt) !important;
+    max-width: var(--hero-novelty-card-width-tmnt) !important;
     margin-inline: auto !important;
     padding-inline: 0 !important;
   }
@@ -1887,12 +1906,19 @@ body::after {
   }
 
   .hero-right-side--novelty .hero-novelty-card-shell {
-    min-height: 0 !important;
-    align-items: center;
+    min-height: var(--hero-novelty-card-slot) !important;
+    max-height: var(--hero-novelty-card-slot) !important;
+    height: 100% !important;
+    align-items: flex-end !important;
   }
 
   .hero-right-side--novelty .hero-right-product {
     min-height: 0;
+    grid-template-rows:
+      auto
+      var(--hero-novelty-card-slot)
+      auto
+      auto !important;
   }
 }
 

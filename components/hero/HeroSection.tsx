@@ -152,6 +152,7 @@ export default function HeroSection({
     const y = preservePageScrollRef.current;
     if (y == null) return;
     preservePageScrollRef.current = null;
+    if (y < 96) return;
 
     const hero = document.querySelector(".hero");
     const newH = hero?.getBoundingClientRect().height ?? preHeroHeightRef.current;

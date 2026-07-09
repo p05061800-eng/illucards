@@ -1,6 +1,5 @@
 import HeroSection from "@/components/hero/HeroSection";
 import { HomeCollection } from "./components/HomeCollection";
-import { HomeHeroScrollGuard } from "./components/HomeHeroScrollGuard";
 import { parseCardsJson } from "./lib/cardsJson";
 import type { CategoryTile } from "./lib/categoriesJson";
 import { parseCategoriesJson } from "./lib/categoriesJson";
@@ -42,7 +41,6 @@ export default function Home() {
 
   return (
     <main className="main relative min-h-screen overflow-x-hidden text-white">
-      <HomeHeroScrollGuard />
       <div className="relative z-10 overflow-visible px-0 pb-16 pt-[10px] sm:px-10 sm:pb-20 sm:pt-4">
         <HeroSection
           cards={cards}

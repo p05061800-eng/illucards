@@ -19,7 +19,7 @@ import PromoSlider from "@/components/PromoSlider";
 import { apiUrl } from "@/app/lib/apiUrl";
 import { collectionSectionId } from "@/app/lib/collectionAnchor";
 import { saveCurrentScrollPosition } from "@/app/lib/catalogScrollRestore";
-import { restorePageScrollY } from "@/app/lib/preservePageScroll";
+import { restorePageScrollAfterLayoutChange } from "@/app/lib/preservePageScroll";
 import { categoryFocusToStyle } from "@/app/lib/imageFocus";
 import { buildNoveltiesCarouselCards } from "@/app/lib/noveltiesHeroCarousel";
 import { sortSectionCardsForDefaultCatalog } from "@/app/lib/collectionFilter";
@@ -70,6 +70,7 @@ export default function HeroSection({
   const noveltyDragStartRef = useRef<{ x: number; y: number } | null>(null);
   /** Сохраняем scrollY страницы при смене карточки в «Новинках». */
   const preservePageScrollRef = useRef<number | null>(null);
+  const preHeroHeightRef = useRef(0);
   /** После свайпа гасим синтетический click по `<Link>` на карточке. */
   const blockHeroCardLinkClickRef = useRef(false);
   /** Пауза автолистания при наведении на колонку «Новинки». */
@@ -137,6 +138,9 @@ export default function HeroSection({
     (value: SetStateAction<number>) => {
       if (showNoveltiesHeroChrome && typeof window !== "undefined") {
         preservePageScrollRef.current = window.scrollY;
+        const hero = document.querySelector(".hero");
+        preHeroHeightRef.current =
+          hero?.getBoundingClientRect().height ?? preHeroHeightRef.current;
       }
       setBrowseIndexState(value);
     },
@@ -148,7 +152,13 @@ export default function HeroSection({
     const y = preservePageScrollRef.current;
     if (y == null) return;
     preservePageScrollRef.current = null;
-    restorePageScrollY(y);
+
+    const hero = document.querySelector(".hero");
+    const newH = hero?.getBoundingClientRect().height ?? preHeroHeightRef.current;
+    const delta = newH - preHeroHeightRef.current;
+    preHeroHeightRef.current = newH;
+
+    restorePageScrollAfterLayoutChange(y, delta);
   }, [browseIndex, showNoveltiesHeroChrome]);
 
   const browseCarouselKey = useMemo(

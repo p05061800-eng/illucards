@@ -87,16 +87,26 @@ export default function PromoSlider({ initialSlides = [] }: Props) {
   const loopEnabled = slides.length > 3;
   const autoplayEnabled = !single && !reduceMotion;
   const pageScrollLockRef = useRef<number | null>(null);
+  const preHeroHeightRef = useRef(0);
 
   const lockPageScroll = useCallback(() => {
     pageScrollLockRef.current = capturePageScrollY();
+    const hero = document.querySelector(".hero");
+    preHeroHeightRef.current =
+      hero?.getBoundingClientRect().height ?? preHeroHeightRef.current;
   }, []);
 
   const unlockPageScroll = useCallback(() => {
     const y = pageScrollLockRef.current;
     pageScrollLockRef.current = null;
     if (y == null || y < 96) return;
-    restorePageScrollY(y);
+
+    const hero = document.querySelector(".hero");
+    const newH = hero?.getBoundingClientRect().height ?? preHeroHeightRef.current;
+    const delta = newH - preHeroHeightRef.current;
+    preHeroHeightRef.current = newH;
+
+    restorePageScrollY(y + delta);
   }, []);
 
   return (

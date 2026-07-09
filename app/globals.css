@@ -625,6 +625,10 @@ body::after {
   overflow-anchor: none;
 }
 
+#collection {
+  overflow-anchor: none;
+}
+
 /* Вертикальный зазор между логотипом и основным рядом — как раньше у .hero gap; на ≥1025px сетка задаёт свои row-gap/column-gap */
 .hero-stage {
   display: flex;
@@ -907,8 +911,9 @@ body::after {
   .hero-right-side--novelty .hero-novelty-card-shell {
     grid-row: 2;
     align-self: stretch;
-    height: auto;
+    height: var(--hero-novelty-card-slot);
     min-height: var(--hero-novelty-card-slot);
+    max-height: var(--hero-novelty-card-slot);
     width: 100%;
     position: relative;
     z-index: 15;
@@ -924,6 +929,7 @@ body::after {
     align-self: stretch;
     width: 100%;
     min-width: 0;
+    min-height: 3.75rem;
   }
 
   .hero-right-side--novelty .hero-novelty-meta {
@@ -932,6 +938,7 @@ body::after {
     margin-top: clamp(0.25rem, 0.9vw, 0.85rem);
     padding-top: clamp(0.25rem, 0.8vw, 0.65rem);
     transform: none;
+    min-height: clamp(4.5rem, 16vw, 5.5rem);
   }
 
 }
@@ -1088,7 +1095,8 @@ body::after {
 
   .hero-right-side--novelty .hero-novelty-card-shell {
     min-height: var(--hero-novelty-card-slot);
-    max-height: none;
+    max-height: var(--hero-novelty-card-slot);
+    height: var(--hero-novelty-card-slot);
     align-items: flex-start;
     justify-content: center;
     padding-bottom: 0.75rem;
@@ -2246,6 +2254,15 @@ body::after {
   .hero .hero-name.hero-novelty-card-title,
   .hero .hero-name {
     margin-top: 10px;
+  }
+
+  .hero-right-side--novelty .hero-novelty-meta-row {
+    min-height: 4.25rem;
+  }
+
+  .hero-right-side--novelty .hero-novelty-card-wrap {
+    height: 100%;
+    max-height: 100%;
   }
 
   .hero-novelty-chrome-shift,

@@ -20,3 +20,19 @@ export function restorePageScrollY(y: number): void {
   window.setTimeout(apply, 50);
   window.setTimeout(apply, 150);
 }
+
+/** Сдвиг scrollY на delta после изменения высоты блока выше текущей позиции. */
+export function compensatePageScrollY(delta: number): void {
+  if (typeof window === "undefined" || !Number.isFinite(delta) || Math.abs(delta) < 0.5) {
+    return;
+  }
+  const next = Math.max(0, window.scrollY + delta);
+  restorePageScrollY(next);
+}
+
+export function restorePageScrollAfterLayoutChange(
+  savedY: number,
+  layoutDelta: number,
+): void {
+  restorePageScrollY(savedY + layoutDelta);
+}

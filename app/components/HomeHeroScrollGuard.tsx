@@ -2,16 +2,24 @@
 
 import { useEffect, useRef } from "react";
 import { usePathname } from "next/navigation";
-import { restorePageScrollY } from "@/app/lib/preservePageScroll";
+import {
+  compensatePageScrollY,
+  restorePageScrollY,
+} from "@/app/lib/preservePageScroll";
 
-/** Ниже этого порога пользователь ещё в герое — не фиксируем scroll. */
+/** Ниже этого порога пользователь ещё в герое — не трогаем scroll. */
 const GUARD_MIN_SCROLL_Y = 96;
-/** Скачок вверх больше этого — восстанавливаем позицию. */
-const JUMP_UP_PX = 48;
+/** Любой нежелательный скачок вверх при прокрученном каталоге. */
+const JUMP_UP_PX = 4;
+
+function shouldCompensateHeroResize(scrollY: number, heroHeight: number): boolean {
+  if (scrollY < GUARD_MIN_SCROLL_Y) return false;
+  return scrollY > heroHeight - 48;
+}
 
 /**
- * На главной: смена новинок / акций не должна подтягивать страницу вверх
- * (layout shift героя + scroll anchoring на iOS).
+ * На главной: смена новинок / акций не должна сдвигать каталог
+ * (компенсация изменения высоты героя + мелких скачков scroll).
  */
 export function HomeHeroScrollGuard() {
   const pathname = usePathname();
@@ -30,13 +38,6 @@ export function HomeHeroScrollGuard() {
     const syncAnchor = () => {
       anchorYRef.current = window.scrollY;
       heroPastRef.current = hero.getBoundingClientRect().bottom < 8;
-    };
-
-    const maybeRestore = () => {
-      const saved = anchorYRef.current;
-      if (saved < GUARD_MIN_SCROLL_Y) return;
-      if (window.scrollY >= saved - JUMP_UP_PX) return;
-      restorePageScrollY(saved);
     };
 
     syncAnchor();
@@ -58,12 +59,21 @@ export function HomeHeroScrollGuard() {
       heroPastRef.current = hero.getBoundingClientRect().bottom < 8;
     };
 
-    const ro = new ResizeObserver(() => {
-      const h = hero.getBoundingClientRect().height;
-      if (Math.abs(h - prevHeroHeight) < 2) return;
-      prevHeroHeight = h;
-      if (anchorYRef.current < GUARD_MIN_SCROLL_Y) return;
-      maybeRestore();
+    const ro = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        const h = entry.contentRect.height;
+        const delta = h - prevHeroHeight;
+        if (Math.abs(delta) < 0.5) continue;
+
+        const scrollY = window.scrollY;
+        if (shouldCompensateHeroResize(scrollY, prevHeroHeight)) {
+          compensatePageScrollY(delta);
+          anchorYRef.current = window.scrollY;
+          heroPastRef.current = hero.getBoundingClientRect().bottom < 8;
+        }
+
+        prevHeroHeight = h;
+      }
     });
 
     ro.observe(hero);

@@ -510,15 +510,12 @@ export default function HeroSection({
                       <div className="hero-novelties-mobile-stack flex w-full max-w-full flex-col items-stretch gap-4 max-md:w-full max-md:px-0 md:contents md:max-w-none">
                       <div className="hero-title hero-novelty-header w-full shrink-0 text-center">
                         <div className="hero-novelty-header-inner mx-auto flex w-full max-w-full flex-col items-center gap-1">
-                          <h2
-                            data-text="Новинки"
-                            className="hero-novelties-title hero-novelties-wordmark-shine hero-scale-wordmark relative m-0 mx-auto block w-full max-w-full origin-center text-balance text-center font-bold tracking-tight"
-                          >
+                          <h2 className="hero-novelties-title hero-wordmark-shine hero-wordmark-shine--mirror hero-scale-wordmark relative m-0 mx-auto block w-full max-w-full origin-center text-balance text-center font-bold tracking-tight drop-shadow-[0_2px_0_rgba(0,0,0,0.55),0_10px_36px_rgba(109,40,217,0.45),0_22px_48px_rgba(0,0,0,0.45)]">
                             Новинки
                           </h2>
                           {activeBrowseCards.length > 1 ? (
                             <p
-                              className="hero-novelties-counter text-[0.7rem] font-medium tabular-nums text-violet-200/80 sm:text-xs"
+                              className="hero-novelties-counter relative z-[2] text-xs font-medium tabular-nums text-violet-200 sm:text-sm"
                               aria-live="polite"
                             >
                               {(browseIndex % activeBrowseCards.length) + 1} из{" "}

@@ -933,10 +933,10 @@ body::after {
     overflow: visible;
   }
 
-  .hero-right-side--novelty .hero-novelties-title.hero-novelties-title--static {
+  .hero-right-side--novelty .hero-novelties-title.hero-novelties-wordmark-shine {
     font-size: clamp(28px, 4vw, 56px);
     line-height: 1.06;
-    letter-spacing: 0.06em;
+    letter-spacing: -0.025em;
   }
 
   .hero-right-side--novelty .hero-novelties-counter {
@@ -1477,34 +1477,78 @@ body::after {
   margin-bottom: clamp(0.04rem, 0.25vw, 0.22rem);
 }
 
-.hero-novelties-title--static {
+.hero-novelties-title--static,
+.hero-novelties-wordmark-shine {
+  position: relative;
+  isolation: isolate;
+  font-weight: 700;
+  letter-spacing: -0.025em;
+  line-height: 1.06;
   background: linear-gradient(
-    115deg,
+    125deg,
     #7f1d1d 0%,
-    #b91c1c 10%,
-    #dc2626 20%,
-    #ea580c 30%,
-    #f59e0b 40%,
-    #fbbf24 48%,
-    #fef08a 52%,
-    #ffffff 56%,
-    #fde047 62%,
-    #f59e0b 72%,
-    #ef4444 84%,
+    #dc2626 14%,
+    #f97316 26%,
+    #fbbf24 38%,
+    #fef9c3 46%,
+    #ffffff 50%,
+    #fde68a 56%,
+    #f59e0b 68%,
+    #ef4444 82%,
     #991b1b 94%,
     #7f1d1d 100%
   );
-  background-size: 280% 280%;
+  background-size: 300% 300%;
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
-  animation: hero-novelties-title-shine-move 5.5s ease-in-out infinite;
-  filter: drop-shadow(0 1px 0 rgba(127, 29, 29, 0.35))
-    drop-shadow(0 6px 18px rgba(220, 38, 38, 0.28))
-    drop-shadow(0 10px 28px rgba(245, 158, 11, 0.18));
+  animation: hero-novelties-title-shine-move 6s ease-in-out infinite reverse;
+  filter:
+    drop-shadow(0 1px 0 rgba(255, 255, 255, 0.14))
+    drop-shadow(0 2px 0 rgba(69, 10, 10, 0.95))
+    drop-shadow(0 4px 0 rgba(127, 29, 29, 0.9))
+    drop-shadow(0 6px 0 rgba(92, 25, 15, 0.78))
+    drop-shadow(0 9px 0 rgba(69, 26, 10, 0.62))
+    drop-shadow(0 14px 22px rgba(0, 0, 0, 0.45))
+    drop-shadow(0 18px 38px rgba(220, 38, 38, 0.42))
+    drop-shadow(0 24px 54px rgba(245, 158, 11, 0.24));
+  transform: translateZ(0);
 }
 
-.hero-novelty-heading-group .hero-novelties-title.hero-novelties-title--static {
+/* 3D-экструзия под бликом — как объём у логотипа IlluCards. */
+.hero-novelties-wordmark-shine::before,
+.hero-novelties-wordmark-shine::after {
+  content: attr(data-text);
+  position: absolute;
+  inset: 0;
+  text-align: inherit;
+  font: inherit;
+  letter-spacing: inherit;
+  line-height: inherit;
+  pointer-events: none;
+  background: none;
+  -webkit-background-clip: unset;
+  background-clip: unset;
+  animation: none;
+  filter: none;
+}
+
+.hero-novelties-wordmark-shine::before {
+  z-index: -1;
+  color: #5c1212;
+  transform: translate(0.045em, 0.058em);
+  opacity: 0.92;
+}
+
+.hero-novelties-wordmark-shine::after {
+  z-index: -2;
+  color: #2a0a0a;
+  transform: translate(0.09em, 0.115em);
+  opacity: 0.88;
+}
+
+.hero-novelty-heading-group .hero-novelties-title.hero-novelties-title--static,
+.hero-novelty-heading-group .hero-novelties-title.hero-novelties-wordmark-shine {
   width: auto;
   text-align: left;
 }
@@ -2608,7 +2652,8 @@ body::after {
     margin-bottom: 0;
   }
 
-  .hero-novelty-heading-group .hero-novelties-title.hero-novelties-title--static {
+  .hero-novelty-heading-group .hero-novelties-title.hero-novelties-title--static,
+  .hero-novelty-heading-group .hero-novelties-title.hero-novelties-wordmark-shine {
     width: 100%;
     text-align: center;
   }
@@ -2669,9 +2714,10 @@ body::after {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .hero-novelties-title--static {
+  .hero-novelties-title--static,
+  .hero-novelties-wordmark-shine {
     animation: none;
-    background-position: 42% 50%;
+    background-position: 48% 50%;
   }
 }
 

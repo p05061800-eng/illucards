@@ -510,7 +510,10 @@ export default function HeroSection({
                       <div className="hero-novelties-mobile-stack flex w-full max-w-full flex-col items-stretch gap-4 max-md:w-full max-md:px-0 md:contents md:max-w-none">
                       <div className="hero-title hero-novelty-header w-full shrink-0 text-center">
                         <div className="hero-novelty-header-inner mx-auto flex w-full max-w-full flex-col items-center gap-1">
-                          <h2 className="hero-novelties-title hero-novelties-title--static mx-auto block w-full max-w-full origin-center text-balance text-center font-bold uppercase tracking-[0.1em]">
+                          <h2
+                            data-text="Новинки"
+                            className="hero-novelties-title hero-novelties-wordmark-shine hero-scale-wordmark relative m-0 mx-auto block w-full max-w-full origin-center text-balance text-center font-bold tracking-tight"
+                          >
                             Новинки
                           </h2>
                           {activeBrowseCards.length > 1 ? (

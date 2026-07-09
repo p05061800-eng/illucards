@@ -39,11 +39,12 @@ import { useCatalogFilter } from "@/app/context/CatalogFilterContext";
 import { CardPriceDualRow } from "../../components/CardPriceDualRow";
 import {
   AdultContentBlurGate,
-  AgeConfirmDialog,
+  isAdultAgeGateTarget,
 } from "../../components/AdultContentBlurGate";
 import {
   cardRequiresAgeConfirmation,
 } from "../../lib/cardRequiresAgeConfirmation";
+import { useCardLinkTouchNav } from "../../lib/useCardLinkTouchNav";
 import { CatalogCardRarityFrame } from "../../components/CatalogCardRarityFrame";
 import { useAdultContentGateOptional } from "../../context/AdultContentContext";
 import { ProductReviewsSection } from "../../components/ProductReviewsSection";
@@ -78,8 +79,6 @@ function ratingCountWord(n: number): string {
   return "оценок";
 }
 
-const MINI_RAIL_TAP_MAX_PX = 22;
-
 const MINI_RAIL_ADULT_BADGE =
   "pointer-events-none absolute right-0.5 top-0.5 z-[130] rounded border border-rose-400/85 bg-rose-950/92 px-1 py-0.5 text-[9px] font-extrabold uppercase leading-none text-rose-50 shadow-[0_0_12px_rgba(244,63,94,0.35)]";
 
@@ -90,107 +89,88 @@ function MiniRailCard({ card: c }: { card: StoredCard }) {
   const img = c.frontImage?.trim();
   const needs18 = cardRequiresAgeConfirmation(c);
   const blocked = needs18 && !(adultGate?.isAdultConfirmed(c.id) ?? false);
-  const [ageOpen, setAgeOpen] = useState(false);
-  const pendingHrefRef = useRef<string | null>(null);
-  const touchStartRef = useRef<{ x: number; y: number } | null>(null);
   const href = `/card/${c.id}`;
 
-  function openNav() {
-    if (blocked) {
-      pendingHrefRef.current = href;
-      setAgeOpen(true);
-    } else {
-      router.push(href);
-    }
+  const openNav = useCallback(() => {
+    if (blocked) return;
+    router.push(href);
+  }, [blocked, href, router]);
+
+  const railTouchNav = useCardLinkTouchNav(openNav, {
+    shouldIgnoreTarget: isAdultAgeGateTarget,
+  });
+
+  const railClass =
+    "group flex w-[min(148px,40vw)] shrink-0 flex-col overflow-visible rounded-lg border border-white/10 bg-zinc-950/60 transition hover:border-purple-500/40 hover:bg-zinc-900/80 sm:w-[148px]";
+
+  const railBody = (
+    <>
+      <CatalogCardRarityFrame
+        card={c}
+        className="relative w-full overflow-visible rounded-t-lg bg-zinc-900"
+      >
+        {needs18 ? (
+          <span className={MINI_RAIL_ADULT_BADGE} aria-hidden>
+            18+
+          </span>
+        ) : null}
+        {img ? (
+          <AdultContentBlurGate isAdult={needs18} cardId={c.id}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={img}
+              alt=""
+              className={`block h-auto w-full max-w-full ${cardArtFaceObjectFitClass(c.cardArtFramePreset)}`}
+              style={cardArtFaceFitStyle(
+                c.cardArtFramePreset,
+                c.frontImageFocus,
+              )}
+            />
+          </AdultContentBlurGate>
+        ) : null}
+      </CatalogCardRarityFrame>
+      <div className="flex min-h-[3.5rem] flex-col gap-1.5 p-2">
+        <p className="line-clamp-2 text-xs font-medium leading-tight text-zinc-100">
+          {c.title}
+        </p>
+        <div className="flex items-center gap-1.5">
+          <CardRatingStars value={merged.avg} compact />
+          <span className="text-[10px] font-semibold tabular-nums text-amber-200/95">
+            {merged.avg.toFixed(1)}
+          </span>
+        </div>
+        <CardPriceDualRow card={c} variant="rail" />
+      </div>
+    </>
+  );
+
+  if (blocked) {
+    return (
+      <div
+        className={railClass}
+        aria-label={`${c.title} — подтвердите возраст 18+ на карточке`}
+      >
+        {railBody}
+      </div>
+    );
   }
 
   return (
-    <>
-      <AgeConfirmDialog
-        open={ageOpen}
-        onClose={() => {
-          setAgeOpen(false);
-          pendingHrefRef.current = null;
-        }}
-        onConfirm={() => {
-          adultGate?.confirmAdultForCard(c.id);
-          setAgeOpen(false);
-          pendingHrefRef.current = null;
-        }}
-      />
-      <Link
-        href={href}
-        className="group flex w-[min(148px,40vw)] shrink-0 flex-col overflow-visible rounded-lg border border-white/10 bg-zinc-950/60 transition hover:border-purple-500/40 hover:bg-zinc-900/80 sm:w-[148px]"
-        onClick={(e) => {
-          if (blocked) {
-            e.preventDefault();
-            pendingHrefRef.current = href;
-            setAgeOpen(true);
-          }
-        }}
-        onTouchStartCapture={(e) => {
-          if (e.touches.length === 0) return;
-          const t = e.touches[0];
-          touchStartRef.current = { x: t.clientX, y: t.clientY };
-        }}
-        onTouchEnd={(e) => {
-          const start = touchStartRef.current;
-          touchStartRef.current = null;
-          if (!start || e.changedTouches.length === 0) return;
-          const t = e.changedTouches[0];
-          const dx = Math.abs(t.clientX - start.x);
-          const dy = Math.abs(t.clientY - start.y);
-          if (dx <= MINI_RAIL_TAP_MAX_PX && dy <= MINI_RAIL_TAP_MAX_PX) {
-            e.preventDefault();
-            openNav();
-          }
-        }}
-        onTouchCancel={() => {
-          touchStartRef.current = null;
-        }}
-      >
-        <CatalogCardRarityFrame
-          card={c}
-          className="relative w-full overflow-visible rounded-t-lg bg-zinc-900"
-        >
-          {needs18 ? (
-            <span className={MINI_RAIL_ADULT_BADGE} aria-hidden>
-              18+
-            </span>
-          ) : null}
-          {img ? (
-            <AdultContentBlurGate
-              isAdult={needs18}
-              cardId={c.id}
-              mode="blurOnly"
-            >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={img}
-                alt=""
-                className={`block h-auto w-full max-w-full ${cardArtFaceObjectFitClass(c.cardArtFramePreset)}`}
-                style={cardArtFaceFitStyle(
-                  c.cardArtFramePreset,
-                  c.frontImageFocus,
-                )}
-              />
-            </AdultContentBlurGate>
-          ) : null}
-        </CatalogCardRarityFrame>
-        <div className="flex min-h-[3.5rem] flex-col gap-1.5 p-2">
-          <p className="line-clamp-2 text-xs font-medium leading-tight text-zinc-100">
-            {c.title}
-          </p>
-          <div className="flex items-center gap-1.5">
-            <CardRatingStars value={merged.avg} compact />
-            <span className="text-[10px] font-semibold tabular-nums text-amber-200/95">
-              {merged.avg.toFixed(1)}
-            </span>
-          </div>
-          <CardPriceDualRow card={c} variant="rail" />
-        </div>
-      </Link>
-    </>
+    <Link
+      href={href}
+      className={railClass}
+      onClick={(e) => {
+        if (railTouchNav.consumeTouchNavigationClick()) {
+          e.preventDefault();
+        }
+      }}
+      onTouchStartCapture={railTouchNav.onTouchStartCapture}
+      onTouchMoveCapture={railTouchNav.onTouchMoveCapture}
+      onTouchEnd={railTouchNav.onTouchEnd}
+      onTouchCancel={railTouchNav.onTouchCancel}
+    >
+      {railBody}
+    </Link>
   );
 }
 

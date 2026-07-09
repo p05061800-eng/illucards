@@ -7780,13 +7780,18 @@
       "intelligence": 50,
       "magic": 50
     },
-    "effect": "vario",
     "isNew": false,
     "isPopular": false,
     "isSale": false,
     "inStock": true,
     "ratingAvg": 5,
     "reviewCount": 0,
+    "rarities": [
+      "common",
+      "novelty"
+    ],
+    "noveltySince": "2026-07-09T03:11:27.895Z",
+    "effect": "vario",
     "categoryBg": "/uploads/1783566642738-2645d77a.webp",
     "frontImageFocus": {
       "x": 50,
@@ -7800,15 +7805,639 @@
       "x": 50,
       "y": 50
     },
-    "categoryOrder": 57,
     "priceRub": 750,
+    "categoryOrder": 57,
     "varioSmoothing": 0.18,
     "frontImageWidth": 761,
-    "frontImageHeight": 1024,
+    "frontImageHeight": 1024
+  },
+  {
+    "id": "b2807fe2-b4f0-495e-9095-cc7a273202f8",
+    "title": "Каратель",
+    "description": "Фрэнк Касл был обычным человеком, пока трагедия не отняла у него всё, что он любил. Потеряв семью, бывший морской пехотинец объявил личную войну преступному миру и превратился в Карателя — беспощадного мстителя, которого боятся даже самые опасные преступники. Не обладая сверхспособностями, он компенсирует это выдающейся боевой подготовкой, тактическим мышлением и несгибаемой волей. Для Карателя существует только одна цель — наказать виновных любой ценой.",
+    "category": "Marvel",
+    "subcategory": "",
+    "frontImage": "/uploads/1783568018417-537a4797.webp",
+    "backImage": "/uploads/1783568022232-19edaf19.webp",
+    "price": 25,
+    "rarity": "novelty",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "isNew": false,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": true,
+    "ratingAvg": 5,
+    "reviewCount": 0,
     "rarities": [
       "common",
       "novelty"
     ],
-    "noveltySince": "2026-07-09T03:11:27.895Z"
+    "noveltySince": "2026-07-09T03:34:07.419Z",
+    "effect": "vario",
+    "categoryBg": "/uploads/1783567986681-2895a542.webp",
+    "frontImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "backImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "priceRub": 750,
+    "categoryOrder": 57,
+    "varioSmoothing": 0.18,
+    "frontImageWidth": 600,
+    "frontImageHeight": 900
+  },
+  {
+    "id": "b5ccb5bd-182c-44a0-854b-ad0f681ab191",
+    "title": "Шторм",
+    "description": "Ороро Монро, известная как Шторм, — одна из самых могущественных мутантов и легендарный член Людей Икс. Она способна управлять погодой по собственной воле, вызывая молнии, ураганы, ливни и снежные бури. Её власть над силами природы делает её грозным противником на любом поле боя, а врождённое благородство и лидерские качества позволяют вдохновлять союзников даже в самые тяжёлые времена. Когда над горизонтом сгущаются тучи, враги знают — Шторм уже рядом.",
+    "category": "Marvel",
+    "subcategory": "",
+    "frontImage": "/uploads/1783568113556-c83b9f61.webp",
+    "backImage": "/uploads/1783568120155-e441c7b5.webp",
+    "price": 30,
+    "rarity": "adult",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "isNew": false,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": true,
+    "ratingAvg": 5,
+    "reviewCount": 0,
+    "rarities": [
+      "adult",
+      "novelty"
+    ],
+    "noveltySince": "2026-07-09T03:36:45.069Z",
+    "effect": "vario",
+    "categoryBg": "/uploads/1783568088723-447a3086.webp",
+    "frontImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "backImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "priceRub": 800,
+    "categoryOrder": 59,
+    "varioSmoothing": 0.18,
+    "frontImageWidth": 600,
+    "frontImageHeight": 900
+  },
+  {
+    "id": "a910ecca-5e20-4fa4-bb3e-b5243b7f480f",
+    "title": "Классическая обложка — Spider-Man: Brand New Day",
+    "description": "Классическая обложка — Spider-Man: Brand New Day. Специальная карточка, посвящённая фильму Spider-Man: Brand New Day. На обложке изображён Человек-паук, оказавшийся в центре новой угрозы, где прошлое и настоящее сталкиваются самым неожиданным образом. Разбитые отражения вокруг героя намекают на события, способные изменить его судьбу, а появление Халка делает историю ещё более масштабной и непредсказуемой. Эта карточка станет памятным дополнением для поклонников вселенной Marvel и коллекционеров редких выпусков.",
+    "category": "Marvel",
+    "subcategory": "",
+    "frontImage": "/uploads/1783568308653-1f249e03.webp",
+    "backImage": "",
+    "price": 40,
+    "rarity": "limited",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "isNew": false,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": true,
+    "ratingAvg": 5,
+    "reviewCount": 0,
+    "rarities": [
+      "limited",
+      "novelty"
+    ],
+    "noveltySince": "2026-07-09T03:38:30.267Z",
+    "effect": "3d-horizontal",
+    "categoryBg": "/uploads/1783568301860-b647a271.webp",
+    "frontImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "priceRub": 1000,
+    "categoryOrder": 60,
+    "frontImageWidth": 600,
+    "frontImageHeight": 900
+  },
+  {
+    "id": "9278957f-97a3-47e5-b31a-7dff69909f22",
+    "title": "Зимний Солдат",
+    "description": "Когда-то Баки Барнс был верным другом Капитана Америки, но годы экспериментов и контроля сознания превратили его в легендарного Зимнего Солдата. Благодаря усиленному телу, металлической руке и безупречной боевой подготовке он стал одним из самых опасных оперативников в мире. Его имя долгие годы наводило ужас на врагов, а каждая выполненная миссия лишь укрепляла его репутацию идеального оружия. Даже освободившись от прошлого, Зимний Солдат остаётся грозным воином, способным изменить исход любого сражения.",
+    "category": "Marvel",
+    "subcategory": "",
+    "frontImage": "/uploads/1783568347541-10690072.webp",
+    "backImage": "",
+    "price": 25,
+    "rarity": "novelty",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "isNew": false,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": true,
+    "ratingAvg": 5,
+    "reviewCount": 0,
+    "rarities": [
+      "common",
+      "novelty"
+    ],
+    "noveltySince": "2026-07-09T03:42:10.749Z",
+    "effect": "3d-horizontal",
+    "categoryBg": "/uploads/1783568337755-c8a6b22c.webp",
+    "frontImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "priceRub": 750,
+    "categoryOrder": 61,
+    "frontImageWidth": 600,
+    "frontImageHeight": 900
+  },
+  {
+    "id": "b465d5e8-7f11-4b8c-a1db-d16b0541ed06",
+    "title": "Оружие Икс",
+    "description": "Проект «Оружие Икс» навсегда изменил судьбу мутанта Логана, превратив его в живое оружие. В ходе жестоких экспериментов его скелет был покрыт неразрушимым адамантием, а природные способности к регенерации сделали его практически неуязвимым. Потеряв часть воспоминаний и человечности, он стал идеальным бойцом, созданным для выполнения самых опасных задач. Даже спустя годы Оружие Икс остаётся символом неудержимой ярости, невероятной выносливости и смертоносной силы.",
+    "category": "Marvel",
+    "subcategory": "",
+    "frontImage": "/uploads/1783568445156-f84ac37b.webp",
+    "backImage": "",
+    "price": 25,
+    "rarity": "novelty",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "isNew": false,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": true,
+    "ratingAvg": 5,
+    "reviewCount": 0,
+    "rarities": [
+      "novelty",
+      "common"
+    ],
+    "noveltySince": "2026-07-09T03:41:59.949Z",
+    "effect": "3d-horizontal",
+    "categoryBg": "/uploads/1783568409215-fcd4b149.webp",
+    "frontImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "priceRub": 750,
+    "categoryOrder": 62,
+    "frontImageWidth": 600,
+    "frontImageHeight": 900
+  },
+  {
+    "id": "95f50317-fe62-4610-9f4e-63929e533af1",
+    "title": "Эмма Фрост",
+    "description": "Эмма Фрост — одна из самых влиятельных и могущественных мутантов во вселенной Людей Икс. Обладая выдающимися телепатическими способностями, она способна читать мысли, воздействовать на разум противников и вести ментальные сражения на высочайшем уровне. Её уникальная способность превращать своё тело в органический алмаз делает Эмму практически неуязвимой для большинства физических атак. Холодная, расчётливая и невероятно умная, она всегда действует на несколько шагов впереди своих врагов, оставаясь одной из самых опасных фигур среди мутантов.",
+    "category": "Marvel",
+    "subcategory": "",
+    "frontImage": "/uploads/1783568483939-30093738.webp",
+    "backImage": "/uploads/1783568488676-83675392.webp",
+    "price": 30,
+    "rarity": "adult",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "isNew": false,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": true,
+    "ratingAvg": 5,
+    "reviewCount": 0,
+    "rarities": [
+      "adult",
+      "novelty"
+    ],
+    "noveltySince": "2026-07-09T03:41:40.377Z",
+    "effect": "vario",
+    "categoryBg": "/uploads/1783568495316-86dc07dd.webp",
+    "frontImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "backImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "priceRub": 800,
+    "categoryOrder": 63,
+    "varioSmoothing": 0.18,
+    "frontImageWidth": 600,
+    "frontImageHeight": 900
+  },
+  {
+    "id": "ddc60d5c-8102-4cf4-9ae3-4f9b2a5204d3",
+    "title": "Токсичный удар",
+    "description": "Созданная по мотивам Скорпиона, эта бонусная карточка символизирует стремительность и смертельную точность атаки. Механический хвост с ядовитым жалом способен молниеносно настигнуть противника даже на большом расстоянии, не оставляя времени на защиту. Активируя «Токсичный удар», владелец получает +500 очков к скорости и ловкости, превращая своего персонажа в настоящего мастера внезапных атак.",
+    "category": "Marvel",
+    "subcategory": "",
+    "frontImage": "/uploads/1783568596622-5bacbe05.webp",
+    "backImage": "",
+    "price": 25,
+    "rarity": "novelty",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "isNew": false,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": true,
+    "ratingAvg": 5,
+    "reviewCount": 0,
+    "rarities": [
+      "novelty",
+      "common"
+    ],
+    "noveltySince": "2026-07-09T03:43:33.918Z",
+    "effect": "3d-horizontal",
+    "categoryBg": "/uploads/1783568566743-df11c89b.webp",
+    "frontImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "priceRub": 750,
+    "categoryOrder": 64,
+    "frontImageWidth": 600,
+    "frontImageHeight": 900
+  },
+  {
+    "id": "f47a3ac4-67a7-47ab-88e0-908c543bf91e",
+    "title": "Джубили",
+    "description": "Джубили — энергичная и харизматичная мутантка, известная своей способностью создавать яркие энергетические вспышки, напоминающие фейерверки. Несмотря на кажущуюся лёгкость характера, она не раз доказывала свою храбрость в самых опасных сражениях. Её скорость, ловкость и нестандартное мышление позволяют находить выход даже из безнадёжных ситуаций, а мощные энергетические заряды способны ослепить и дезориентировать противника. Благодаря своему оптимизму и верности друзьям Джубили стала одним из самых запоминающихся членов команды Людей Икс.",
+    "category": "Marvel",
+    "subcategory": "",
+    "frontImage": "/uploads/1783568659861-835c3d7f.webp",
+    "backImage": "/uploads/1783568664324-3320979f.webp",
+    "price": 30,
+    "rarity": "adult",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "isNew": false,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": true,
+    "ratingAvg": 5,
+    "reviewCount": 0,
+    "rarities": [
+      "adult",
+      "novelty"
+    ],
+    "noveltySince": "2026-07-09T03:44:26.457Z",
+    "effect": "vario",
+    "categoryBg": "/uploads/1783568648855-7ab55bcc.webp",
+    "frontImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "backImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "priceRub": 800,
+    "categoryOrder": 65,
+    "varioSmoothing": 0.18,
+    "frontImageWidth": 600,
+    "frontImageHeight": 900
+  },
+  {
+    "id": "4d76071d-0e9f-4c05-b755-d2fa99ab317e",
+    "title": "Пленники Харли",
+    "description": "Харли Квинн обладает удивительным талантом превращать даже самых серьёзных и опасных злодеев в участников своих безумных приключений. Джокер, Бэтмен, Ядовитый Плющ и Дэдшот могут сколько угодно сопротивляться, но рядом с Харли любая ситуация быстро выходит из-под контроля. Её непредсказуемость, харизма и безграничная энергия способны обезоружить даже самых стойких противников.",
+    "category": "DC",
+    "subcategory": "",
+    "frontImage": "/uploads/1783568932157-4d490f44.webp",
+    "backImage": "/uploads/1783568935935-e2dd7773.webp",
+    "price": 40,
+    "rarity": "adult",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "isNew": false,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": true,
+    "ratingAvg": 5,
+    "reviewCount": 0,
+    "rarities": [
+      "adult",
+      "limited",
+      "novelty"
+    ],
+    "noveltySince": "2026-07-09T03:49:51.539Z",
+    "effect": "vario",
+    "categoryBg": "/uploads/1783568923006-5e5c4c0b.webp",
+    "frontImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "backImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "priceRub": 1000,
+    "categoryOrder": 180,
+    "varioSmoothing": 0.18,
+    "frontImageWidth": 600,
+    "frontImageHeight": 900
+  },
+  {
+    "id": "add5f1f3-a95c-4f1e-b60f-cd877e0d1c4f",
+    "title": "Флэш",
+    "description": "Барри Аллен, известный как Флэш, — самый быстрый человек на Земле и один из величайших героев своей вселенной. Получив доступ к загадочной Силе Скорости, он обрёл способность двигаться быстрее света, преодолевать огромные расстояния за мгновения и даже влиять на течение времени. Пока его противники только готовятся к атаке, Флэш уже успевает предотвратить катастрофу и спасти десятки жизней. Его невероятная скорость, острый ум и непоколебимое чувство справедливости делают его одним из самых опасных и уважаемых защитников мира.",
+    "category": "The Boys",
+    "subcategory": "",
+    "frontImage": "/uploads/1783569042087-4fb2315e.webp",
+    "backImage": "",
+    "price": 25,
+    "rarity": "novelty",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "isNew": false,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": true,
+    "ratingAvg": 5,
+    "reviewCount": 0,
+    "rarities": [
+      "common",
+      "novelty"
+    ],
+    "noveltySince": "2026-07-09T03:51:55.368Z",
+    "effect": "3d-horizontal",
+    "categoryBg": "/uploads/1783569098565-003e6628.webp",
+    "frontImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "priceRub": 750,
+    "categoryOrder": 4,
+    "frontImageWidth": 600,
+    "frontImageHeight": 900
+  },
+  {
+    "id": "7c62738f-6425-4898-8762-4f891536d2f1",
+    "title": "Харизма Харли",
+    "description": "Харли Квинн способна устроить хаос одним своим появлением. Её безумная улыбка, непредсказуемые поступки и невероятная уверенность сбивают противников с толку, заставляя их совершать ошибки. Там, где другие полагаются на силу или расчёт, Харли превращает собственную харизму в самое опасное оружие. Карточка «Харизма Харли» удваивает показатель аномалии и делает владельца настоящим источником хаоса, способным изменить ход любой игры.",
+    "category": "DC",
+    "subcategory": "",
+    "frontImage": "/uploads/1783569153306-1225f668.webp",
+    "backImage": "/uploads/1783569157690-634b90f1.webp",
+    "price": 30,
+    "rarity": "adult",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "isNew": false,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": true,
+    "ratingAvg": 5,
+    "reviewCount": 0,
+    "rarities": [
+      "adult",
+      "novelty"
+    ],
+    "noveltySince": "2026-07-09T03:52:38.704Z",
+    "effect": "vario",
+    "categoryBg": "/uploads/1783569140847-010d8fe8.webp",
+    "frontImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "backImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "priceRub": 800,
+    "categoryOrder": 6,
+    "varioSmoothing": 0.18,
+    "frontImageWidth": 600,
+    "frontImageHeight": 900
+  },
+  {
+    "id": "bd1f4b2b-16c5-4cbc-bc76-bae8269c977e",
+    "title": "Джокер",
+    "description": "Джокер — самый непредсказуемый и опасный враг Бэтмена, преступный гений, для которого хаос является высшей формой искусства. Он не стремится к власти или богатству ради выгоды — его цель заключается в том, чтобы доказать, что любой порядок можно разрушить одним удачным толчком в бездну безумия. Благодаря острому уму, невероятной изобретательности и полному отсутствию страха он способен поставить на грань катастрофы целый город. Каждый его план кажется абсурдным, но именно эта непредсказуемость делает Джокера одним из самых опасных злодеев в истории комиксов.",
+    "category": "DC",
+    "subcategory": "",
+    "frontImage": "/uploads/1783569242040-b297d98b.webp",
+    "backImage": "/uploads/1783569247579-643ee47a.webp",
+    "price": 25,
+    "rarity": "novelty",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "isNew": false,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": true,
+    "ratingAvg": 5,
+    "reviewCount": 0,
+    "rarities": [
+      "common",
+      "novelty"
+    ],
+    "noveltySince": "2026-07-09T03:54:25.213Z",
+    "effect": "vario",
+    "categoryBg": "/uploads/1783569256726-25310b65.webp",
+    "frontImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "backImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "priceRub": 750,
+    "categoryOrder": 7,
+    "varioSmoothing": 0.18,
+    "frontImageWidth": 600,
+    "frontImageHeight": 900
+  },
+  {
+    "id": "2de3f862-0527-496c-8b4d-e2e1d92f59cc",
+    "title": "Харли Квинн",
+    "description": "Харли Квинн — одна из самых ярких и непредсказуемых злодеек Готэма. Бывший психиатр, она оставила прошлую жизнь позади и превратилась в свободолюбивую королеву хаоса, живущую по собственным правилам. Её сложно назвать сильнейшим бойцом или гениальным стратегом, но благодаря безумию, хитрости и полной непредсказуемости Харли способна застать врасплох даже самых опасных противников. Вооружённая своей верной битой и неудержимым чувством юмора, она превращает любое столкновение в настоящий спектакль, где никто не знает, чем всё закончится.",
+    "category": "DC",
+    "subcategory": "",
+    "frontImage": "/uploads/1783569360500-56a5d0db.webp",
+    "backImage": "/uploads/1783569366340-9abc8687.webp",
+    "price": 30,
+    "rarity": "adult",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "isNew": false,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": true,
+    "ratingAvg": 5,
+    "reviewCount": 0,
+    "rarities": [
+      "adult",
+      "novelty"
+    ],
+    "noveltySince": "2026-07-09T03:56:16.970Z",
+    "effect": "vario",
+    "categoryBg": "/uploads/1783569375945-bdf40ffb.webp",
+    "frontImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "backImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "priceRub": 800,
+    "categoryOrder": 13,
+    "varioSmoothing": 0.18,
+    "frontImageWidth": 600,
+    "frontImageHeight": 900
+  },
+  {
+    "id": "3d041362-3f21-4663-8320-aea69585bf50",
+    "title": "Бэтмен, который смеётся",
+    "description": "Родившийся в одной из самых мрачных реальностей Мультивселенной, Бэтмен, который смеётся, стал воплощением кошмара, объединившего гениальный разум Брюса Уэйна и безумие Джокера. Он сохранил выдающийся интеллект Тёмного рыцаря, но полностью лишился моральных ограничений, превратившись в существо, для которого хаос является главным инструментом власти.\r\nЭтот злодей не просто побеждает врагов — он ломает их волю, заставляя мир подчиняться собственным правилам. Его планы охватывают целые вселенные, а жестокость и хитрость делают его одной из самых опасных версий Бэтмена. Там, где появляется Бэтмен, который смеётся, привычная реальность начинает рушиться, уступая место безумию и страху.",
+    "category": "DC",
+    "subcategory": "",
+    "frontImage": "/uploads/1783569442019-3ddc851f.webp",
+    "backImage": "",
+    "price": 25,
+    "rarity": "novelty",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "isNew": false,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": true,
+    "ratingAvg": 5,
+    "reviewCount": 0,
+    "rarities": [
+      "common",
+      "novelty"
+    ],
+    "noveltySince": "2026-07-09T03:57:35.327Z",
+    "effect": "3d-horizontal",
+    "categoryBg": "/uploads/1783569424801-81ec9ae9.webp",
+    "frontImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "priceRub": 750,
+    "categoryOrder": 8,
+    "frontImageWidth": 600,
+    "frontImageHeight": 900
   }
 ]

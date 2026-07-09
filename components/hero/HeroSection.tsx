@@ -471,7 +471,7 @@ export default function HeroSection({
                   >
                   {showNoveltiesHeroChrome ? (
                     <div className="hero-right-product flex w-full max-w-none min-w-0 flex-col items-center gap-0 overflow-visible py-0 md:items-stretch md:gap-0 md:py-0">
-                      <div className="hero-novelties-mobile-stack flex w-full max-w-full flex-col items-stretch gap-10 max-md:w-full max-md:px-0 md:contents md:max-w-none">
+                      <div className="hero-novelties-mobile-stack flex w-full max-w-full flex-col items-stretch gap-4 max-md:w-full max-md:px-0 md:contents md:max-w-none">
                       <div className="hero-title hero-novelty-header w-full shrink-0 text-center">
                         <h2 className="hero-novelties-title hero-novelties-title--static mx-auto block w-full max-w-full origin-center text-balance text-center font-bold uppercase tracking-[0.1em]">
                           Новинки
@@ -553,7 +553,7 @@ export default function HeroSection({
                       </div>
 
                       <div
-                        className={`hero-novelty-meta flex w-full max-w-full shrink-0 flex-col gap-2 px-0 text-left max-md:mt-6 md:gap-3 md:px-3 ${
+                        className={`hero-novelty-meta flex w-full max-w-full shrink-0 flex-col gap-2 px-0 text-left max-md:mt-2 md:gap-3 md:px-3 ${
                           isTmntHeroCard
                             ? "md:max-w-[min(100%,50rem)]"
                             : isMarvelHeroCard

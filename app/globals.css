@@ -772,12 +772,10 @@ body::after {
   .hero-stage {
     display: grid;
     grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
-    grid-template-rows: auto minmax(0, 1fr);
+    grid-template-rows: auto auto;
     column-gap: clamp(32px, 2.2vw, 48px);
     row-gap: clamp(14px, 1.2vw, 20px);
-    align-items: stretch;
-    min-height: clamp(32rem, 68vh, 44rem);
-    max-height: min(82vh, 50rem);
+    align-items: start;
     /*
      * Главная карточка крупнее; заголовок, миниатюры и подпись — компактнее.
      */
@@ -786,8 +784,11 @@ body::after {
     --hero-novelties-title-band: clamp(3.1rem, 4.8vw, 4.6rem);
     --hero-gap-novelties-title-to-card: clamp(0.75rem, 1.35vw, 1.15rem);
     --hero-gap-hero-card-to-name: clamp(0.3rem, 0.55vw, 0.5rem);
-    --hero-novelty-card-slot: clamp(13.5rem, 20vh, 17.5rem);
+    --hero-novelty-card-slot: clamp(15.5rem, 24vh, 20.5rem);
     --hero-gap-thumbs-to-title: clamp(0.1rem, 0.2vw, 0.2rem);
+    --hero-right-col-offset: clamp(1rem, 2vw, 1.75rem);
+    --hero-left-gap-categories-promo: clamp(18px, 1.4vw, 22px);
+    --hero-left-gap-wordmark-categories: clamp(10px, 1vw, 14px);
   }
 
   .hero-wordmark-row {
@@ -803,12 +804,12 @@ body::after {
     width: 100%;
     max-width: 100%;
     flex: none;
-    align-self: stretch;
+    align-self: start;
     display: flex;
     flex-direction: column;
-    gap: clamp(12px, 1vw, 16px);
+    gap: var(--hero-left-gap-categories-promo);
     min-height: 0;
-    margin-top: clamp(4px, 0.45vw, 8px);
+    margin-top: var(--hero-left-gap-wordmark-categories);
   }
 
   .hero-body {
@@ -833,11 +834,12 @@ body::after {
   .hero-right-side {
     grid-column: 2;
     grid-row: 1 / -1;
-    align-self: stretch;
+    align-self: start;
     width: 100%;
     max-width: 100%;
     flex: none;
     min-height: 0;
+    padding-top: var(--hero-right-col-offset);
     justify-content: flex-start;
     align-items: flex-start;
   }
@@ -909,13 +911,12 @@ body::after {
     grid-template-columns: minmax(0, 1fr);
     grid-template-rows:
       auto
-      var(--hero-novelty-card-slot)
+      minmax(var(--hero-novelty-card-slot), auto)
       auto
       auto;
     align-items: stretch;
     justify-items: stretch;
     width: 100%;
-    height: 100%;
     min-height: 0;
     row-gap: clamp(0.45rem, 0.85vw, 0.75rem);
   }
@@ -960,9 +961,9 @@ body::after {
   .hero-right-side--novelty .hero-novelty-card-shell {
     grid-row: 2;
     align-self: start;
-    height: var(--hero-novelty-card-slot);
+    height: auto;
     min-height: var(--hero-novelty-card-slot);
-    max-height: var(--hero-novelty-card-slot);
+    max-height: none;
     width: 100%;
     position: relative;
     z-index: 5;
@@ -972,17 +973,17 @@ body::after {
     justify-content: center;
     box-sizing: border-box;
     padding-block: clamp(0.2rem, 0.4vw, 0.35rem);
-    overflow: clip;
+    overflow: visible;
   }
 
   .hero-right-side--novelty .hero-novelty-card-wrap {
-    max-height: calc(var(--hero-novelty-card-slot) - 0.5rem);
+    max-height: none;
   }
 
   .hero-right-side--novelty .hero-novelty-card-wrap,
   .hero-right-side--novelty .hero-novelty-card-wrap .hero-stack-max,
   .hero-right-side--novelty .hero-novelty-card-wrap .product-card-page-stack {
-    max-height: calc(var(--hero-novelty-card-slot) - 0.5rem);
+    max-height: none;
   }
 
   .hero-right-side--novelty .hero-novelties-thumb-strip-wrap {
@@ -1955,19 +1956,19 @@ body::after {
 
   .hero-right-side--novelty .hero-novelty-card-shell {
     min-height: var(--hero-novelty-card-slot) !important;
-    max-height: var(--hero-novelty-card-slot) !important;
-    height: var(--hero-novelty-card-slot) !important;
+    max-height: none !important;
+    height: auto !important;
     margin-top: var(--hero-gap-novelties-title-to-card) !important;
     align-self: start !important;
     align-items: center !important;
-    overflow: clip !important;
+    overflow: visible !important;
     z-index: 5 !important;
   }
 
   .hero-right-side--novelty .hero-novelty-card-wrap,
   .hero-right-side--novelty .hero-novelty-card-wrap .hero-stack-max,
   .hero-right-side--novelty .hero-novelty-card-wrap .product-card-page-stack {
-    max-height: calc(var(--hero-novelty-card-slot) - 0.5rem) !important;
+    max-height: none !important;
   }
 
   .hero-right-side--novelty .hero-card-stack-visual .card-side {
@@ -2005,7 +2006,7 @@ body::after {
     min-height: 0;
     grid-template-rows:
       auto
-      var(--hero-novelty-card-slot)
+      minmax(var(--hero-novelty-card-slot), auto)
       auto
       auto !important;
   }

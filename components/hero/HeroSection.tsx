@@ -370,7 +370,7 @@ export default function HeroSection({
       className={`relative z-0 w-full overflow-visible pt-0 ${
         viewportCompact
           ? "hero-viewport-compact mb-0 flex min-h-0 min-w-0 flex-1 flex-col pb-0"
-          : "mb-12 pb-[clamp(1rem,2.5vw,2rem)]"
+          : "mb-6 pb-[clamp(0.75rem,2vw,1.5rem)]"
       }`}
     >
       {/* Как на макете: та же сетка, что у хедера — max-w-[1400px] + px-6 lg:px-10 */}

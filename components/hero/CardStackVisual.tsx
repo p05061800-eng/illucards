@@ -62,6 +62,8 @@ export type CardStackVisualProps = {
   hideUltraLayer?: boolean;
   overlay?: ReactNode;
   dataCartFlySource?: boolean;
+  /** Не захватывать pointer на таче — чтобы клик по ссылке на карточку срабатывал (герой «Новинки»). */
+  navigationTapSafe?: boolean;
 };
 
 /**
@@ -78,6 +80,7 @@ export function CardStackVisual({
   hideUltraLayer = false,
   overlay,
   dataCartFlySource,
+  navigationTapSafe = false,
 }: CardStackVisualProps) {
   const resolvedRoot =
     rootClassName ??
@@ -348,7 +351,7 @@ export function CardStackVisual({
     (e: PointerEvent<HTMLDivElement>) => {
       dismissTiltHint();
       /* iOS шлёт и pointer, и touch — движение обрабатывают touch listeners */
-      if (heroStack && e.pointerType === "touch") return;
+      if ((heroStack || navigationTapSafe) && e.pointerType === "touch") return;
       pendingRef.current = { cx: e.clientX, cy: e.clientY };
       if (rafRef.current !== 0) cancelAnimationFrame(rafRef.current);
       rafRef.current = requestAnimationFrame(applyTilt);
@@ -360,7 +363,7 @@ export function CardStackVisual({
     (e: PointerEvent<HTMLDivElement>) => {
       setHoverMotionEngaged(true);
       void hoverMotionVideoRef.current?.play()?.catch(() => {});
-      if (heroStack && e.pointerType === "touch") return;
+      if ((heroStack || navigationTapSafe) && e.pointerType === "touch") return;
       pendingRef.current = { cx: e.clientX, cy: e.clientY };
       if (rafRef.current !== 0) cancelAnimationFrame(rafRef.current);
       rafRef.current = requestAnimationFrame(applyTilt);
@@ -377,7 +380,7 @@ export function CardStackVisual({
     dismissTiltHint();
     setHoverMotionEngaged(true);
     void hoverMotionVideoRef.current?.play()?.catch(() => {});
-    if (!heroStack && (e.pointerType === "touch" || e.pointerType === "pen")) {
+    if (!heroStack && !navigationTapSafe && (e.pointerType === "touch" || e.pointerType === "pen")) {
       try {
         e.currentTarget.setPointerCapture(e.pointerId);
       } catch {
@@ -390,7 +393,7 @@ export function CardStackVisual({
   }, [applyTilt, dismissTiltHint, heroStack]);
 
   const onPointerUp = useCallback((e: PointerEvent<HTMLDivElement>) => {
-    if (!heroStack && (e.pointerType === "touch" || e.pointerType === "pen")) {
+    if (!heroStack && !navigationTapSafe && (e.pointerType === "touch" || e.pointerType === "pen")) {
       try {
         e.currentTarget.releasePointerCapture(e.pointerId);
       } catch {
@@ -731,7 +734,7 @@ export function CardStackVisual({
           className={`${
             interactiveTilt ? "card-stack-tilt-zone " : ""
           }absolute inset-0 z-30 ${
-            heroStack || heroDiagonalLayout
+            heroStack || heroDiagonalLayout || navigationTapSafe
               ? "touch-manipulation"
               : "touch-none"
           } ${interactiveTilt ? "" : "pointer-events-none"}`}

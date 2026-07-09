@@ -1,30 +1,25 @@
 import type { StoredCard } from "@/app/api/cards/route";
 import { cardHasRarityTag } from "@/app/lib/cardRarityTags";
 
-/** Если в каталоге есть категория с таким именем — карусель «Новинки» берёт все её карточки. */
-export const NOVELTIES_CATEGORY_NAME = "Новинки";
-
 export type NoveltiesCarouselOrder = {
   /** Явный порядок id в карусели; если пусто — все из пула по умолчанию. */
   cardIds?: string[];
 };
 
+function isActiveNoveltyCard(card: StoredCard): boolean {
+  return cardHasRarityTag(card, "novelty");
+}
+
 /**
  * Полный список карточек для карусели «Новинки» в герое:
- * приоритет — все карточки категории «Новинки», иначе все с isNew / rarity novelty.
+ * все карточки с активной меткой «Новинки» (не старше 30 дней).
  * Если заданы `cardIds`, они идут первыми по порядку, затем остальные из пула.
  */
 export function buildNoveltiesCarouselCards(
   cards: StoredCard[],
   order?: NoveltiesCarouselOrder
 ): StoredCard[] {
-  const inCategory = cards.filter(
-    (c) => (c.category?.trim() ?? "") === NOVELTIES_CATEGORY_NAME
-  );
-  const pool =
-    inCategory.length > 0
-      ? inCategory
-      : cards.filter((c) => c.isNew || cardHasRarityTag(c, "novelty"));
+  const pool = cards.filter((c) => isActiveNoveltyCard(c));
 
   const ids = order?.cardIds?.filter(Boolean) ?? [];
   if (ids.length === 0) return pool;
@@ -35,7 +30,7 @@ export function buildNoveltiesCarouselCards(
 
   for (const id of ids) {
     const c = allCardsMap.get(id);
-    if (c && !seen.has(c.id)) {
+    if (c && isActiveNoveltyCard(c) && !seen.has(c.id)) {
       seen.add(c.id);
       out.push(c);
     }

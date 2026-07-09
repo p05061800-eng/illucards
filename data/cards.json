@@ -7674,5 +7674,141 @@
     "varioSmoothing": 0.18,
     "frontImageWidth": 600,
     "frontImageHeight": 900
+  },
+  {
+    "id": "b1ccd5cd-8a23-453e-b54b-b19216c22f02",
+    "title": "Хан",
+    "description": "Хан был одним из самых опасных бойцов клана «Пурпурный Дракон», сочетая огромную силу, боевое мастерство и железную дисциплину. Однако после мутации его способности выросли до невероятного уровня, а контроль над собой практически исчез. Превратившись в живую машину разрушения, Хан-Мутант стал угрозой не только для врагов, но и для собственных союзников.",
+    "category": "TMNT",
+    "subcategory": "turtles",
+    "frontImage": "/uploads/1783566134372-67a03e98.webp",
+    "backImage": "/uploads/1783566143364-527f193c.webp",
+    "price": 180,
+    "rarity": "limited",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "isNew": false,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": true,
+    "ratingAvg": 5,
+    "reviewCount": 0,
+    "effect": "vario",
+    "categoryBg": "/uploads/1783566120598-6e1eb172.webp",
+    "frontImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "backImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "priceRub": 5000,
+    "categoryOrder": 0,
+    "varioSmoothing": 0.18,
+    "frontImageWidth": 761,
+    "frontImageHeight": 1024
+  },
+  {
+    "id": "7de60b2d-92a2-40a6-93a1-9801d1bbd32e",
+    "title": "Чёрный Нуар / Блэк Нуар",
+    "description": "За маской Чёрного Нуара скрывается один из самых опасных и загадочных суперов. Он почти никогда не говорит, предпочитая действия словам, а его появление на поле боя часто означает, что исход схватки уже предрешён. Быстрый, безжалостный и невероятно выносливый, Нуар способен устранить цель ещё до того, как она поймёт, что находится в опасности. Его истинные мотивы остаются тайной даже для союзников, делая его одной из самых непредсказуемых фигур во вселенной «Пацанов».",
+    "category": "The Boys",
+    "subcategory": "",
+    "frontImage": "/uploads/1783566573428-994d9873.webp",
+    "backImage": "/uploads/1783566577818-9ca91ce7.webp",
+    "price": 25,
+    "rarity": "novelty",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "isNew": false,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": true,
+    "ratingAvg": 5,
+    "reviewCount": 0,
+    "rarities": [
+      "novelty",
+      "common"
+    ],
+    "noveltySince": "2026-07-09T03:10:07.355Z",
+    "effect": "vario",
+    "categoryBg": "/uploads/1783566564390-2a1b848b.webp",
+    "frontImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "backImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "priceRub": 750,
+    "categoryOrder": 2,
+    "varioSmoothing": 0.18,
+    "frontImageWidth": 600,
+    "frontImageHeight": 900
+  },
+  {
+    "id": "e2f85847-7caa-4cf0-b148-f5d2a0161412",
+    "title": "Шреддер с Мечом Тенгу",
+    "description": "Завладев легендарным Мечом Тенгу, Шреддер получил доступ к силе, способной изменить ход истории. Древний артефакт усиливает своего владельца, превращая и без того грозного повелителя Клана Фут в практически непобедимого воина. Каждая победа подпитывает мощь клинка, а каждый взмах несёт угрозу целым армиям. В руках Шреддера Меч Тенгу становится символом абсолютной власти, перед которой дрожат даже самые опасные противники.",
+    "category": "TMNT",
+    "subcategory": "foes",
+    "frontImage": "/uploads/1783566669861-1ff894c0.webp",
+    "backImage": "/uploads/1783566673840-38146412.webp",
+    "price": 25,
+    "rarity": "novelty",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "effect": "vario",
+    "isNew": false,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": true,
+    "ratingAvg": 5,
+    "reviewCount": 0,
+    "categoryBg": "/uploads/1783566642738-2645d77a.webp",
+    "frontImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "backImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryOrder": 57,
+    "priceRub": 750,
+    "varioSmoothing": 0.18,
+    "frontImageWidth": 761,
+    "frontImageHeight": 1024,
+    "rarities": [
+      "common",
+      "novelty"
+    ],
+    "noveltySince": "2026-07-09T03:11:27.895Z"
   }
 ]

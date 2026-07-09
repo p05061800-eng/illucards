@@ -5,14 +5,20 @@ import { useRouter } from "next/navigation";
 import {
   useCallback,
   useEffect,
+  useRef,
+  useState,
   type KeyboardEvent as ReactKeyboardEvent,
   type MouseEvent as ReactMouseEvent,
 } from "react";
 import type { StoredCard } from "../../api/cards/route";
+import { AgeConfirmDialog } from "@/app/components/AdultContentBlurGate";
 import { useAdultContentGateOptional } from "../../context/AdultContentContext";
 import { cardRequiresAgeConfirmation } from "../../lib/cardRequiresAgeConfirmation";
 import { ultraOrHeroBgUrl } from "../../lib/cardUltraBg";
 import { CardStackVisual } from "@/components/hero/CardStackVisual";
+
+const TAP_MAX_PX = 22;
+const TOUCH_MOVE_CANCEL_PX = 8;
 
 type Props = {
   activeCard: StoredCard;
@@ -129,40 +135,58 @@ export function CardViewer({
 }: Props) {
   const router = useRouter();
   const adultGate = useAdultContentGateOptional();
+  const touchStartRef = useRef<{ x: number; y: number } | null>(null);
+  const touchMovedRef = useRef(false);
+  const [ageOpen, setAgeOpen] = useState(false);
   const n = browseCards.length;
   const rawIdx = browseCards.findIndex((c) => c.id === activeCard.id);
   const idx = rawIdx >= 0 ? rawIdx : 0;
   const active = browseCards[idx] ?? browseCards[0];
   const clickable = Boolean(onCardClick);
+  const cardHref = active ? `/card/${active.id}` : "#";
   const adultLocked =
     Boolean(active) &&
     cardRequiresAgeConfirmation(active) &&
     !(adultGate?.isAdultConfirmed(active.id) ?? false);
 
+  const openCardNav = useCallback(() => {
+    if (!active || !clickable) return;
+    if (adultLocked) {
+      setAgeOpen(true);
+      return;
+    }
+    onCardClick?.(active.id);
+  }, [active, adultLocked, clickable, onCardClick]);
+
   const handleCardClick = useCallback(
-    (e?: ReactMouseEvent<HTMLElement>) => {
+    (e: ReactMouseEvent<HTMLElement>) => {
       if (!active || !clickable) return;
       if (
-        e?.target &&
+        e.target &&
         (e.target as HTMLElement).closest?.("[data-adult-age-gate]")
       ) {
         return;
       }
-      if (adultLocked) return;
-      onCardClick?.(active.id);
+      if (touchMovedRef.current) {
+        touchMovedRef.current = false;
+        e.preventDefault();
+        return;
+      }
+      e.preventDefault();
+      openCardNav();
     },
-    [active, adultLocked, clickable, onCardClick],
+    [active, clickable, openCardNav],
   );
 
   const onCardKeyDown = useCallback(
-    (e: ReactKeyboardEvent<HTMLDivElement>) => {
-      if (!clickable || adultLocked) return;
+    (e: ReactKeyboardEvent<HTMLAnchorElement>) => {
+      if (!clickable) return;
       if (e.key === "Enter" || e.key === " ") {
         e.preventDefault();
-        handleCardClick();
+        openCardNav();
       }
     },
-    [adultLocked, clickable, handleCardClick]
+    [clickable, openCardNav],
   );
 
   const go = useCallback(
@@ -223,28 +247,88 @@ export function CardViewer({
    * оставляем только область стопки — иначе «пустой» низ перехватывает клики
    * по кнопкам под карточкой (напр. «Купить первым»).
    */
+  const stackVisual = (
+    <CardStackVisual
+      key={active.id}
+      card={active}
+      ultraBgUrl={ultraOrHeroBgUrl(active)}
+      heroStack={layout !== "product"}
+      heroDiagonalLayout={layout === "product"}
+      navigationTapSafe={clickable}
+      dataCartFlySource
+      rootClassName={layout === "product" ? productRoot : defaultRoot}
+    />
+  );
+
   const centerColumn = (
     <div
       className={`relative z-0 flex min-h-0 min-w-0 touch-pan-y overflow-visible px-0.5 ${hideNavigation ? "w-full flex-none items-start justify-center" : `flex-1 ${wrapMax} justify-center`} ${clickable ? "pointer-events-none" : ""}`}
     >
+      {clickable ? (
+        <AgeConfirmDialog
+          open={ageOpen}
+          onClose={() => setAgeOpen(false)}
+          onConfirm={() => {
+            adultGate?.confirmAdultForCard(active.id);
+            setAgeOpen(false);
+            onCardClick?.(active.id);
+          }}
+        />
+      ) : null}
       <div className="grid w-full min-w-0 min-h-0 place-items-start justify-items-center overflow-visible py-1">
-        <div
-          role={clickable ? "button" : undefined}
-          tabIndex={clickable ? 0 : undefined}
-          className={`relative z-0 flex w-full min-h-0 overflow-visible ${hideNavigation ? "items-start justify-center" : "justify-center"} ${layout === "product" ? "max-w-full px-2 pb-2 pt-0 sm:px-4 sm:pb-4" : "max-w-full"} ${clickable ? "pointer-events-auto cursor-pointer" : ""}`}
-          onClick={clickable ? (e) => handleCardClick(e) : undefined}
-          onKeyDown={clickable ? onCardKeyDown : undefined}
-        >
-          <CardStackVisual
-            key={active.id}
-            card={active}
-            ultraBgUrl={ultraOrHeroBgUrl(active)}
-            heroStack={layout !== "product"}
-            heroDiagonalLayout={layout === "product"}
-            dataCartFlySource
-            rootClassName={layout === "product" ? productRoot : defaultRoot}
-          />
-        </div>
+        {clickable ? (
+          <Link
+            href={cardHref}
+            aria-label={`Открыть ${active.title}`}
+            className={`relative z-0 flex w-full min-h-0 cursor-pointer overflow-visible border-0 bg-transparent p-0 text-left ${hideNavigation ? "items-start justify-center" : "justify-center"} ${layout === "product" ? "max-w-full px-2 pb-2 pt-0 sm:px-4 sm:pb-4" : "max-w-full"} pointer-events-auto`}
+            onClick={handleCardClick}
+            onKeyDown={onCardKeyDown}
+            onTouchStartCapture={(e) => {
+              if (e.touches.length === 0) return;
+              const t = e.touches[0];
+              touchStartRef.current = { x: t.clientX, y: t.clientY };
+              touchMovedRef.current = false;
+            }}
+            onTouchMove={(e) => {
+              const start = touchStartRef.current;
+              if (!start || e.touches.length === 0) return;
+              const t = e.touches[0];
+              const dx = Math.abs(t.clientX - start.x);
+              const dy = Math.abs(t.clientY - start.y);
+              if (dx > TOUCH_MOVE_CANCEL_PX || dy > TOUCH_MOVE_CANCEL_PX) {
+                touchMovedRef.current = true;
+              }
+            }}
+            onTouchEnd={(e) => {
+              const start = touchStartRef.current;
+              touchStartRef.current = null;
+              if (!start || e.changedTouches.length === 0) return;
+              const t = e.changedTouches[0];
+              const dx = Math.abs(t.clientX - start.x);
+              const dy = Math.abs(t.clientY - start.y);
+              if (dx > TOUCH_MOVE_CANCEL_PX || dy > TOUCH_MOVE_CANCEL_PX) {
+                touchMovedRef.current = true;
+                return;
+              }
+              if (dx <= TAP_MAX_PX && dy <= TAP_MAX_PX) {
+                e.preventDefault();
+                openCardNav();
+              }
+            }}
+            onTouchCancel={() => {
+              touchStartRef.current = null;
+              touchMovedRef.current = false;
+            }}
+          >
+            {stackVisual}
+          </Link>
+        ) : (
+          <div
+            className={`relative z-0 flex w-full min-h-0 overflow-visible ${hideNavigation ? "items-start justify-center" : "justify-center"} ${layout === "product" ? "max-w-full px-2 pb-2 pt-0 sm:px-4 sm:pb-4" : "max-w-full"}`}
+          >
+            {stackVisual}
+          </div>
+        )}
       </div>
     </div>
   );

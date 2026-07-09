@@ -112,16 +112,16 @@ export default function HeroSection({
     return sortSectionCardsForDefaultCatalog(base, cards);
   }, [filteredCards, cards]);
 
-  /** Новинки только внутри выбранной категории. */
-  const categoryNoveltiesCards = useMemo(
-    () => buildNoveltiesCarouselCards(heroBrowseCards),
-    [heroBrowseCards],
-  );
+  /** Все активные новинки из каталога (не зависят от выбранной категории в герое). */
+  const allNoveltiesCards = useMemo(() => {
+    const pool = buildNoveltiesCarouselCards(cards);
+    return sortSectionCardsForDefaultCatalog(pool, cards);
+  }, [cards]);
 
-  const showNoveltiesHeroChrome = categoryNoveltiesCards.length > 0;
+  const showNoveltiesHeroChrome = allNoveltiesCards.length > 0;
 
   const activeBrowseCards = showNoveltiesHeroChrome
-    ? categoryNoveltiesCards
+    ? allNoveltiesCards
     : heroBrowseCards;
 
   const [browseIndex, setBrowseIndex] = useState(0);
@@ -562,9 +562,13 @@ export default function HeroSection({
                         }`}
                       >
                         <div className="hero-novelty-meta-row w-full">
-                          <p className="hero-name hero-novelty-card-title line-clamp-2 max-w-full text-balance text-base font-semibold text-white md:text-lg lg:text-xl">
+                          <button
+                            type="button"
+                            onClick={() => openCardPage(stackCard.id)}
+                            className="hero-name hero-novelty-card-title line-clamp-2 max-w-full text-balance text-left text-base font-semibold text-white transition hover:text-purple-200 md:text-lg lg:text-xl"
+                          >
                             {stackCard.title}
-                          </p>
+                          </button>
                           <button
                             type="button"
                             onClick={(e) => {

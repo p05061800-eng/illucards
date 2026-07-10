@@ -629,6 +629,13 @@ body::after {
   overflow-anchor: none;
 }
 
+/* Главная: зазор между героем (акции) и блоком «Коллекции». */
+.home-main-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 3cm;
+}
+
 /* Вертикальный зазор между логотипом и основным рядом — как раньше у .hero gap; на ≥1025px сетка задаёт свои row-gap/column-gap */
 .hero-stage {
   display: flex;
@@ -770,46 +777,57 @@ body::after {
   }
 
   .hero-stage {
-    display: grid;
-    grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
-    grid-template-rows: auto auto;
-    column-gap: clamp(32px, 2.2vw, 48px);
-    row-gap: 0;
-    align-items: start;
+    display: block;
+    position: relative;
+    width: 100%;
+    --hero-desktop-col-gap: clamp(32px, 2.2vw, 48px);
     /*
      * Главная карточка крупнее; заголовок, миниатюры и подпись — компактнее.
      */
-    --hero-novelty-card-width: clamp(14rem, 86%, 18rem);
+    --hero-novelty-card-width: clamp(16.5rem, 92%, 21rem);
     --hero-novelty-card-width-tmnt: min(100%, calc(var(--hero-novelty-card-width) * 1.08));
     --hero-novelties-title-band: clamp(3.1rem, 4.8vw, 4.6rem);
     --hero-gap-novelties-title-to-card: clamp(0.75rem, 1.35vw, 1.15rem);
     --hero-gap-hero-card-to-name: clamp(0.3rem, 0.55vw, 0.5rem);
-    --hero-novelty-card-slot: clamp(15.5rem, 24vh, 20.5rem);
-    --hero-gap-thumbs-to-title: clamp(0.1rem, 0.2vw, 0.2rem);
+    --hero-novelty-card-slot: clamp(17rem, 27vh, 23rem);
+    --hero-gap-thumbs-to-title: clamp(0.15rem, 0.3vw, 0.25rem);
+    --hero-gap-card-to-thumbs: clamp(0.2rem, 0.45vw, 0.4rem);
     --hero-right-col-offset: clamp(1rem, 2vw, 1.75rem);
     --hero-left-gap-categories-promo: 1cm;
     --hero-left-gap-wordmark-categories: 1cm;
   }
 
   .hero-wordmark-row {
-    grid-column: 1;
-    grid-row: 1;
     min-width: 0;
-    margin-bottom: 0;
+    align-self: start;
+    margin-bottom: var(--hero-left-gap-wordmark-categories);
+  }
+
+  .hero-left-side .hero-scale-wordmark {
+    font-size: clamp(31px, 4.4vw, 60px);
+  }
+
+  .hero-left-side .hero-scale-tagline {
+    font-size: clamp(15px, 1.65vw, 19px);
   }
 
   .hero-left-side {
-    grid-column: 1;
-    grid-row: 2;
-    width: 100%;
-    max-width: 100%;
+    width: calc((100% - var(--hero-desktop-col-gap)) * 0.6);
+    max-width: none;
     flex: none;
     align-self: start;
     display: flex;
     flex-direction: column;
-    gap: var(--hero-left-gap-categories-promo);
+    gap: 0;
     min-height: 0;
-    margin-top: var(--hero-left-gap-wordmark-categories);
+    margin-top: 0;
+  }
+
+  .hero-left-side > .categories.hero-categories-outer {
+    margin-top: 0;
+    margin-bottom: var(--hero-left-gap-categories-promo);
+    padding-top: 0;
+    padding-bottom: 0;
   }
 
   .hero-body {
@@ -832,22 +850,33 @@ body::after {
     margin-top: 0 !important;
   }
 
-  .hero-left-side > .categories.hero-categories-outer {
-    margin-bottom: 0;
+  .hero-left-side .hero-categories.hero-categories-strip {
+    padding-top: 0;
     padding-bottom: 0;
   }
 
   .hero-right-side {
-    grid-column: 2;
-    grid-row: 1 / -1;
-    align-self: start;
-    width: 100%;
-    max-width: 100%;
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: calc((100% - var(--hero-desktop-col-gap)) * 0.4);
+    max-width: none;
     flex: none;
     min-height: 0;
     padding-top: var(--hero-right-col-offset);
     justify-content: flex-start;
     align-items: flex-start;
+  }
+
+  .hero-right-side--novelty .hero-novelty-card-shell {
+    padding-bottom: 0;
+  }
+
+  #collection {
+    position: relative;
+    z-index: 8;
+    margin-top: 0;
+    padding-top: 0;
   }
 
   /* «Новинки»: чуть правее относительно левой колонки */
@@ -924,7 +953,7 @@ body::after {
     justify-items: stretch;
     width: 100%;
     min-height: 0;
-    row-gap: clamp(0.45rem, 0.85vw, 0.75rem);
+    row-gap: var(--hero-gap-card-to-thumbs);
   }
 
   .hero-right-side--novelty .hero-novelty-header {
@@ -1001,16 +1030,17 @@ body::after {
     position: relative;
     z-index: 40;
     margin-top: 0;
+    margin-bottom: 0;
     isolation: isolate;
   }
 
   .hero-right-side--novelty .hero-novelty-meta {
     grid-row: 4;
     align-self: start;
-    margin-top: var(--hero-gap-thumbs-to-title);
-    padding-top: 0;
-    transform: none;
-    min-height: clamp(2.85rem, 5.5vw, 3.35rem);
+    margin-top: var(--hero-gap-thumbs-to-title) !important;
+    padding-top: 0 !important;
+    transform: none !important;
+    min-height: clamp(2.5rem, 4.8vw, 2.85rem);
   }
 
   /*
@@ -1064,17 +1094,13 @@ body::after {
   }
 
   .hero-right-side--novelty .hero-novelty-meta {
-    margin-top: var(--hero-gap-thumbs-to-title);
-    padding-top: 0;
-    min-height: clamp(2.75rem, 5.5vw, 3.25rem);
+    margin-top: var(--hero-gap-thumbs-to-title) !important;
+    padding-top: 0 !important;
+    transform: none !important;
+    min-height: clamp(2.5rem, 4.8vw, 2.85rem);
     width: 100%;
     max-width: 100%;
     padding-inline: 0;
-  }
-
-  .hero-right-side--novelty .hero-novelty-card-title {
-    font-size: clamp(0.95rem, 1.2vw, 1.125rem);
-    line-height: 1.25;
   }
 
   .hero-right-side--novelty .hero-novelty-meta-row {
@@ -1084,8 +1110,13 @@ body::after {
     align-items: center;
     column-gap: clamp(0.65rem, 1.2vw, 1rem);
     row-gap: 0;
-    min-height: clamp(2.75rem, 5.5vw, 3.25rem);
+    min-height: clamp(2.5rem, 4.8vw, 2.85rem);
     width: 100%;
+  }
+
+  .hero-right-side--novelty .hero-novelty-card-title {
+    font-size: clamp(0.95rem, 1.2vw, 1.125rem);
+    line-height: 1.25;
   }
 
   .hero-right-side--novelty .hero-novelty-meta-row .hero-novelty-card-title {
@@ -1144,6 +1175,23 @@ body::after {
   .hero-main-desktop {
     flex-direction: column;
     gap: clamp(1rem, 2vw, 1.75rem);
+  }
+
+  /* Логотип внутри левой колонки — выносим на всю ширину над блоком */
+  .hero-left-side {
+    display: contents;
+  }
+
+  .hero-left-side > .hero-wordmark-row {
+    width: 100%;
+    max-width: 100%;
+    margin-bottom: clamp(0.5rem, 1.2vw, 0.85rem);
+    order: -2;
+  }
+
+  .hero-left-side > .categories.hero-categories-outer {
+    order: -1;
+    margin-bottom: 0;
   }
 
   .hero-left-side,
@@ -1587,12 +1635,6 @@ body::after {
   margin-bottom: 0;
 }
 
-@media (min-width: 769px) {
-  .hero-novelty-header {
-    margin-bottom: clamp(0.5rem, 1vw, 0.9rem);
-  }
-}
-
 .hero-novelty-card-shell {
   display: flex;
   align-items: flex-start;
@@ -1601,9 +1643,14 @@ body::after {
   width: 100%;
   max-width: 100%;
   margin-top: 0;
+  padding-bottom: 0;
 }
 
-@media (min-width: 769px) {
+@media (min-width: 769px) and (max-width: 1024px) {
+  .hero-novelty-header {
+    margin-bottom: clamp(0.5rem, 1vw, 0.9rem);
+  }
+
   .hero-novelty-card-shell {
     padding-bottom: clamp(4rem, 5vw, 5rem);
   }
@@ -1613,9 +1660,7 @@ body::after {
     max-height: none;
     overflow: visible;
   }
-}
 
-@media (min-width: 769px) and (max-width: 1024px) {
   /* Новинки: min-height слота — подпись не прыгает; карточку не режем (планшет). */
   .hero-right-side--novelty .hero-novelty-card-shell {
     min-height: var(--hero-novelty-card-slot);
@@ -1663,6 +1708,9 @@ body::after {
 
 .hero-novelties-thumb-strip-wrap {
   pointer-events: auto;
+  position: relative;
+  z-index: 40;
+  isolation: isolate;
 }
 
 .hero-novelties-thumb {
@@ -1670,11 +1718,10 @@ body::after {
 }
 
 /* Полоса миниатюр — строго под слотом карточки, не под 3D-слоями. */
-.hero-right-side--novelty .hero-novelties-thumb-strip-wrap {
-  position: relative;
-  z-index: 40;
-  isolation: isolate;
-  margin-top: clamp(0.75rem, 2vw, 1.35rem);
+@media (max-width: 1024px) {
+  .hero-right-side--novelty .hero-novelties-thumb-strip-wrap {
+    margin-top: clamp(0.75rem, 2vw, 1.35rem);
+  }
 }
 
 .hero-novelties-counter {
@@ -1986,11 +2033,19 @@ body::after {
     z-index: 30 !important;
   }
 
+  .hero-right-side--novelty .hero-novelty-meta {
+    margin-top: var(--hero-gap-thumbs-to-title) !important;
+    padding-top: 0 !important;
+    transform: none !important;
+    min-height: clamp(2.5rem, 4.8vw, 2.85rem) !important;
+  }
+
   .hero-right-side--novelty .hero-novelty-meta-row {
     display: grid !important;
     grid-template-columns: minmax(0, 1fr) auto !important;
     grid-template-rows: auto !important;
     align-items: center !important;
+    min-height: clamp(2.5rem, 4.8vw, 2.85rem) !important;
   }
 
   .hero-right-side--novelty .hero-novelty-meta-row .hero-novelty-card-title {
@@ -2010,6 +2065,7 @@ body::after {
 
   .hero-right-side--novelty .hero-right-product {
     min-height: 0;
+    row-gap: var(--hero-gap-card-to-thumbs) !important;
     grid-template-rows:
       auto
       minmax(var(--hero-novelty-card-slot), auto)
@@ -2436,10 +2492,11 @@ body::after {
     width: 100%;
   }
 
-  /* Как на макете телефона: слева вертикальная колонка категорий, справа «Новинки». */
+  /* Как на макете телефона: сверху логотип; слева категории, справа «Новинки». */
   .hero-main-desktop {
-    display: flex;
-    flex-direction: row;
+    display: grid;
+    grid-template-columns: auto 1fr;
+    grid-template-rows: auto minmax(0, 1fr);
     align-items: stretch;
     flex-wrap: nowrap;
     width: 100%;
@@ -2457,33 +2514,37 @@ body::after {
   }
 
   .hero-left-side {
-    display: flex;
-    flex-direction: column;
-    align-items: stretch;
-    align-self: stretch;
-    width: auto;
-    max-width: 4.75rem;
-    flex: 0 0 auto;
-    min-width: 0;
-    min-height: 100%;
-    gap: 0;
-    order: 1;
-    padding-right: 8px;
-    margin-right: 8px;
-    border-right: none;
-    box-sizing: border-box;
+    display: contents;
+  }
+
+  .hero-left-side > .hero-wordmark-row {
+    grid-column: 1 / -1;
+    grid-row: 1;
+    width: 100%;
+    max-width: 100%;
+    margin-bottom: 12px;
+    order: unset;
   }
 
   .hero-left-side > .categories.hero-categories-outer {
-    width: 100%;
-    max-width: 100%;
+    grid-column: 1;
+    grid-row: 2;
+    order: unset;
+    width: auto;
+    max-width: 4.75rem;
     min-width: 0;
     flex: 1 1 auto;
     display: flex;
     flex-direction: column;
     min-height: 0;
     height: 100%;
-    order: 1;
+    padding-right: 8px;
+    margin-right: 8px;
+    margin-bottom: 0;
+  }
+
+  .hero-left-side > .hero-promo-desktop-slot {
+    display: none;
   }
 
   .hero-left-side .hero-categories.hero-categories-strip {
@@ -2535,13 +2596,16 @@ body::after {
   }
 
   .hero-left-side > .hero-category-empty-msg {
-    order: 2;
+    grid-column: 1 / -1;
+    grid-row: 3;
     width: 100%;
     flex: 0 0 auto;
   }
 
   .hero-main-desktop > .hero-right-side.hero-content {
-    order: 2;
+    grid-column: 2;
+    grid-row: 2;
+    order: unset;
     min-width: 0;
     max-width: none;
     flex: 1 1 0%;

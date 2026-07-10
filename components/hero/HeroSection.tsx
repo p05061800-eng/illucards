@@ -370,7 +370,7 @@ export default function HeroSection({
       className={`relative z-0 w-full overflow-visible pt-0 ${
         viewportCompact
           ? "hero-viewport-compact mb-0 flex min-h-0 min-w-0 flex-1 flex-col pb-0"
-          : "mb-6 pb-[clamp(0.75rem,2vw,1.5rem)]"
+          : "mb-0 pb-0"
       }`}
     >
       {/* Как на макете: та же сетка, что у хедера — max-w-[1400px] + px-6 lg:px-10 */}
@@ -391,12 +391,7 @@ export default function HeroSection({
             }`}
           >
             <div className="hero-stage min-w-0 w-full">
-            {/* 1. Логотип — на широком экране та же строка сетки, что верх правой колонки (см. .hero-stage в globals). */}
-            <div className="hero-wordmark-row min-w-0 w-full shrink-0">
-              <HeroIlluCardsLogo />
-            </div>
-
-            {/* 2–3. Десктоп: слева категории, справа карточка. ≤768 — см. globals. */}
+            {/* Десктоп: логотип в левой колонке (flex-стек). ≤1024 — см. globals (display: contents). */}
             <div className="hero-body min-w-0 w-full">
               <div
                 className={`hero-main-desktop min-w-0 w-full ${
@@ -404,8 +399,11 @@ export default function HeroSection({
                 }`}
               >
                 <div className="hero-left-side min-w-0">
+                  <div className="hero-wordmark-row min-w-0 w-full shrink-0">
+                    <HeroIlluCardsLogo />
+                  </div>
                   <div className="categories hero-categories-outer relative z-30 w-full min-w-0">
-                    <div className="hero-categories hero-categories-strip relative flex min-w-0 w-full justify-start overflow-x-auto overflow-y-visible py-0.5 scrollbar-hide">
+                    <div className="hero-categories hero-categories-strip relative flex min-w-0 w-full justify-start overflow-x-auto overflow-y-visible py-0 scrollbar-hide md:py-0">
               {apiCategories.map((cat) => {
                 const selected =
                   selectedCategoryName != null &&

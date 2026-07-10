@@ -41,7 +41,7 @@ export default function Home() {
 
   return (
     <main className="main relative min-h-screen overflow-x-hidden text-white">
-      <div className="relative z-10 overflow-visible px-0 pb-16 pt-[10px] sm:px-10 sm:pb-20 sm:pt-4">
+      <div className="home-main-stack relative z-10 overflow-visible px-0 pb-16 pt-[10px] sm:px-10 sm:pb-20 sm:pt-4">
         <HeroSection
           cards={cards}
           initialHeroCategoryName={initialHeroCategoryName}
@@ -51,7 +51,7 @@ export default function Home() {
 
         <section
           id="collection"
-          className="mx-auto w-full max-w-[min(100%,1800px)] scroll-mt-24 px-5 pb-8 pt-2 sm:px-10 sm:pb-12 sm:pt-4"
+          className="mx-auto w-full max-w-[min(100%,1800px)] scroll-mt-24 px-5 pb-8 pt-0 sm:px-10 sm:pb-12"
         >
           <h2 className="site-heading mb-10 text-2xl font-bold tracking-tight text-balance sm:text-3xl">
             Коллекции

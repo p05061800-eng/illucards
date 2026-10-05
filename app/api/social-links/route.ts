@@ -7,6 +7,11 @@ import {
   normalizeSocialLinksConfig,
   parseSocialLinksConfig,
 } from "@/app/lib/socialLinksJson";
+import {
+  DURABLE_JSON_KEYS,
+  loadDurableJsonText,
+  saveDurableJsonText,
+} from "@/app/lib/durableJson";
 
 const filePath = path.join(process.cwd(), "data", "social-links.json");
 
@@ -22,22 +27,28 @@ async function ensureFile() {
 }
 
 export async function GET() {
-  await ensureFile();
-  const data = await fs.readFile(filePath, "utf-8");
+  const data =
+    (await loadDurableJsonText(DURABLE_JSON_KEYS.social, filePath)) ?? defaultJson;
   return NextResponse.json(parseSocialLinksConfig(JSON.parse(data)));
 }
 
 export async function POST(req: NextRequest) {
   const denied = rejectUnlessAdmin(req);
   if (denied) return denied;
-  await ensureFile();
   const body = await req.json();
   const parsed = parseSocialLinksConfig(body);
   const normalized = normalizeSocialLinksConfig(parsed);
-  await fs.writeFile(
-    filePath,
-    JSON.stringify(normalized, null, 2),
-    "utf-8"
-  );
+  try {
+    await saveDurableJsonText(
+      DURABLE_JSON_KEYS.social,
+      filePath,
+      JSON.stringify(normalized, null, 2),
+    );
+  } catch (e) {
+    return NextResponse.json(
+      { error: e instanceof Error ? e.message : "Не удалось сохранить." },
+      { status: 500 },
+    );
+  }
   return NextResponse.json({ ok: true, config: normalized });
 }

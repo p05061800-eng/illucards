@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { apiUrl } from "@/app/lib/apiUrl";
+import { adminFetch } from "@/app/lib/adminFetch";
 
 export function AdminLogoutButton() {
   const router = useRouter();
@@ -11,7 +11,7 @@ export function AdminLogoutButton() {
   const onClick = async () => {
     setPending(true);
     try {
-      await fetch(apiUrl("/api/admin/logout"), { method: "POST" });
+      await adminFetch("/api/admin/logout", { method: "POST" });
     } catch {
       /* всё равно уходим на форму входа */
     }

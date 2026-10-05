@@ -7,22 +7,29 @@ import {
   parsePromoSlides,
   type PromoSlide,
 } from "./lib/promoSlidesJson";
-import fs from "fs";
+import {
+  DURABLE_JSON_KEYS,
+  loadDurableJsonText,
+} from "./lib/durableJson";
 import path from "path";
 
 /** Читать `data/*.json` при каждом запросе, а не застывший при билде снимок (акции/каталог). */
 export const dynamic = "force-dynamic";
 
-export default function Home() {
+export default async function Home() {
   const filePath = path.join(process.cwd(), "data", "cards.json");
-  const fileData = fs.readFileSync(filePath, "utf-8");
+  const fileData =
+    (await loadDurableJsonText(DURABLE_JSON_KEYS.cards, filePath)) ?? "[]";
   const cards = parseCardsJson(fileData);
 
   const categoriesPath = path.join(process.cwd(), "data", "categories.json");
   let categoryTiles: CategoryTile[] = [];
   try {
-    const raw = fs.readFileSync(categoriesPath, "utf-8");
-    categoryTiles = parseCategoriesJson(JSON.parse(raw));
+    const raw = await loadDurableJsonText(
+      DURABLE_JSON_KEYS.categories,
+      categoriesPath,
+    );
+    categoryTiles = raw ? parseCategoriesJson(JSON.parse(raw)) : [];
   } catch {
     categoryTiles = [];
   }
@@ -33,8 +40,11 @@ export default function Home() {
   let initialPromoSlides: PromoSlide[] = [];
   try {
     const promoPath = path.join(process.cwd(), "data", "promo-slides.json");
-    const promoRaw = fs.readFileSync(promoPath, "utf-8");
-    initialPromoSlides = parsePromoSlides(JSON.parse(promoRaw));
+    const promoRaw = await loadDurableJsonText(
+      DURABLE_JSON_KEYS.promo,
+      promoPath,
+    );
+    initialPromoSlides = promoRaw ? parsePromoSlides(JSON.parse(promoRaw)) : [];
   } catch {
     initialPromoSlides = [];
   }

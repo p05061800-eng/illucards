@@ -2,7 +2,7 @@
 
 import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
-import { apiUrl } from "@/app/lib/apiUrl";
+import { adminFetch } from "@/app/lib/adminFetch";
 
 type Props = {
   nextPath: string;
@@ -20,7 +20,7 @@ export function AdminLoginForm({ nextPath }: Props) {
     setError(null);
     setPending(true);
     try {
-      const res = await fetch(apiUrl("/api/admin/login"), {
+      const res = await adminFetch("/api/admin/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ login, password }),

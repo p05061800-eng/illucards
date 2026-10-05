@@ -24,7 +24,7 @@ import {
   DEFAULT_IMAGE_FOCUS,
 } from "../lib/imageFocus";
 import { useIntrinsicImageAspect } from "../lib/useIntrinsicImageAspect";
-import { apiUrl } from "../lib/apiUrl";
+import { adminFetch } from "../lib/adminFetch";
 import { isFrontHoverVideoUrl } from "../lib/frontHoverMotionUrl";
 
 type AdminCardFormProps = {
@@ -44,7 +44,7 @@ async function uploadImageFile(
   if (opts?.cardCategory === "TMNT") {
     fd.append("cardCategory", "TMNT");
   }
-  const res = await fetch(apiUrl("/api/upload"), { method: "POST", body: fd });
+  const res = await adminFetch("/api/upload", { method: "POST", body: fd });
   const data = (await res.json()) as { url?: string; error?: string };
   if (!res.ok || !data.url) {
     throw new Error(
@@ -63,7 +63,7 @@ async function uploadVideoFile(
   if (opts?.cardCategory === "TMNT") {
     fd.append("cardCategory", "TMNT");
   }
-  const res = await fetch(apiUrl("/api/upload-video"), {
+  const res = await adminFetch("/api/upload-video", {
     method: "POST",
     body: fd,
   });
@@ -474,7 +474,7 @@ export function AdminCardForm({
     }
 
     try {
-      const res = await fetch(apiUrl("/api/cards"), {
+      const res = await adminFetch("/api/cards", {
         method: isEdit ? "PATCH" : "POST",
         body: fd,
       });

@@ -1,9 +1,12 @@
 import type { Metadata } from "next";
-import fs from "fs";
 import Link from "next/link";
 import path from "path";
 import type { StoredCard } from "../api/cards/route";
 import { parseCardsJson } from "../lib/cardsJson";
+import {
+  DURABLE_JSON_KEYS,
+  loadDurableJsonText,
+} from "../lib/durableJson";
 import { listRecentOrders } from "@/app/lib/ordersStore";
 import { AdminTabs } from "./AdminTabs";
 import { AdminLogoutButton } from "./AdminLogoutButton";
@@ -13,18 +16,21 @@ export const metadata: Metadata = {
   description: "Добавление карточек в коллекцию",
 };
 
-function loadCards(): StoredCard[] {
+async function loadCards(): Promise<StoredCard[]> {
   try {
     const filePath = path.join(process.cwd(), "data", "cards.json");
-    const fileData = fs.readFileSync(filePath, "utf-8");
-    return parseCardsJson(fileData);
+    const fileData = await loadDurableJsonText(
+      DURABLE_JSON_KEYS.cards,
+      filePath,
+    );
+    return fileData ? parseCardsJson(fileData) : [];
   } catch {
     return [];
   }
 }
 
 export default async function AdminPage() {
-  const initialCards = loadCards();
+  const initialCards = await loadCards();
   const initialOrders = await listRecentOrders(50);
 
   return (

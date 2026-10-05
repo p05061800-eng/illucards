@@ -7,7 +7,7 @@ import {
   SOCIAL_NETWORK_LABELS,
   SOCIAL_NETWORK_ORDER,
 } from "@/app/lib/socialLinksJson";
-import { apiUrl } from "@/app/lib/apiUrl";
+import { adminFetch } from "@/app/lib/adminFetch";
 
 export function AdminSocialLinksEditor() {
   const [config, setConfig] = useState<SocialLinksConfig>(
@@ -18,7 +18,7 @@ export function AdminSocialLinksEditor() {
 
   useEffect(() => {
     let cancelled = false;
-    fetch(apiUrl("/api/social-links"))
+    adminFetch("/api/social-links")
       .then((res) => (res.ok ? res.json() : Promise.reject(new Error(String(res.status)))))
       .then((data: unknown) => {
         if (cancelled || !data || typeof data !== "object") return;
@@ -44,7 +44,7 @@ export function AdminSocialLinksEditor() {
   const save = async () => {
     setSaving(true);
     try {
-      const res = await fetch(apiUrl("/api/social-links"), {
+      const res = await adminFetch("/api/social-links", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(config),

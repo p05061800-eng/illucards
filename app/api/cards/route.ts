@@ -1,9 +1,15 @@
 import { randomUUID } from "crypto";
 import { promises as fs } from "fs";
 import { parseCardsJson } from "@/app/lib/cardsJson";
+import {
+  DURABLE_JSON_KEYS,
+  loadDurableJsonText,
+  saveDurableJsonText,
+} from "@/app/lib/durableJson";
 import type { ImageFocus } from "@/app/lib/imageFocus";
 import { parseImageFocusJson } from "@/app/lib/imageFocus";
 import { NextRequest, NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 import { rejectUnlessAdmin } from "@/app/lib/adminSession";
 import path from "path";
 import { maxCategoryOrderInCategory } from "@/app/lib/adminCategoryOrder";
@@ -36,8 +42,12 @@ const UPLOAD_PUBLIC = path.join(process.cwd(), "public", "uploads");
 export const dynamic = "force-dynamic";
 
 async function ensureStorage() {
-  await fs.mkdir(path.dirname(DATA_PATH), { recursive: true });
-  await fs.mkdir(UPLOAD_PUBLIC, { recursive: true });
+  try {
+    await fs.mkdir(path.dirname(DATA_PATH), { recursive: true });
+    await fs.mkdir(UPLOAD_PUBLIC, { recursive: true });
+  } catch {
+    /* На Vercel диск только для чтения — каталог держим в Redis. */
+  }
 }
 
 /** Vario / Morphing (две картинки) или 3D (лицевая + наклон без смены сторон). */
@@ -353,11 +363,22 @@ async function resolveUploadedImage(
 
 async function readCards(): Promise<StoredCard[]> {
   try {
-    const raw = await fs.readFile(DATA_PATH, "utf-8");
-    return parseCardsJson(raw);
+    const raw = await loadDurableJsonText(DURABLE_JSON_KEYS.cards, DATA_PATH);
+    return raw ? parseCardsJson(raw) : [];
   } catch {
     return [];
   }
+}
+
+async function persistCards(cards: StoredCard[]): Promise<void> {
+  await saveDurableJsonText(
+    DURABLE_JSON_KEYS.cards,
+    DATA_PATH,
+    JSON.stringify(cards, null, 2),
+  );
+  revalidatePath("/");
+  revalidatePath("/admin");
+  revalidatePath("/collection");
 }
 
 export async function GET() {
@@ -605,7 +626,14 @@ export async function POST(req: NextRequest) {
   }
 
   cards.push(newCard);
-  await fs.writeFile(DATA_PATH, JSON.stringify(cards, null, 2), "utf-8");
+  try {
+    await persistCards(cards);
+  } catch (e) {
+    return NextResponse.json(
+      { error: e instanceof Error ? e.message : "Не удалось сохранить карточку." },
+      { status: 500 },
+    );
+  }
 
   return NextResponse.json(newCard);
 }
@@ -955,7 +983,14 @@ export async function PATCH(req: NextRequest) {
   }
 
   cards[idx] = updated;
-  await fs.writeFile(DATA_PATH, JSON.stringify(cards, null, 2), "utf-8");
+  try {
+    await persistCards(cards);
+  } catch (e) {
+    return NextResponse.json(
+      { error: e instanceof Error ? e.message : "Не удалось сохранить карточку." },
+      { status: 500 },
+    );
+  }
 
   return NextResponse.json(updated);
 }
@@ -975,6 +1010,13 @@ export async function DELETE(req: NextRequest) {
     return NextResponse.json({ error: "Карточка не найдена." }, { status: 404 });
   }
 
-  await fs.writeFile(DATA_PATH, JSON.stringify(next, null, 2), "utf-8");
+  try {
+    await persistCards(next);
+  } catch (e) {
+    return NextResponse.json(
+      { error: e instanceof Error ? e.message : "Не удалось удалить карточку." },
+      { status: 500 },
+    );
+  }
   return NextResponse.json({ ok: true });
 }

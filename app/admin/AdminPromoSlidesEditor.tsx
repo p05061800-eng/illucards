@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { GripVertical, Trash2 } from "lucide-react";
 import type { PromoSlide } from "@/app/lib/promoSlidesJson";
-import { apiUrl } from "@/app/lib/apiUrl";
+import { adminFetch } from "@/app/lib/adminFetch";
 
 function newId() {
   if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
@@ -20,7 +20,7 @@ export function AdminPromoSlidesEditor() {
 
   useEffect(() => {
     let cancelled = false;
-    fetch(apiUrl("/api/promo-slides"))
+    adminFetch("/api/promo-slides")
       .then((r) => (r.ok ? r.json() : Promise.reject()))
       .then((data: unknown) => {
         if (cancelled || !data || typeof data !== "object") return;
@@ -86,7 +86,7 @@ export function AdminPromoSlidesEditor() {
       const fd = new FormData();
       fd.append("file", file);
       fd.append("purpose", "promo");
-      const res = await fetch(apiUrl("/api/upload"), { method: "POST", body: fd });
+      const res = await adminFetch("/api/upload", { method: "POST", body: fd });
       const data = (await res.json()) as { url?: string; error?: string };
       if (!res.ok || !data.url) {
         window.alert(
@@ -113,7 +113,7 @@ export function AdminPromoSlidesEditor() {
     }
     setSaving(true);
     try {
-      const res = await fetch(apiUrl("/api/promo-slides"), {
+      const res = await adminFetch("/api/promo-slides", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ items }),

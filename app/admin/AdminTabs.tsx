@@ -8,7 +8,7 @@ import { AdminCardsTable } from "./AdminCardsTable";
 import { AdminCategoriesEditor } from "./AdminCategoriesEditor";
 import { AdminOrdersPanel } from "./AdminOrdersPanel";
 import type { AdminOrderRow } from "@/app/lib/ordersStore";
-import { apiUrl } from "../lib/apiUrl";
+import { adminFetch } from "../lib/adminFetch";
 
 const TABS = [
   { id: "cards", label: "Карточки" },
@@ -51,7 +51,7 @@ export function AdminTabs({ initialCards, initialOrders }: AdminTabsProps) {
 
   const refreshCards = useCallback(async () => {
     try {
-      const res = await fetch(apiUrl("/api/cards"));
+      const res = await adminFetch("/api/cards");
       if (!res.ok) return;
       const data = (await res.json()) as unknown;
       if (Array.isArray(data)) {
@@ -65,8 +65,8 @@ export function AdminTabs({ initialCards, initialOrders }: AdminTabsProps) {
   const deleteCard = useCallback(async (id: string) => {
     if (!window.confirm("Удалить эту карточку из каталога?")) return;
     try {
-      const res = await fetch(
-        apiUrl(`/api/cards?id=${encodeURIComponent(id)}`),
+      const res = await adminFetch(
+        `/api/cards?id=${encodeURIComponent(id)}`,
         { method: "DELETE" }
       );
       if (!res.ok) {

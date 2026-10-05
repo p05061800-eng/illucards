@@ -3,6 +3,11 @@ import { rejectUnlessAdmin } from "@/app/lib/adminSession";
 import { promises as fs } from "fs";
 import path from "path";
 import { parseCategoriesJson } from "@/app/lib/categoriesJson";
+import {
+  DURABLE_JSON_KEYS,
+  loadDurableJsonText,
+  saveDurableJsonText,
+} from "@/app/lib/durableJson";
 
 const filePath = path.join(process.cwd(), "data", "categories.json");
 
@@ -51,17 +56,27 @@ async function ensureFile() {
 }
 
 export async function GET() {
-  await ensureFile();
-  const data = await fs.readFile(filePath, "utf-8");
+  const raw = await loadDurableJsonText(DURABLE_JSON_KEYS.categories, filePath);
+  const data = raw ?? defaultJson;
   return NextResponse.json(parseCategoriesJson(JSON.parse(data)));
 }
 
 export async function POST(req: NextRequest) {
   const denied = rejectUnlessAdmin(req);
   if (denied) return denied;
-  await ensureFile();
   const body = await req.json();
   const parsed = parseCategoriesJson(body);
-  await fs.writeFile(filePath, JSON.stringify(parsed, null, 2), "utf-8");
+  try {
+    await saveDurableJsonText(
+      DURABLE_JSON_KEYS.categories,
+      filePath,
+      JSON.stringify(parsed, null, 2),
+    );
+  } catch (e) {
+    return NextResponse.json(
+      { error: e instanceof Error ? e.message : "Не удалось сохранить." },
+      { status: 500 },
+    );
+  }
   return NextResponse.json({ ok: true });
 }

@@ -3,7 +3,6 @@ import type { NextRequest } from "next/server";
 import {
   ADMIN_SESSION_COOKIE,
   isAdminLoginPath,
-  isAdminMutatingApi,
   isAdminPagePath,
   unsealAdminSessionEdge,
 } from "@/app/lib/adminSessionEdge";
@@ -12,6 +11,7 @@ function applyApiCors(request: NextRequest, response: NextResponse) {
   const origin = request.headers.get("origin");
   if (origin) {
     response.headers.set("Access-Control-Allow-Origin", origin);
+    response.headers.set("Access-Control-Allow-Credentials", "true");
     response.headers.set("Vary", "Origin");
   } else {
     response.headers.set("Access-Control-Allow-Origin", "*");
@@ -53,13 +53,6 @@ export async function proxy(request: NextRequest) {
       return NextResponse.redirect(dest);
     }
     return NextResponse.next();
-  }
-
-  if (isAdminMutatingApi(pathname, request.method) && !adminSession) {
-    return NextResponse.json(
-      { error: "Нужна авторизация администратора" },
-      { status: 401 },
-    );
   }
 
   if (pathname === "/login") {

@@ -9,7 +9,7 @@ import {
   DEFAULT_IMAGE_FOCUS,
 } from "@/app/lib/imageFocus";
 import { useCategoryFramesRefresh } from "@/app/context/CategoryFramesContext";
-import { apiUrl } from "@/app/lib/apiUrl";
+import { adminFetch } from "@/app/lib/adminFetch";
 import {
   defaultTmntSubcollectionsForEditor,
   ensureTmntSubcollectionsOnTile,
@@ -32,7 +32,7 @@ export function AdminCategoriesEditor({ variant = "page" }: Props) {
 
   useEffect(() => {
     let cancelled = false;
-    fetch(apiUrl("/api/categories"))
+    adminFetch("/api/categories")
       .then((res) => (res.ok ? res.json() : Promise.reject(new Error(String(res.status)))))
       .then((data: unknown) => {
         if (cancelled) return;
@@ -58,7 +58,7 @@ export function AdminCategoriesEditor({ variant = "page" }: Props) {
   const save = async () => {
     setSaving(true);
     try {
-      const res = await fetch(apiUrl("/api/categories"), {
+      const res = await adminFetch("/api/categories", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(cats),
@@ -82,7 +82,7 @@ export function AdminCategoriesEditor({ variant = "page" }: Props) {
         formData.append("file", file);
         formData.append("purpose", "logo");
 
-        const res = await fetch(apiUrl("/api/upload"), {
+        const res = await adminFetch("/api/upload", {
           method: "POST",
           body: formData,
         });

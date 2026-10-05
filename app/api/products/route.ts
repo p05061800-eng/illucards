@@ -1,9 +1,12 @@
-import { promises as fs } from "fs";
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 import path from "path";
 import type { StoredCard } from "@/app/api/cards/route";
 import { parseCardsJson } from "@/app/lib/cardsJson";
+import {
+  DURABLE_JSON_KEYS,
+  loadDurableJsonText,
+} from "@/app/lib/durableJson";
 import {
   effectiveCardPriceByn,
   effectiveCardPriceRub,
@@ -28,8 +31,8 @@ export type BotProduct = {
 
 async function readCards(): Promise<StoredCard[]> {
   try {
-    const raw = await fs.readFile(DATA_PATH, "utf-8");
-    return parseCardsJson(raw);
+    const raw = await loadDurableJsonText(DURABLE_JSON_KEYS.cards, DATA_PATH);
+    return raw ? parseCardsJson(raw) : [];
   } catch {
     return [];
   }

@@ -6,14 +6,14 @@ import { DraggableImageFrame } from "@/app/admin/components/DraggableImageFrame"
 import type { MenuJsonSection } from "@/app/lib/menuJson";
 import { DEFAULT_CARD_ASPECT_RATIO_CSS } from "@/app/lib/cardAspectRatio";
 import { DEFAULT_IMAGE_FOCUS } from "@/app/lib/imageFocus";
-import { apiUrl } from "@/app/lib/apiUrl";
+import { adminFetch } from "@/app/lib/adminFetch";
 
 export default function AdminMenu() {
   const [menu, setMenu] = useState<MenuJsonSection[]>([]);
   const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
-    fetch(apiUrl("/api/menu"))
+    adminFetch("/api/menu")
       .then((res) => res.json())
       .then((data: unknown) => {
         if (Array.isArray(data)) {
@@ -24,7 +24,7 @@ export default function AdminMenu() {
   }, []);
 
   const save = async () => {
-    await fetch(apiUrl("/api/menu"), {
+    await adminFetch("/api/menu", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(menu),
@@ -37,7 +37,7 @@ export default function AdminMenu() {
     formData.append("file", file);
     formData.append("purpose", "logo");
 
-    const res = await fetch(apiUrl("/api/upload"), {
+    const res = await adminFetch("/api/upload", {
       method: "POST",
       body: formData,
     });

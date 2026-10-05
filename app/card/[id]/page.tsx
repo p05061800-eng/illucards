@@ -1,24 +1,23 @@
 import type { Metadata } from "next";
-import fs from "fs";
 import path from "path";
 import { notFound } from "next/navigation";
 import type { StoredCard } from "../../api/cards/route";
 import { parseCardsJson } from "../../lib/cardsJson";
 import type { CategoryTile } from "@/app/lib/categoriesJson";
 import { parseCategoriesJson } from "@/app/lib/categoriesJson";
+import {
+  DURABLE_JSON_KEYS,
+  loadDurableJsonText,
+} from "@/app/lib/durableJson";
 import { resolveTmntCollections } from "@/app/lib/tmntCollections";
 import CardProductContent from "./CardProductContent";
 
 export const dynamic = "force-dynamic";
 
-function loadCards(): StoredCard[] {
+async function loadCards(): Promise<StoredCard[]> {
   const filePath = path.join(process.cwd(), "data", "cards.json");
-  const fileData = fs.readFileSync(filePath, "utf-8");
-  return parseCardsJson(fileData);
-}
-
-function cardById(id: string): StoredCard | undefined {
-  return loadCards().find((c) => c.id === id);
+  const fileData = await loadDurableJsonText(DURABLE_JSON_KEYS.cards, filePath);
+  return fileData ? parseCardsJson(fileData) : [];
 }
 
 type PageProps = {
@@ -27,7 +26,7 @@ type PageProps = {
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { id } = await params;
-  const card = cardById(id);
+  const card = (await loadCards()).find((c) => c.id === id);
   if (!card) {
     return { title: "Карточка не найдена — IlluCards" };
   }
@@ -39,8 +38,8 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
 export default async function CardPage({ params }: PageProps) {
   const { id } = await params;
-  const all = loadCards();
-  const card = cardById(id);
+  const all = await loadCards();
+  const card = all.find((c) => c.id === id);
   if (!card) notFound();
 
   const cat = card.category?.trim() ?? "";
@@ -52,8 +51,11 @@ export default async function CardPage({ params }: PageProps) {
   let categoryTiles: CategoryTile[] = [];
   try {
     const categoriesPath = path.join(process.cwd(), "data", "categories.json");
-    const raw = fs.readFileSync(categoriesPath, "utf-8");
-    categoryTiles = parseCategoriesJson(JSON.parse(raw));
+    const raw = await loadDurableJsonText(
+      DURABLE_JSON_KEYS.categories,
+      categoriesPath,
+    );
+    categoryTiles = raw ? parseCategoriesJson(JSON.parse(raw)) : [];
   } catch {
     categoryTiles = [];
   }

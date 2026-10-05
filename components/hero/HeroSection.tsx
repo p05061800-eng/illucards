@@ -534,7 +534,7 @@ export default function HeroSection({
                           e.stopPropagation();
                           blockHeroCardLinkClickRef.current = false;
                         }}
-                        className="hero-slider hero-novelty-card-shell relative flex w-full max-w-full shrink-0 items-start justify-center gap-2 px-0 md:gap-3 md:px-2"
+                        className="hero-slider hero-novelty-card-shell relative flex w-full max-w-full shrink-0 items-center justify-center gap-2 px-0"
                       >
                         {canCycleWithArrows ? (
                           <button
@@ -557,7 +557,7 @@ export default function HeroSection({
                           </span>
                         )}
 
-                        <div className="hero-card hero-novelty-card-wrap flex-1 min-w-0">
+                        <div className="hero-card hero-novelty-card-wrap min-w-0">
                           <CardViewer
                             layout="product"
                             activeCard={stackCard}

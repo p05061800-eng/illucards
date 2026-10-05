@@ -21,7 +21,7 @@ function eventTargetsAgeGate(target: EventTarget | null): boolean {
 }
 
 const clickableStackClass = (hideNavigation: boolean, layout: string) =>
-  `relative z-0 flex w-full min-h-0 cursor-pointer overflow-visible border-0 bg-transparent p-0 text-left ${hideNavigation ? "items-start justify-center" : "justify-center"} ${layout === "product" ? "max-w-full px-2 pb-2 pt-0 sm:px-4 sm:pb-4" : "max-w-full"} pointer-events-auto`;
+  `relative z-0 flex w-full min-h-0 cursor-pointer overflow-visible border-0 bg-transparent p-0 text-left ${hideNavigation ? "items-start justify-center" : "justify-center"} ${layout === "product" && !hideNavigation ? "max-w-full px-2 pb-2 pt-0 sm:px-4 sm:pb-4" : "max-w-full"} pointer-events-auto`;
 
 type Props = {
   activeCard: StoredCard;

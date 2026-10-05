@@ -1,4 +1,5 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
+import { rejectUnlessAdmin } from "@/app/lib/adminSession";
 import { promises as fs } from "fs";
 import path from "path";
 import { parseCategoriesJson } from "@/app/lib/categoriesJson";
@@ -55,7 +56,9 @@ export async function GET() {
   return NextResponse.json(parseCategoriesJson(JSON.parse(data)));
 }
 
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
+  const denied = rejectUnlessAdmin(req);
+  if (denied) return denied;
   await ensureFile();
   const body = await req.json();
   const parsed = parseCategoriesJson(body);

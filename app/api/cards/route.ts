@@ -4,6 +4,7 @@ import { parseCardsJson } from "@/app/lib/cardsJson";
 import type { ImageFocus } from "@/app/lib/imageFocus";
 import { parseImageFocusJson } from "@/app/lib/imageFocus";
 import { NextRequest, NextResponse } from "next/server";
+import { rejectUnlessAdmin } from "@/app/lib/adminSession";
 import path from "path";
 import { maxCategoryOrderInCategory } from "@/app/lib/adminCategoryOrder";
 import {
@@ -370,6 +371,8 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
+  const denied = rejectUnlessAdmin(req);
+  if (denied) return denied;
   await ensureStorage();
 
   const formData = await req.formData();
@@ -608,6 +611,8 @@ export async function POST(req: NextRequest) {
 }
 
 export async function PATCH(req: NextRequest) {
+  const denied = rejectUnlessAdmin(req);
+  if (denied) return denied;
   await ensureStorage();
 
   const formData = await req.formData();
@@ -956,6 +961,8 @@ export async function PATCH(req: NextRequest) {
 }
 
 export async function DELETE(req: NextRequest) {
+  const denied = rejectUnlessAdmin(req);
+  if (denied) return denied;
   await ensureStorage();
   const id = new URL(req.url).searchParams.get("id")?.trim();
   if (!id) {

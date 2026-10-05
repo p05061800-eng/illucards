@@ -6,6 +6,7 @@ import type { StoredCard } from "../api/cards/route";
 import { parseCardsJson } from "../lib/cardsJson";
 import { listRecentOrders } from "@/app/lib/ordersStore";
 import { AdminTabs } from "./AdminTabs";
+import { AdminLogoutButton } from "./AdminLogoutButton";
 
 export const metadata: Metadata = {
   title: "Админ — IlluCards",
@@ -74,6 +75,7 @@ export default async function AdminPage() {
               >
                 Акции
               </Link>
+              <AdminLogoutButton />
               <Link
                 href="/"
                 className="inline-flex items-center justify-center rounded-full border border-purple-500/35 bg-purple-950/40 px-5 py-2.5 text-sm font-medium text-purple-100 shadow-[0_0_24px_rgba(168,85,247,0.25)] transition hover:border-purple-400/50 hover:bg-purple-900/50 hover:shadow-[0_0_36px_rgba(168,85,247,0.4)]"

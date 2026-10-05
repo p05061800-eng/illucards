@@ -1,7 +1,8 @@
 import { randomUUID } from "crypto";
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { promises as fs } from "fs";
 import path from "path";
+import { rejectUnlessAdmin } from "@/app/lib/adminSession";
 import {
   imageBufferLogoWebp,
   imageBufferPromoBannerWebp,
@@ -11,7 +12,7 @@ import {
 
 const UPLOAD_ROOT = path.join(process.cwd(), "public", "uploads");
 
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
   const data = await req.formData();
   const file = data.get("file");
 
@@ -37,6 +38,11 @@ export async function POST(req: Request) {
     typeof purposeRaw === "string" ? purposeRaw.trim().toLowerCase() : "";
   const useLogoPipeline = purpose === "logo" || purpose === "category";
   const usePromoPipeline = purpose === "promo";
+
+  if (useLogoPipeline || usePromoPipeline) {
+    const denied = rejectUnlessAdmin(req);
+    if (denied) return denied;
+  }
 
   const cardCategoryRaw = data.get("cardCategory");
   const cardCategory =

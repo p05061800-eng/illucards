@@ -1,5 +1,12 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
+import {
+  ADMIN_SESSION_COOKIE,
+  isAdminLoginPath,
+  isAdminMutatingApi,
+  isAdminPagePath,
+  unsealAdminSessionEdge,
+} from "@/app/lib/adminSessionEdge";
 
 function applyApiCors(request: NextRequest, response: NextResponse) {
   const origin = request.headers.get("origin");
@@ -20,8 +27,40 @@ function applyApiCors(request: NextRequest, response: NextResponse) {
   return response;
 }
 
-export function proxy(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
+  const adminSession = await unsealAdminSessionEdge(
+    request.cookies.get(ADMIN_SESSION_COOKIE)?.value,
+  );
+
+  if (isAdminPagePath(pathname)) {
+    if (isAdminLoginPath(pathname)) {
+      if (adminSession) {
+        const dest = request.nextUrl.clone();
+        dest.pathname = "/admin";
+        dest.search = "";
+        return NextResponse.redirect(dest);
+      }
+      return NextResponse.next();
+    }
+    if (!adminSession) {
+      const dest = request.nextUrl.clone();
+      dest.pathname = "/admin/login";
+      dest.search = "";
+      if (pathname !== "/admin") {
+        dest.searchParams.set("next", pathname);
+      }
+      return NextResponse.redirect(dest);
+    }
+    return NextResponse.next();
+  }
+
+  if (isAdminMutatingApi(pathname, request.method) && !adminSession) {
+    return NextResponse.json(
+      { error: "Нужна авторизация администратора" },
+      { status: 401 },
+    );
+  }
 
   if (pathname === "/login") {
     const dest = request.nextUrl.clone();
@@ -51,5 +90,5 @@ export function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/api/:path*", "/login"],
+  matcher: ["/api/:path*", "/login", "/admin", "/admin/:path*"],
 };

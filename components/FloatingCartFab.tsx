@@ -13,7 +13,7 @@ export function FloatingCartFab() {
   const count = hydrated ? itemCount : 0;
 
   return (
-    <div className="pointer-events-auto fixed bottom-24 right-[max(1rem,env(safe-area-inset-right,0px))] z-[185] flex flex-col items-center gap-2 sm:bottom-28 sm:right-[max(1.25rem,env(safe-area-inset-right,0px))]">
+    <div className="pointer-events-auto fixed bottom-[max(5.5rem,calc(env(safe-area-inset-bottom,0px)+4.5rem))] right-[max(0.75rem,env(safe-area-inset-right,0px))] z-[185] flex flex-col items-center gap-2 sm:bottom-8 sm:right-[max(1.25rem,env(safe-area-inset-right,0px))]">
       <div
         className="flex rounded-full border border-white/15 bg-black/70 p-0.5 shadow-[0_10px_28px_rgba(0,0,0,0.38)] backdrop-blur-md"
         role="group"

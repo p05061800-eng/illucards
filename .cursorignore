@@ -4,14 +4,30 @@ node_modules/
 .next/
 dist/
 build/
-coverage/
-# public/uploads/ — не скрывать от инструментов: иначе `git add .` из Cursor может не увидеть каталог. Тяжёлые ассеты скрыты в VS Code (files.exclude).
-
-# Extra heavy / generated
 out/
-.turbo/
+coverage/
 .cache/
+.turbo/
 .vercel/
+.git/
+
+# Lockfiles / TS build info
 package-lock.json
 pnpm-lock.yaml
 *.tsbuildinfo
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+.pnpm-debug.log*
+
+# OS / editor junk
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+
+# public/uploads/ — не скрывать: иначе инструменты Cursor могут не увидеть каталог для git.

@@ -3,6 +3,7 @@
   "files.watcherExclude": {
     "**/.git/objects/**": true,
     "**/.git/subtree-cache/**": true,
+    "**/.git/**": true,
     "**/node_modules/**": true,
     "**/.next/**": true,
     "**/out/**": true,
@@ -15,7 +16,8 @@
     "**/pnpm-lock.yaml": true,
     "**/tsconfig.tsbuildinfo": true,
     "**/.vercel/**": true,
-    "**/public/uploads/**": true
+    "**/public/uploads/**": true,
+    "**/*.log": true
   },
   "search.exclude": {
     "**/node_modules": true,
@@ -42,7 +44,7 @@
   "search.useIgnoreFiles": true,
   "search.followSymlinks": false,
   "search.smartCase": true,
-  "typescript.tsserver.maxTsServerMemory": 4096,
+  "typescript.tsserver.maxTsServerMemory": 1536,
   "typescript.tsserver.experimental.enableProjectDiagnostics": false,
   "typescript.tsserver.watchOptions": {
     "watchFile": "useFsEventsOnParentDirectory",
@@ -83,5 +85,6 @@
     "*test.py"
   ],
   "python.testing.pytestEnabled": false,
-  "python.testing.unittestEnabled": true
+  "python.testing.unittestEnabled": false,
+  "python.testing.autoTestDiscoverOnSaveEnabled": false
 }

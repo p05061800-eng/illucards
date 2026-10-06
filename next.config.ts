@@ -31,7 +31,17 @@ const nextConfig: NextConfig = {
           : {};
       const extraIgnored = [
         "**/public/uploads/**",
+        "**/.next/**",
         "**/.next/cache/**",
+        "**/.git/**",
+        "**/coverage/**",
+        "**/.turbo/**",
+        "**/.vercel/**",
+        "**/.cache/**",
+        "**/*.log",
+        "**/dist/**",
+        "**/build/**",
+        "**/out/**",
       ];
       const prev = woBase.ignored;
       /** Next может задавать `ignored` как RegExp — в общий массив их смешивать нельзя (падает схема Webpack). */

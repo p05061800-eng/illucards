@@ -394,7 +394,7 @@ export default function HeroSection({
             {/* Десктоп: логотип в левой колонке (flex-стек). ≤1024 — см. globals (display: contents). */}
             <div className="hero-body min-w-0 w-full">
               <div
-                className={`hero-main-desktop min-w-0 w-full ${
+                className={`hero-main-desktop hero-product-layout min-w-0 w-full ${
                   viewportCompact ? "min-h-0 flex-1" : ""
                 }`}
               >
@@ -402,7 +402,7 @@ export default function HeroSection({
                   <div className="hero-wordmark-row min-w-0 w-full shrink-0">
                     <HeroIlluCardsLogo />
                   </div>
-                  <div className="categories hero-categories-outer relative z-30 w-full min-w-0">
+                  <div className="categories hero-categories-outer hero-categories-row relative w-full min-w-0">
                     <div className="hero-categories hero-categories-strip relative flex min-w-0 w-full justify-start overflow-x-auto overflow-y-visible py-0 scrollbar-hide md:py-0">
               {apiCategories.map((cat) => {
                 const selected =
@@ -460,7 +460,7 @@ export default function HeroSection({
                     </div>
                   </div>
 
-                  <div className="hero-promo-desktop-slot hidden min-w-0 md:block">
+                  <div className="hero-promo-desktop-slot min-w-0">
                     <PromoSlider initialSlides={initialPromoSlides} />
                   </div>
 
@@ -476,6 +476,7 @@ export default function HeroSection({
                   className={[
                     "hero-content hero-right-side min-w-0",
                     showNoveltiesHeroChrome ? "hero-right-side--novelty" : "",
+                    "hero-right-side--product",
                     isMarvelHeroCard ? "hero-right-side--marvel" : "",
                     isTmntHeroCard ? "hero-right-side--tmnt" : "",
                   ]
@@ -486,9 +487,7 @@ export default function HeroSection({
                     className={[
                       "hero-cell-card hero-card relative z-20 flex w-full min-w-0 max-w-full flex-col justify-start",
                       viewportCompact ? "min-h-0" : "",
-                      showNoveltiesHeroChrome
-                        ? "hero-card--novelty-overlap items-start"
-                        : "items-end",
+                      showNoveltiesHeroChrome ? "items-start" : "items-end",
                     ]
                       .filter(Boolean)
                       .join(" ")}
@@ -504,145 +503,143 @@ export default function HeroSection({
                     }
                   >
                   {showNoveltiesHeroChrome ? (
-                    <div className="hero-right-product flex w-full max-w-none min-w-0 flex-col items-center gap-0 overflow-visible py-0 md:items-stretch md:gap-0 md:py-0">
-                      <div className="hero-novelties-mobile-stack flex w-full max-w-full flex-col items-stretch gap-4 max-md:w-full max-md:px-0 md:contents md:max-w-none">
-                      <div className="hero-title hero-novelty-header w-full shrink-0 text-center">
-                        <div className="hero-novelty-header-inner mx-auto flex w-full max-w-full flex-col items-center gap-1">
-                          <h2 className="hero-novelties-title hero-wordmark-shine hero-wordmark-shine--mirror hero-scale-wordmark relative m-0 mx-auto block w-full max-w-full origin-center text-balance text-center font-bold tracking-tight drop-shadow-[0_2px_0_rgba(0,0,0,0.55),0_10px_36px_rgba(109,40,217,0.45),0_22px_48px_rgba(0,0,0,0.45)]">
-                            Новинки
-                          </h2>
-                          {activeBrowseCards.length > 1 ? (
-                            <p
-                              className="hero-novelties-counter relative z-[2] text-xs font-medium tabular-nums text-violet-200 sm:text-sm"
-                              aria-live="polite"
-                            >
-                              {(browseIndex % activeBrowseCards.length) + 1} из{" "}
-                              {activeBrowseCards.length}
-                            </p>
-                          ) : null}
-                        </div>
-                      </div>
-
-                      <div
-                        ref={heroCardFlyRef}
-                        onPointerDown={onNoveltyPointerDown}
-                        onPointerUp={onNoveltyPointerUp}
-                        onPointerCancel={onNoveltyPointerCancel}
-                        onClickCapture={(e) => {
-                          if (!blockHeroCardLinkClickRef.current) return;
-                          e.preventDefault();
-                          e.stopPropagation();
-                          blockHeroCardLinkClickRef.current = false;
-                        }}
-                        className="hero-slider hero-novelty-card-shell relative flex w-full max-w-full shrink-0 items-center justify-center gap-2 px-0"
-                      >
-                        {canCycleWithArrows ? (
-                          <button
-                            type="button"
-                            data-hero-novelty-flank-nav
-                            aria-label="Предыдущая карточка"
-                            onClick={() => stepBrowseIndex(-1)}
-                            onKeyDown={onNoveltyArrowKeyDown}
-                            className={`arrow arrow--left hero-novelty-side-arrow hero-novelty-arrow--prev ${PRODUCT_CARD_NAV_ARROW_CLASS}`}
-                          >
-                            <ProductCardNavArrowIcon direction="prev" />
-                          </button>
-                        ) : (
-                          <span
-                            data-hero-novelty-flank-nav
-                            className={`arrow arrow--left hero-novelty-side-arrow hero-novelty-arrow--prev ${PRODUCT_CARD_NAV_ARROW_CLASS} pointer-events-none cursor-not-allowed opacity-35`}
-                            aria-hidden
-                          >
-                            <ProductCardNavArrowIcon direction="prev" />
-                          </span>
-                        )}
-
-                        <div className="hero-card hero-novelty-card-wrap min-w-0">
-                          <CardViewer
-                            layout="product"
-                            activeCard={stackCard}
-                            browseCards={activeBrowseCards}
-                            onNavigate={onHeroBrowseNavigate}
-                            hideNavigation
-                            productCenterConstrained={true}
-                            onCardClick={openCardPage}
-                          />
-                        </div>
-
-                        {canCycleWithArrows ? (
-                          <button
-                            type="button"
-                            data-hero-novelty-flank-nav
-                            aria-label="Следующая карточка"
-                            onClick={() => stepBrowseIndex(1)}
-                            onKeyDown={onNoveltyArrowKeyDown}
-                            className={`arrow arrow--right hero-novelty-side-arrow hero-novelty-arrow--next ${PRODUCT_CARD_NAV_ARROW_CLASS}`}
-                          >
-                            <ProductCardNavArrowIcon direction="next" />
-                          </button>
-                        ) : (
-                          <span
-                            data-hero-novelty-flank-nav
-                            className={`arrow arrow--right hero-novelty-side-arrow hero-novelty-arrow--next ${PRODUCT_CARD_NAV_ARROW_CLASS} pointer-events-none cursor-not-allowed opacity-35`}
-                            aria-hidden
-                          >
-                            <ProductCardNavArrowIcon direction="next" />
-                          </span>
-                        )}
-                      </div>
-
-                      {activeBrowseCards.length > 1 ? (
-                        <div className="hero-novelties-thumb-strip-wrap w-full max-w-full shrink-0 px-0 md:px-1">
-                          <div
-                            className="hero-novelties-thumb-strip scrollbar-hide flex w-full gap-2 overflow-x-auto overflow-y-hidden py-1"
-                            role="tablist"
-                            aria-label="Все новинки"
-                          >
-                            {activeBrowseCards.map((c, i) => {
-                              const active = i === browseIndex % activeBrowseCards.length;
-                              const thumb = c.frontImage?.trim();
-                              if (!thumb) return null;
-                              return (
-                                <button
-                                  key={c.id}
-                                  type="button"
-                                  role="tab"
-                                  data-novelty-thumb={c.id}
-                                  aria-selected={active}
-                                  aria-label={c.title}
-                                  onClick={() => setBrowseIndex(i)}
-                                  className={[
-                                    "hero-novelties-thumb shrink-0 overflow-hidden rounded-lg border-2 bg-zinc-900 transition",
-                                    active
-                                      ? "border-violet-400 shadow-[0_0_16px_rgba(168,85,247,0.45)]"
-                                      : "border-white/10 opacity-75 hover:border-violet-300/50 hover:opacity-100",
-                                  ].join(" ")}
-                                >
-                                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                                  <img
-                                    src={thumb}
-                                    alt=""
-                                    className="block h-12 w-9 object-cover object-center sm:h-14 sm:w-10"
-                                    draggable={false}
-                                    loading="lazy"
-                                    decoding="async"
-                                  />
-                                </button>
-                              );
-                            })}
+                    <div className="hero-product-section">
+                      <div className="hero-product-stage">
+                        <div className="hero-title hero-novelty-header w-full shrink-0 text-center">
+                          <div className="hero-novelty-header-inner mx-auto flex w-full max-w-full flex-col items-center gap-1">
+                            <h2 className="hero-novelties-title hero-wordmark-shine hero-wordmark-shine--mirror hero-scale-wordmark relative m-0 mx-auto block w-full max-w-full origin-center text-balance text-center font-bold tracking-tight drop-shadow-[0_2px_0_rgba(0,0,0,0.55),0_10px_36px_rgba(109,40,217,0.45),0_22px_48px_rgba(0,0,0,0.45)]">
+                              Новинки
+                            </h2>
+                            {activeBrowseCards.length > 1 ? (
+                              <p
+                                className="hero-novelties-counter relative z-[2] text-xs font-medium tabular-nums text-violet-200 sm:text-sm"
+                                aria-live="polite"
+                              >
+                                {(browseIndex % activeBrowseCards.length) + 1} из{" "}
+                                {activeBrowseCards.length}
+                              </p>
+                            ) : null}
                           </div>
                         </div>
-                      ) : null}
 
-                      <div className="hero-novelty-meta flex w-full max-w-full shrink-0 flex-col gap-2 px-0 text-left max-md:mt-2 md:gap-3 md:px-1">
-                        <div className="hero-novelty-meta-row w-full">
-                          <button
-                            type="button"
-                            onClick={() => openCardPage(stackCard.id)}
-                            className="hero-name hero-novelty-card-title line-clamp-2 max-w-full text-balance text-left text-base font-semibold text-white transition hover:text-purple-200 md:text-lg lg:text-xl"
-                          >
-                            {stackCard.title}
-                          </button>
+                        <div
+                          ref={heroCardFlyRef}
+                          onPointerDown={onNoveltyPointerDown}
+                          onPointerUp={onNoveltyPointerUp}
+                          onPointerCancel={onNoveltyPointerCancel}
+                          onClickCapture={(e) => {
+                            if (!blockHeroCardLinkClickRef.current) return;
+                            e.preventDefault();
+                            e.stopPropagation();
+                            blockHeroCardLinkClickRef.current = false;
+                          }}
+                          className="hero-cards-stack"
+                        >
+                          {canCycleWithArrows ? (
+                            <button
+                              type="button"
+                              data-hero-novelty-flank-nav
+                              aria-label="Предыдущая карточка"
+                              onClick={() => stepBrowseIndex(-1)}
+                              onKeyDown={onNoveltyArrowKeyDown}
+                              className={`arrow arrow--left hero-novelty-side-arrow hero-novelty-arrow--prev ${PRODUCT_CARD_NAV_ARROW_CLASS}`}
+                            >
+                              <ProductCardNavArrowIcon direction="prev" />
+                            </button>
+                          ) : (
+                            <span
+                              data-hero-novelty-flank-nav
+                              className={`arrow arrow--left hero-novelty-side-arrow hero-novelty-arrow--prev ${PRODUCT_CARD_NAV_ARROW_CLASS} pointer-events-none cursor-not-allowed opacity-35`}
+                              aria-hidden
+                            >
+                              <ProductCardNavArrowIcon direction="prev" />
+                            </span>
+                          )}
+
+                          <div className="hero-cards-main">
+                            <CardViewer
+                              layout="product"
+                              activeCard={stackCard}
+                              browseCards={activeBrowseCards}
+                              onNavigate={onHeroBrowseNavigate}
+                              hideNavigation
+                              productCenterConstrained={true}
+                              onCardClick={openCardPage}
+                            />
+                          </div>
+
+                          {canCycleWithArrows ? (
+                            <button
+                              type="button"
+                              data-hero-novelty-flank-nav
+                              aria-label="Следующая карточка"
+                              onClick={() => stepBrowseIndex(1)}
+                              onKeyDown={onNoveltyArrowKeyDown}
+                              className={`arrow arrow--right hero-novelty-side-arrow hero-novelty-arrow--next ${PRODUCT_CARD_NAV_ARROW_CLASS}`}
+                            >
+                              <ProductCardNavArrowIcon direction="next" />
+                            </button>
+                          ) : (
+                            <span
+                              data-hero-novelty-flank-nav
+                              className={`arrow arrow--right hero-novelty-side-arrow hero-novelty-arrow--next ${PRODUCT_CARD_NAV_ARROW_CLASS} pointer-events-none cursor-not-allowed opacity-35`}
+                              aria-hidden
+                            >
+                              <ProductCardNavArrowIcon direction="next" />
+                            </span>
+                          )}
+                        </div>
+
+                        {activeBrowseCards.length > 1 ? (
+                          <div className="hero-novelties-thumb-strip-wrap w-full max-w-full shrink-0 px-0 md:px-1">
+                            <div
+                              className="hero-novelties-thumb-strip scrollbar-hide flex w-full gap-2 overflow-x-auto overflow-y-hidden py-1"
+                              role="tablist"
+                              aria-label="Все новинки"
+                            >
+                              {activeBrowseCards.map((c, i) => {
+                                const active =
+                                  i === browseIndex % activeBrowseCards.length;
+                                const thumb = c.frontImage?.trim();
+                                if (!thumb) return null;
+                                return (
+                                  <button
+                                    key={c.id}
+                                    type="button"
+                                    role="tab"
+                                    data-novelty-thumb={c.id}
+                                    aria-selected={active}
+                                    aria-label={c.title}
+                                    onClick={() => setBrowseIndex(i)}
+                                    className={[
+                                      "hero-novelties-thumb shrink-0 overflow-hidden rounded-lg border-2 bg-zinc-900 transition",
+                                      active
+                                        ? "border-violet-400 shadow-[0_0_16px_rgba(168,85,247,0.45)]"
+                                        : "border-white/10 opacity-75 hover:border-violet-300/50 hover:opacity-100",
+                                    ].join(" ")}
+                                  >
+                                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                                    <img
+                                      src={thumb}
+                                      alt=""
+                                      className="block h-12 w-9 object-cover object-center sm:h-14 sm:w-10"
+                                      draggable={false}
+                                      loading="lazy"
+                                      decoding="async"
+                                    />
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        ) : null}
+
+                        <div className="hero-product-info">
+                          <HeroCatalogCardFooter
+                            card={stackCard}
+                            flySourceRef={heroCardFlyRef}
+                            size="novelty"
+                          />
                           <button
                             type="button"
                             onClick={(e) => {
@@ -655,35 +652,22 @@ export default function HeroSection({
                           </button>
                         </div>
                       </div>
-                      </div>
                     </div>
                   ) : (
-                    <div className="hero-right-product flex w-full max-w-none min-w-0 flex-col items-end gap-0 overflow-visible py-3">
-                      <div className="mt-16 md:mt-0 flex w-full justify-center">
-                      <div
-                        className={[
-                          "hero-primary-card-shell mx-auto w-full origin-top motion-reduce:scale-100",
-                          isTmntHeroCard
-                            ? "max-w-[min(100%,36rem)] sm:max-w-[min(100%,40rem)] md:max-w-[min(100%,46rem)] lg:max-w-[min(100%,50rem)] xl:max-w-[min(100%,54rem)]"
-                            : "max-w-[min(100%,30rem)] sm:max-w-[min(100%,34rem)] md:max-w-[min(100%,38rem)] lg:max-w-[min(100%,40rem)] xl:max-w-[min(100%,42rem)]",
-                        ].join(" ")}
-                      >
-                        <div
-                          className={`relative flex w-full items-center justify-center gap-2 md:gap-3 ${
-                            canCycleWithArrows ? "px-0 md:px-2" : ""
-                          }`}
-                        >
+                    <div className="hero-product-section">
+                      <div className="hero-product-stage">
+                        <div className="hero-cards-stack" ref={heroCardFlyRef}>
                           {canCycleWithArrows ? (
                             <button
                               type="button"
                               aria-label="Предыдущая карточка"
                               onClick={() => stepBrowseIndex(-1)}
-                              className={PRODUCT_CARD_NAV_ARROW_CLASS}
+                              className={`hero-novelty-side-arrow hero-novelty-arrow--prev ${PRODUCT_CARD_NAV_ARROW_CLASS}`}
                             >
                               <ProductCardNavArrowIcon direction="prev" />
                             </button>
                           ) : null}
-                          <div className="min-w-0 flex-1">
+                          <div className="hero-cards-main">
                             <CardViewer
                               layout="product"
                               activeCard={stackCard}
@@ -699,19 +683,20 @@ export default function HeroSection({
                               type="button"
                               aria-label="Следующая карточка"
                               onClick={() => stepBrowseIndex(1)}
-                              className={PRODUCT_CARD_NAV_ARROW_CLASS}
+                              className={`hero-novelty-side-arrow hero-novelty-arrow--next ${PRODUCT_CARD_NAV_ARROW_CLASS}`}
                             >
                               <ProductCardNavArrowIcon direction="next" />
                             </button>
                           ) : null}
                         </div>
+                        <div className="hero-product-info">
+                          <HeroCatalogCardFooter
+                            card={stackCard}
+                            flySourceRef={heroCardFlyRef}
+                            size="default"
+                          />
+                        </div>
                       </div>
-                      </div>
-                      <HeroCatalogCardFooter
-                        card={stackCard}
-                        flySourceRef={heroCardFlyRef}
-                        size="default"
-                      />
                     </div>
                   )}
                 </div>
@@ -719,7 +704,7 @@ export default function HeroSection({
             </div>
 
               <div
-                className="hero-mobile-akcii mt-4 w-full min-w-0 shrink-0 md:hidden"
+                className="hero-mobile-akcii mt-4 w-full min-w-0 shrink-0"
                 aria-label="Акции"
               >
                 <h2 className="hero-akcii-mobile-title mb-2.5 text-center text-[0.7rem] font-bold uppercase tracking-[0.14em] text-white/90">

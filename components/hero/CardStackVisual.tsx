@@ -713,10 +713,14 @@ export function CardStackVisual({
       >
       <div className="relative block w-full max-w-full min-h-0 min-w-0">
         {frontSrc ? (
-          <div
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={frontSrc}
+            alt=""
             aria-hidden
-            className="block w-full max-w-full rounded-2xl opacity-0 pointer-events-none select-none"
+            className="hero-card-stack-sizer block h-auto w-full max-h-full max-w-full rounded-2xl object-contain opacity-0 pointer-events-none select-none"
             style={{ aspectRatio: stackBoxAspectCss }}
+            draggable={false}
           />
         ) : null}
 

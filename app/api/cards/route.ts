@@ -220,6 +220,25 @@ export type StoredCard = {
   varioSmoothing?: number;
 };
 
+function isSafeImageUrl(p: string): boolean {
+  const value = p.trim();
+
+  if (isSafeUploadPublicPath(value)) return true;
+
+  try {
+    const url = new URL(value);
+
+    return (
+      url.protocol === "https:" &&
+      url.hostname.endsWith(".public.blob.vercel-storage.com") &&
+      !url.username &&
+      !url.password &&
+      !url.pathname.includes("..")
+    );
+  } catch {
+    return false;
+  }
+}
 function isSafeFrontHoverMotionPath(p: string): boolean {
   const t = p.trim().toLowerCase();
   if (!isSafeUploadPublicPath(p)) return false;
@@ -351,7 +370,7 @@ async function resolveUploadedImage(
   pipeline: CardImageSavePipeline = "card34",
 ): Promise<string | null> {
   const urlRaw = String(formData.get(urlKey) ?? "").trim();
-  if (urlRaw && isSafeUploadPublicPath(urlRaw)) {
+  if (urlRaw && isSafeImageUrl(urlRaw)) {
     return urlRaw;
   }
   const file = formData.get(fileKey);
@@ -470,7 +489,7 @@ export async function POST(req: NextRequest) {
   const categoryBgUrlRaw = String(formData.get("categoryBgUrl") ?? "").trim();
   const categoryBgUpload = formData.get("categoryBgFile");
   let categoryBgPath: string | undefined;
-  if (categoryBgUrlRaw && isSafeUploadPublicPath(categoryBgUrlRaw)) {
+  if (categoryBgUrlRaw && isSafeImageUrl(categoryBgUrlRaw)) {
     categoryBgPath = categoryBgUrlRaw;
   } else if (categoryBgUpload instanceof File && categoryBgUpload.size > 0) {
     categoryBgPath = await saveImageFile(
@@ -785,7 +804,7 @@ export async function PATCH(req: NextRequest) {
     delete updated.middleImageFocus;
   }
 
-  if (categoryBgUrlPatch && isSafeUploadPublicPath(categoryBgUrlPatch)) {
+  if (categoryBgUrlPatch && isSafeImageUrl(categoryBgUrlPatch)) {
     updated.categoryBg = categoryBgUrlPatch;
   } else if (categoryBgUpload instanceof File && categoryBgUpload.size > 0) {
     updated.categoryBg = await saveImageFile(

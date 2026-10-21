@@ -5,12 +5,15 @@ const REDIS_SOCIAL_KEY = "illucards:catalog:social-links";
 const REDIS_PROMO_KEY = "illucards:catalog:promo-slides";
 
 function redisRestCredentials(): { url: string; token: string } | null {
-  const u =
-    process.env.UPSTASH_REDIS_REST_URL?.trim() ||
-    process.env.KV_REST_API_URL?.trim();
-  const t =
-    process.env.UPSTASH_REDIS_REST_TOKEN?.trim() ||
-    process.env.KV_REST_API_TOKEN?.trim();
+const u =
+  process.env.UPSTASH_REDIS_REST_URL?.trim() ||
+  process.env.KV_REST_API_URL?.trim() ||
+  process.env.UPSTASH_REDIS_REST_KV_REST_API_URL?.trim();
+
+const t =
+  process.env.UPSTASH_REDIS_REST_TOKEN?.trim() ||
+  process.env.KV_REST_API_TOKEN?.trim() ||
+  process.env.UPSTASH_REDIS_REST_KV_REST_API_TOKEN?.trim();
   if (!u || !t) return null;
   return { url: u, token: t };
 }

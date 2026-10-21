@@ -16,6 +16,7 @@
     "deploy": "git add . && (git diff --cached --quiet && echo \"No changes to deploy\" || (git commit -m \"deploy\" && git push))"
   },
   "dependencies": {
+    "@vercel/blob": "^2.8.2",
     "framer-motion": "^12.38.0",
     "lucide-react": "^1.7.0",
     "next": "16.2.2",

@@ -22,16 +22,42 @@ async function redisCommand(
   cmd: unknown[],
 ): Promise<{ result?: unknown; error?: string } | null> {
   const cred = redisRestCredentials();
-  if (!cred) return null;
+
+  if (!cred) {
+    console.error("Redis REST credentials are missing.");
+    return null;
+  }
+
   try {
     const res = await fetch(cred.url, {
       method: "POST",
-      headers: { Authorization: `Bearer ${cred.token}` },
+      headers: {
+        Authorization: `Bearer ${cred.token}`,
+        "Content-Type": "application/json",
+      },
       body: JSON.stringify(cmd),
       cache: "no-store",
     });
-    return (await res.json()) as { result?: unknown; error?: string };
-  } catch {
+
+    const body = (await res.json()) as {
+      result?: unknown;
+      error?: string;
+    };
+
+    if (!res.ok || body.error) {
+      console.error(
+        `Upstash Redis HTTP ${res.status}:`,
+        body.error ?? "Unknown error",
+      );
+    }
+
+    return body;
+  } catch (error) {
+    console.error(
+      "Upstash Redis request failed:",
+      error instanceof Error ? error.message : "Unknown error",
+    );
+
     return null;
   }
 }

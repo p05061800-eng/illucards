@@ -54,7 +54,7 @@ export function AdultContentBlurGate({
     <div
       className={
         locked
-          ? "pointer-events-none select-none blur-2xl saturate-[0.65]"
+          ? "adult-gate-locked-art pointer-events-none select-none"
           : ""
       }
     >

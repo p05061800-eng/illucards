@@ -20,7 +20,9 @@ function noveltySortKey(card: StoredCard): number {
 
 export function isHeroNoveltyCard(card: StoredCard): boolean {
   if (!card.frontImage?.trim()) return false;
-  return card.isNew || cardHasRarityTag(card, "novelty");
+  if (card.isNew || cardHasRarityTag(card, "novelty")) return true;
+  /** В карусели героя остаются и те, у кого метка уже снялась по сроку. */
+  return parseNoveltySinceMs(card.noveltySince) != null;
 }
 
 /** Новинки в герое: сначала свежие, затем по порядку в файле. */

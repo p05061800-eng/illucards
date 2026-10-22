@@ -25,7 +25,6 @@ import { buildNoveltiesCarouselCards } from "@/app/lib/noveltiesHeroCarousel";
 import { sortSectionCardsForDefaultCatalog } from "@/app/lib/collectionFilter";
 import {
   CardViewer,
-  PRODUCT_CARD_NAV_ARROW_CLASS,
   ProductCardNavArrowIcon,
 } from "@/app/components/card-showcase/CardViewer";
 import { HeroCatalogCardFooter } from "./HeroCatalogCardFooter";
@@ -548,6 +547,7 @@ export default function HeroSection({
 
                   <div className="hero-promo-desktop-slot min-w-0">
                     <PromoSlider
+                      cards={cards}
                       initialConfig={initialPromoConfig}
                       initialSlides={initialPromoSlides}
                     />
@@ -629,16 +629,19 @@ export default function HeroSection({
                               type="button"
                               data-hero-novelty-flank-nav
                               aria-label="Предыдущая карточка"
-                              onClick={() => stepBrowseIndex(-1)}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                stepBrowseIndex(-1);
+                              }}
                               onKeyDown={onNoveltyArrowKeyDown}
-                              className={`arrow arrow--left hero-novelty-side-arrow hero-novelty-arrow--prev ${PRODUCT_CARD_NAV_ARROW_CLASS}`}
+                              className="arrow arrow--left hero-novelty-side-arrow hero-novelty-arrow--prev hero-novelty-nav-btn"
                             >
                               <ProductCardNavArrowIcon direction="prev" />
                             </button>
                           ) : (
                             <span
                               data-hero-novelty-flank-nav
-                              className={`arrow arrow--left hero-novelty-side-arrow hero-novelty-arrow--prev ${PRODUCT_CARD_NAV_ARROW_CLASS} pointer-events-none cursor-not-allowed opacity-35`}
+                              className="arrow arrow--left hero-novelty-side-arrow hero-novelty-arrow--prev hero-novelty-nav-btn pointer-events-none cursor-not-allowed opacity-35"
                               aria-hidden
                             >
                               <ProductCardNavArrowIcon direction="prev" />
@@ -662,16 +665,19 @@ export default function HeroSection({
                               type="button"
                               data-hero-novelty-flank-nav
                               aria-label="Следующая карточка"
-                              onClick={() => stepBrowseIndex(1)}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                stepBrowseIndex(1);
+                              }}
                               onKeyDown={onNoveltyArrowKeyDown}
-                              className={`arrow arrow--right hero-novelty-side-arrow hero-novelty-arrow--next ${PRODUCT_CARD_NAV_ARROW_CLASS}`}
+                              className="arrow arrow--right hero-novelty-side-arrow hero-novelty-arrow--next hero-novelty-nav-btn"
                             >
                               <ProductCardNavArrowIcon direction="next" />
                             </button>
                           ) : (
                             <span
                               data-hero-novelty-flank-nav
-                              className={`arrow arrow--right hero-novelty-side-arrow hero-novelty-arrow--next ${PRODUCT_CARD_NAV_ARROW_CLASS} pointer-events-none cursor-not-allowed opacity-35`}
+                              className="arrow arrow--right hero-novelty-side-arrow hero-novelty-arrow--next hero-novelty-nav-btn pointer-events-none cursor-not-allowed opacity-35"
                               aria-hidden
                             >
                               <ProductCardNavArrowIcon direction="next" />
@@ -750,8 +756,11 @@ export default function HeroSection({
                             <button
                               type="button"
                               aria-label="Предыдущая карточка"
-                              onClick={() => stepBrowseIndex(-1)}
-                              className={`hero-novelty-side-arrow hero-novelty-arrow--prev ${PRODUCT_CARD_NAV_ARROW_CLASS}`}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                stepBrowseIndex(-1);
+                              }}
+                              className="hero-novelty-side-arrow hero-novelty-arrow--prev hero-novelty-nav-btn"
                             >
                               <ProductCardNavArrowIcon direction="prev" />
                             </button>
@@ -771,8 +780,11 @@ export default function HeroSection({
                             <button
                               type="button"
                               aria-label="Следующая карточка"
-                              onClick={() => stepBrowseIndex(1)}
-                              className={`hero-novelty-side-arrow hero-novelty-arrow--next ${PRODUCT_CARD_NAV_ARROW_CLASS}`}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                stepBrowseIndex(1);
+                              }}
+                              className="hero-novelty-side-arrow hero-novelty-arrow--next hero-novelty-nav-btn"
                             >
                               <ProductCardNavArrowIcon direction="next" />
                             </button>
@@ -797,6 +809,7 @@ export default function HeroSection({
                 aria-label="Карточка на заказ и акции"
               >
                 <PromoSlider
+                  cards={cards}
                   initialConfig={initialPromoConfig}
                   initialSlides={initialPromoSlides}
                 />

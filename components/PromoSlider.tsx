@@ -6,23 +6,34 @@ import {
   useCallback,
   useEffect,
   useMemo,
+  useRef,
   useState,
+  type KeyboardEvent,
   type MouseEvent,
+  type PointerEvent,
   type ReactNode,
 } from "react";
+import type { StoredCard } from "@/app/api/cards/route";
 import { apiUrl } from "@/app/lib/apiUrl";
+import { buildCustomOrderHeroCards } from "@/app/lib/customOrderHeroCarousel";
+import { ultraOrHeroBgUrl } from "@/app/lib/cardUltraBg";
 import { getTelegramOrderBotUsername } from "@/app/lib/telegramOrderBotUsername";
 import { telegramCustomCardOrderUrl } from "@/app/lib/telegramOrderStartPayload";
 import {
   customOrderForHero,
   parsePromoHomeConfig,
   promoCarouselForHero,
-  type PromoCustomOrder,
   type PromoHomeConfig,
   type PromoSlide,
 } from "@/app/lib/promoSlidesJson";
+import { ProductCardNavArrowIcon } from "@/app/components/card-showcase/CardViewer";
+import { CardStackVisual } from "@/components/hero/CardStackVisual";
+
+/** Как в «Новинках»: горизонтальный жест переключает слайд. */
+const CUSTOM_ORDER_SWIPE_MIN_PX = 48;
 
 type Props = {
+  cards?: StoredCard[];
   initialSlides?: PromoSlide[];
   initialConfig?: PromoHomeConfig;
 };
@@ -39,6 +50,7 @@ function configFromProps(
 }
 
 export default function PromoSlider({
+  cards = [],
   initialSlides = [],
   initialConfig,
 }: Props) {
@@ -91,8 +103,10 @@ export default function PromoSlider({
   }, []);
 
   const orderTile = customOrderForHero(config.customOrder);
+  const orderCards = buildCustomOrderHeroCards(cards);
+  const showOrderCol = orderCards.length > 0 || orderTile != null;
   const promos = promoCarouselForHero(config.items);
-  const colCount = (orderTile ? 1 : 0) + (promos.length > 0 ? 1 : 0);
+  const colCount = (showOrderCol ? 1 : 0) + (promos.length > 0 ? 1 : 0);
   if (colCount === 0) return null;
 
   const pairClass =
@@ -104,9 +118,13 @@ export default function PromoSlider({
     <div className="hero-promo-slider w-full min-w-0">
       <div className={pairClass}>
         <div className="hero-promo-pair-grid">
-          {orderTile ? (
+          {showOrderCol ? (
             <PromoColumn title="Карточка на заказ">
-              <StaticPromoTile slide={orderTile} eager />
+              <CustomOrderCarousel
+                cards={orderCards}
+                fallbackImageUrl={orderTile?.imageUrl ?? ""}
+                examplesHref={config.customOrder.href.trim()}
+              />
             </PromoColumn>
           ) : null}
           {promos.length > 0 ? (
@@ -234,22 +252,196 @@ function PromoCtaStack({ examplesHref }: { examplesHref: string }) {
   );
 }
 
-function StaticPromoTile({
-  slide,
-  eager,
+function CustomOrderCarousel({
+  cards,
+  fallbackImageUrl,
+  examplesHref,
 }: {
-  slide: PromoCustomOrder;
-  eager?: boolean;
+  cards: StoredCard[];
+  fallbackImageUrl: string;
+  examplesHref: string;
 }) {
+  const [index, setIndex] = useState(0);
+  const dragStartRef = useRef<{ x: number; y: number } | null>(null);
+  const n = cards.length;
+  const safeIndex = n === 0 ? 0 : ((index % n) + n) % n;
+  const canCycle = n > 1;
+  const activeCard = n > 0 ? cards[safeIndex] : null;
+
+  useEffect(() => {
+    if (index >= n && n > 0) setIndex(0);
+  }, [index, n]);
+
+  const step = useCallback(
+    (delta: number) => {
+      if (n < 2) return;
+      setIndex((i) => (i + delta + n * 16) % n);
+    },
+    [n],
+  );
+
+  const onArrowKeyDown = useCallback(
+    (e: KeyboardEvent<HTMLButtonElement>) => {
+      if (n < 2) return;
+      if (e.key === "ArrowLeft") {
+        e.preventDefault();
+        step(-1);
+      } else if (e.key === "ArrowRight") {
+        e.preventDefault();
+        step(1);
+      }
+    },
+    [n, step],
+  );
+
+  const applySwipe = useCallback(
+    (start: { x: number; y: number }, endX: number, endY: number) => {
+      if (n < 2) return;
+      const dx = endX - start.x;
+      const dy = endY - start.y;
+      if (
+        Math.abs(dx) < CUSTOM_ORDER_SWIPE_MIN_PX ||
+        Math.abs(dx) < Math.abs(dy)
+      ) {
+        return;
+      }
+      if (dx < 0) step(1);
+      else step(-1);
+    },
+    [n, step],
+  );
+
+  const onPointerDown = useCallback(
+    (e: PointerEvent<HTMLDivElement>) => {
+      if (e.button !== 0 && e.pointerType !== "touch") return;
+      if (n < 2) return;
+      const target = e.target as HTMLElement | null;
+      if (target?.closest?.("a, button")) return;
+      dragStartRef.current = { x: e.clientX, y: e.clientY };
+    },
+    [n],
+  );
+
+  const onPointerUp = useCallback(
+    (e: PointerEvent<HTMLDivElement>) => {
+      const start = dragStartRef.current;
+      dragStartRef.current = null;
+      if (!start) return;
+      applySwipe(start, e.clientX, e.clientY);
+    },
+    [applySwipe],
+  );
+
+  const onPointerCancel = useCallback(() => {
+    dragStartRef.current = null;
+  }, []);
+
+  if (!activeCard && !fallbackImageUrl) return null;
+
   return (
-    <div className="hero-promo-tile overflow-hidden rounded-2xl border border-white/10 bg-zinc-950/50 shadow-[0_8px_32px_rgba(0,0,0,0.35)]">
-      <PromoLinkedMedia
-        src={slide.imageUrl}
-        href=""
-        eager={eager}
-        label="Карточка на заказ"
-      />
-      <PromoCtaStack examplesHref={slide.href.trim()} />
+    <div
+      className="hero-promo-tile hero-custom-order-tile overflow-hidden rounded-2xl border border-white/10 bg-zinc-950/50 shadow-[0_8px_32px_rgba(0,0,0,0.35)]"
+      aria-roledescription="carousel"
+      aria-label="Карточка на заказ"
+    >
+      <div
+        className="hero-custom-order-stage"
+        onPointerDown={onPointerDown}
+        onPointerUp={onPointerUp}
+        onPointerCancel={onPointerCancel}
+      >
+        {activeCard ? (
+          <div key={activeCard.id} className="hero-custom-order-fill">
+            <CardStackVisual
+              card={activeCard}
+              ultraBgUrl={ultraOrHeroBgUrl(activeCard)}
+              catalogStack
+              hideUltraLayer
+              navigationTapSafe
+              rootClassName="relative h-full w-full max-w-none overflow-hidden rounded-2xl"
+            />
+          </div>
+        ) : (
+          <div className="hero-custom-order-fill">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={fallbackImageUrl}
+              alt=""
+              className="hero-custom-order-fallback-img"
+              draggable={false}
+            />
+          </div>
+        )}
+      </div>
+
+      {canCycle ? (
+        <>
+          <button
+            type="button"
+            className="hero-custom-order-arrow hero-custom-order-arrow--prev"
+            aria-label="Предыдущая карточка на заказ"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              step(-1);
+            }}
+            onKeyDown={onArrowKeyDown}
+          >
+            <ProductCardNavArrowIcon direction="prev" />
+          </button>
+          <button
+            type="button"
+            className="hero-custom-order-arrow hero-custom-order-arrow--next"
+            aria-label="Следующая карточка на заказ"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              step(1);
+            }}
+            onKeyDown={onArrowKeyDown}
+          >
+            <ProductCardNavArrowIcon direction="next" />
+          </button>
+        </>
+      ) : null}
+
+      {canCycle ? (
+        n <= 8 ? (
+          <div className="hero-custom-order-dots" role="tablist" aria-label="Слайды карточки на заказ">
+            {cards.map((card, i) => (
+              <button
+                key={card.id}
+                type="button"
+                role="tab"
+                aria-selected={i === safeIndex}
+                aria-label={`Карточка ${i + 1} из ${n}`}
+                className={
+                  i === safeIndex
+                    ? "hero-custom-order-dot is-active"
+                    : "hero-custom-order-dot"
+                }
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  setIndex(i);
+                }}
+              />
+            ))}
+          </div>
+        ) : (
+          <p className="hero-custom-order-counter" aria-live="polite">
+            {safeIndex + 1} из {n}
+          </p>
+        )
+      ) : null}
+
+      <p className="sr-only" aria-live="polite">
+        {activeCard
+          ? `${safeIndex + 1} из ${n}: ${activeCard.title}`
+          : "Карточка на заказ"}
+      </p>
+
+      <PromoCtaStack examplesHref={examplesHref} />
     </div>
   );
 }

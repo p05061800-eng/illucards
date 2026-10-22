@@ -59,7 +59,7 @@ export default async function Home() {
 
   return (
     <main className="main relative min-h-screen overflow-x-hidden text-white">
-      <div className="home-main-stack relative z-10 overflow-visible px-0 pb-16 pt-[10px] sm:px-10 sm:pb-20 sm:pt-4">
+      <div className="home-main-stack relative z-10 overflow-x-hidden overflow-y-visible px-0 pb-16 pt-[6px] sm:pb-20 sm:pt-2">
         <HeroSection
           cards={cards}
           initialHeroCategoryName={initialHeroCategoryName}

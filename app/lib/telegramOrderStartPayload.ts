@@ -31,3 +31,11 @@ export function telegramOrderBotUrl(
   const start = telegramOrderStartPayload(orderId, buyerSeq);
   return `https://t.me/${encodeURIComponent(bot)}?start=${encodeURIComponent(start)}`;
 }
+
+/** Payload /start для оформления индивидуальной карточки с главной. */
+export const CUSTOM_CARD_START_PAYLOAD = "custom_card";
+
+export function telegramCustomCardOrderUrl(botUsername: string): string {
+  const bot = botUsername.replace(/^@/, "").trim();
+  return `https://t.me/${encodeURIComponent(bot)}?start=${CUSTOM_CARD_START_PAYLOAD}`;
+}

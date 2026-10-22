@@ -4,7 +4,7 @@ import { AdminPromoSlidesEditor } from "../AdminPromoSlidesEditor";
 
 export const metadata: Metadata = {
   title: "Акции — админ — IlluCards",
-  description: "Баннеры акций под категориями на главной",
+  description: "Карточка на заказ и карусель акций на главной"
 };
 
 export default function AdminPromoPage() {
@@ -20,11 +20,11 @@ export default function AdminPromoPage() {
             <div>
               <h1 className="text-3xl font-bold tracking-tight md:text-4xl">
                 <span className="bg-gradient-to-r from-purple-300 via-violet-400 to-fuchsia-400 bg-clip-text text-transparent">
-                  Акции на главной
+                  Плашки на главной
                 </span>
               </h1>
               <p className="mt-2 text-zinc-400">
-                Слайдер под плашками категорий: автопрокрутка и стрелки на сайте.
+                Карточка на заказ и карусель акций под категориями.
               </p>
             </div>
             <Link

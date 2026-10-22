@@ -5,6 +5,7 @@ import {
   DURABLE_JSON_KEYS,
   loadDurableJsonText,
   saveDurableJsonText,
+  savePublicUpload,
 } from "@/app/lib/durableJson";
 import type { ImageFocus } from "@/app/lib/imageFocus";
 import { parseImageFocusJson } from "@/app/lib/imageFocus";
@@ -16,7 +17,9 @@ import { maxCategoryOrderInCategory } from "@/app/lib/adminCategoryOrder";
 import {
   imageBufferTo34Webp,
   imageBufferToTmntPosterWebp,
+  isSafeImageUrl,
   isSafeUploadPublicPath,
+  isSafeVercelBlobUrl,
 } from "@/app/lib/serverImage";
 import { readPublicImageDimensions } from "@/app/lib/readPublicImageDimensions";
 import {
@@ -220,34 +223,18 @@ export type StoredCard = {
   varioSmoothing?: number;
 };
 
-function isSafeImageUrl(p: string): boolean {
-  const value = p.trim();
-
-  if (isSafeUploadPublicPath(value)) return true;
-
-  try {
-    const url = new URL(value);
-
-    return (
-      url.protocol === "https:" &&
-      url.hostname.endsWith(".public.blob.vercel-storage.com") &&
-      !url.username &&
-      !url.password &&
-      !url.pathname.includes("..")
-    );
-  } catch {
-    return false;
-  }
-}
 function isSafeFrontHoverMotionPath(p: string): boolean {
   const t = p.trim().toLowerCase();
-  if (!isSafeUploadPublicPath(p)) return false;
-  if (!t.startsWith("/uploads/videos/")) return false;
-  return (
+  const isVideoExt =
     t.endsWith(".mp4") ||
     t.endsWith(".webm") ||
     t.endsWith(".mov") ||
-    t.endsWith(".m4v")
+    t.endsWith(".m4v");
+  if (!isVideoExt) return false;
+  if (isSafeVercelBlobUrl(p)) return true;
+  if (!isSafeUploadPublicPath(p)) return false;
+  return (
+    t.startsWith("/uploads/videos/") || t.startsWith("/api/media/videos/")
   );
 }
 
@@ -321,7 +308,7 @@ function parseReviews(raw: unknown): CardReview[] | undefined {
     if (Array.isArray(o.images)) {
       for (const u of o.images) {
         const s = String(u).trim();
-        if (s && isSafeUploadPublicPath(s)) images.push(s);
+        if (s && isSafeImageUrl(s)) images.push(s);
       }
     }
     const videoRaw = typeof o.video === "string" ? o.video.trim() : "";
@@ -359,8 +346,7 @@ async function saveImageFile(
       ? await imageBufferToTmntPosterWebp(buffer)
       : await imageBufferTo34Webp(buffer);
   const filename = `${randomUUID()}.webp`;
-  await fs.writeFile(path.join(UPLOAD_PUBLIC, filename), processed);
-  return `/uploads/${filename}`;
+  return savePublicUpload(filename, processed, "image/webp");
 }
 
 async function resolveUploadedImage(
@@ -438,63 +424,76 @@ export async function POST(req: NextRequest) {
   const imagePipe: CardImageSavePipeline =
     category === "TMNT" ? "tmntPoster" : "card34";
 
-  const frontImagePath = await resolveUploadedImage(
-    formData,
-    "frontImageUrl",
-    "frontImage",
-    imagePipe,
-  );
-  if (!frontImagePath) {
-    return NextResponse.json(
-      { error: "Выберите изображение лицевой стороны (загрузите файл)." },
-      { status: 400 }
-    );
-  }
-
+  let frontImagePath: string | null;
   let backImagePath = "";
-  if (effect === "vario" || effect === "morphing") {
-    const resolved = await resolveUploadedImage(
+  let middleImagePath: string | undefined;
+  let categoryBgPath: string | undefined;
+  try {
+    frontImagePath = await resolveUploadedImage(
       formData,
-      "backImageUrl",
-      "backImage",
+      "frontImageUrl",
+      "frontImage",
       imagePipe,
     );
-    if (!resolved) {
+    if (!frontImagePath) {
       return NextResponse.json(
-        {
-          error:
-            effect === "morphing"
-              ? "Для Morphing нужно второе изображение (крупный герой) — загрузите файл."
-              : "Для эффекта Vario нужна оборотная сторона — загрузите второе изображение.",
-        },
+        { error: "Выберите изображение лицевой стороны (загрузите файл)." },
         { status: 400 }
       );
     }
-    backImagePath = resolved;
-  }
 
-  let middleImagePath: string | undefined;
-  if (effect === "vario") {
-    const midRes = await resolveUploadedImage(
-      formData,
-      "middleImageUrl",
-      "middleImage",
-      imagePipe,
-    );
-    if (midRes) {
-      middleImagePath = midRes;
+    if (effect === "vario" || effect === "morphing") {
+      const resolved = await resolveUploadedImage(
+        formData,
+        "backImageUrl",
+        "backImage",
+        imagePipe,
+      );
+      if (!resolved) {
+        return NextResponse.json(
+          {
+            error:
+              effect === "morphing"
+                ? "Для Morphing нужно второе изображение (крупный герой) — загрузите файл."
+                : "Для эффекта Vario нужна оборотная сторона — загрузите второе изображение.",
+          },
+          { status: 400 }
+        );
+      }
+      backImagePath = resolved;
     }
-  }
 
-  const categoryBgUrlRaw = String(formData.get("categoryBgUrl") ?? "").trim();
-  const categoryBgUpload = formData.get("categoryBgFile");
-  let categoryBgPath: string | undefined;
-  if (categoryBgUrlRaw && isSafeImageUrl(categoryBgUrlRaw)) {
-    categoryBgPath = categoryBgUrlRaw;
-  } else if (categoryBgUpload instanceof File && categoryBgUpload.size > 0) {
-    categoryBgPath = await saveImageFile(
-      categoryBgUpload,
-      category === "TMNT" ? "tmntPoster" : "card34",
+    if (effect === "vario") {
+      const midRes = await resolveUploadedImage(
+        formData,
+        "middleImageUrl",
+        "middleImage",
+        imagePipe,
+      );
+      if (midRes) {
+        middleImagePath = midRes;
+      }
+    }
+
+    const categoryBgUrlRaw = String(formData.get("categoryBgUrl") ?? "").trim();
+    const categoryBgUpload = formData.get("categoryBgFile");
+    if (categoryBgUrlRaw && isSafeImageUrl(categoryBgUrlRaw)) {
+      categoryBgPath = categoryBgUrlRaw;
+    } else if (categoryBgUpload instanceof File && categoryBgUpload.size > 0) {
+      categoryBgPath = await saveImageFile(
+        categoryBgUpload,
+        category === "TMNT" ? "tmntPoster" : "card34",
+      );
+    }
+  } catch (e) {
+    return NextResponse.json(
+      {
+        error:
+          e instanceof Error
+            ? e.message
+            : "Не удалось сохранить изображение на сервере.",
+      },
+      { status: 503 },
     );
   }
 
@@ -706,12 +705,39 @@ export async function PATCH(req: NextRequest) {
   const imagePipe: CardImageSavePipeline =
     category === "TMNT" ? "tmntPoster" : "card34";
 
-  const frontResolved = await resolveUploadedImage(
-    formData,
-    "frontImageUrl",
-    "frontImage",
-    imagePipe,
-  );
+  let frontResolved: string | null;
+  let backResolved: string | null;
+  let middleResolved: string | null;
+  try {
+    frontResolved = await resolveUploadedImage(
+      formData,
+      "frontImageUrl",
+      "frontImage",
+      imagePipe,
+    );
+    backResolved = await resolveUploadedImage(
+      formData,
+      "backImageUrl",
+      "backImage",
+      imagePipe,
+    );
+    middleResolved = await resolveUploadedImage(
+      formData,
+      "middleImageUrl",
+      "middleImage",
+      imagePipe,
+    );
+  } catch (e) {
+    return NextResponse.json(
+      {
+        error:
+          e instanceof Error
+            ? e.message
+            : "Не удалось сохранить изображение на сервере.",
+      },
+      { status: 503 },
+    );
+  }
   if (frontResolved) {
     frontImagePath = frontResolved;
   }
@@ -721,20 +747,6 @@ export async function PATCH(req: NextRequest) {
       { status: 400 }
     );
   }
-
-  const backResolved = await resolveUploadedImage(
-    formData,
-    "backImageUrl",
-    "backImage",
-    imagePipe,
-  );
-
-  const middleResolved = await resolveUploadedImage(
-    formData,
-    "middleImageUrl",
-    "middleImage",
-    imagePipe,
-  );
 
   let backImagePath = "";
   if (effect === "vario" || effect === "morphing") {
@@ -792,7 +804,7 @@ export async function PATCH(req: NextRequest) {
       updated.middleImage = middleResolved;
     } else if (formData.has("middleImageUrl")) {
       const midUrl = String(formData.get("middleImageUrl") ?? "").trim();
-      if (midUrl && isSafeUploadPublicPath(midUrl)) {
+      if (midUrl && isSafeImageUrl(midUrl)) {
         updated.middleImage = midUrl;
       } else if (midUrl === "") {
         delete updated.middleImage;
@@ -807,10 +819,22 @@ export async function PATCH(req: NextRequest) {
   if (categoryBgUrlPatch && isSafeImageUrl(categoryBgUrlPatch)) {
     updated.categoryBg = categoryBgUrlPatch;
   } else if (categoryBgUpload instanceof File && categoryBgUpload.size > 0) {
-    updated.categoryBg = await saveImageFile(
-      categoryBgUpload,
-      category === "TMNT" ? "tmntPoster" : "card34",
-    );
+    try {
+      updated.categoryBg = await saveImageFile(
+        categoryBgUpload,
+        category === "TMNT" ? "tmntPoster" : "card34",
+      );
+    } catch (e) {
+      return NextResponse.json(
+        {
+          error:
+            e instanceof Error
+              ? e.message
+              : "Не удалось сохранить изображение на сервере.",
+        },
+        { status: 503 },
+      );
+    }
   }
 
   updated.inStock = formData.has("inStock")

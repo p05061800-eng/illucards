@@ -45,9 +45,9 @@ export async function imageBufferLogoWebp(buffer: Buffer): Promise<Buffer> {
 }
 
 const PROMO_BANNER_MAX_W = 1920;
-const PROMO_BANNER_MAX_H = 1080;
+const PROMO_BANNER_MAX_H = 2400;
 
-/** Баннеры акций 16:9 в герое — без обрезки до 2:3, вписать в 1920×1080. */
+/** Плашки акций на главной: без кадрирования, вписать в 1920×2400. */
 export async function imageBufferPromoBannerWebp(
   buffer: Buffer
 ): Promise<Buffer> {
@@ -64,7 +64,28 @@ export async function imageBufferPromoBannerWebp(
 /** Проверка пути в public (uploads и вложенные папки, без ..). */
 export function isSafeUploadPublicPath(p: string): boolean {
   const s = p.trim();
-  if (!s.startsWith("/uploads/")) return false;
   if (s.includes("..") || s.includes("\\")) return false;
-  return /^\/uploads\/[a-zA-Z0-9._\/-]+$/.test(s);
+  return (
+    /^\/uploads\/[a-zA-Z0-9._\/-]+$/.test(s) ||
+    /^\/api\/media\/[a-zA-Z0-9._\/-]+$/.test(s)
+  );
+}
+
+export function isSafeVercelBlobUrl(p: string): boolean {
+  try {
+    const url = new URL(p.trim());
+    return (
+      url.protocol === "https:" &&
+      url.hostname.endsWith(".public.blob.vercel-storage.com") &&
+      !url.username &&
+      !url.password &&
+      !url.pathname.includes("..")
+    );
+  } catch {
+    return false;
+  }
+}
+
+export function isSafeImageUrl(p: string): boolean {
+  return isSafeUploadPublicPath(p) || isSafeVercelBlobUrl(p);
 }

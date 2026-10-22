@@ -1,77 +1,86 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Autoplay } from "swiper/modules";
-import { Swiper, SwiperSlide } from "swiper/react";
-import { apiUrl } from "@/app/lib/apiUrl";
+import { ChevronDown } from "lucide-react";
 import {
-  capturePageScrollY,
-  restorePageScrollY,
-} from "@/app/lib/preservePageScroll";
-import type { PromoSlide } from "@/app/lib/promoSlidesJson";
-
-import "swiper/css";
-
-const AUTOPLAY_MS = 6000;
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+  type MouseEvent,
+  type ReactNode,
+} from "react";
+import { apiUrl } from "@/app/lib/apiUrl";
+import { getTelegramOrderBotUsername } from "@/app/lib/telegramOrderBotUsername";
+import { telegramCustomCardOrderUrl } from "@/app/lib/telegramOrderStartPayload";
+import {
+  customOrderForHero,
+  parsePromoHomeConfig,
+  promoCarouselForHero,
+  type PromoCustomOrder,
+  type PromoHomeConfig,
+  type PromoSlide,
+} from "@/app/lib/promoSlidesJson";
 
 type Props = {
   initialSlides?: PromoSlide[];
+  initialConfig?: PromoHomeConfig;
 };
 
-export default function PromoSlider({ initialSlides = [] }: Props) {
-  const [slides, setSlides] = useState<PromoSlide[]>(initialSlides);
-  const [reduceMotion, setReduceMotion] = useState(false);
+function configFromProps(
+  initialConfig?: PromoHomeConfig,
+  initialSlides?: PromoSlide[],
+): PromoHomeConfig {
+  if (initialConfig) return parsePromoHomeConfig(initialConfig);
+  if (initialSlides && initialSlides.length > 0) {
+    return parsePromoHomeConfig({ items: initialSlides });
+  }
+  return { customOrder: { imageUrl: "", href: "" }, items: [] };
+}
 
-  const promoSnap = useMemo(
-    () => JSON.stringify(initialSlides),
-    [initialSlides]
+export default function PromoSlider({
+  initialSlides = [],
+  initialConfig,
+}: Props) {
+  const [config, setConfig] = useState<PromoHomeConfig>(() =>
+    configFromProps(initialConfig, initialSlides),
   );
 
-  /** Новые данные с сервера при навигации / RSC (не даём «залипнуть» только на клиенте). */
+  const promoSnap = useMemo(
+    () => JSON.stringify({ initialConfig, initialSlides }),
+    [initialConfig, initialSlides],
+  );
+
   useEffect(() => {
     try {
-      const next = JSON.parse(promoSnap) as PromoSlide[];
-      if (Array.isArray(next)) setSlides(next);
+      const parsed = JSON.parse(promoSnap) as {
+        initialConfig?: PromoHomeConfig;
+        initialSlides?: PromoSlide[];
+      };
+      setConfig(configFromProps(parsed.initialConfig, parsed.initialSlides));
     } catch {
       /* ignore */
     }
   }, [promoSnap]);
 
   useEffect(() => {
-    if (typeof window === "undefined") return;
-    setReduceMotion(
-      window.matchMedia("(prefers-reduced-motion: reduce)").matches
-    );
-  }, []);
-
-  useEffect(() => {
     let cancelled = false;
     fetch(apiUrl("/api/promo-slides"))
       .then((r) => (r.ok ? r.json() : Promise.reject()))
       .then((data: unknown) => {
-        if (cancelled || !data || typeof data !== "object") return;
-        const items = (data as { items?: unknown }).items;
-        if (!Array.isArray(items)) return;
-        const next: PromoSlide[] = [];
-        for (const x of items) {
-          if (!x || typeof x !== "object") continue;
-          const o = x as Record<string, unknown>;
-          if (typeof o.id !== "string" || typeof o.imageUrl !== "string") continue;
-          next.push({
-            id: o.id,
-            imageUrl: o.imageUrl,
-            href: typeof o.href === "string" ? o.href : "",
-          });
-        }
-        /**
-         * Не затираем непустой витринный список пустым ответом API:
-         * на Vercel без постоянного диска GET часто отдаёт «зашитый при деплое» JSON,
-         * а после гидрации это выглядело как «пропала акция».
-         */
-        setSlides((prev) => {
-          if (next.length > 0) return next;
-          if (prev.length > 0) return prev;
+        if (cancelled) return;
+        const next = parsePromoHomeConfig(data);
+        setConfig((prev) => {
+          const hasArt =
+            next.customOrder.imageUrl.trim().length > 0 ||
+            next.items.some((s) => s.imageUrl.trim().length > 0);
+          if (hasArt) return next;
+          if (
+            prev.customOrder.imageUrl.trim().length > 0 ||
+            prev.items.length > 0
+          ) {
+            return prev;
+          }
           return next;
         });
       })
@@ -81,111 +90,105 @@ export default function PromoSlider({ initialSlides = [] }: Props) {
     };
   }, []);
 
-  if (slides.length === 0) return null;
+  const orderTile = customOrderForHero(config.customOrder);
+  const promos = promoCarouselForHero(config.items);
+  const colCount = (orderTile ? 1 : 0) + (promos.length > 0 ? 1 : 0);
+  if (colCount === 0) return null;
 
-  const single = slides.length === 1;
-  const loopEnabled = slides.length > 3;
-  const autoplayEnabled = !single && !reduceMotion;
-  const pageScrollLockRef = useRef<number | null>(null);
-  const preHeroHeightRef = useRef(0);
-
-  const lockPageScroll = useCallback(() => {
-    pageScrollLockRef.current = capturePageScrollY();
-    const hero = document.querySelector(".hero");
-    preHeroHeightRef.current =
-      hero?.getBoundingClientRect().height ?? preHeroHeightRef.current;
-  }, []);
-
-  const unlockPageScroll = useCallback(() => {
-    const y = pageScrollLockRef.current;
-    pageScrollLockRef.current = null;
-    if (y == null || y < 96) return;
-
-    const hero = document.querySelector(".hero");
-    const newH = hero?.getBoundingClientRect().height ?? preHeroHeightRef.current;
-    const delta = newH - preHeroHeightRef.current;
-    preHeroHeightRef.current = newH;
-
-    restorePageScrollY(y + delta);
-  }, []);
+  const pairClass =
+    colCount === 1
+      ? "hero-promo-pair hero-promo-pair--single"
+      : "hero-promo-pair";
 
   return (
-    <div className="hero-promo-slider relative mt-2 w-full min-w-0 sm:mt-3">
-      <div className="relative w-full min-w-0 overflow-hidden rounded-2xl border border-white/10 bg-zinc-950/50 shadow-[0_8px_32px_rgba(0,0,0,0.35)]">
-        <Swiper
-          modules={[Autoplay]}
-          slidesPerView={1}
-          loop={loopEnabled}
-          speed={520}
-          simulateTouch
-          threshold={12}
-          touchRatio={1}
-          shortSwipes
-          longSwipesRatio={0.35}
-          touchEventsTarget="container"
-          preventInteractionOnTransition
-          onSlideChangeTransitionStart={lockPageScroll}
-          onSlideChangeTransitionEnd={unlockPageScroll}
-          onResize={unlockPageScroll}
-          autoplay={
-            autoplayEnabled
-              ? {
-                  delay: AUTOPLAY_MS,
-                  disableOnInteraction: false,
-                  pauseOnMouseEnter: true,
-                }
-              : false
-          }
-          className="hero-promo-swiper w-full cursor-grab active:cursor-grabbing"
-        >
-          {slides.map((slide, i) => (
-            <SwiperSlide key={slide.id} className="!h-auto">
-              <div className="relative aspect-video w-full bg-zinc-900">
-                <BannerSlide slide={slide} eager={i === 0} />
-              </div>
-            </SwiperSlide>
-          ))}
-        </Swiper>
+    <div className="hero-promo-slider w-full min-w-0">
+      <div className={pairClass}>
+        <div className="hero-promo-pair-grid">
+          {orderTile ? (
+            <PromoColumn title="Карточка на заказ">
+              <StaticPromoTile slide={orderTile} eager />
+            </PromoColumn>
+          ) : null}
+          {promos.length > 0 ? (
+            <PromoColumn title="Акции">
+              <PromoCarousel slides={promos} />
+            </PromoColumn>
+          ) : null}
+        </div>
       </div>
     </div>
   );
 }
 
-function BannerSlide({ slide, eager }: { slide: PromoSlide; eager?: boolean }) {
-  const href = slide.href?.trim();
-  const src = slide.imageUrl?.trim() ?? "";
-  const [loadFailed, setLoadFailed] = useState(false);
-
-  const image = loadFailed || !src ? (
-    <div className="absolute inset-0 flex flex-col items-center justify-center gap-1 bg-zinc-900 px-4 text-center">
-      <span className="text-xs font-medium text-zinc-400">Акция</span>
-      <span className="text-[11px] leading-snug text-zinc-600">
-        Не удалось загрузить баннер. Проверьте файл в админке или загрузите картинку заново.
-      </span>
+function PromoColumn({
+  title,
+  children,
+}: {
+  title: string;
+  children: ReactNode;
+}) {
+  return (
+    <div className="hero-promo-col">
+      <h2 className="hero-promo-col-title">
+        <span className="hero-promo-col-title-text">{title}</span>
+      </h2>
+      {children}
     </div>
-  ) : (
-    // eslint-disable-next-line @next/next/no-img-element -- баннеры из /uploads/: next/image через _next/image часто даёт 404 на проде
-    <img
-      src={src}
-      alt=""
-      className="absolute inset-0 h-full w-full object-cover"
-      loading={eager ? "eager" : "lazy"}
-      decoding="async"
-      onError={() => setLoadFailed(true)}
-    />
   );
+}
 
-  if (!href) {
+function isHttpHref(href: string) {
+  return /^https?:\/\//i.test(href);
+}
+
+function PromoLinkedMedia({
+  src,
+  href,
+  eager,
+  label,
+}: {
+  src: string;
+  href: string;
+  eager?: boolean;
+  label: string;
+}) {
+  const [loadFailed, setLoadFailed] = useState(false);
+  const image =
+    loadFailed || !src ? (
+      <div className="absolute inset-0 flex flex-col items-center justify-center gap-1 bg-zinc-900 px-3 text-center">
+        <span className="text-xs font-medium text-zinc-400">{label}</span>
+        <span className="text-[11px] leading-snug text-zinc-600">
+          Не удалось загрузить изображение.
+        </span>
+      </div>
+    ) : (
+      // eslint-disable-next-line @next/next/no-img-element -- баннеры из /uploads/
+      <img
+        src={src}
+        alt=""
+        className="hero-promo-tile-img"
+        loading={eager ? "eager" : "lazy"}
+        decoding="async"
+        onError={() => setLoadFailed(true)}
+      />
+    );
+
+  const trimmed = href.trim();
+  if (!trimmed) {
     return image;
   }
 
-  if (/^https?:\/\//i.test(href)) {
+  const linkClass =
+    "hero-promo-tile-link hero-promo-tile-hit outline-none focus-visible:ring-2 focus-visible:ring-violet-500/60";
+
+  if (isHttpHref(trimmed)) {
     return (
       <a
-        href={href}
+        href={trimmed}
         target="_blank"
         rel="noopener noreferrer"
-        className="absolute inset-0 z-[1] block outline-none focus-visible:ring-2 focus-visible:ring-violet-500/60"
+        className={linkClass}
+        aria-label={label}
       >
         {image}
       </a>
@@ -193,11 +196,122 @@ function BannerSlide({ slide, eager }: { slide: PromoSlide; eager?: boolean }) {
   }
 
   return (
-    <Link
-      href={href}
-      className="absolute inset-0 z-[1] block outline-none focus-visible:ring-2 focus-visible:ring-violet-500/60"
-    >
+    <Link href={trimmed} className={linkClass} aria-label={label}>
       {image}
     </Link>
+  );
+}
+
+function PromoCtaStack({ examplesHref }: { examplesHref: string }) {
+  const orderHref = telegramCustomCardOrderUrl(getTelegramOrderBotUsername());
+  return (
+    <div className="hero-promo-cta-stack">
+      {examplesHref ? (
+        isHttpHref(examplesHref) ? (
+          <a
+            href={examplesHref}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="hero-promo-cta"
+          >
+            Примеры
+          </a>
+        ) : (
+          <Link href={examplesHref} className="hero-promo-cta">
+            Примеры
+          </Link>
+        )
+      ) : null}
+      <a
+        href={orderHref}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="hero-promo-cta hero-promo-cta--order"
+      >
+        Заказать
+      </a>
+    </div>
+  );
+}
+
+function StaticPromoTile({
+  slide,
+  eager,
+}: {
+  slide: PromoCustomOrder;
+  eager?: boolean;
+}) {
+  return (
+    <div className="hero-promo-tile overflow-hidden rounded-2xl border border-white/10 bg-zinc-950/50 shadow-[0_8px_32px_rgba(0,0,0,0.35)]">
+      <PromoLinkedMedia
+        src={slide.imageUrl}
+        href=""
+        eager={eager}
+        label="Карточка на заказ"
+      />
+      <PromoCtaStack examplesHref={slide.href.trim()} />
+    </div>
+  );
+}
+
+function PromoCarousel({ slides }: { slides: PromoSlide[] }) {
+  const [index, setIndex] = useState(0);
+  const safeIndex = slides.length === 0 ? 0 : index % slides.length;
+
+  useEffect(() => {
+    if (index >= slides.length) setIndex(0);
+  }, [index, slides.length]);
+
+  const next = useCallback(
+    (event: MouseEvent<HTMLButtonElement>) => {
+      event.preventDefault();
+      event.stopPropagation();
+      if (slides.length < 2) return;
+      setIndex((i) => (i + 1) % slides.length);
+    },
+    [slides.length],
+  );
+
+  const hasNext = slides.length > 1;
+
+  return (
+    <div
+      className={
+        hasNext
+          ? "hero-promo-tile hero-promo-carousel has-next overflow-hidden rounded-2xl border border-white/10 bg-zinc-950/50 shadow-[0_8px_32px_rgba(0,0,0,0.35)]"
+          : "hero-promo-tile hero-promo-carousel overflow-hidden rounded-2xl border border-white/10 bg-zinc-950/50 shadow-[0_8px_32px_rgba(0,0,0,0.35)]"
+      }
+      aria-roledescription="carousel"
+      aria-label="Акции"
+    >
+      {slides.map((slide, i) => (
+        <div
+          key={slide.id}
+          className={
+            i === safeIndex
+              ? "hero-promo-carousel-slide is-active"
+              : "hero-promo-carousel-slide"
+          }
+          aria-hidden={i !== safeIndex}
+        >
+          <PromoLinkedMedia
+            src={slide.imageUrl}
+            href={slide.href}
+            eager={i === 0}
+            label={`Акция ${i + 1}`}
+          />
+        </div>
+      ))}
+      {hasNext ? (
+        <button
+          type="button"
+          className="hero-promo-next"
+          aria-label="Следующая акция"
+          onClick={next}
+        >
+          <ChevronDown className="hero-promo-next-icon" aria-hidden />
+        </button>
+      ) : null}
+    </div>
   );
 }

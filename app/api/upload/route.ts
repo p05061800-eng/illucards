@@ -1,7 +1,7 @@
 import { randomUUID } from "crypto";
 import { NextRequest, NextResponse } from "next/server";
-import { put } from "@vercel/blob";
 import { rejectUnlessAdmin } from "@/app/lib/adminSession";
+import { savePublicUpload } from "@/app/lib/durableJson";
 import {
   imageBufferLogoWebp,
   imageBufferPromoBannerWebp,
@@ -9,36 +9,39 @@ import {
   imageBufferToTmntPosterWebp,
 } from "@/app/lib/serverImage";
 
+function isUploadBlob(value: FormDataEntryValue | null): value is File {
+  return (
+    typeof value === "object" &&
+    value !== null &&
+    typeof (value as Blob).arrayBuffer === "function" &&
+    typeof (value as Blob).size === "number"
+  );
+}
+
 export async function POST(req: NextRequest) {
   try {
     const data = await req.formData();
     const file = data.get("file");
 
-    if (!file || !(file instanceof File)) {
-      return NextResponse.json(
-        { error: "no file" },
-        { status: 400 }
-      );
+    if (!isUploadBlob(file) || file.size < 1) {
+      return NextResponse.json({ error: "no file" }, { status: 400 });
     }
 
-    if (file.type === "image/gif") {
+    const mime = "type" in file && typeof file.type === "string" ? file.type : "";
+    if (mime === "image/gif") {
       return NextResponse.json(
         {
           error:
             "GIF не поддерживаются. Загрузите PNG/JPEG/WebP или короткое видео (MP4) для анимации при наведении.",
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
     const purposeRaw = data.get("purpose");
     const purpose =
-      typeof purposeRaw === "string"
-        ? purposeRaw.trim().toLowerCase()
-        : "";
-
-    const useLogoPipeline =
-      purpose === "logo" || purpose === "category";
+      typeof purposeRaw === "string" ? purposeRaw.trim().toLowerCase() : "";
+    const useLogoPipeline = purpose === "logo" || purpose === "category";
     const usePromoPipeline = purpose === "promo";
 
     if (useLogoPipeline || usePromoPipeline) {
@@ -51,12 +54,9 @@ export async function POST(req: NextRequest) {
 
     const cardCategoryRaw = data.get("cardCategory");
     const cardCategory =
-      typeof cardCategoryRaw === "string"
-        ? cardCategoryRaw.trim()
-        : "";
+      typeof cardCategoryRaw === "string" ? cardCategoryRaw.trim() : "";
 
     let processed: Buffer;
-
     try {
       processed = usePromoPipeline
         ? await imageBufferPromoBannerWebp(buffer)
@@ -66,32 +66,39 @@ export async function POST(req: NextRequest) {
             ? await imageBufferToTmntPosterWebp(buffer)
             : await imageBufferTo34Webp(buffer);
     } catch {
-      return NextResponse.json(
-        { error: "Не удалось обработать изображение." },
-        { status: 400 }
-      );
+      if (usePromoPipeline) {
+        try {
+          processed = await imageBufferLogoWebp(buffer);
+        } catch {
+          return NextResponse.json(
+            {
+              error:
+                "Не удалось обработать изображение. Сохраните файл как JPG, PNG или WebP и попробуйте снова.",
+            },
+            { status: 400 },
+          );
+        }
+      } else {
+        return NextResponse.json(
+          { error: "Не удалось обработать изображение." },
+          { status: 400 },
+        );
+      }
     }
 
-    const fileName =
-      `${Date.now()}-${randomUUID().slice(0, 8)}.webp`;
-
-    const blob = await put(fileName, processed, {
-      access: "public",
-      addRandomSuffix: false,
-      contentType: "image/webp",
-      cacheControlMaxAge: 31536000,
-    });
-
-    return NextResponse.json({ url: blob.url });
+    const fileName = `${Date.now()}-${randomUUID().slice(0, 8)}.webp`;
+    const url = await savePublicUpload(fileName, processed, "image/webp");
+    return NextResponse.json({ url });
   } catch (error) {
     console.error("Image upload failed:", error);
-
     return NextResponse.json(
       {
         error:
-          "Не удалось сохранить изображение. Проверьте настройки хранилища.",
+          error instanceof Error
+            ? error.message
+            : "Не удалось сохранить изображение. Проверьте настройки хранилища.",
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

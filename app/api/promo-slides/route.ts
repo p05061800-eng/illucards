@@ -1,11 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { rejectUnlessAdmin } from "@/app/lib/adminSession";
-import { promises as fs } from "fs";
 import path from "path";
 import {
-  normalizePromoSlides,
-  parsePromoSlides,
-  type PromoSlidesFile,
+  normalizePromoHomeForSave,
+  parsePromoHomeConfig,
+  type PromoHomeConfig,
 } from "@/app/lib/promoSlidesJson";
 import {
   DURABLE_JSON_KEYS,
@@ -15,37 +14,32 @@ import {
 
 const filePath = path.join(process.cwd(), "data", "promo-slides.json");
 
-const defaultJson: PromoSlidesFile = { items: [] };
+const defaultJson: PromoHomeConfig = {
+  customOrder: { imageUrl: "", href: "" },
+  items: [],
+};
 
-async function ensureFile() {
-  await fs.mkdir(path.dirname(filePath), { recursive: true });
+async function loadConfig(): Promise<PromoHomeConfig> {
+  const data =
+    (await loadDurableJsonText(DURABLE_JSON_KEYS.promo, filePath)) ??
+    JSON.stringify(defaultJson);
   try {
-    await fs.access(filePath);
+    return parsePromoHomeConfig(JSON.parse(data));
   } catch {
-    await fs.writeFile(
-      filePath,
-      JSON.stringify(defaultJson, null, 2),
-      "utf-8"
-    );
+    return defaultJson;
   }
 }
 
 export async function GET() {
-  const data =
-    (await loadDurableJsonText(DURABLE_JSON_KEYS.promo, filePath)) ??
-    JSON.stringify(defaultJson);
-  const items = parsePromoSlides(JSON.parse(data));
-  return NextResponse.json({ items } satisfies PromoSlidesFile);
+  const config = await loadConfig();
+  return NextResponse.json(config satisfies PromoHomeConfig);
 }
 
 export async function POST(req: NextRequest) {
   const denied = rejectUnlessAdmin(req);
   if (denied) return denied;
   const body = await req.json();
-  const parsed = parsePromoSlides(
-    body && typeof body === "object" && "items" in body ? body : { items: [] }
-  );
-  const normalized = normalizePromoSlides(parsed);
+  const normalized = normalizePromoHomeForSave(body);
   try {
     await saveDurableJsonText(
       DURABLE_JSON_KEYS.promo,
@@ -58,5 +52,5 @@ export async function POST(req: NextRequest) {
       { status: 500 },
     );
   }
-  return NextResponse.json({ ok: true, items: normalized.items });
+  return NextResponse.json({ ok: true, ...normalized });
 }

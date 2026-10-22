@@ -1,5 +1,13 @@
 [
   {
+    "name": "Карточка на заказ",
+    "image": "",
+    "imageFocus": {
+      "x": 50,
+      "y": 50
+    }
+  },
+  {
     "name": "Marvel",
     "image": "/uploads/1775862470555-c10f414f.webp",
     "imageFocus": {
@@ -95,6 +103,32 @@
       "y": 50
     },
     "plateImage": "/uploads/1775867372472-1c6c1f35.webp",
+    "plateImageFocus": {
+      "x": 50,
+      "y": 50
+    }
+  },
+  {
+    "name": "Динамо Минск",
+    "image": "/uploads/1791852378360-f3e1c098.webp",
+    "imageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "plateImage": "/uploads/1791737927167-afa1423e.webp",
+    "plateImageFocus": {
+      "x": 50,
+      "y": 50
+    }
+  },
+  {
+    "name": "Трансформеры Прайм",
+    "image": "/uploads/1791852430059-7fa5f2b7.webp",
+    "imageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "plateImage": "/uploads/1791775825679-084c622f.webp",
     "plateImageFocus": {
       "x": 50,
       "y": 50

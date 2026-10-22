@@ -1,16 +1,26 @@
 import path from "path";
 import sharp from "sharp";
+import { loadDurableUpload } from "@/app/lib/durableJson";
 import { isSafeUploadPublicPath } from "@/app/lib/serverImage";
 
-/** Размеры файла в `public/` по URL вида `/uploads/...`. */
+/** Размеры файла в `public/` или Redis по URL `/uploads/...` и `/api/media/...`. */
 export async function readPublicImageDimensions(
   publicUrl: string,
 ): Promise<{ width: number; height: number } | null> {
   const t = publicUrl?.trim();
   if (!t || !isSafeUploadPublicPath(t)) return null;
-  const fp = path.join(process.cwd(), "public", t.replace(/^\//, ""));
+  let input: string | Buffer = path.join(
+    process.cwd(),
+    "public",
+    t.replace(/^\//, ""),
+  );
+  if (t.startsWith("/api/media/")) {
+    const bytes = await loadDurableUpload(t.slice("/api/media/".length));
+    if (!bytes) return null;
+    input = bytes;
+  }
   try {
-    const m = await sharp(fp).metadata();
+    const m = await sharp(input).metadata();
     if (
       typeof m.width === "number" &&
       typeof m.height === "number" &&

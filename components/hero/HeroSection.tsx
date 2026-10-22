@@ -14,7 +14,7 @@ import {
 } from "react";
 import type { StoredCard } from "@/app/api/cards/route";
 import type { CategoryTile } from "@/app/lib/categoriesJson";
-import type { PromoSlide } from "@/app/lib/promoSlidesJson";
+import type { PromoHomeConfig, PromoSlide } from "@/app/lib/promoSlidesJson";
 import PromoSlider from "@/components/PromoSlider";
 import { apiUrl } from "@/app/lib/apiUrl";
 import { collectionSectionId } from "@/app/lib/collectionAnchor";
@@ -45,8 +45,9 @@ type Props = {
   initialCategories?: CategoryTile[];
   /** Ужать герой по вертикали (главная «в один экран»). */
   viewportCompact?: boolean;
-  /** Акции под категориями — с сервера для SSR без «мигания». */
+  /** Плашки «на заказ» и акции — с сервера для SSR без «мигания». */
   initialPromoSlides?: PromoSlide[];
+  initialPromoConfig?: PromoHomeConfig;
 };
 
 export default function HeroSection({
@@ -55,6 +56,7 @@ export default function HeroSection({
   initialCategories = [],
   viewportCompact = false,
   initialPromoSlides = [],
+  initialPromoConfig,
 }: Props) {
   const router = useRouter();
   const openCardPage = useCallback(
@@ -95,6 +97,60 @@ export default function HeroSection({
       .catch(() => {});
   }, []);
 
+  const catStripRef = useRef<HTMLDivElement>(null);
+  const [catCanScrollStart, setCatCanScrollStart] = useState(false);
+  const [catCanScrollEnd, setCatCanScrollEnd] = useState(true);
+
+  const updateCatStripScroll = useCallback(() => {
+    const el = catStripRef.current;
+    if (!el) {
+      setCatCanScrollStart(false);
+      setCatCanScrollEnd(false);
+      return;
+    }
+    const max = el.scrollWidth - el.clientWidth;
+    const overflow = max > 6;
+    setCatCanScrollStart(overflow && el.scrollLeft > 4);
+    setCatCanScrollEnd(overflow && el.scrollLeft < max - 4);
+  }, []);
+
+  useEffect(() => {
+    const el = catStripRef.current;
+    if (!el) return;
+    const run = () => updateCatStripScroll();
+    run();
+    const raf = requestAnimationFrame(run);
+    el.addEventListener("scroll", run, { passive: true });
+    const ro = new ResizeObserver(run);
+    ro.observe(el);
+    window.addEventListener("resize", run);
+    const imgs = el.querySelectorAll("img");
+    const onImg = () => run();
+    imgs.forEach((img) => {
+      if (!img.complete) img.addEventListener("load", onImg);
+    });
+    return () => {
+      cancelAnimationFrame(raf);
+      el.removeEventListener("scroll", run);
+      ro.disconnect();
+      window.removeEventListener("resize", run);
+      imgs.forEach((img) => img.removeEventListener("load", onImg));
+    };
+  }, [updateCatStripScroll, apiCategories.length]);
+
+  const scrollHeroCategories = useCallback((direction: -1 | 1) => {
+    const el = catStripRef.current;
+    if (!el) return;
+    const max = Math.max(0, el.scrollWidth - el.clientWidth);
+    if (max <= 0) {
+      updateCatStripScroll();
+      return;
+    }
+    const step = Math.max(el.clientWidth * 0.72, 72);
+    el.scrollLeft = Math.min(max, Math.max(0, el.scrollLeft + direction * step));
+    updateCatStripScroll();
+  }, [updateCatStripScroll]);
+
   const autoCategoryName = useMemo(() => {
     if (!apiCategories.length || !cards.length) return null;
     const match = apiCategories.find((cat) =>
@@ -126,7 +182,8 @@ export default function HeroSection({
     [cards],
   );
 
-  const showNoveltiesHeroChrome = allNoveltiesCards.length > 0;
+  const showNoveltiesHeroChrome =
+    userSelectedCategory == null && allNoveltiesCards.length > 0;
 
   const activeBrowseCards = showNoveltiesHeroChrome
     ? allNoveltiesCards
@@ -402,8 +459,28 @@ export default function HeroSection({
                   <div className="hero-wordmark-row min-w-0 w-full shrink-0">
                     <HeroIlluCardsLogo />
                   </div>
-                  <div className="categories hero-categories-outer hero-categories-row relative w-full min-w-0">
-                    <div className="hero-categories hero-categories-strip relative flex min-w-0 w-full justify-start overflow-x-auto overflow-y-visible py-0 scrollbar-hide md:py-0">
+                  <div
+                    className={[
+                      "categories hero-categories-outer hero-categories-row relative w-full min-w-0",
+                      catCanScrollStart ? "is-cat-scrolled" : "",
+                      catCanScrollEnd ? "can-cat-scroll-end" : "",
+                    ]
+                      .filter(Boolean)
+                      .join(" ")}
+                  >
+                    <button
+                      type="button"
+                      className="hero-cat-scroll-btn hero-cat-scroll-btn--prev"
+                      aria-label="Предыдущие категории"
+                      disabled={!catCanScrollStart}
+                      onClick={() => scrollHeroCategories(-1)}
+                    >
+                      <ProductCardNavArrowIcon direction="prev" />
+                    </button>
+                    <div
+                      ref={catStripRef}
+                      className="hero-categories hero-categories-strip relative flex min-w-0 w-full justify-start overflow-x-auto overflow-y-hidden py-0 scrollbar-hide md:py-0"
+                    >
               {apiCategories.map((cat) => {
                 const selected =
                   selectedCategoryName != null &&
@@ -458,10 +535,22 @@ export default function HeroSection({
                 );
               })}
                     </div>
+                    <button
+                      type="button"
+                      className="hero-cat-scroll-btn hero-cat-scroll-btn--next"
+                      aria-label="Следующие категории"
+                      disabled={!catCanScrollEnd}
+                      onClick={() => scrollHeroCategories(1)}
+                    >
+                      <ProductCardNavArrowIcon direction="next" />
+                    </button>
                   </div>
 
                   <div className="hero-promo-desktop-slot min-w-0">
-                    <PromoSlider initialSlides={initialPromoSlides} />
+                    <PromoSlider
+                      initialConfig={initialPromoConfig}
+                      initialSlides={initialPromoSlides}
+                    />
                   </div>
 
                   {noCardsInCategory ? (
@@ -487,7 +576,7 @@ export default function HeroSection({
                     className={[
                       "hero-cell-card hero-card relative z-20 flex w-full min-w-0 max-w-full flex-col justify-start",
                       viewportCompact ? "min-h-0" : "",
-                      showNoveltiesHeroChrome ? "items-start" : "items-end",
+                      showNoveltiesHeroChrome ? "items-start" : "items-center",
                     ]
                       .filter(Boolean)
                       .join(" ")}
@@ -705,12 +794,12 @@ export default function HeroSection({
 
               <div
                 className="hero-mobile-akcii mt-4 w-full min-w-0 shrink-0"
-                aria-label="Акции"
+                aria-label="Карточка на заказ и акции"
               >
-                <h2 className="hero-akcii-mobile-title mb-2.5 text-center text-[0.7rem] font-bold uppercase tracking-[0.14em] text-white/90">
-                  Акции
-                </h2>
-                <PromoSlider initialSlides={initialPromoSlides} />
+                <PromoSlider
+                  initialConfig={initialPromoConfig}
+                  initialSlides={initialPromoSlides}
+                />
               </div>
             </div>
             </div>

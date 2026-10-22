@@ -30,9 +30,25 @@ export type CategoryTile = {
   cardFrameHeight?: number;
 };
 
+export const CUSTOM_ORDER_CATEGORY_NAME = "Карточка на заказ";
+
+/** Плашка «Карточка на заказ» всегда первая в ленте и в коллекции. */
+export function withCustomOrderCategoryFirst(
+  tiles: readonly CategoryTile[],
+): CategoryTile[] {
+  const list = tiles.slice();
+  const idx = list.findIndex(
+    (t) => t.name.trim().toLowerCase() === CUSTOM_ORDER_CATEGORY_NAME.toLowerCase(),
+  );
+  if (idx <= 0) return list;
+  const [item] = list.splice(idx, 1);
+  list.unshift(item);
+  return list;
+}
+
 export function parseCategoriesJson(raw: unknown): CategoryTile[] {
   if (!Array.isArray(raw)) return [];
-  return raw.map((row) => {
+  const parsed = raw.map((row) => {
     const o = row as Record<string, unknown>;
     const tile: CategoryTile = {
       name: typeof o.name === "string" ? o.name : "",
@@ -68,6 +84,7 @@ export function parseCategoriesJson(raw: unknown): CategoryTile[] {
     }
     return tile;
   });
+  return withCustomOrderCategoryFirst(parsed);
 }
 
 /**

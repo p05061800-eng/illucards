@@ -94,7 +94,7 @@ export default function AdminMenu() {
 
       {menu.map((section, i) => (
         <div
-          key={`sec-${i}-${section.title}`}
+          key={`sec-${i}`}
           className="mb-10 rounded-xl border border-white/15 p-4"
         >
           <div className="mb-4 flex flex-wrap items-center gap-3">
@@ -107,8 +107,10 @@ export default function AdminMenu() {
                   return next;
                 });
               }}
-              className="flex-1 border border-white/20 bg-black p-2"
+              className="flex-1 border border-white/20 bg-black p-2 text-base"
               placeholder="Заголовок раздела"
+              autoComplete="off"
+              spellCheck={false}
             />
             <button
               type="button"
@@ -135,7 +137,9 @@ export default function AdminMenu() {
                       return next;
                     });
                   }}
-                  className="border border-white/20 bg-black p-2"
+                  className="border border-white/20 bg-black p-2 text-base"
+                  autoComplete="off"
+                  spellCheck={false}
                 />
                 <input
                   value={item.link}

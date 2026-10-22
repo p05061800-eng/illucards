@@ -1,7 +1,7 @@
 import { randomUUID } from "crypto";
 import { promises as fs } from "fs";
 import path from "path";
-import { isSafeUploadPublicPath } from "@/app/lib/serverImage";
+import { isSafeImageUrl, isSafeVercelBlobUrl } from "@/app/lib/serverImage";
 
 const FILE = path.join(process.cwd(), "data", "user-reviews.json");
 
@@ -62,15 +62,23 @@ export async function writeUserReviews(entries: UserReviewEntry[]): Promise<void
 }
 
 export function isAllowedReviewImageUrl(s: string): boolean {
-  return isSafeUploadPublicPath(s.trim());
+  return isSafeImageUrl(s.trim());
 }
 
 /** Только загруженные в каталог отзывов ролики (`/uploads/videos/…`). */
 export function isAllowedReviewVideoUrl(s: string): boolean {
   const t = s.trim();
-  if (!t.startsWith("/uploads/videos/")) return false;
   if (t.includes("..") || t.includes("\\")) return false;
-  return /^\/uploads\/videos\/[a-zA-Z0-9._-]+$/.test(t);
+  const isVideoExt =
+    t.toLowerCase().endsWith(".mp4") ||
+    t.toLowerCase().endsWith(".webm") ||
+    t.toLowerCase().endsWith(".mov") ||
+    t.toLowerCase().endsWith(".m4v");
+  if (isSafeVercelBlobUrl(t) && isVideoExt) return true;
+  return (
+    /^\/uploads\/videos\/[a-zA-Z0-9._-]+$/.test(t) ||
+    /^\/api\/media\/videos\/[a-zA-Z0-9._-]+$/.test(t)
+  );
 }
 
 export async function appendUserReview(data: {

@@ -178,7 +178,7 @@ export function AdminCategoriesEditor({ variant = "page" }: Props) {
 
       {cats.map((cat, i) => (
         <div
-          key={`${cat.name}-${i}`}
+          key={`category-${i}`}
           className="mb-4 flex flex-col gap-4 border-b border-white/10 pb-6 lg:flex-row lg:flex-wrap lg:items-end"
         >
           <div className="flex flex-col gap-1">
@@ -192,7 +192,9 @@ export function AdminCategoriesEditor({ variant = "page" }: Props) {
                   return next;
                 });
               }}
-              className="min-w-[200px] rounded-lg border border-white/20 bg-black p-2 text-white"
+              autoComplete="off"
+              spellCheck={false}
+              className="min-w-[200px] rounded-lg border border-white/20 bg-black p-2 text-base text-white"
             />
           </div>
 
@@ -222,7 +224,9 @@ export function AdminCategoriesEditor({ variant = "page" }: Props) {
                           return next;
                         });
                       }}
-                      className="min-w-[200px] rounded-lg border border-white/20 bg-black p-2 text-white"
+                      autoComplete="off"
+                      spellCheck={false}
+                      className="min-w-[200px] rounded-lg border border-white/20 bg-black p-2 text-base text-white"
                     />
                   </div>
                 ))}

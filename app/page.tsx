@@ -4,8 +4,8 @@ import { parseCardsJson } from "./lib/cardsJson";
 import type { CategoryTile } from "./lib/categoriesJson";
 import { parseCategoriesJson } from "./lib/categoriesJson";
 import {
-  parsePromoSlides,
-  type PromoSlide,
+  parsePromoHomeConfig,
+  type PromoHomeConfig,
 } from "./lib/promoSlidesJson";
 import {
   DURABLE_JSON_KEYS,
@@ -37,16 +37,24 @@ export default async function Home() {
   const initialHeroCategoryName =
     cards[0]?.category?.trim() ? cards[0].category.trim() : null;
 
-  let initialPromoSlides: PromoSlide[] = [];
+  let initialPromoConfig: PromoHomeConfig = {
+    customOrder: { imageUrl: "", href: "" },
+    items: [],
+  };
   try {
     const promoPath = path.join(process.cwd(), "data", "promo-slides.json");
     const promoRaw = await loadDurableJsonText(
       DURABLE_JSON_KEYS.promo,
       promoPath,
     );
-    initialPromoSlides = promoRaw ? parsePromoSlides(JSON.parse(promoRaw)) : [];
+    initialPromoConfig = promoRaw
+      ? parsePromoHomeConfig(JSON.parse(promoRaw))
+      : initialPromoConfig;
   } catch {
-    initialPromoSlides = [];
+    initialPromoConfig = {
+      customOrder: { imageUrl: "", href: "" },
+      items: [],
+    };
   }
 
   return (
@@ -56,7 +64,7 @@ export default async function Home() {
           cards={cards}
           initialHeroCategoryName={initialHeroCategoryName}
           initialCategories={categoryTiles}
-          initialPromoSlides={initialPromoSlides}
+          initialPromoConfig={initialPromoConfig}
         />
 
         <section

@@ -24,7 +24,7 @@ export function inferNoveltySinceMsFromUploadPath(
   frontImage: unknown,
 ): number | undefined {
   if (typeof frontImage !== "string" || !frontImage.trim()) return undefined;
-  const m = frontImage.match(/\/uploads\/(\d{10,})-/);
+  const m = frontImage.match(/\/(?:uploads|api\/media)\/(\d{10,})-/);
   if (!m) return undefined;
   const n = Number(m[1]);
   if (!Number.isFinite(n) || n <= 0) return undefined;

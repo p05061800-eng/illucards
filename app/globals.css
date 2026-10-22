@@ -625,6 +625,284 @@ body::after {
   overflow-anchor: none;
 }
 
+/* Две плашки акций 3:4 в потоке документа — высота от доступной ширины. */
+.hero-promo-pair {
+  width: 100%;
+  min-width: 0;
+}
+
+.hero-promo-pair-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: clamp(0.5rem, 1.2vw, 0.9rem);
+  width: 100%;
+  align-items: start;
+}
+
+.hero-promo-pair--single .hero-promo-pair-grid {
+  grid-template-columns: minmax(0, 1fr);
+  width: calc((100% - clamp(0.5rem, 1.2vw, 0.9rem)) / 2);
+  max-width: 100%;
+}
+
+.hero-promo-col {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  width: 100%;
+}
+
+.hero-promo-col-title {
+  display: grid;
+  grid-template-columns: minmax(0.4rem, 1fr) auto minmax(0.4rem, 1fr);
+  align-items: center;
+  column-gap: clamp(0.3rem, 1vw, 0.65rem);
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  min-height: clamp(2.45rem, 4.8vw, 3.15rem);
+  margin: 0 0 clamp(0.45rem, 1.15vw, 0.75rem);
+  padding: 0 0.15rem;
+  text-align: center;
+}
+
+.hero-promo-col-title::before,
+.hero-promo-col-title::after {
+  content: "";
+  width: auto;
+  min-width: 0;
+  height: 1px;
+  border-radius: 1px;
+  box-shadow: 0 0 8px rgba(139, 92, 246, 0.4);
+}
+
+.hero-promo-col-title::before {
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(196, 181, 253, 0.85)
+  );
+}
+
+.hero-promo-col-title::after {
+  background: linear-gradient(
+    90deg,
+    rgba(196, 181, 253, 0.85),
+    transparent
+  );
+}
+
+.hero-promo-col-title-text {
+  grid-column: 2;
+  flex: none;
+  min-width: 0;
+  max-width: 100%;
+  font-size: clamp(0.68rem, 0.52rem + 1.05vw, 1.08rem);
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  line-height: 1.15;
+  text-transform: uppercase;
+  white-space: nowrap;
+  text-wrap: nowrap;
+  background: linear-gradient(
+    128deg,
+    #ffffff 0%,
+    #e9d5ff 28%,
+    #c4b5fd 58%,
+    #a78bfa 86%,
+    #8b5cf6 100%
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  filter: drop-shadow(0 0 10px rgba(167, 139, 250, 0.42));
+}
+
+@media (max-width: 768px) {
+  .hero-promo-pair-grid {
+    grid-template-columns: minmax(0, 1fr);
+    gap: clamp(1rem, 4vw, 1.35rem);
+  }
+
+  .hero-promo-pair--single .hero-promo-pair-grid {
+    width: 100%;
+  }
+
+  .hero-promo-col-title {
+    min-height: clamp(1.9rem, 7vw, 2.45rem);
+  }
+
+  .hero-promo-col-title-text {
+    letter-spacing: 0.07em;
+    font-size: clamp(0.66rem, 3.2vw, 0.9rem);
+  }
+}
+
+@media (max-width: 360px) {
+  .hero-promo-col-title-text {
+    white-space: normal;
+    text-wrap: balance;
+    letter-spacing: 0.05em;
+    font-size: clamp(0.6rem, 3.1vw, 0.78rem);
+  }
+}
+
+.hero-promo-tile-link {
+  display: block;
+  width: 100%;
+  min-width: 0;
+}
+
+.hero-promo-tile-hit {
+  position: absolute;
+  inset: 0;
+}
+
+.hero-promo-tile {
+  position: relative;
+  width: 100%;
+  min-width: 0;
+  height: auto;
+  aspect-ratio: 3 / 4;
+}
+
+.hero-promo-tile-img,
+.hero-promo-tile img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+}
+
+.hero-promo-carousel-slide {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(6%);
+  transition:
+    opacity 0.45s ease,
+    transform 0.45s ease;
+}
+
+.hero-promo-carousel-slide.is-active {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateY(0);
+  z-index: 1;
+}
+
+.hero-promo-next {
+  position: absolute;
+  z-index: 3;
+  left: 0;
+  right: 0;
+  bottom: clamp(0.55rem, 3.2%, 0.95rem);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.65rem;
+  height: 2.65rem;
+  margin-inline: auto;
+  padding: 0;
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  border-radius: 999px;
+  background: rgba(8, 6, 18, 0.5);
+  color: #fff;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+  backdrop-filter: blur(8px);
+  cursor: pointer;
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease;
+}
+
+.hero-promo-next:hover,
+.hero-promo-next:focus-visible {
+  background: rgba(24, 16, 48, 0.72);
+  border-color: rgba(196, 181, 253, 0.65);
+  outline: none;
+}
+
+.hero-promo-next:focus-visible {
+  box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.55);
+}
+
+.hero-promo-next-icon {
+  width: 1.25rem;
+  height: 1.25rem;
+}
+
+.hero-promo-cta-stack {
+  position: absolute;
+  z-index: 2;
+  left: 0;
+  right: 0;
+  bottom: clamp(0.7rem, 4%, 1.05rem);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.4rem;
+  width: min(88%, 13rem);
+  margin-inline: auto;
+  pointer-events: none;
+}
+
+.hero-promo-cta {
+  pointer-events: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 2.35rem;
+  padding: 0.4rem 0.75rem;
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  border-radius: 999px;
+  background: rgba(10, 6, 22, 0.72);
+  color: #f8f5ff;
+  font-size: clamp(0.72rem, 1.6vw, 0.86rem);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  text-decoration: none;
+  text-align: center;
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(10px);
+}
+
+.hero-promo-cta--order {
+  border-color: rgba(196, 181, 253, 0.55);
+  background: linear-gradient(
+    180deg,
+    rgba(88, 28, 135, 0.82),
+    rgba(46, 16, 80, 0.88)
+  );
+}
+
+.hero-promo-cta:hover,
+.hero-promo-cta:focus-visible {
+  border-color: rgba(216, 180, 254, 0.85);
+  color: #fff;
+  outline: none;
+}
+
+@media (max-width: 768px) {
+  .hero-promo-cta {
+    min-height: 2.1rem;
+    font-size: 0.68rem;
+    letter-spacing: 0.06em;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-promo-carousel-slide {
+    transition: opacity 0.2s ease;
+    transform: none;
+  }
+}
+
 #collection {
   overflow-anchor: none;
 }
@@ -662,6 +940,10 @@ body::after {
 
 .hero-mobile-akcii {
   display: block;
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  min-width: 0;
   margin-top: clamp(0.85rem, 3.2vw, 1.6rem);
 }
 
@@ -681,6 +963,121 @@ body::after {
 .hero-categories.hero-categories-strip .category-item .category-tile-wrap,
 .hero-categories.hero-categories-strip .category-item .category-tile-img {
   border-radius: inherit;
+}
+
+.hero-categories-row {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  min-width: 0;
+}
+
+.hero-categories-row .hero-categories.hero-categories-strip {
+  flex: 1 1 auto;
+  min-width: 0;
+  touch-action: pan-x;
+}
+
+.hero-categories-row.is-cat-scrolled .hero-categories.hero-categories-strip {
+  padding-inline-start: 2rem;
+}
+
+.hero-categories-row::before,
+.hero-categories-row::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 1.85rem;
+  pointer-events: none;
+  z-index: 2;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.hero-categories-row::before {
+  left: 0;
+  background: linear-gradient(
+    90deg,
+    rgba(8, 6, 18, 0.92),
+    rgba(8, 6, 18, 0)
+  );
+}
+
+.hero-categories-row::after {
+  right: 2.15rem;
+  background: linear-gradient(
+    270deg,
+    rgba(8, 6, 18, 0.88),
+    rgba(8, 6, 18, 0)
+  );
+}
+
+.hero-categories-row.is-cat-scrolled::before,
+.hero-categories-row.can-cat-scroll-end::after {
+  opacity: 1;
+}
+
+.hero-cat-scroll-btn {
+  z-index: 4;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 1.7rem;
+  height: 1.7rem;
+  padding: 0;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 999px;
+  background: rgba(12, 8, 24, 0.88);
+  color: #f5f0ff;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.35);
+  cursor: pointer;
+  transition:
+    opacity 0.2s ease,
+    background 0.2s ease,
+    border-color 0.2s ease;
+}
+
+.hero-cat-scroll-btn svg {
+  width: 0.78rem;
+  height: 0.78rem;
+}
+
+.hero-cat-scroll-btn--prev {
+  position: absolute;
+  left: 0.1rem;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.hero-cat-scroll-btn--next {
+  position: relative;
+}
+
+.hero-cat-scroll-btn:hover,
+.hero-cat-scroll-btn:focus-visible {
+  background: rgba(46, 22, 88, 0.92);
+  border-color: rgba(196, 181, 253, 0.55);
+  outline: none;
+}
+
+.hero-cat-scroll-btn:focus-visible {
+  box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.5);
+}
+
+.hero-cat-scroll-btn--prev:disabled {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  cursor: default;
+}
+
+.hero-cat-scroll-btn--next:disabled {
+  opacity: 0.35;
+  pointer-events: none;
+  cursor: default;
 }
 
 /*
@@ -725,56 +1122,74 @@ body::after {
   align-items: flex-start;
 }
 
-/* ——— MOBILE: категории слева, карточка справа, баннер ниже ——— */
+/* ——— MOBILE: лента категорий сверху, карточка ниже, плашки столбиком ——— */
 @media (max-width: 768px) {
   .hero-product-layout {
-    grid-template-columns: auto minmax(0, 1fr);
-    grid-template-rows: auto auto auto auto;
-    column-gap: clamp(8px, 2.4vw, 14px);
-    row-gap: clamp(0.45rem, 1.8vw, 0.75rem);
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto;
+    column-gap: 0;
+    row-gap: clamp(0.7rem, 2.4vw, 1.05rem);
     align-items: start;
   }
 
   .hero-product-layout > .hero-left-side > .hero-wordmark-row {
-    grid-column: 1 / -1;
+    grid-column: 1;
     grid-row: 1;
     width: 100%;
-    margin-bottom: 12px;
+    margin-bottom: 0;
   }
 
   .hero-product-layout > .hero-left-side > .hero-categories-row,
   .hero-product-layout > .hero-left-side > .categories.hero-categories-outer {
     grid-column: 1;
     grid-row: 2;
-    width: auto;
-    max-width: 4.75rem;
+    width: 100%;
+    max-width: 100%;
     min-width: 0;
     margin: 0;
     padding: 0;
-    justify-self: start;
+    justify-self: stretch;
     align-self: start;
+    position: relative;
+    z-index: 2;
   }
 
   .hero-product-layout .hero-categories.hero-categories-strip {
     display: flex;
-    flex-direction: column;
+    flex-direction: row;
     flex-wrap: nowrap;
     align-items: center;
     justify-content: flex-start;
     gap: 10px;
-    width: auto;
-    overflow-x: visible;
-    overflow-y: visible;
+    width: 100%;
+    max-width: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-x: contain;
+    padding-block: 6px;
+    padding-inline: 2px;
+    scrollbar-width: none;
+  }
+
+  .hero-product-layout .hero-categories.hero-categories-strip::-webkit-scrollbar {
+    display: none;
+  }
+
+  .hero-product-layout .hero-categories .category-item {
+    width: 56px;
+    height: 56px;
+    min-width: 56px;
+    min-height: 56px;
+    max-width: 56px;
+    max-height: 56px;
+    flex-shrink: 0;
   }
 
   .hero-product-layout > .hero-left-side > .hero-promo-desktop-slot {
     display: none;
   }
 
-  /*
-   * Разворачиваем правую колонку: стопка делит ряд с категориями,
-   * название/кнопки идут следующим рядом — высоту ряда задают категории.
-   */
   .hero-product-layout > .hero-right-side,
   .hero-product-layout .hero-cell-card,
   .hero-product-layout .hero-product-section,
@@ -782,33 +1197,46 @@ body::after {
     display: contents;
   }
 
+  .hero-product-layout .hero-novelty-header {
+    grid-column: 1;
+    grid-row: 3;
+    align-self: start;
+    width: 100%;
+  }
+
+  .hero-product-layout .hero-product-info {
+    display: contents;
+  }
+
   .hero-product-layout .hero-cards-stack {
-    grid-column: 2;
-    grid-row: 2;
+    grid-column: 1;
+    grid-row: 4;
     position: relative;
-    align-self: stretch;
+    align-self: start;
     justify-self: stretch;
     width: 100%;
+    max-width: 100%;
     min-width: 0;
-    height: 0;
-    min-height: 100%;
-    max-height: 100%;
+    height: auto;
+    min-height: 0;
+    max-height: none;
     margin: 0;
-    padding-top: 0;
-    padding-bottom: 0;
-    padding-inline-start: clamp(1.85rem, 15vw, 2.75rem);
-    padding-inline-end: clamp(0.4rem, 3vw, 0.7rem);
+    padding-top: clamp(0.1rem, 0.8vw, 0.25rem);
+    padding-bottom: 12px;
+    padding-inline-start: clamp(2.15rem, 8vw, 2.45rem);
+    padding-inline-end: clamp(1.95rem, 7vw, 2.25rem);
     box-sizing: border-box;
+    z-index: auto;
   }
 
   .hero-product-layout .hero-cards-main {
-    position: absolute;
-    inset: 0;
+    position: relative;
+    inset: auto;
     display: flex;
     align-items: flex-start;
     justify-content: center;
-    width: auto;
-    max-width: none;
+    width: 100%;
+    max-width: 100%;
     height: auto;
     max-height: none;
     min-width: 0;
@@ -819,19 +1247,20 @@ body::after {
   .hero-product-layout .hero-cards-main .hero-card-stack-visual,
   .hero-product-layout .hero-cards-main .product-card-page-stack,
   .hero-product-layout .hero-cards-main .hero-stack-max {
-    height: 100%;
-    max-height: 100%;
-    width: auto;
-    max-width: 100%;
+    height: auto;
+    max-height: none;
+    width: 86%;
+    max-width: 86%;
     min-width: 0;
     min-height: 0;
+    margin-inline: auto;
   }
 
   .hero-product-layout .hero-cards-main .hero-card-stack-visual > .relative,
   .hero-product-layout .hero-cards-main .hero-card-stack-visual > .relative > [aria-hidden] {
-    height: 100%;
-    max-height: 100%;
-    width: auto;
+    height: auto;
+    max-height: none;
+    width: 100%;
     max-width: 100%;
   }
 
@@ -840,25 +1269,52 @@ body::after {
   .hero-product-layout .hero-cards-main .card-stack-visual-art .card-side-img {
     object-fit: contain;
     width: 100%;
-    height: 100%;
+    height: auto;
     max-width: 100%;
-    max-height: 100%;
+    max-height: none;
   }
 
-  .hero-product-layout .hero-product-info {
-    grid-column: 1 / -1;
-    grid-row: 3;
-  }
-
-  .hero-product-layout .hero-novelty-header {
-    grid-column: 2;
-    grid-row: 2;
-    align-self: start;
+  .hero-product-layout .hero-product-info .hero-limited-card-footer,
+  .hero-product-layout .hero-product-info .hero-limited-card-footer--novelty,
+  .hero-product-layout .hero-product-info .hero-limited-card-footer--default {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    grid-column: 1;
+    grid-row: 5;
+    position: relative;
+    z-index: 5;
+    isolation: isolate;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    margin: 0;
+    margin-top: calc(-1 * clamp(0.7rem, 2.4vw, 1.05rem));
+    padding-inline: 0.75rem;
+    padding-top: 0;
+    padding-bottom: 0.25rem;
+    box-sizing: border-box;
   }
 
   .hero-product-layout .hero-novelties-thumb-strip-wrap {
-    grid-column: 1 / -1;
-    grid-row: 4;
+    grid-column: 1;
+    grid-row: 6;
+    width: 100%;
+  }
+
+  .hero-product-layout .hero-product-info .hero-novelty-buy-first {
+    grid-column: 1;
+    grid-row: 7;
+    width: auto;
+    max-width: min(100%, 17.5rem);
+    margin-inline: auto;
+    margin-top: 0.15rem;
+  }
+
+  .hero-product-layout > .hero-left-side > .hero-category-empty-msg {
+    grid-column: 1;
+    grid-row: 7;
+    width: 100%;
   }
 
   .hero-promo-desktop-slot {
@@ -894,6 +1350,8 @@ body::after {
     max-width: 100%;
     margin: 0;
     padding: 0;
+    position: relative;
+    z-index: 2;
   }
 
   .hero-product-layout .hero-categories.hero-categories-strip {
@@ -904,7 +1362,15 @@ body::after {
     justify-content: flex-start;
     gap: 12px;
     width: 100%;
-    overflow: visible;
+    max-width: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding-block: 8px;
+    scrollbar-width: none;
+  }
+
+  .hero-product-layout .hero-categories.hero-categories-strip::-webkit-scrollbar {
+    display: none;
   }
 
   .hero-product-layout > .hero-left-side > .hero-promo-desktop-slot,
@@ -914,21 +1380,38 @@ body::after {
     grid-row: 3;
     width: 100%;
     min-width: 0;
+    max-width: 100%;
     align-self: start;
+    justify-self: stretch;
+    position: relative;
+    z-index: 1;
   }
 
   .hero-product-layout > .hero-right-side {
     grid-column: 2;
-    grid-row: 3;
+    /* Совпадает с рядом категорий: карточка не ждёт заголовки/баннеры слева. */
+    grid-row: 2 / 4;
     width: auto;
-    max-width: none;
+    max-width: 100%;
     min-width: 0;
     margin: 0;
+    margin-inline-start: clamp(2.75rem, 3.4vw, 3.5rem);
     padding: 0;
     transform: none;
     justify-self: stretch;
     align-self: start;
-    justify-content: center;
+    justify-content: flex-start;
+    position: relative;
+    z-index: 1;
+    --hero-card-face-max: 21.5rem;
+    --hero-stack-pad-start: clamp(2.5rem, 18%, 4.25rem);
+    --hero-stack-pad-end: clamp(0.85rem, 5%, 1.5rem);
+  }
+
+  .hero-product-layout > .hero-left-side > .hero-category-empty-msg {
+    grid-column: 1 / -1;
+    grid-row: 4;
+    width: 100%;
   }
 
   .hero-mobile-akcii {
@@ -1057,6 +1540,10 @@ body::after {
   .hero-promo-desktop-slot .hero-promo-slider {
     width: 100%;
     margin-top: 0 !important;
+  }
+
+  .hero-promo-desktop-slot .hero-promo-pair {
+    width: 100%;
   }
 
   .hero-left-side .hero-categories.hero-categories-strip {
@@ -1999,11 +2486,11 @@ body::after {
 
 .hero-novelty-card-title {
   margin-bottom: 0;
-  text-align: left;
+  text-align: center;
   flex: 1 1 auto;
   min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  overflow: visible;
+  text-overflow: unset;
   white-space: nowrap;
 }
 
@@ -2163,6 +2650,12 @@ body::after {
   width: 100%;
 }
 
+.hero-product-info .hero-limited-card-titlebar > a {
+  flex: none;
+  width: 100%;
+  text-align: center;
+}
+
 .hero-product-info .hero-limited-card-title,
 .hero-product-info .hero-limited-card-title--novelty {
   width: 100%;
@@ -2184,83 +2677,97 @@ body::after {
 
 @media (max-width: 768px) {
   .hero-cards-main .hero-card-stack-visual .card-side {
-    transform: translate3d(-12%, 11%, 0) rotate(-13deg);
-    transform-origin: 44% 68%;
+    transform: translate3d(-5%, 0, 0) rotate(-8deg);
+    transform-origin: 42% 82%;
   }
 
-  /* BYN/RUB (fixed FAB) не наезжает на ♡/корзину. */
   .hero-product-info {
-    padding-right: 4.75rem;
+    padding-right: 0;
   }
 
-  /*
-   * Высоту ряда задаёт колонка категорий. Стопка заполняет этот ряд
-   * (height:0 + min-height:100%), картинка целиком вписывается contain.
-   */
+  .hero-product-layout .hero-product-info .hero-limited-card-titlebar {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 0.55rem;
+    width: 100%;
+  }
+
+  .hero-product-layout .hero-product-info .hero-limited-card-titlebar::before {
+    content: none;
+  }
+
+  .hero-product-layout .hero-product-info .hero-limited-card-titlebar > a {
+    flex: none;
+    width: 100%;
+    max-width: 100%;
+    text-align: center;
+  }
+
+  .hero-product-layout .hero-product-info .hero-limited-card-title,
+  .hero-product-layout .hero-product-info .hero-limited-card-title--novelty {
+    width: 100%;
+    max-width: 100%;
+    font-size: clamp(1.0625rem, 4.2vw, 1.1875rem);
+    font-weight: 600;
+    line-height: 1.25;
+    letter-spacing: -0.02em;
+    color: #fff;
+    text-align: center;
+    white-space: nowrap;
+    overflow: visible;
+    text-overflow: unset;
+    position: relative;
+    z-index: 1;
+  }
+
+  .hero-product-layout .hero-product-info .hero-limited-card-titlebar > :last-child {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 0.7rem;
+    width: auto;
+    margin: 0;
+  }
+
+  .hero-product-layout .hero-product-info .hero-limited-card-action {
+    width: clamp(2.75rem, 12vw, 3rem);
+    height: clamp(2.75rem, 12vw, 3rem);
+    flex: 0 0 auto;
+  }
+
   .hero-product-layout .hero-cards-stack {
     position: relative;
-    height: 0;
-    min-height: 100%;
-    max-height: 100%;
-    padding-top: 0;
-    padding-bottom: 0;
-    padding-inline-start: clamp(1.85rem, 15vw, 2.75rem);
-    padding-inline-end: clamp(0.35rem, 2.5vw, 0.65rem);
-    padding-bottom: clamp(0.55rem, 3.5vw, 0.9rem);
+    z-index: auto;
+    height: auto;
+    min-height: 0;
+    max-height: none;
+  }
+
+  .hero-product-layout .hero-cards-stack > .hero-novelty-side-arrow {
+    width: 2.5rem;
+    height: 2.5rem;
+    min-width: 2.5rem;
+    min-height: 2.5rem;
+    background: rgba(12, 8, 24, 0.72);
+    backdrop-filter: blur(8px);
+  }
+
+  .hero-product-layout .hero-cards-stack > .hero-novelty-arrow--prev {
+    left: 0.1rem;
+  }
+
+  .hero-product-layout .hero-cards-stack > .hero-novelty-arrow--next {
+    right: 0.1rem;
   }
 
   .hero-product-layout .hero-cards-main {
-    position: absolute;
-    inset: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: auto;
-    max-width: none;
-    height: auto;
-    container-type: size;
-    container-name: hero-cards-slot;
-  }
-
-  .hero-product-layout .hero-cards-main .product-card-page-stack,
-  .hero-product-layout .hero-cards-main .hero-stack-max,
-  .hero-product-layout .hero-cards-main .hero-card-stack-visual {
-    width: auto;
-    max-width: min(100cqw, 82%);
-    height: auto;
-    max-height: min(100cqh, 82%);
-    min-width: 0;
-    min-height: 0;
-    padding: 0;
-  }
-
-  .hero-product-layout .hero-cards-main .hero-card-stack-visual > .relative {
-    width: auto;
-    height: auto;
-    max-width: 100%;
-    max-height: 100%;
-    min-width: 0;
-    min-height: 0;
-  }
-
-  .hero-product-layout .hero-cards-main .hero-card-stack-sizer,
-  .hero-product-layout .hero-cards-main .hero-card-stack-visual > .relative > [aria-hidden] {
-    width: auto;
-    height: auto;
-    max-width: 100%;
-    max-height: 100%;
-    object-fit: contain;
-  }
-
-  .hero-product-layout .hero-cards-main .card-stack-visual-art .card-main,
-  .hero-product-layout .hero-cards-main .card-stack-visual-art .card-main img,
-  .hero-product-layout .hero-cards-main .card-stack-visual-art .card-side-img {
-    object-fit: contain !important;
-    object-position: top center;
+    position: relative;
+    inset: auto;
     width: 100%;
-    height: 100%;
     max-width: 100%;
-    max-height: 100%;
+    height: auto;
   }
 }
 
@@ -2269,27 +2776,91 @@ body::after {
     column-gap: clamp(1.5rem, 3vw, 2.75rem);
   }
 
+  .hero-product-layout .hero-product-stage {
+    gap: clamp(0.7rem, 1.8vw, 1.15rem);
+  }
+
   .hero-product-layout .hero-cards-stack {
-    /* Верх стопки чуть выше ряда категорий; название едет вместе со стопкой. */
-    margin-top: calc(
-      -1 *
-        (
-          clamp(40px, 6vw, 70px) + clamp(0.65rem, 1.4vw, 1.1rem) +
-            clamp(2.1rem, 3.8vw, 2.85rem)
-        )
-    );
+    margin-top: 0;
     padding-top: 0;
-    /* Запас слева под наклон задней карты — peek остаётся в колонке стопки. */
-    padding-inline-start: clamp(3.5rem, 24%, 5rem);
-    padding-inline-end: clamp(0.85rem, 5%, 1.5rem);
+    /* Запас под наклон задней карты и зазор до блока «Акции». */
+    padding-inline-start: var(--hero-stack-pad-start);
+    padding-inline-end: var(--hero-stack-pad-end);
     padding-bottom: clamp(1.5rem, 11%, 2.6rem);
+    box-sizing: border-box;
+    max-width: 100%;
   }
 
   .hero-product-layout .hero-cards-main {
-    width: min(100%, 21.5rem);
+    width: min(100%, var(--hero-card-face-max));
     max-width: 100%;
     margin-inline: 0;
     justify-self: start;
+  }
+
+  .hero-product-layout .hero-cards-stack > .hero-novelty-side-arrow {
+    width: clamp(1.4rem, 3.5vw, 2.05rem);
+    height: clamp(1.4rem, 3.5vw, 2.05rem);
+    min-width: clamp(1.4rem, 3.5vw, 2.05rem);
+    min-height: clamp(1.4rem, 3.5vw, 2.05rem);
+  }
+
+  .hero-product-layout .hero-cards-stack > .hero-novelty-side-arrow svg {
+    width: 0.9rem;
+    height: 0.9rem;
+  }
+
+  .hero-product-layout .hero-cards-stack > .hero-novelty-arrow--prev {
+    left: 0.2rem;
+  }
+
+  .hero-product-layout .hero-cards-stack > .hero-novelty-arrow--next {
+    right: 0.15rem;
+  }
+
+  .hero-product-layout .hero-product-info {
+    box-sizing: border-box;
+    padding-inline-start: var(--hero-stack-pad-start);
+    padding-inline-end: var(--hero-stack-pad-end);
+    align-items: flex-start;
+  }
+
+  .hero-product-layout .hero-right-side .hero-product-info .hero-limited-card-footer,
+  .hero-product-layout .hero-right-side .hero-product-info .hero-limited-card-footer--default,
+  .hero-product-layout .hero-right-side .hero-product-info .hero-limited-card-footer--novelty {
+    width: min(100%, var(--hero-card-face-max));
+    max-width: min(100%, var(--hero-card-face-max));
+    margin-inline: 0;
+  }
+
+  .hero-product-layout .hero-product-info .hero-limited-card-titlebar {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 0.5rem;
+    width: 100%;
+  }
+
+  .hero-product-layout .hero-product-info .hero-limited-card-titlebar::before {
+    content: none;
+  }
+
+  .hero-product-layout .hero-product-info .hero-limited-card-titlebar > a {
+    flex: none;
+    width: 100%;
+    min-width: 0;
+    text-align: center;
+  }
+
+  .hero-product-layout .hero-product-info .hero-limited-card-titlebar > :last-child {
+    justify-self: center;
+    margin-right: 0;
+  }
+
+  .hero-product-layout .hero-product-info .hero-limited-card-action {
+    width: 2.25rem;
+    height: 2.25rem;
   }
 }
 
@@ -2785,10 +3356,15 @@ body::after {
 }
 
 .hero-limited-card-title {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  overflow: visible;
+  text-overflow: unset;
+  white-space: nowrap;
   font-size: clamp(1rem, 0.92rem + 0.6vw, 1.28rem);
-  line-height: 1.08;
+  line-height: 1.15;
   letter-spacing: -0.02em;
-  text-wrap: balance;
   text-shadow:
     0 1px 0 rgba(255, 255, 255, 0.12),
     0 10px 24px rgba(0, 0, 0, 0.42);
@@ -2926,7 +3502,7 @@ body::after {
 }
 
 /*
- * Мобильный герой (≤768): вертикальные категории слева, карточка справа.
+ * Мобильный герой (≤768): лента категорий сверху, карточка и акции столбиком.
  * Без * { position: static } — сохраняются стрелки и 3D.
  */
 @media (max-width: 768px) {
@@ -2950,7 +3526,7 @@ body::after {
     width: 100%;
   }
 
-  /* Сверху логотип; слева вертикальные категории, справа карточка. */
+  /* Сверху логотип; затем горизонтальная лента категорий, ниже карточка. */
   .hero-main-desktop {
     margin-top: 0;
     padding-left: max(0px, env(safe-area-inset-left, 0px));
@@ -2966,8 +3542,8 @@ body::after {
   }
 
   .hero-left-side > .categories.hero-categories-outer {
-    width: auto;
-    max-width: 4.75rem;
+    width: 100%;
+    max-width: 100%;
     min-width: 0;
     margin: 0;
     padding: 0;
@@ -2979,16 +3555,20 @@ body::after {
 
   .hero-left-side .hero-categories.hero-categories-strip {
     display: flex;
-    flex-direction: column;
+    flex-direction: row;
     flex-wrap: nowrap;
     align-items: center;
     justify-content: flex-start;
     gap: 10px;
-    width: auto;
+    width: 100%;
+    max-width: 100%;
     min-width: 0;
-    overflow-x: visible;
-    overflow-y: visible;
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-x: contain;
     padding-bottom: 0;
+    scrollbar-width: none;
   }
 
   .hero-left-side .hero-categories.hero-categories-strip::-webkit-scrollbar {
@@ -3013,7 +3593,7 @@ body::after {
     max-width: 56px;
     max-height: 56px;
     border-radius: inherit;
-    object-fit: cover;
+    object-fit: contain;
   }
 
   .hero-left-side > .hero-category-empty-msg {
@@ -3163,6 +3743,10 @@ body::after {
 
   .hero-mobile-akcii .hero-promo-slider {
     margin-top: 0;
+  }
+
+  .hero-mobile-akcii .hero-promo-pair--single .hero-promo-pair-grid {
+    width: 100%;
   }
 }
 
@@ -3590,8 +4174,8 @@ body::after {
   .hero-product-layout .hero-cards-main .hero-card-stack-visual .card-side,
   .hero-product-layout .hero-cards-main .hero-card-stack-visual.hero-stack-catalog-diagonal .card-side,
   .hero-product-layout .hero-right-side--novelty .hero-card-stack-visual .card-side {
-    transform: translate3d(-12%, 11%, 0) rotate(-13deg);
-    transform-origin: 44% 68%;
+    transform: translate3d(-5%, 0, 0) rotate(-8deg);
+    transform-origin: 42% 82%;
   }
 }
 

@@ -11,6 +11,14 @@ const nextConfig: NextConfig = {
   env: {
     NEXT_PUBLIC_APP_BUILD_ID: nextPublicAppBuildId,
   },
+  images: {
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "*.public.blob.vercel-storage.com",
+      },
+    ],
+  },
   turbopack: {},
   /** Меньше модулей в бандле при импорте из barrel-пакетов (легче dev/build). */
   experimental: {

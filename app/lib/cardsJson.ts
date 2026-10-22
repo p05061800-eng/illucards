@@ -19,7 +19,11 @@ import {
   withoutExpiredNovelty,
 } from "@/app/lib/noveltyExpiry";
 import { parseImageFocus } from "@/app/lib/imageFocus";
-import { isSafeUploadPublicPath } from "@/app/lib/serverImage";
+import {
+  isSafeImageUrl,
+  isSafeUploadPublicPath,
+  isSafeVercelBlobUrl,
+} from "@/app/lib/serverImage";
 
 const DEFAULT_STATS: CardStats = {
   power: 50,
@@ -85,13 +89,16 @@ function parseOptionalPriceRub(raw: unknown): number | undefined {
 
 function isSafeFrontHoverMotionPath(p: string): boolean {
   const t = p.trim().toLowerCase();
-  if (!isSafeUploadPublicPath(p)) return false;
-  if (!t.startsWith("/uploads/videos/")) return false;
-  return (
+  const isVideoExt =
     t.endsWith(".mp4") ||
     t.endsWith(".webm") ||
     t.endsWith(".mov") ||
-    t.endsWith(".m4v")
+    t.endsWith(".m4v");
+  if (!isVideoExt) return false;
+  if (isSafeVercelBlobUrl(p)) return true;
+  if (!isSafeUploadPublicPath(p)) return false;
+  return (
+    t.startsWith("/uploads/videos/") || t.startsWith("/api/media/videos/")
   );
 }
 
@@ -177,7 +184,7 @@ function parseReviews(raw: unknown): CardReview[] | undefined {
     if (Array.isArray(o.images)) {
       for (const u of o.images) {
         const s = String(u).trim();
-        if (s && isSafeUploadPublicPath(s)) images.push(s);
+        if (s && isSafeImageUrl(s)) images.push(s);
       }
     }
     const videoRaw = typeof o.video === "string" ? o.video.trim() : "";

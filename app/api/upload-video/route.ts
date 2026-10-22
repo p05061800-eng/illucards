@@ -1,10 +1,7 @@
 import { randomUUID } from "crypto";
 import { NextResponse } from "next/server";
-import { promises as fs } from "fs";
-import path from "path";
+import { savePublicUpload } from "@/app/lib/durableJson";
 import { tryTranscodeToTmntPosterMp4 } from "@/app/lib/tmntHoverVideo";
-
-const UPLOAD_DIR = path.join(process.cwd(), "public", "uploads", "videos");
 
 const MIME_TO_EXT = new Map<string, string>([
   ["video/mp4", ".mp4"],
@@ -85,13 +82,28 @@ export async function POST(req: Request) {
     }
   }
 
-  const name = `${randomUUID()}${outExt}`;
-  await fs.mkdir(UPLOAD_DIR, { recursive: true });
-  await fs.writeFile(path.join(UPLOAD_DIR, name), outBuffer);
-
-  const url = `/uploads/videos/${name}`;
-  return NextResponse.json({
-    url,
-    ...(cardCategory === "TMNT" ? { transcoded } : {}),
-  });
+  const name = `videos/${randomUUID()}${outExt}`;
+  const videoType =
+    outExt === ".webm"
+      ? "video/webm"
+      : outExt === ".mov"
+        ? "video/quicktime"
+        : "video/mp4";
+  try {
+    const url = await savePublicUpload(name, outBuffer, videoType);
+    return NextResponse.json({
+      url,
+      ...(cardCategory === "TMNT" ? { transcoded } : {}),
+    });
+  } catch (e) {
+    return NextResponse.json(
+      {
+        error:
+          e instanceof Error
+            ? e.message
+            : "Не удалось сохранить видео на сервере. На сайте Vercel короткое видео часто не помещается в Redis — карточка без видео при наведении сохранится.",
+      },
+      { status: 503 },
+    );
+  }
 }

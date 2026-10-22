@@ -15,7 +15,7 @@ export default function AdminPromoPage() {
         aria-hidden
       />
       <div className="relative z-10 p-8 md:p-12">
-        <div className="mx-auto max-w-3xl">
+        <div className="mx-auto max-w-5xl">
           <div className="mb-10 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <h1 className="text-3xl font-bold tracking-tight md:text-4xl">

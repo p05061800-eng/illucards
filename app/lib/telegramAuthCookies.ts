@@ -13,8 +13,10 @@ export function isHttpsRequest(request: NextRequest): boolean {
 /** Общий домен cookie для illucards.by и www.illucards.by */
 export function rootCookieDomainFromHost(host: string | null | undefined): string | undefined {
   if (!host) return undefined;
-  const h = host.split(":")[0]?.trim().toLowerCase() ?? "";
-  if (h === "illucards.by" || h === "www.illucards.by") return ".illucards.by";
+  const h = host.split(",")[0]?.split(":")[0]?.trim().toLowerCase() ?? "";
+  if (h === "illucards.by" || h === "www.illucards.by" || h.endsWith(".illucards.by")) {
+    return ".illucards.by";
+  }
   return undefined;
 }
 

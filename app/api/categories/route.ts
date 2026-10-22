@@ -64,7 +64,12 @@ export async function GET() {
 export async function POST(req: NextRequest) {
   const denied = rejectUnlessAdmin(req);
   if (denied) return denied;
-  const body = await req.json();
+  let body: unknown;
+  try {
+    body = await req.json();
+  } catch {
+    return NextResponse.json({ error: "Некорректный JSON." }, { status: 400 });
+  }
   const parsed = parseCategoriesJson(body);
   try {
     await saveDurableJsonText(

@@ -9,7 +9,7 @@ import {
   DEFAULT_IMAGE_FOCUS,
 } from "@/app/lib/imageFocus";
 import { useCategoryFramesRefresh } from "@/app/context/CategoryFramesContext";
-import { adminFetch } from "@/app/lib/adminFetch";
+import { adminFetch, readAdminError } from "@/app/lib/adminFetch";
 import {
   defaultTmntSubcollectionsForEditor,
   ensureTmntSubcollectionsOnTile,
@@ -64,11 +64,13 @@ export function AdminCategoriesEditor({ variant = "page" }: Props) {
         body: JSON.stringify(cats),
       });
       if (!res.ok) {
-        window.alert("Не удалось сохранить.");
+        window.alert(await readAdminError(res));
         return;
       }
       refreshCategoryFrames();
       window.alert("Сохранено");
+    } catch {
+      window.alert("Сеть оборвалась при сохранении. Откройте https://www.illucards.by/admin и попробуйте снова.");
     } finally {
       setSaving(false);
     }

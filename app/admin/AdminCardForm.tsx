@@ -26,6 +26,7 @@ import {
 import { useIntrinsicImageAspect } from "../lib/useIntrinsicImageAspect";
 import { adminFetch } from "../lib/adminFetch";
 import { isFrontHoverVideoUrl } from "../lib/frontHoverMotionUrl";
+import { CUSTOM_ORDER_CATEGORY_NAME } from "../lib/categoriesJson";
 
 type AdminCardFormProps = {
   /** Каталог — для порядка в категории при добавлении карточки. */
@@ -33,6 +34,8 @@ type AdminCardFormProps = {
   editingCard?: StoredCard | null;
   onCancelEdit?: () => void;
   onSuccess?: () => void;
+  /** Категория фиксирована (плашка «Карточка на заказ»). */
+  forcedCategory?: string;
 };
 
 async function uploadImageFile(
@@ -94,13 +97,16 @@ export function AdminCardForm({
   editingCard = null,
   onCancelEdit,
   onSuccess,
+  forcedCategory,
 }: AdminCardFormProps) {
   const isEdit = Boolean(editingCard);
   const categoryTiles = useCategoryTiles();
   const [categoryOrderInput, setCategoryOrderInput] = useState("");
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
-  const [category, setCategory] = useState<string>("Marvel");
+  const [category, setCategory] = useState<string>(
+    forcedCategory?.trim() || "Marvel",
+  );
   const [tmntCollection, setTmntCollection] = useState<TmntCollectionId>(
     TMNT_DEFAULT_COLLECTION_ID,
   );
@@ -151,6 +157,9 @@ export function AdminCardForm({
       const n = c.category?.trim();
       if (n && !merged.includes(n)) merged.push(n);
     }
+    if (!merged.includes(CUSTOM_ORDER_CATEGORY_NAME)) {
+      merged.unshift(CUSTOM_ORDER_CATEGORY_NAME);
+    }
     return merged;
   }, [categoryTiles, allCards]);
 
@@ -166,6 +175,7 @@ export function AdminCardForm({
       setBackFocus(DEFAULT_IMAGE_FOCUS);
       setCategoryBgFocus(DEFAULT_IMAGE_FOCUS);
       setSelectedRarities(["limited"]);
+      if (forcedCategory?.trim()) setCategory(forcedCategory.trim());
       return;
     }
     setTitle(editingCard.title ?? "");
@@ -173,7 +183,11 @@ export function AdminCardForm({
     const cat = editingCard.category?.trim() ?? "";
     const catOk = categoryOptions.some((name) => name === cat);
     setCategory(
-      catOk && cat ? cat : categoryOptions[0] ?? TMNT_PARENT_CATEGORY,
+      forcedCategory?.trim()
+        ? forcedCategory.trim()
+        : catOk && cat
+          ? cat
+          : categoryOptions[0] ?? TMNT_PARENT_CATEGORY,
     );
     setTmntCollection(
       cat === TMNT_PARENT_CATEGORY
@@ -229,7 +243,7 @@ export function AdminCardForm({
     );
     setStatus("idle");
     setMessage("");
-  }, [editingCard, categoryOptions]);
+  }, [editingCard, categoryOptions, forcedCategory]);
 
   useEffect(() => {
     if (editingCard) return;
@@ -431,7 +445,7 @@ export function AdminCardForm({
     }
     fd.set("title", title);
     fd.set("description", description);
-    fd.set("category", category);
+    fd.set("category", forcedCategory?.trim() || category);
     if (category === TMNT_PARENT_CATEGORY) {
       fd.set("subcategory", tmntCollection);
     }
@@ -492,7 +506,11 @@ export function AdminCardForm({
       if (!isEdit) {
         setTitle("");
         setDescription("");
-        setCategory(categoryOptions[0] ?? TMNT_PARENT_CATEGORY);
+        setCategory(
+          forcedCategory?.trim() ||
+            categoryOptions[0] ||
+            TMNT_PARENT_CATEGORY,
+        );
         setTmntCollection(TMNT_DEFAULT_COLLECTION_ID);
         setCategoryBgUrl(null);
         setEffect("3d-horizontal");
@@ -571,14 +589,17 @@ export function AdminCardForm({
         <label htmlFor="category" className={fieldLabelClass}>
           Категория
           <span className="mt-0.5 block text-[11px] font-normal leading-snug text-zinc-500">
-            Превью — в пропорциях загруженного лица (как на витрине).
+            {category === CUSTOM_ORDER_CATEGORY_NAME
+              ? "Эти карточки показываются в плашке «Карточка на заказ» на главной."
+              : "Превью — в пропорциях загруженного лица (как на витрине)."}
           </span>
         </label>
         <select
           id="category"
           name="category"
-          value={category}
+          value={forcedCategory?.trim() || category}
           onChange={(e) => setCategory(e.target.value)}
+          disabled={Boolean(forcedCategory)}
           className={selectClass}
         >
           {categoryOptions.map((name) => (

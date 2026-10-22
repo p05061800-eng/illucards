@@ -17,8 +17,6 @@ import type { StoredCard } from "@/app/api/cards/route";
 import { apiUrl } from "@/app/lib/apiUrl";
 import { buildCustomOrderHeroCards } from "@/app/lib/customOrderHeroCarousel";
 import { ultraOrHeroBgUrl } from "@/app/lib/cardUltraBg";
-import { getTelegramOrderBotUsername } from "@/app/lib/telegramOrderBotUsername";
-import { telegramCustomCardOrderUrl } from "@/app/lib/telegramOrderStartPayload";
 import {
   customOrderForHero,
   parsePromoHomeConfig,
@@ -221,7 +219,6 @@ function PromoLinkedMedia({
 }
 
 function PromoCtaStack({ examplesHref }: { examplesHref: string }) {
-  const orderHref = telegramCustomCardOrderUrl(getTelegramOrderBotUsername());
   return (
     <div className="hero-promo-cta-stack">
       {examplesHref ? (
@@ -240,14 +237,12 @@ function PromoCtaStack({ examplesHref }: { examplesHref: string }) {
           </Link>
         )
       ) : null}
-      <a
-        href={orderHref}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="hero-promo-cta hero-promo-cta--order"
+      <span
+        className="hero-promo-cta hero-promo-cta--coming-soon"
+        aria-disabled="true"
       >
-        Заказать
-      </a>
+        (в разработке)
+      </span>
     </div>
   );
 }
@@ -340,7 +335,7 @@ function CustomOrderCarousel({
 
   return (
     <div
-      className="hero-promo-tile hero-custom-order-tile overflow-hidden rounded-2xl border border-white/10 bg-zinc-950/50 shadow-[0_8px_32px_rgba(0,0,0,0.35)]"
+      className="hero-promo-tile hero-custom-order-tile"
       aria-roledescription="carousel"
       aria-label="Карточка на заказ"
     >
@@ -352,58 +347,61 @@ function CustomOrderCarousel({
       >
         {activeCard ? (
           <div key={activeCard.id} className="hero-custom-order-fill">
-            <CardStackVisual
-              card={activeCard}
-              ultraBgUrl={ultraOrHeroBgUrl(activeCard)}
-              catalogStack
-              hideUltraLayer
-              navigationTapSafe
-              rootClassName="relative h-full w-full max-w-none overflow-hidden rounded-2xl"
-            />
+            <div className="hero-custom-order-frame">
+              <div className="hero-custom-order-art">
+                <CardStackVisual
+                  card={activeCard}
+                  ultraBgUrl={ultraOrHeroBgUrl(activeCard)}
+                  catalogStack
+                  hideUltraLayer
+                  navigationTapSafe
+                  rootClassName="relative h-full w-full max-w-none rounded-2xl bg-transparent"
+                />
+              </div>
+              <button
+                type="button"
+                className="hero-custom-order-arrow hero-custom-order-arrow--prev"
+                aria-label="Предыдущая карточка на заказ"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  step(-1);
+                }}
+                onKeyDown={onArrowKeyDown}
+              >
+                <ProductCardNavArrowIcon direction="prev" />
+              </button>
+              <button
+                type="button"
+                className="hero-custom-order-arrow hero-custom-order-arrow--next"
+                aria-label="Следующая карточка на заказ"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  step(1);
+                }}
+                onKeyDown={onArrowKeyDown}
+              >
+                <ProductCardNavArrowIcon direction="next" />
+              </button>
+            </div>
           </div>
         ) : (
           <div className="hero-custom-order-fill">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={fallbackImageUrl}
-              alt=""
-              className="hero-custom-order-fallback-img"
-              draggable={false}
-            />
+            <div className="hero-custom-order-frame">
+              <div className="hero-custom-order-art">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={fallbackImageUrl}
+                  alt=""
+                  className="hero-custom-order-fallback-img"
+                  draggable={false}
+                />
+              </div>
+            </div>
           </div>
         )}
       </div>
-
-      {canCycle ? (
-        <>
-          <button
-            type="button"
-            className="hero-custom-order-arrow hero-custom-order-arrow--prev"
-            aria-label="Предыдущая карточка на заказ"
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              step(-1);
-            }}
-            onKeyDown={onArrowKeyDown}
-          >
-            <ProductCardNavArrowIcon direction="prev" />
-          </button>
-          <button
-            type="button"
-            className="hero-custom-order-arrow hero-custom-order-arrow--next"
-            aria-label="Следующая карточка на заказ"
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              step(1);
-            }}
-            onKeyDown={onArrowKeyDown}
-          >
-            <ProductCardNavArrowIcon direction="next" />
-          </button>
-        </>
-      ) : null}
 
       {canCycle ? (
         n <= 8 ? (

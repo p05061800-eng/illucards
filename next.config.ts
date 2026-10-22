@@ -78,6 +78,12 @@ const nextConfig: NextConfig = {
         destination: "/",
         permanent: false,
       },
+      {
+        source: "/:path*",
+        has: [{ type: "host", value: "illucards.by" }],
+        destination: "https://www.illucards.by/:path*",
+        permanent: true,
+      },
     ];
   },
 };

@@ -7,7 +7,7 @@ import {
   SOCIAL_NETWORK_LABELS,
   SOCIAL_NETWORK_ORDER,
 } from "@/app/lib/socialLinksJson";
-import { adminFetch } from "@/app/lib/adminFetch";
+import { adminFetch, readAdminError } from "@/app/lib/adminFetch";
 
 export function AdminSocialLinksEditor() {
   const [config, setConfig] = useState<SocialLinksConfig>(
@@ -50,7 +50,7 @@ export function AdminSocialLinksEditor() {
         body: JSON.stringify(config),
       });
       if (!res.ok) {
-        window.alert("Не удалось сохранить.");
+        window.alert(await readAdminError(res));
         return;
       }
       window.alert("Сохранено");

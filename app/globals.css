@@ -883,6 +883,17 @@ body::after {
   );
 }
 
+.hero-promo-cta--coming-soon {
+  pointer-events: none;
+  cursor: default;
+  text-transform: none;
+  letter-spacing: 0.04em;
+  opacity: 0.78;
+  border-color: rgba(255, 255, 255, 0.18);
+  background: rgba(18, 12, 32, 0.62);
+  color: rgba(248, 245, 255, 0.78);
+}
+
 .hero-promo-cta:hover,
 .hero-promo-cta:focus-visible {
   border-color: rgba(216, 180, 254, 0.85);
@@ -890,16 +901,28 @@ body::after {
   outline: none;
 }
 
-/* Левая плашка: одна карточка каталога (Vario) на всю 3:4 площадь. */
+.hero-promo-cta--coming-soon:hover,
+.hero-promo-cta--coming-soon:focus-visible {
+  border-color: rgba(255, 255, 255, 0.18);
+  color: rgba(248, 245, 255, 0.78);
+}
+
+/*
+ * Слот как у акций (3:4, та же высота колонки).
+ * Сама картинка — 2:3 на всю высоту слота, по центру: без боковых полей и без обрезки.
+ */
 .hero-custom-order-tile {
   isolation: isolate;
-  overflow: hidden;
+  overflow: visible;
+  background: transparent !important;
+  border-color: transparent !important;
+  box-shadow: none !important;
 }
 
 .hero-custom-order-stage {
   position: absolute;
   inset: 0;
-  overflow: hidden;
+  overflow: visible;
   border-radius: inherit;
   touch-action: pan-y;
   user-select: none;
@@ -907,10 +930,34 @@ body::after {
 
 .hero-custom-order-fill {
   position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
+  inset: 0 0 3.15rem;
+  display: block;
+  width: auto;
+  height: auto;
+  overflow: visible;
   animation: hero-custom-order-in 0.4s ease;
+}
+
+.hero-custom-order-frame {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  width: auto;
+  height: 100%;
+  max-width: 100%;
+  aspect-ratio: 2 / 3;
+  transform: translateX(-50%);
+}
+
+.hero-custom-order-art {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  border-radius: 1rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: #161022;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35);
 }
 
 @keyframes hero-custom-order-in {
@@ -922,9 +969,9 @@ body::after {
   }
 }
 
-.hero-custom-order-fill .illucards-card,
-.hero-custom-order-fill .catalog-card-stack,
-.hero-custom-order-fill .card-stack-visual-art {
+.hero-custom-order-art .illucards-card,
+.hero-custom-order-art .catalog-card-stack,
+.hero-custom-order-art .card-stack-visual-art {
   position: absolute;
   inset: 0;
   width: 100% !important;
@@ -935,32 +982,32 @@ body::after {
   overflow: hidden;
 }
 
-.hero-custom-order-fill .relative.block,
-.hero-custom-order-fill .card-container,
-.hero-custom-order-fill .card-face-lenticular-thick,
-.hero-custom-order-fill .card-main,
-.hero-custom-order-fill .card-vario-front,
-.hero-custom-order-fill .card-vario-back,
-.hero-custom-order-fill .card-vario-middle {
+.hero-custom-order-art .relative.block,
+.hero-custom-order-art .card-container,
+.hero-custom-order-art .card-face-lenticular-thick,
+.hero-custom-order-art .card-main,
+.hero-custom-order-art .card-vario-front,
+.hero-custom-order-art .card-vario-back,
+.hero-custom-order-art .card-vario-middle {
   position: absolute;
   inset: 0;
   width: 100% !important;
   height: 100% !important;
   max-width: none !important;
   max-height: none !important;
+  overflow: hidden;
 }
 
-.hero-custom-order-fill .hero-card-stack-sizer {
+.hero-custom-order-art .hero-card-stack-sizer {
   position: absolute;
   inset: 0;
   width: 100% !important;
   height: 100% !important;
-  object-fit: cover;
+  object-fit: contain !important;
   opacity: 0;
 }
 
-.hero-custom-order-tile .hero-custom-order-fill .card-main img,
-.hero-custom-order-tile .hero-custom-order-fill .card-side-img,
+.hero-custom-order-tile .hero-custom-order-art img,
 .hero-custom-order-fallback-img {
   position: absolute !important;
   inset: 0 !important;
@@ -968,13 +1015,14 @@ body::after {
   height: 100% !important;
   max-width: none !important;
   max-height: none !important;
-  object-fit: cover !important;
-  object-position: center;
+  object-fit: contain !important;
+  object-position: center center;
+  transform: none !important;
   background: transparent !important;
 }
 
-.hero-custom-order-fill .card-face-lenticular-thick,
-.hero-custom-order-fill .card-main {
+.hero-custom-order-art .card-face-lenticular-thick,
+.hero-custom-order-art .card-main {
   background: transparent !important;
 }
 
@@ -987,7 +1035,7 @@ body::after {
 .hero-custom-order-arrow {
   position: absolute;
   z-index: 5;
-  top: 42%;
+  top: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1008,11 +1056,11 @@ body::after {
 }
 
 .hero-custom-order-arrow--prev {
-  left: 0.35rem;
+  left: 0.4rem;
 }
 
 .hero-custom-order-arrow--next {
-  right: 0.35rem;
+  right: 0.4rem;
 }
 
 .hero-custom-order-arrow:hover,
@@ -1072,6 +1120,8 @@ body::after {
 
 .hero-custom-order-tile .hero-promo-cta-stack {
   z-index: 6;
+  bottom: 0.2rem;
+  width: min(12.5rem, 88%);
 }
 
 @media (max-width: 768px) {
@@ -2809,14 +2859,32 @@ body::after {
   background: rgba(12, 8, 24, 0.82);
   border: 1px solid rgba(255, 255, 255, 0.28);
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  --hero-novelty-arrow-gap: 0.42rem;
+  --hero-novelty-arrow-shift: calc(
+    clamp(2.35rem, 7vw, 2.85rem) + var(--hero-novelty-arrow-gap)
+  );
 }
 
 .hero-cards-stack > .hero-novelty-arrow--prev {
-  left: 0;
+  left: clamp(
+    0.12rem,
+    calc(
+      50% - var(--hero-card-face-max, 86%) / 2 - var(--hero-novelty-arrow-shift)
+    ),
+    calc(50% - 2.4rem)
+  );
+  right: auto;
 }
 
 .hero-cards-stack > .hero-novelty-arrow--next {
-  right: 0;
+  left: auto;
+  right: clamp(
+    0.12rem,
+    calc(
+      50% - var(--hero-card-face-max, 86%) / 2 - var(--hero-novelty-arrow-shift)
+    ),
+    calc(50% - 2.4rem)
+  );
 }
 
 .hero-cards-main {
@@ -2994,14 +3062,7 @@ body::after {
     min-height: 2.5rem;
     background: rgba(12, 8, 24, 0.72);
     backdrop-filter: blur(8px);
-  }
-
-  .hero-product-layout .hero-cards-stack > .hero-novelty-arrow--prev {
-    left: 0.1rem;
-  }
-
-  .hero-product-layout .hero-cards-stack > .hero-novelty-arrow--next {
-    right: 0.1rem;
+    --hero-novelty-arrow-shift: calc(2.5rem + var(--hero-novelty-arrow-gap));
   }
 
   .hero-product-layout .hero-cards-main {
@@ -3041,19 +3102,14 @@ body::after {
     height: clamp(1.4rem, 3.5vw, 2.05rem);
     min-width: clamp(1.4rem, 3.5vw, 2.05rem);
     min-height: clamp(1.4rem, 3.5vw, 2.05rem);
+    --hero-novelty-arrow-shift: calc(
+      clamp(1.4rem, 3.5vw, 2.05rem) + var(--hero-novelty-arrow-gap)
+    );
   }
 
   .hero-product-layout .hero-cards-stack > .hero-novelty-side-arrow svg {
     width: 0.9rem;
     height: 0.9rem;
-  }
-
-  .hero-product-layout .hero-cards-stack > .hero-novelty-arrow--prev {
-    left: 0.2rem;
-  }
-
-  .hero-product-layout .hero-cards-stack > .hero-novelty-arrow--next {
-    right: 0.15rem;
   }
 
   .hero-product-layout .hero-product-info {

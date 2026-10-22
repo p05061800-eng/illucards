@@ -6,7 +6,7 @@ import { DraggableImageFrame } from "@/app/admin/components/DraggableImageFrame"
 import type { MenuJsonSection } from "@/app/lib/menuJson";
 import { DEFAULT_CARD_ASPECT_RATIO_CSS } from "@/app/lib/cardAspectRatio";
 import { DEFAULT_IMAGE_FOCUS } from "@/app/lib/imageFocus";
-import { adminFetch } from "@/app/lib/adminFetch";
+import { adminFetch, readAdminError } from "@/app/lib/adminFetch";
 
 export default function AdminMenu() {
   const [menu, setMenu] = useState<MenuJsonSection[]>([]);
@@ -24,12 +24,22 @@ export default function AdminMenu() {
   }, []);
 
   const save = async () => {
-    await adminFetch("/api/menu", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(menu),
-    });
-    window.alert("Сохранено");
+    try {
+      const res = await adminFetch("/api/menu", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(menu),
+      });
+      if (!res.ok) {
+        window.alert(await readAdminError(res));
+        return;
+      }
+      window.alert("Сохранено");
+    } catch {
+      window.alert(
+        "Сеть оборвалась при сохранении. Откройте https://www.illucards.by/admin и попробуйте снова.",
+      );
+    }
   };
 
   const upload = useCallback(async (file: File, i: number, j: number) => {

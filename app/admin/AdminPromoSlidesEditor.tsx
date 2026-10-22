@@ -9,7 +9,8 @@ import {
   type PromoHomeConfig,
   type PromoSlide,
 } from "@/app/lib/promoSlidesJson";
-import { adminFetch } from "@/app/lib/adminFetch";
+import { adminFetch, readAdminError } from "@/app/lib/adminFetch";
+import { AdminCustomOrderCardsEditor } from "./AdminCustomOrderCardsEditor";
 
 const inputClass =
   "w-full rounded-lg border border-white/10 bg-black/40 px-3 py-2 text-base text-zinc-100 placeholder:text-zinc-600 focus:border-violet-500/50 focus:outline-none focus:ring-1 focus:ring-violet-500/40";
@@ -98,7 +99,7 @@ export function AdminPromoSlidesEditor() {
         body: JSON.stringify(config),
       });
       if (!res.ok) {
-        window.alert("Не удалось сохранить.");
+        window.alert(await readAdminError(res));
         return;
       }
       const data = (await res.json()) as PromoHomeConfig;
@@ -163,7 +164,9 @@ export function AdminPromoSlidesEditor() {
             Карточка на заказ
           </h2>
           <p className="mt-1 text-sm text-zinc-400">
-            Левая плашка на главной. На ней кнопки «Примеры» и «Заказать».
+            Левая плашка на главной заполняется карточками категории
+            «Карточка на заказ» из админки. Картинка ниже — запасная, если
+            карточек ещё нет. Кнопка заказа пока «(в разработке)».
           </p>
         </div>
         <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4 sm:p-5">
@@ -179,12 +182,13 @@ export function AdminPromoSlidesEditor() {
               label="URL кнопки «Примеры»"
               placeholder="/card/id или https://…"
               value={custom.href}
-              hint="«Заказать» всегда открывает существующий бот @illucards_bot (?start=custom_card). Пустая ссылка скрывает кнопку «Примеры»."
+              hint="Заказ карточки на заказ пока отключён. Пустая ссылка скрывает кнопку «Примеры»."
               onChange={(href) => setCustom({ href })}
             />
           </div>
         </div>
         <SaveButton saving={saving} onClick={() => void save()} />
+        <AdminCustomOrderCardsEditor />
       </section>
 
       <section className="space-y-4">

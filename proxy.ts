@@ -9,12 +9,15 @@ import {
 
 function applyApiCors(request: NextRequest, response: NextResponse) {
   const origin = request.headers.get("origin");
-  if (origin) {
+  const allowed =
+    origin === "https://illucards.by" ||
+    origin === "https://www.illucards.by" ||
+    origin === "http://localhost:3010" ||
+    origin === "http://127.0.0.1:3010";
+  if (origin && allowed) {
     response.headers.set("Access-Control-Allow-Origin", origin);
     response.headers.set("Access-Control-Allow-Credentials", "true");
     response.headers.set("Vary", "Origin");
-  } else {
-    response.headers.set("Access-Control-Allow-Origin", "*");
   }
   response.headers.set(
     "Access-Control-Allow-Methods",
@@ -27,7 +30,24 @@ function applyApiCors(request: NextRequest, response: NextResponse) {
   return response;
 }
 
+function canonicalWwwHost(request: NextRequest): string | null {
+  const raw =
+    request.headers.get("x-forwarded-host") ?? request.headers.get("host");
+  const host = raw?.split(",")[0]?.split(":")[0]?.trim().toLowerCase() ?? "";
+  if (host === "illucards.by") return "www.illucards.by";
+  return null;
+}
+
 export async function proxy(request: NextRequest) {
+  const wwwHost = canonicalWwwHost(request);
+  if (wwwHost) {
+    const dest = request.nextUrl.clone();
+    dest.hostname = wwwHost;
+    dest.protocol = "https:";
+    dest.port = "";
+    return NextResponse.redirect(dest, 308);
+  }
+
   const { pathname } = request.nextUrl;
   const adminSession = await unsealAdminSessionEdge(
     request.cookies.get(ADMIN_SESSION_COOKIE)?.value,
@@ -83,5 +103,11 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/api/:path*", "/login", "/admin", "/admin/:path*"],
+  matcher: [
+    "/",
+    "/api/:path*",
+    "/login",
+    "/admin",
+    "/admin/:path*",
+  ],
 };

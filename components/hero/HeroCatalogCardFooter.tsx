@@ -3,8 +3,6 @@
 import { Heart, ShoppingBag } from "lucide-react";
 import {
   useCallback,
-  useLayoutEffect,
-  useRef,
   useState,
   type MouseEvent,
   type RefObject,
@@ -31,41 +29,8 @@ export function HeroCatalogCardFooter({
   const addToCartWithFeedback = useAddToCartWithFeedback();
   const [showPopup, setShowPopup] = useState(false);
   const liked = isFavorite(card.id);
-  const titleRef = useRef<HTMLHeadingElement>(null);
 
   const closePopup = useCallback(() => setShowPopup(false), []);
-
-  useLayoutEffect(() => {
-    const el = titleRef.current;
-    if (!el) return;
-
-    const fit = () => {
-      el.style.fontSize = "";
-      el.style.whiteSpace = "nowrap";
-      const maxPx = parseFloat(getComputedStyle(el).fontSize);
-      if (!Number.isFinite(maxPx) || maxPx <= 0) return;
-      const minPx = Math.max(12, maxPx * 0.58);
-      if (el.scrollWidth <= el.clientWidth + 1) return;
-      let lo = minPx;
-      let hi = maxPx;
-      for (let i = 0; i < 14; i++) {
-        const mid = (lo + hi) / 2;
-        el.style.fontSize = `${mid}px`;
-        if (el.scrollWidth <= el.clientWidth + 1) lo = mid;
-        else hi = mid;
-      }
-      el.style.fontSize = `${lo}px`;
-      if (el.scrollWidth > el.clientWidth + 1) {
-        el.style.whiteSpace = "normal";
-      }
-    };
-
-    fit();
-    const ro = new ResizeObserver(fit);
-    ro.observe(el);
-    if (el.parentElement) ro.observe(el.parentElement);
-    return () => ro.disconnect();
-  }, [card.title]);
 
   function handleFavorite(e: MouseEvent<HTMLButtonElement>) {
     e.stopPropagation();
@@ -89,7 +54,6 @@ export function HeroCatalogCardFooter({
           className="min-w-0 flex-1 text-center transition hover:text-amber-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300/60"
         >
           <h3
-            ref={titleRef}
             className={`hero-limited-card-title font-semibold text-white ${
               size === "novelty" ? "hero-limited-card-title--novelty" : ""
             }`}

@@ -429,7 +429,7 @@ img.category-tile-img {
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
+  --font-sans: var(--font-inter);
   --font-mono: var(--font-geist-mono);
 }
 
@@ -438,7 +438,7 @@ body {
   overflow-x: visible;
   background: var(--background);
   color: var(--foreground);
-  font-family: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  font-family: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
   font-feature-settings:
     "kern" 1,
     "liga" 1,
@@ -3025,8 +3025,10 @@ body::after {
     letter-spacing: -0.02em;
     color: #fff;
     text-align: center;
-    white-space: nowrap;
-    overflow: visible;
+    white-space: normal;
+    overflow: hidden;
+    overflow-wrap: anywhere;
+    text-wrap: balance;
     text-overflow: unset;
     position: relative;
     z-index: 1;
@@ -3748,11 +3750,12 @@ body::after {
   display: block;
   width: 100%;
   max-width: 100%;
-  overflow: visible;
-  text-overflow: unset;
-  white-space: nowrap;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+  text-wrap: balance;
+  white-space: normal;
   font-size: clamp(1rem, 0.92rem + 0.6vw, 1.28rem);
-  line-height: 1.15;
+  line-height: 1.2;
   letter-spacing: -0.02em;
   text-shadow:
     0 1px 0 rgba(255, 255, 255, 0.12),

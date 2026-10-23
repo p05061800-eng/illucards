@@ -3,6 +3,7 @@ import {
   redisGetText,
   redisRestCredentials,
   redisSetText,
+  redisSetTextResult,
 } from "@/app/lib/redisRest";
 
 const REDIS_CARDS_KEY = "illucards:catalog:cards";
@@ -46,14 +47,15 @@ export async function saveDurableJsonText(
   filePath: string,
   text: string,
 ): Promise<void> {
-  const redisOk = await redisSetText(redisKey, text);
+  const redis = await redisSetTextResult(redisKey, text);
   const fileOk = await writeFileText(filePath, text);
-  if (redisOk || fileOk) return;
+  if (redis.ok || fileOk) return;
   const cred = redisRestCredentials();
   throw new Error(
-    cred
-      ? "Redis не принял запись. Проверьте, что магазин Redis в Vercel привязан к Production, и сделайте Redeploy."
-      : redisCredentialsHint(),
+    redis.error ||
+      (cred
+        ? "Redis не принял запись. В Vercel → Storage нужен Upstash Redis с REST URL и Token на Production, затем Redeploy."
+        : redisCredentialsHint()),
   );
 }
 

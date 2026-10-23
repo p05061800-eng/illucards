@@ -24,6 +24,7 @@ const inter = Inter({
   subsets: ["latin", "cyrillic"],
   variable: "--font-inter",
   display: "swap",
+  adjustFontFallback: true,
 });
 
 /** Заголовки (латиница — сам шрифт; кириллица автоматически через Inter в стеке). */

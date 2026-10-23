@@ -406,14 +406,25 @@ function normalizeCard(raw: Record<string, unknown>): StoredCard {
   return card;
 }
 
-/** Разбор JSON из файла — учитывает старые карточки с полем `image`. */
+/** Карточки без файлов картинок в хранилище (чёрные заглушки на сайте). */
+const MISSING_MEDIA_CARD_IDS = new Set([
+  "aa205736-a440-4d40-9fdf-79a5ec082362",
+  "cd17a026-965b-420c-b9a1-d7dadb318d62",
+  "4fb97a73-bbdd-4c9b-8c2e-4d1568adab96",
+  "0a2d61ce-641a-4379-84b1-cb7b2449fa1f",
+]);
+
 export function parseCardsJson(json: string): StoredCard[] {
   try {
     const parsed = JSON.parse(json) as unknown;
     if (!Array.isArray(parsed)) return [];
-    return parsed.map((item) =>
-      normalizeCard(item as Record<string, unknown>)
-    );
+    return parsed
+      .map((item) => normalizeCard(item as Record<string, unknown>))
+      .filter(
+        (card) =>
+          Boolean(card.frontImage?.trim()) &&
+          !MISSING_MEDIA_CARD_IDS.has(card.id),
+      );
   } catch {
     return [];
   }

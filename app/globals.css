@@ -171,6 +171,8 @@ html.home-one-screen main.home-one-screen-main {
   max-width: 100%;
   height: 100%;
   min-height: 0;
+  content-visibility: auto;
+  contain-intrinsic-size: auto 28rem;
 }
 
 .collection-card-grid .catalog-card-image-link {
@@ -484,7 +486,10 @@ body::before {
       #06040c 78%,
       #030205 100%
     );
-  animation: site-mesh-breathe 38s ease-in-out infinite alternate;
+}
+
+html.tab-hidden * {
+  animation-play-state: paused !important;
 }
 
 body::after {
@@ -493,33 +498,17 @@ body::after {
   inset: 0;
   z-index: -1;
   pointer-events: none;
-  opacity: 0.065;
-  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)'/%3E%3C/svg%3E");
+  opacity: 0.045;
+  background-image: radial-gradient(
+    rgba(255, 255, 255, 0.22) 0.55px,
+    transparent 0.6px
+  );
+  background-size: 3px 3px;
   mix-blend-mode: overlay;
 }
 
-/* Без transform: на iOS Safari анимация scale на полноэкранном слое ломала hit-testing даже при pointer-events: none */
-@keyframes site-mesh-breathe {
-  0% {
-    filter: saturate(1) brightness(1);
-  }
-  100% {
-    filter: saturate(1.12) brightness(1.06);
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  body::before {
-    animation: none;
-  }
-}
-
 @media (hover: none) and (pointer: coarse) {
-  body::before {
-    animation: none;
-  }
-
-  /* Шумовой слой: feTurbulence на весь экран дорог на мобильных GPU */
+  /* Шумовой слой дорог на мобильных GPU */
   body::after {
     opacity: 0;
   }
@@ -624,12 +613,14 @@ body::after {
 .hero-promo-swiper {
   overscroll-behavior: contain;
   overflow-anchor: none;
+  overflow: visible;
 }
 
 /* Две плашки акций 3:4 в потоке документа — высота от доступной ширины. */
 .hero-promo-pair {
   width: 100%;
   min-width: 0;
+  overflow: visible;
 }
 
 .hero-promo-pair-grid {
@@ -638,6 +629,7 @@ body::after {
   gap: clamp(0.5rem, 1.2vw, 0.9rem);
   width: 100%;
   align-items: start;
+  overflow: visible;
 }
 
 .hero-promo-pair--single .hero-promo-pair-grid {
@@ -651,6 +643,7 @@ body::after {
   flex-direction: column;
   min-width: 0;
   width: 100%;
+  overflow: visible;
 }
 
 .hero-promo-col-title {
@@ -768,7 +761,7 @@ body::after {
 }
 
 .hero-promo-tile-img,
-.hero-promo-tile img {
+.hero-promo-carousel-slide img {
   position: absolute;
   inset: 0;
   width: 100%;
@@ -888,10 +881,9 @@ body::after {
   cursor: default;
   text-transform: none;
   letter-spacing: 0.04em;
-  opacity: 0.78;
-  border-color: rgba(255, 255, 255, 0.18);
-  background: rgba(18, 12, 32, 0.62);
-  color: rgba(248, 245, 255, 0.78);
+  border-color: rgba(196, 181, 253, 0.42);
+  background: rgba(46, 16, 80, 0.52);
+  color: rgba(248, 245, 255, 0.92);
 }
 
 .hero-promo-cta:hover,
@@ -903,61 +895,73 @@ body::after {
 
 .hero-promo-cta--coming-soon:hover,
 .hero-promo-cta--coming-soon:focus-visible {
-  border-color: rgba(255, 255, 255, 0.18);
-  color: rgba(248, 245, 255, 0.78);
+  border-color: rgba(196, 181, 253, 0.42);
+  color: rgba(248, 245, 255, 0.92);
 }
 
 /*
- * Слот как у акций (3:4, та же высота колонки).
- * Сама картинка — 2:3 на всю высоту слота, по центру: без боковых полей и без обрезки.
+ * «Карточка на заказ»: колонка той же ширины и высоты, что «Акции» (3/4).
+ * Само изображение — 2:3 contain на всю высоту слота, без пустого поля снизу
+ * и без внешней рамки.
  */
 .hero-custom-order-tile {
+  position: relative;
   isolation: isolate;
   overflow: visible;
-  background: transparent !important;
-  border-color: transparent !important;
-  box-shadow: none !important;
+  display: flex;
+  align-items: stretch;
+  justify-content: center;
+  width: 100%;
+  max-width: 100%;
+  height: auto;
+  aspect-ratio: 3 / 4;
+  margin: 0;
+  padding: 0;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
 }
 
 .hero-custom-order-stage {
+  position: relative;
+  z-index: 1;
+  flex: 0 0 auto;
+  width: auto;
+  height: 100%;
+  max-width: 100%;
+  aspect-ratio: var(--hero-custom-order-w, 2) / var(--hero-custom-order-h, 3);
+  overflow: hidden;
+  margin: 0;
+  padding: 0;
+  border: none;
+  border-radius: 1rem;
+  background: transparent;
+  box-shadow: none;
+}
+
+.hero-custom-order-fill,
+.hero-custom-order-frame,
+.hero-custom-order-art,
+.hero-custom-order-card-shell {
   position: absolute;
   inset: 0;
-  overflow: visible;
+  overflow: hidden;
+  width: auto;
+  height: auto;
+  margin: 0;
+  padding: 0;
   border-radius: inherit;
+  background: transparent;
+}
+
+.hero-custom-order-stage {
   touch-action: pan-y;
   user-select: none;
 }
 
 .hero-custom-order-fill {
-  position: absolute;
-  inset: 0 0 3.15rem;
-  display: block;
-  width: auto;
-  height: auto;
-  overflow: visible;
   animation: hero-custom-order-in 0.4s ease;
-}
-
-.hero-custom-order-frame {
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  left: 50%;
-  width: auto;
-  height: 100%;
-  max-width: 100%;
-  aspect-ratio: 2 / 3;
-  transform: translateX(-50%);
-}
-
-.hero-custom-order-art {
-  position: absolute;
-  inset: 0;
-  overflow: hidden;
-  border-radius: 1rem;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  background: #161022;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35);
 }
 
 @keyframes hero-custom-order-in {
@@ -978,8 +982,8 @@ body::after {
   max-width: none !important;
   height: 100% !important;
   margin: 0 !important;
-  border-radius: inherit;
   overflow: hidden;
+  border-radius: inherit;
 }
 
 .hero-custom-order-art .relative.block,
@@ -996,6 +1000,7 @@ body::after {
   max-width: none !important;
   max-height: none !important;
   overflow: hidden;
+  border-radius: inherit;
 }
 
 .hero-custom-order-art .hero-card-stack-sizer {
@@ -1009,21 +1014,26 @@ body::after {
 
 .hero-custom-order-tile .hero-custom-order-art img,
 .hero-custom-order-fallback-img {
-  position: absolute !important;
-  inset: 0 !important;
-  width: 100% !important;
-  height: 100% !important;
-  max-width: none !important;
-  max-height: none !important;
-  object-fit: contain !important;
-  object-position: center center;
-  transform: none !important;
-  background: transparent !important;
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  max-height: none;
+  object-fit: contain;
+  object-position: center;
+  background: transparent;
+  border: 0;
+  border-radius: inherit;
+  box-shadow: none;
 }
 
-.hero-custom-order-art .card-face-lenticular-thick,
-.hero-custom-order-art .card-main {
-  background: transparent !important;
+.hero-custom-order-art .card-container,
+.hero-custom-order-art .card-main,
+.hero-custom-order-art .card-face-lenticular-thick {
+  background: transparent;
+  box-shadow: none;
+  outline: none;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -1074,6 +1084,11 @@ body::after {
   box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.55);
 }
 
+.hero-custom-order-arrow:disabled {
+  cursor: default;
+  opacity: 0.45;
+}
+
 .hero-custom-order-dots {
   position: absolute;
   z-index: 6;
@@ -1120,8 +1135,8 @@ body::after {
 
 .hero-custom-order-tile .hero-promo-cta-stack {
   z-index: 6;
-  bottom: 0.2rem;
-  width: min(12.5rem, 88%);
+  bottom: clamp(1.7rem, 11%, 2.45rem);
+  width: min(12.5rem, 82%);
 }
 
 @media (max-width: 768px) {
@@ -1737,7 +1752,11 @@ body::after {
     width: 100%;
     --hero-desktop-col-gap: clamp(32px, 2.2vw, 48px);
     --hero-novelty-card-width: min(100%, 16.75rem);
-    --hero-novelty-card-width-tmnt: min(100%, 16.75rem);
+    /* TMNT 761/1024: та же высота, что у 2:3, без смены пропорций. */
+    --hero-novelty-card-width-tmnt: min(
+      100%,
+      calc(16.75rem * 3 / 2 * 761 / 1024)
+    );
     --hero-novelties-title-band: clamp(2.35rem, 3.4vw, 3.35rem);
     --hero-gap-novelties-title-to-card: clamp(0.2rem, 0.45vw, 0.35rem);
     --hero-gap-hero-card-to-name: clamp(0.28rem, 0.55vw, 0.45rem);
@@ -1802,8 +1821,9 @@ body::after {
   }
 
   .hero-promo-desktop-slot .hero-promo-pair-grid {
-    align-items: stretch;
+    align-items: start;
     grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    overflow: visible;
   }
 
   .hero-promo-desktop-slot .hero-promo-tile {
@@ -2985,6 +3005,94 @@ body::after {
   width: 100%;
 }
 
+.hero-right-side--novelty .hero-novelties-thumb-strip-wrap,
+.hero-right-side--novelty .hero-product-info {
+  flex-shrink: 0;
+}
+
+.hero-right-side--novelty .hero-product-info .hero-limited-card-title--novelty {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  min-height: 2.6em;
+  overflow: hidden;
+}
+
+/*
+ * «Новинки»: слот большой карточки фиксирован (2:3), лента миниатюр не прыгает.
+ */
+.hero-right-side--novelty .hero-product-stage {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: auto auto auto auto;
+  align-items: start;
+  justify-items: stretch;
+}
+
+.hero-right-side--novelty .hero-novelty-header {
+  grid-row: 1;
+}
+
+.hero-right-side--novelty .hero-cards-stack {
+  grid-row: 2;
+  padding-top: 0.15rem;
+  padding-bottom: 0.45rem;
+  align-self: start;
+}
+
+.hero-right-side--novelty .hero-novelties-thumb-strip-wrap {
+  grid-row: 3;
+}
+
+.hero-right-side--novelty .hero-product-info {
+  grid-row: 4;
+}
+
+.hero-right-side--novelty .hero-cards-main {
+  width: var(--hero-novelty-card-width, 16.75rem);
+  max-width: min(100%, var(--hero-novelty-card-width, 16.75rem));
+  aspect-ratio: 2 / 3;
+  height: auto;
+  position: relative;
+}
+
+.hero-right-side--tmnt.hero-right-side--novelty .hero-cards-main {
+  width: var(--hero-novelty-card-width-tmnt);
+  max-width: min(100%, var(--hero-novelty-card-width-tmnt));
+  aspect-ratio: 761 / 1024;
+}
+
+.hero-right-side--novelty .hero-cards-main .product-card-page-stack,
+.hero-right-side--novelty .hero-cards-main .hero-card-stack-visual,
+.hero-right-side--novelty .hero-cards-main .illucards-card,
+.hero-right-side--novelty .hero-cards-main .hero-stack-max {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  max-width: 100%;
+  height: 100%;
+  padding-top: 0.15rem !important;
+  padding-bottom: 0 !important;
+}
+
+.hero-right-side--novelty .hero-cards-main .hero-card-stack-sizer {
+  aspect-ratio: 2 / 3 !important;
+}
+
+.hero-right-side--tmnt.hero-right-side--novelty .hero-cards-main .hero-card-stack-sizer {
+  aspect-ratio: 761 / 1024 !important;
+}
+
+.hero-right-side--novelty .hero-cards-main .card-main img,
+.hero-right-side--novelty .hero-cards-main .card-vario-front img,
+.hero-right-side--novelty .hero-cards-main .card-vario-back img,
+.hero-right-side--novelty .hero-cards-main .card-side-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  object-position: center center;
+}
+
 @media (max-width: 768px) {
   .hero-cards-main .hero-card-stack-visual .card-side {
     transform: translate3d(-5%, 0, 0) rotate(-8deg);
@@ -3457,7 +3565,10 @@ body::after {
 
   .hero-stage {
     --hero-novelty-card-width: min(100%, 18rem);
-    --hero-novelty-card-width-tmnt: min(100%, 18rem);
+    --hero-novelty-card-width-tmnt: min(
+      100%,
+      calc(18rem * 3 / 2 * 761 / 1024)
+    );
   }
 }
 
@@ -4253,13 +4364,9 @@ body::after {
   0%,
   100% {
     opacity: 0.72;
-    transform: scale(0.98);
-    filter: blur(16px) brightness(1);
   }
   50% {
     opacity: 1;
-    transform: scale(1.04);
-    filter: blur(20px) brightness(1.15);
   }
 }
 
@@ -4267,13 +4374,9 @@ body::after {
   0%,
   100% {
     opacity: 0.7;
-    transform: scale(0.98);
-    filter: blur(16px) brightness(1);
   }
   50% {
     opacity: 1;
-    transform: scale(1.04);
-    filter: blur(20px) brightness(1.12);
   }
 }
 
@@ -4281,13 +4384,9 @@ body::after {
   0%,
   100% {
     opacity: 0.74;
-    transform: scale(0.98);
-    filter: blur(17px) brightness(1.02);
   }
   50% {
     opacity: 1;
-    transform: scale(1.05);
-    filter: blur(22px) brightness(1.14);
   }
 }
 
@@ -4295,13 +4394,9 @@ body::after {
   0%,
   100% {
     opacity: 0.68;
-    transform: scale(0.98);
-    filter: blur(16px) brightness(1);
   }
   50% {
     opacity: 0.95;
-    transform: scale(1.04);
-    filter: blur(20px) brightness(1.1);
   }
 }
 
@@ -4328,6 +4423,7 @@ body::after {
     rgba(245, 158, 11, 0.16) 62%,
     transparent 78%
   );
+  filter: blur(18px);
   animation: card-rarity-back-gold-pulse 2.8s ease-in-out infinite;
 }
 
@@ -4339,6 +4435,7 @@ body::after {
     rgba(225, 29, 72, 0.15) 62%,
     transparent 78%
   );
+  filter: blur(18px);
   animation: card-rarity-back-red-pulse 2.8s ease-in-out infinite;
 }
 
@@ -4356,6 +4453,7 @@ body::after {
       rgba(244, 63, 94, 0.22) 48%,
       transparent 72%
     );
+  filter: blur(18px);
   animation: card-rarity-back-duo-pulse 3s ease-in-out infinite;
 }
 
@@ -4367,7 +4465,13 @@ body::after {
     rgba(236, 72, 153, 0.14) 64%,
     transparent 78%
   );
+  filter: blur(18px);
   animation: card-rarity-back-hot-pulse 2.8s ease-in-out infinite;
+}
+
+.collection-card-grid .card-rarity-glow::before {
+  animation: none;
+  opacity: 0.82;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -4701,6 +4805,10 @@ body::after {
     rgba(167, 139, 250, 0.14) 100%
   );
   background-size: 220% 220%;
+  background-position: 50% 48%;
+}
+
+.hero-card-stack-visual:hover .hero-holo-iridescent {
   animation: hero-holo-iridescent-move 10s ease-in-out infinite;
 }
 

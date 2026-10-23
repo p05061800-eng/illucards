@@ -15,6 +15,7 @@ import { CurrencyProvider } from "./context/CurrencyContext";
 import { FavoritesProvider } from "./context/FavoritesContext";
 import { AdultContentProvider } from "./context/AdultContentContext";
 import { CategoryFramesProvider } from "./context/CategoryFramesContext";
+import { PauseGpuWhenHidden } from "./components/PauseGpuWhenHidden";
 
 export function Providers({ children }: { children: ReactNode }) {
   return (
@@ -31,6 +32,7 @@ export function Providers({ children }: { children: ReactNode }) {
               <CartProvider>
                 <CatalogFilterProvider>
                   <AdultContentProvider>
+                    <PauseGpuWhenHidden />
                     {children}
                     <CartDrawer />
                     <CurrencyPrompt />

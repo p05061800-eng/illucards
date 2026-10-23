@@ -139,6 +139,22 @@ function parsePositiveDimension(raw: unknown): number | undefined {
   return undefined;
 }
 
+/** Ссылка карточки: внутренний путь или http(s). Пустое / некорректное — undefined. */
+export function parseOptionalCardHref(raw: unknown): string | undefined {
+  if (typeof raw !== "string") return undefined;
+  const s = raw.trim();
+  if (!s) return undefined;
+  if (s.includes("\\") || s.includes("..")) return undefined;
+  if (s.startsWith("/") && !s.startsWith("//")) return s;
+  try {
+    const u = new URL(s);
+    if (u.protocol === "http:" || u.protocol === "https:") return s;
+  } catch {
+    /* ignore */
+  }
+  return undefined;
+}
+
 function parseCategoryOrder(raw: unknown): number | undefined {
   if (raw === undefined || raw === null || raw === "") return undefined;
   const n =
@@ -382,6 +398,10 @@ function normalizeCard(raw: Record<string, unknown>): StoredCard {
   const framePreset = parseCardArtFramePreset(raw.cardArtFramePreset);
   if (isFixedCardArtFramePreset(framePreset)) {
     card.cardArtFramePreset = framePreset;
+  }
+  const href = parseOptionalCardHref(raw.href);
+  if (href) {
+    card.href = href;
   }
   return card;
 }

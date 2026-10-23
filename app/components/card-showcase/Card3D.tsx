@@ -291,11 +291,7 @@ export function Card3D({ card }: Props) {
 
     const io = new IntersectionObserver(
       ([entry]) => {
-        const vis = Boolean(entry?.isIntersecting);
-        if (vis) {
-          runParticles = true;
-          startLoop();
-        } else {
+        if (!entry?.isIntersecting) {
           runParticles = false;
           stopLoop();
         }
@@ -313,12 +309,23 @@ export function Card3D({ card }: Props) {
     };
     document.addEventListener("visibilitychange", onVisibility);
 
-    runParticles = true;
-    startLoop();
+    const onEnter = () => {
+      runParticles = true;
+      startLoop();
+    };
+    const onLeave = () => {
+      runParticles = false;
+      stopLoop();
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+    };
+    wrap.addEventListener("pointerenter", onEnter);
+    wrap.addEventListener("pointerleave", onLeave);
 
     return () => {
       runParticles = false;
       stopLoop();
+      wrap.removeEventListener("pointerenter", onEnter);
+      wrap.removeEventListener("pointerleave", onLeave);
       document.removeEventListener("visibilitychange", onVisibility);
       io.disconnect();
       ro.disconnect();

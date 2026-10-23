@@ -39,7 +39,9 @@ export function AdminCustomOrderCardsEditor() {
         method: "DELETE",
       });
       if (!res.ok) {
-        const err = (await res.json().catch(() => null)) as { error?: string } | null;
+        const err = (await res.json().catch(() => null)) as {
+          error?: string;
+        } | null;
         window.alert(err?.error ?? "Не удалось удалить.");
         return;
       }
@@ -60,9 +62,9 @@ export function AdminCustomOrderCardsEditor() {
         <h3 className="text-base font-semibold text-white">
           Карточки на главной
         </h3>
-        <p className="mt-1 text-sm text-zinc-500">
-          Добавляйте сюда карточки категории «{CUSTOM_ORDER_CATEGORY_NAME}».
-          На сайте они листаются стрелками. Сейчас: {orderCards.length}.
+        <p className="mt-1 text-sm text-zinc-400">
+          Добавляются так же, как в каталоге: две стороны и эффект Vario.
+          Сейчас: {orderCards.length}.
         </p>
       </div>
 
@@ -83,6 +85,7 @@ export function AdminCustomOrderCardsEditor() {
                 <p className="truncate text-sm font-medium text-zinc-100">
                   {card.title || "Без названия"}
                 </p>
+                <p className="text-xs text-zinc-500">Vario</p>
               </div>
               <button
                 type="button"
@@ -103,8 +106,8 @@ export function AdminCustomOrderCardsEditor() {
         </ul>
       ) : (
         <p className="text-sm text-zinc-500">
-          Пока нет карточек. Заполните форму ниже — они появятся в плашке на
-          главной, и появятся стрелки.
+          Пока нет карточек. Заполните форму ниже — они появятся на главной со
+          стрелками.
         </p>
       )}
 
@@ -119,6 +122,7 @@ export function AdminCustomOrderCardsEditor() {
           allCards={allCards}
           editingCard={editingCard}
           forcedCategory={CUSTOM_ORDER_CATEGORY_NAME}
+          forcedEffect="vario"
           onCancelEdit={() => setEditingCard(null)}
           onSuccess={() => {
             setEditingCard(null);

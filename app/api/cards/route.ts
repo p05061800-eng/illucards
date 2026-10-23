@@ -1,6 +1,6 @@
 import { randomUUID } from "crypto";
 import { promises as fs } from "fs";
-import { parseCardsJson } from "@/app/lib/cardsJson";
+import { parseCardsJson, parseOptionalCardHref } from "@/app/lib/cardsJson";
 import {
   DURABLE_JSON_KEYS,
   loadDurableJsonText,
@@ -214,6 +214,8 @@ export type StoredCard = {
   categoryBgFocus?: ImageFocus;
   /** Порядок в категории на главной (меньше — раньше). Только админка + сортировка каталога. */
   categoryOrder?: number;
+  /** Необязательная ссылка при клике (внутренний путь или http(s)). */
+  href?: string;
   /**
    * Vario: плавно смешивать три слоя (ultra + оборот + лицо) по горизонтали курсора.
    * Если false — только лицо/оборот как раньше; ultra всегда непрозрачен.
@@ -643,6 +645,11 @@ export async function POST(req: NextRequest) {
     newCard.noveltySince = noveltySincePost;
   }
 
+  const hrefPost = parseOptionalCardHref(formData.get("href"));
+  if (hrefPost) {
+    newCard.href = hrefPost;
+  }
+
   cards.push(newCard);
   try {
     await persistCards(cards);
@@ -995,6 +1002,15 @@ export async function PATCH(req: NextRequest) {
       vsPatch ?? existing.varioSmoothing ?? 0.18;
   } else {
     delete updated.varioSmoothing;
+  }
+
+  if (formData.has("href")) {
+    const hrefPatch = parseOptionalCardHref(formData.get("href"));
+    if (hrefPatch) {
+      updated.href = hrefPatch;
+    } else {
+      delete updated.href;
+    }
   }
 
   if (formData.has("priceRub")) {

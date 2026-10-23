@@ -36,6 +36,8 @@ type AdminCardFormProps = {
   onSuccess?: () => void;
   /** Категория фиксирована (плашка «Карточка на заказ»). */
   forcedCategory?: string;
+  /** Эффект фиксирован (карточки на заказ — только Vario). */
+  forcedEffect?: "vario";
 };
 
 async function uploadImageFile(
@@ -98,6 +100,7 @@ export function AdminCardForm({
   onCancelEdit,
   onSuccess,
   forcedCategory,
+  forcedEffect,
 }: AdminCardFormProps) {
   const isEdit = Boolean(editingCard);
   const categoryTiles = useCategoryTiles();
@@ -113,7 +116,7 @@ export function AdminCardForm({
   const [categoryBgUrl, setCategoryBgUrl] = useState<string | null>(null);
   const [effect, setEffect] = useState<
     "vario" | "morphing" | "3d-horizontal"
-  >("3d-horizontal");
+  >(forcedEffect === "vario" ? "vario" : "3d-horizontal");
   /** Плавный кроссфейд трёх слоёв (ultra + оборот + лицо) на витрине — только с фоном категории. */
   const [varioSmoothBlend, setVarioSmoothBlend] = useState(false);
   /** Инерция следования за курсором (0.05–0.6). */
@@ -176,6 +179,7 @@ export function AdminCardForm({
       setCategoryBgFocus(DEFAULT_IMAGE_FOCUS);
       setSelectedRarities(["limited"]);
       if (forcedCategory?.trim()) setCategory(forcedCategory.trim());
+      if (forcedEffect === "vario") setEffect("vario");
       return;
     }
     setTitle(editingCard.title ?? "");
@@ -196,11 +200,13 @@ export function AdminCardForm({
     );
     const rawEff = editingCard.effect?.trim().toLowerCase() ?? "";
     const eff: "vario" | "morphing" | "3d-horizontal" =
-      rawEff === "vario"
+      forcedEffect === "vario"
         ? "vario"
-        : rawEff === "morphing"
-          ? "morphing"
-          : "3d-horizontal";
+        : rawEff === "vario"
+          ? "vario"
+          : rawEff === "morphing"
+            ? "morphing"
+            : "3d-horizontal";
     setEffect(eff);
     setPrice(
       editingCard.price !== undefined && editingCard.price !== null
@@ -243,7 +249,7 @@ export function AdminCardForm({
     );
     setStatus("idle");
     setMessage("");
-  }, [editingCard, categoryOptions, forcedCategory]);
+  }, [editingCard, categoryOptions, forcedCategory, forcedEffect]);
 
   useEffect(() => {
     if (editingCard) return;
@@ -449,7 +455,7 @@ export function AdminCardForm({
     if (category === TMNT_PARENT_CATEGORY) {
       fd.set("subcategory", tmntCollection);
     }
-    fd.set("effect", effect);
+    fd.set("effect", forcedEffect === "vario" ? "vario" : effect);
     fd.set("price", price.trim() === "" ? "0" : price.trim());
     fd.set("priceRub", priceRub.trim());
     fd.set("rarities", JSON.stringify(selectedRarities));
@@ -513,7 +519,7 @@ export function AdminCardForm({
         );
         setTmntCollection(TMNT_DEFAULT_COLLECTION_ID);
         setCategoryBgUrl(null);
-        setEffect("3d-horizontal");
+        setEffect(forcedEffect === "vario" ? "vario" : "3d-horizontal");
         setPrice("");
         setPriceRub("");
         setSelectedRarities(["limited"]);
@@ -714,7 +720,8 @@ export function AdminCardForm({
         <select
           id="effect"
           name="effect"
-          value={effect}
+          value={forcedEffect === "vario" ? "vario" : effect}
+          disabled={forcedEffect === "vario"}
           onChange={(e) => {
             const v = e.target.value;
             if (v !== "vario" && v !== "morphing" && v !== "3d-horizontal") {

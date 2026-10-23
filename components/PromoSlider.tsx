@@ -15,7 +15,7 @@ import {
 } from "react";
 import type { StoredCard } from "@/app/api/cards/route";
 import { apiUrl } from "@/app/lib/apiUrl";
-import { buildCustomOrderHeroCards } from "@/app/lib/customOrderHeroCarousel";
+import { resolveCustomOrderHeroCards } from "@/app/lib/customOrderHeroCarousel";
 import { ultraOrHeroBgUrl } from "@/app/lib/cardUltraBg";
 import {
   customOrderForHero,
@@ -55,6 +55,7 @@ export default function PromoSlider({
   const [config, setConfig] = useState<PromoHomeConfig>(() =>
     configFromProps(initialConfig, initialSlides),
   );
+  const [catalogCards, setCatalogCards] = useState<StoredCard[]>(cards);
 
   const promoSnap = useMemo(
     () => JSON.stringify({ initialConfig, initialSlides }),
@@ -72,6 +73,24 @@ export default function PromoSlider({
       /* ignore */
     }
   }, [promoSnap]);
+
+  useEffect(() => {
+    setCatalogCards(cards);
+  }, [cards]);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetch(apiUrl("/api/cards"))
+      .then((r) => (r.ok ? r.json() : Promise.reject()))
+      .then((data: unknown) => {
+        if (cancelled || !Array.isArray(data)) return;
+        setCatalogCards(data as StoredCard[]);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -101,7 +120,10 @@ export default function PromoSlider({
   }, []);
 
   const orderTile = customOrderForHero(config.customOrder);
-  const orderCards = buildCustomOrderHeroCards(cards);
+  const orderCards = resolveCustomOrderHeroCards(
+    catalogCards,
+    orderTile?.imageUrl,
+  );
   const showOrderCol = orderCards.length > 0 || orderTile != null;
   const promos = promoCarouselForHero(config.items);
   const colCount = (showOrderCol ? 1 : 0) + (promos.length > 0 ? 1 : 0);
@@ -333,9 +355,26 @@ function CustomOrderCarousel({
 
   if (!activeCard && !fallbackImageUrl) return null;
 
+  const artW =
+    activeCard &&
+    typeof activeCard.frontImageWidth === "number" &&
+    activeCard.frontImageWidth > 0
+      ? activeCard.frontImageWidth
+      : 2;
+  const artH =
+    activeCard &&
+    typeof activeCard.frontImageHeight === "number" &&
+    activeCard.frontImageHeight > 0
+      ? activeCard.frontImageHeight
+      : 3;
+
   return (
     <div
-      className="hero-promo-tile hero-custom-order-tile"
+      className="hero-custom-order-tile"
+      style={{
+        ["--hero-custom-order-w" as string]: String(artW),
+        ["--hero-custom-order-h" as string]: String(artH),
+      }}
       aria-roledescription="carousel"
       aria-label="Карточка на заказ"
     >
@@ -349,54 +388,78 @@ function CustomOrderCarousel({
           <div key={activeCard.id} className="hero-custom-order-fill">
             <div className="hero-custom-order-frame">
               <div className="hero-custom-order-art">
-                <CardStackVisual
-                  card={activeCard}
-                  ultraBgUrl={ultraOrHeroBgUrl(activeCard)}
-                  catalogStack
-                  hideUltraLayer
-                  navigationTapSafe
-                  rootClassName="relative h-full w-full max-w-none rounded-2xl bg-transparent"
-                />
+                <div className="hero-custom-order-card-shell">
+                  <CardStackVisual
+                    card={activeCard}
+                    ultraBgUrl={ultraOrHeroBgUrl(activeCard)}
+                    catalogStack
+                    hideUltraLayer
+                    navigationTapSafe
+                    rootClassName="relative h-full w-full max-w-none bg-transparent"
+                  />
+                  <button
+                    type="button"
+                    className="hero-custom-order-arrow hero-custom-order-arrow--prev"
+                    aria-label="Предыдущая карточка на заказ"
+                    disabled={n < 2}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      step(-1);
+                    }}
+                    onKeyDown={onArrowKeyDown}
+                  >
+                    <ProductCardNavArrowIcon direction="prev" />
+                  </button>
+                  <button
+                    type="button"
+                    className="hero-custom-order-arrow hero-custom-order-arrow--next"
+                    aria-label="Следующая карточка на заказ"
+                    disabled={n < 2}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      step(1);
+                    }}
+                    onKeyDown={onArrowKeyDown}
+                  >
+                    <ProductCardNavArrowIcon direction="next" />
+                  </button>
+                  <PromoCtaStack examplesHref={examplesHref} />
+                </div>
               </div>
-              <button
-                type="button"
-                className="hero-custom-order-arrow hero-custom-order-arrow--prev"
-                aria-label="Предыдущая карточка на заказ"
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  step(-1);
-                }}
-                onKeyDown={onArrowKeyDown}
-              >
-                <ProductCardNavArrowIcon direction="prev" />
-              </button>
-              <button
-                type="button"
-                className="hero-custom-order-arrow hero-custom-order-arrow--next"
-                aria-label="Следующая карточка на заказ"
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  step(1);
-                }}
-                onKeyDown={onArrowKeyDown}
-              >
-                <ProductCardNavArrowIcon direction="next" />
-              </button>
             </div>
           </div>
         ) : (
           <div className="hero-custom-order-fill">
             <div className="hero-custom-order-frame">
               <div className="hero-custom-order-art">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={fallbackImageUrl}
-                  alt=""
-                  className="hero-custom-order-fallback-img"
-                  draggable={false}
-                />
+                <div className="hero-custom-order-card-shell">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={fallbackImageUrl}
+                    alt=""
+                    className="hero-custom-order-fallback-img"
+                    draggable={false}
+                  />
+                  <button
+                    type="button"
+                    className="hero-custom-order-arrow hero-custom-order-arrow--prev"
+                    aria-label="Предыдущая карточка на заказ"
+                    disabled
+                  >
+                    <ProductCardNavArrowIcon direction="prev" />
+                  </button>
+                  <button
+                    type="button"
+                    className="hero-custom-order-arrow hero-custom-order-arrow--next"
+                    aria-label="Следующая карточка на заказ"
+                    disabled
+                  >
+                    <ProductCardNavArrowIcon direction="next" />
+                  </button>
+                  <PromoCtaStack examplesHref={examplesHref} />
+                </div>
               </div>
             </div>
           </div>
@@ -404,33 +467,9 @@ function CustomOrderCarousel({
       </div>
 
       {canCycle ? (
-        n <= 8 ? (
-          <div className="hero-custom-order-dots" role="tablist" aria-label="Слайды карточки на заказ">
-            {cards.map((card, i) => (
-              <button
-                key={card.id}
-                type="button"
-                role="tab"
-                aria-selected={i === safeIndex}
-                aria-label={`Карточка ${i + 1} из ${n}`}
-                className={
-                  i === safeIndex
-                    ? "hero-custom-order-dot is-active"
-                    : "hero-custom-order-dot"
-                }
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  setIndex(i);
-                }}
-              />
-            ))}
-          </div>
-        ) : (
-          <p className="hero-custom-order-counter" aria-live="polite">
-            {safeIndex + 1} из {n}
-          </p>
-        )
+        <p className="hero-custom-order-counter" aria-live="polite">
+          {safeIndex + 1} из {n}
+        </p>
       ) : null}
 
       <p className="sr-only" aria-live="polite">
@@ -438,8 +477,6 @@ function CustomOrderCarousel({
           ? `${safeIndex + 1} из ${n}: ${activeCard.title}`
           : "Карточка на заказ"}
       </p>
-
-      <PromoCtaStack examplesHref={examplesHref} />
     </div>
   );
 }

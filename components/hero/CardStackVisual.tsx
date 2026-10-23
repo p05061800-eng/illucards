@@ -791,9 +791,9 @@ export function CardStackVisual({
           >
             <div
               ref={tiltRef}
-              className={`absolute inset-0 [will-change:transform] [transform-style:preserve-3d] motion-reduce:transform-none ${
-                heroStack ? "origin-top-right" : "origin-center"
-              }`}
+              className={`absolute inset-0 [transform-style:preserve-3d] motion-reduce:transform-none ${
+                hoverMotionEngaged ? "[will-change:transform]" : ""
+              } ${heroStack ? "origin-top-right" : "origin-center"}`}
               style={{
                 transform: `rotateX(0deg) rotateY(0deg) translateZ(${idleTranslateZ}px)`,
               }}
@@ -1015,6 +1015,7 @@ export function CardStackVisual({
                     }}
                     aria-hidden
                   />
+                  {catalogStack ? null : (
                   <div
                     className="card-glare pointer-events-none absolute inset-0 rounded-2xl opacity-[0.09] mix-blend-overlay motion-reduce:opacity-[0.05]"
                     style={{
@@ -1023,6 +1024,7 @@ export function CardStackVisual({
                     }}
                     aria-hidden
                   />
+                  )}
                   <div
                     className="card-glare pointer-events-none absolute inset-0 rounded-2xl shadow-[inset_0_0_40px_rgba(0,0,0,0.14)]"
                     aria-hidden

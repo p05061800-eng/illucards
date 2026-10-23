@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useId, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { ChevronDown, ChevronUp, Plus, Trash2 } from "lucide-react";
 import {
   emptyPromoSlide,
@@ -11,9 +11,11 @@ import {
 } from "@/app/lib/promoSlidesJson";
 import { adminFetch, readAdminError } from "@/app/lib/adminFetch";
 import { AdminCustomOrderCardsEditor } from "./AdminCustomOrderCardsEditor";
-
-const inputClass =
-  "w-full rounded-lg border border-white/10 bg-black/40 px-3 py-2 text-base text-zinc-100 placeholder:text-zinc-600 focus:border-violet-500/50 focus:outline-none focus:ring-1 focus:ring-violet-500/40";
+import {
+  ImageField,
+  PromoUrlField,
+  SaveButton,
+} from "./AdminPromoFields";
 
 export function AdminPromoSlidesEditor() {
   const [config, setConfig] = useState<PromoHomeConfig>(() =>
@@ -164,31 +166,24 @@ export function AdminPromoSlidesEditor() {
             Карточка на заказ
           </h2>
           <p className="mt-1 text-sm text-zinc-400">
-            Левая плашка на главной заполняется карточками категории
-            «Карточка на заказ» из админки. Картинка ниже — запасная, если
-            карточек ещё нет. Кнопка заказа пока «(в разработке)».
+            Левая плашка на главной — карточки категории «Карточка на заказ» с
+            эффектом Vario, как в каталоге. Обычная картинка без варио сюда не
+            ставится. Кнопка заказа пока «(в разработке)».
           </p>
         </div>
+        <AdminCustomOrderCardsEditor />
         <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4 sm:p-5">
-          <div className="grid gap-4 md:grid-cols-[minmax(0,180px)_1fr] md:items-start">
-            <ImageField
-              imageUrl={custom.imageUrl}
-              uploading={uploadingKey === "custom"}
-              error={uploadError?.key === "custom" ? uploadError.msg : null}
-              onFile={(f) => void uploadImage("custom", f)}
-              onClear={() => setCustom({ imageUrl: "" })}
-            />
-            <PromoUrlField
-              label="URL кнопки «Примеры»"
-              placeholder="/card/id или https://…"
-              value={custom.href}
-              hint="Заказ карточки на заказ пока отключён. Пустая ссылка скрывает кнопку «Примеры»."
-              onChange={(href) => setCustom({ href })}
-            />
+          <PromoUrlField
+            label="URL кнопки «Примеры»"
+            placeholder="/card/id или https://…"
+            value={custom.href}
+            hint="Необязательно. Пустая ссылка скрывает кнопку «Примеры» на главной."
+            onChange={(href) => setCustom({ href })}
+          />
+          <div className="mt-4">
+            <SaveButton saving={saving} onClick={() => void save()} />
           </div>
         </div>
-        <SaveButton saving={saving} onClick={() => void save()} />
-        <AdminCustomOrderCardsEditor />
       </section>
 
       <section className="space-y-4">
@@ -291,144 +286,6 @@ export function AdminPromoSlidesEditor() {
           <SaveButton saving={saving} onClick={() => void save()} />
         </div>
       </section>
-    </div>
-  );
-}
-
-function PromoUrlField({
-  label,
-  placeholder,
-  value,
-  hint,
-  onChange,
-}: {
-  label: string;
-  placeholder: string;
-  value: string;
-  hint: string;
-  onChange: (value: string) => void;
-}) {
-  const id = useId();
-  return (
-    <div className="block">
-      <label
-        htmlFor={id}
-        className="mb-1.5 block text-xs font-medium text-zinc-400"
-      >
-        {label}
-      </label>
-      <input
-        id={id}
-        type="text"
-        inputMode="url"
-        className={inputClass}
-        placeholder={placeholder}
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        autoComplete="off"
-        autoCorrect="off"
-        autoCapitalize="none"
-        spellCheck={false}
-      />
-      <p className="mt-2 text-xs text-zinc-500">{hint}</p>
-    </div>
-  );
-}
-
-function SaveButton({
-  saving,
-  onClick,
-}: {
-  saving: boolean;
-  onClick: () => void;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      disabled={saving}
-      className="rounded-full border border-violet-500/40 bg-violet-950/50 px-6 py-2.5 text-sm font-semibold text-violet-100 transition hover:border-violet-400/60 hover:bg-violet-900/60 disabled:opacity-40"
-    >
-      {saving ? "Сохранение…" : "Сохранить"}
-    </button>
-  );
-}
-
-function ImageField({
-  imageUrl,
-  uploading,
-  error,
-  onFile,
-  onClear,
-}: {
-  imageUrl: string;
-  uploading: boolean;
-  error?: string | null;
-  onFile: (file: File | null) => void;
-  onClear: () => void;
-}) {
-  const inputId = useId();
-  const [localPreview, setLocalPreview] = useState<string | null>(null);
-  const [fileName, setFileName] = useState<string | null>(null);
-  const preview = localPreview || imageUrl;
-
-  return (
-    <div className="space-y-2">
-      <label
-        htmlFor={inputId}
-        className="block text-xs font-medium text-zinc-400"
-      >
-        Изображение
-      </label>
-      {preview ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
-          src={preview}
-          alt=""
-          className="aspect-[3/4] w-full rounded-lg border border-white/10 object-cover"
-        />
-      ) : (
-        <div className="flex aspect-[3/4] w-full items-center justify-center rounded-lg border border-dashed border-white/15 bg-black/40 text-xs text-zinc-500">
-          Нет файла
-        </div>
-      )}
-      <input
-        id={inputId}
-        type="file"
-        accept="image/*"
-        disabled={uploading}
-        onChange={(e) => {
-          const f = e.target.files?.[0] ?? null;
-          if (localPreview) URL.revokeObjectURL(localPreview);
-          if (f) {
-            setLocalPreview(URL.createObjectURL(f));
-            setFileName(f.name);
-            void onFile(f);
-          }
-        }}
-        className="block w-full max-w-full text-sm text-zinc-400 file:mr-2 file:rounded-lg file:border-0 file:bg-violet-600 file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-white hover:file:bg-violet-500"
-      />
-      {fileName ? (
-        <p className="truncate text-xs text-zinc-500">Файл: {fileName}</p>
-      ) : null}
-      {uploading ? (
-        <p className="text-xs text-violet-300/90">Загрузка…</p>
-      ) : null}
-      {error ? <p className="text-xs text-red-300">{error}</p> : null}
-      {imageUrl ? (
-        <button
-          type="button"
-          onClick={() => {
-            if (localPreview) URL.revokeObjectURL(localPreview);
-            setLocalPreview(null);
-            setFileName(null);
-            onClear();
-          }}
-          className="text-xs text-zinc-500 underline-offset-2 hover:text-zinc-300 hover:underline"
-        >
-          Убрать изображение
-        </button>
-      ) : null}
     </div>
   );
 }

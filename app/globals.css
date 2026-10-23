@@ -1566,7 +1566,7 @@ body::after {
     width: auto;
     max-width: min(100%, 17.5rem);
     margin-inline: auto;
-    margin-top: 0.15rem;
+    margin-top: 0;
   }
 
   .hero-product-layout > .hero-left-side > .hero-category-empty-msg {
@@ -1760,7 +1760,7 @@ body::after {
     --hero-novelties-title-band: clamp(2.35rem, 3.4vw, 3.35rem);
     --hero-gap-novelties-title-to-card: clamp(0.2rem, 0.45vw, 0.35rem);
     --hero-gap-hero-card-to-name: clamp(0.28rem, 0.55vw, 0.45rem);
-    --hero-gap-thumbs-to-title: clamp(0.2rem, 0.45vw, 0.35rem);
+    --hero-gap-thumbs-to-title: clamp(0.08rem, 0.28vw, 0.18rem);
     --hero-gap-card-to-thumbs: clamp(0.2rem, 0.45vw, 0.35rem);
     --hero-right-col-offset: 0px;
     --hero-left-gap-categories-promo: 0.32cm;
@@ -2798,7 +2798,9 @@ body::after {
   min-width: 0;
   overflow: visible;
   text-overflow: unset;
-  white-space: nowrap;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .hero-novelty-buy-first {
@@ -3010,12 +3012,22 @@ body::after {
   flex-shrink: 0;
 }
 
+.hero-right-side--novelty .hero-product-info {
+  gap: clamp(0.18rem, 0.6vw, 0.32rem);
+  margin-top: -0.2rem;
+}
+
 .hero-right-side--novelty .hero-product-info .hero-limited-card-title--novelty {
-  display: -webkit-box;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
-  min-height: 2.6em;
-  overflow: hidden;
+  display: block;
+  -webkit-line-clamp: unset;
+  min-height: 0;
+  overflow: visible;
+  white-space: normal;
+  text-overflow: unset;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  text-wrap: pretty;
+  line-height: 1.28;
 }
 
 /*
@@ -3093,6 +3105,88 @@ body::after {
   object-position: center center;
 }
 
+/*
+ * Мобильный герой: слот «Новинок» не должен перебивать сетку
+ * (категории / заголовок) и не должен занимать 16.75rem.
+ */
+@media (max-width: 768px) {
+  .hero-product-layout .hero-right-side--novelty,
+  .hero-product-layout .hero-right-side--novelty .hero-cell-card,
+  .hero-product-layout .hero-right-side--novelty .hero-product-section,
+  .hero-product-layout .hero-right-side--novelty .hero-product-stage {
+    display: contents;
+  }
+
+  .hero-product-layout .hero-right-side--novelty .hero-novelty-header {
+    grid-column: 1;
+    grid-row: 3;
+    position: relative;
+    z-index: 3;
+    width: 100%;
+    margin-bottom: 0.35rem;
+  }
+
+  .hero-product-layout .hero-right-side--novelty .hero-cards-stack {
+    grid-column: 1;
+    grid-row: 4;
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    max-width: 100%;
+    overflow: hidden;
+    padding-top: 0.2rem;
+    padding-bottom: 0.45rem;
+    padding-inline-start: 2.1rem;
+    padding-inline-end: 2.1rem;
+  }
+
+  .hero-product-layout .hero-right-side--novelty .hero-novelties-thumb-strip-wrap {
+    grid-column: 1;
+    grid-row: 5;
+    position: relative;
+    z-index: 3;
+    width: 100%;
+    margin-top: 0.25rem;
+  }
+
+  .hero-product-layout .hero-right-side--novelty .hero-product-info {
+    display: contents;
+  }
+
+  .hero-product-layout .hero-product-info .hero-limited-card-footer--novelty {
+    padding-bottom: 0.08rem;
+    margin-top: -0.12rem;
+  }
+
+  .hero-product-layout .hero-right-side--novelty .hero-cards-main {
+    width: min(11.25rem, 58vw);
+    max-width: min(11.25rem, 58vw);
+    max-height: min(42vh, 18.25rem);
+    aspect-ratio: 2 / 3;
+    height: auto;
+    margin-inline: auto;
+  }
+
+  .hero-product-layout .hero-right-side--tmnt.hero-right-side--novelty .hero-cards-main {
+    width: min(12.15rem, 62vw);
+    max-width: min(12.15rem, 62vw);
+    max-height: min(42vh, 18.25rem);
+    aspect-ratio: 761 / 1024;
+  }
+
+  .hero-product-layout .hero-right-side--novelty .hero-cards-main .card-main img,
+  .hero-product-layout .hero-right-side--novelty .hero-cards-main .card-vario-front img,
+  .hero-product-layout .hero-right-side--novelty .hero-cards-main .card-vario-back img,
+  .hero-product-layout .hero-right-side--novelty .hero-cards-main .card-side-img {
+    width: 100%;
+    height: 100%;
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+    object-position: center center;
+  }
+}
+
 @media (max-width: 768px) {
   .hero-cards-main .hero-card-stack-visual .card-side {
     transform: translate3d(-5%, 0, 0) rotate(-8deg);
@@ -3108,7 +3202,7 @@ body::after {
     flex-direction: column;
     align-items: center;
     justify-content: flex-start;
-    gap: 0.55rem;
+    gap: 0.28rem;
     width: 100%;
   }
 
@@ -3129,17 +3223,28 @@ body::after {
     max-width: 100%;
     font-size: clamp(1.0625rem, 4.2vw, 1.1875rem);
     font-weight: 600;
-    line-height: 1.25;
+    line-height: 1.28;
     letter-spacing: -0.02em;
     color: #fff;
     text-align: center;
     white-space: normal;
-    overflow: hidden;
+    overflow: visible;
     overflow-wrap: anywhere;
-    text-wrap: balance;
+    word-break: break-word;
+    text-wrap: pretty;
     text-overflow: unset;
     position: relative;
     z-index: 1;
+  }
+
+  .hero-right-side--novelty .hero-limited-card-titlebar {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .hero-right-side--novelty .hero-limited-card-titlebar > a {
+    flex: none;
+    width: 100%;
   }
 
   .hero-product-layout .hero-product-info .hero-limited-card-titlebar > :last-child {
@@ -3185,6 +3290,14 @@ body::after {
 }
 
 @media (min-width: 769px) {
+  .hero-product-layout .hero-right-side--novelty .hero-product-info .hero-limited-card-titlebar {
+    gap: 0.28rem;
+  }
+
+  .hero-product-layout .hero-right-side--novelty .hero-product-stage {
+    gap: clamp(0.28rem, 0.75vw, 0.48rem);
+  }
+
   .hero-product-layout .hero-product-stage {
     gap: clamp(0.45rem, 1.2vw, 0.8rem);
   }
@@ -3595,6 +3708,18 @@ body::after {
     padding-inline-end: 1.7rem;
   }
 
+  .hero-product-layout .hero-right-side--novelty .hero-cards-main {
+    width: min(10.25rem, 56vw);
+    max-width: min(10.25rem, 56vw);
+    max-height: min(40vh, 16.5rem);
+  }
+
+  .hero-product-layout .hero-right-side--tmnt.hero-right-side--novelty .hero-cards-main {
+    width: min(11rem, 60vw);
+    max-width: min(11rem, 60vw);
+    max-height: min(40vh, 16.5rem);
+  }
+
   .hero-product-layout .hero-categories .category-item {
     width: 52px;
     height: 52px;
@@ -3839,7 +3964,7 @@ body::after {
 
 .hero-limited-card-footer--novelty {
   max-width: min(100%, clamp(258px, 33vw, 456px));
-  margin-top: clamp(1rem, 1.8vw, 1.55rem);
+  margin-top: clamp(0.28rem, 0.7vw, 0.5rem);
   position: relative;
   z-index: 40;
 }
@@ -3852,7 +3977,7 @@ body::after {
   display: flex;
   width: 100%;
   min-width: 0;
-  align-items: flex-end;
+  align-items: flex-start;
   justify-content: space-between;
   gap: clamp(0.5rem, 1vw, 0.85rem);
 }
@@ -3875,7 +4000,25 @@ body::after {
 
 .hero-limited-card-title--novelty {
   font-size: clamp(1.14rem, 1rem + 0.72vw, 1.5rem);
-  line-height: 1.02;
+  line-height: 1.28;
+}
+
+.hero-right-side--novelty .hero-limited-card-titlebar {
+  flex-direction: row;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.hero-right-side--novelty .hero-limited-card-titlebar > a {
+  flex: 1 1 auto;
+  min-width: 0;
+  width: auto;
+  max-width: 100%;
+}
+
+.hero-right-side--novelty .hero-button.hero-novelty-buy-first {
+  margin-top: 0;
 }
 
 .hero-limited-card-action {

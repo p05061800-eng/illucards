@@ -93,6 +93,16 @@ const nextConfig: NextConfig = {
       },
     ];
   },
+  async rewrites() {
+    return {
+      fallback: [
+        {
+          source: "/uploads/:path*",
+          destination: "/api/media/:path*",
+        },
+      ],
+    };
+  },
 };
 
 export default nextConfig;

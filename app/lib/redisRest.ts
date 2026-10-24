@@ -143,6 +143,7 @@ async function postRedis(
   url: string,
   token: string,
   payload: unknown,
+  cacheMode: "no-store" | "catalog" = "no-store",
 ): Promise<{ status: number; body: RedisBody }> {
   const res = await fetch(url, {
     method: "POST",
@@ -151,7 +152,9 @@ async function postRedis(
       "Content-Type": "application/json",
     },
     body: JSON.stringify(payload),
-    cache: "no-store",
+    ...(cacheMode === "catalog"
+      ? { next: { revalidate: 60, tags: ["catalog-json"] } }
+      : { cache: "no-store" as const }),
   });
   const body = await parseRedisResponse(res);
   if (!res.ok && !body.error) {
@@ -162,6 +165,7 @@ async function postRedis(
 
 export async function redisCommand(
   cmd: unknown[],
+  cacheMode: "no-store" | "catalog" = "no-store",
 ): Promise<{ result?: unknown; error?: string } | null> {
   const cred = redisRestCredentials();
   if (!cred) {
@@ -177,7 +181,12 @@ export async function redisCommand(
     ];
     let last: { status: number; body: RedisBody } | null = null;
     for (const attempt of attempts) {
-      last = await postRedis(attempt.url, cred.token, attempt.payload);
+      last = await postRedis(
+        attempt.url,
+        cred.token,
+        attempt.payload,
+        cacheMode,
+      );
       if (!last.body.error && last.status >= 200 && last.status < 300) {
         return last.body;
       }
@@ -197,8 +206,11 @@ export async function redisCommand(
   }
 }
 
-export async function redisGetText(key: string): Promise<string | null> {
-  const j = await redisCommand(["GET", key]);
+export async function redisGetText(
+  key: string,
+  cacheMode: "no-store" | "catalog" = "no-store",
+): Promise<string | null> {
+  const j = await redisCommand(["GET", key], cacheMode);
   if (!j || j.error) return null;
   if (typeof j.result === "string" && j.result.trim()) return j.result;
   if (j.result && typeof j.result === "object") {

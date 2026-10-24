@@ -1,3 +1,4 @@
+import { revalidateTag } from "next/cache";
 import {
   redisCredentialsHint,
   redisGetText,
@@ -37,7 +38,7 @@ export async function loadDurableJsonText(
   redisKey: string,
   filePath: string,
 ): Promise<string | null> {
-  const fromRedis = await redisGetText(redisKey);
+  const fromRedis = await redisGetText(redisKey, "catalog");
   if (fromRedis) return fromRedis;
   return readFileText(filePath);
 }
@@ -49,7 +50,10 @@ export async function saveDurableJsonText(
 ): Promise<void> {
   const redis = await redisSetTextResult(redisKey, text);
   const fileOk = await writeFileText(filePath, text);
-  if (redis.ok || fileOk) return;
+  if (redis.ok || fileOk) {
+    revalidateTag("catalog-json", "max");
+    return;
+  }
   const cred = redisRestCredentials();
   throw new Error(
     redis.error ||
@@ -145,7 +149,7 @@ export async function saveDurableUpload(
           : redisCredentialsHint(),
     );
   }
-  return `/api/media/${safe}`;
+  return `/uploads/${safe}`;
 }
 
 export async function loadDurableUpload(

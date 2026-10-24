@@ -32,7 +32,11 @@ async function loadConfig(): Promise<PromoHomeConfig> {
 
 export async function GET() {
   const config = await loadConfig();
-  return NextResponse.json(config satisfies PromoHomeConfig);
+  return NextResponse.json(config satisfies PromoHomeConfig, {
+    headers: {
+      "Cache-Control": "public, s-maxage=60, stale-while-revalidate=300",
+    },
+  });
 }
 
 export async function POST(req: NextRequest) {

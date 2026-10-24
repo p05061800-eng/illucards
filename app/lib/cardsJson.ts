@@ -25,6 +25,7 @@ import {
   isSafeImageUrl,
   isSafeUploadPublicPath,
   isSafeVercelBlobUrl,
+  publicCdnUploadUrl,
 } from "@/app/lib/serverImage";
 
 const DEFAULT_STATS: CardStats = {
@@ -280,8 +281,8 @@ function normalizeCard(raw: Record<string, unknown>): StoredCard {
       typeof raw.category === "string" ? raw.category : "",
     subcategory:
       typeof raw.subcategory === "string" ? raw.subcategory.trim() : "",
-    frontImage: front,
-    backImage: back,
+    frontImage: publicCdnUploadUrl(front),
+    backImage: back ? publicCdnUploadUrl(back) : back,
     price: parsePrice(raw.priceByn ?? raw.price),
     rarity: rarityValue,
     stats: parseStats(raw.stats),
@@ -310,12 +311,12 @@ function normalizeCard(raw: Record<string, unknown>): StoredCard {
   const pv =
     typeof raw.productVideo === "string" ? raw.productVideo.trim() : "";
   if (pv && isSafeVideoUrl(pv)) {
-    card.productVideo = pv;
+    card.productVideo = publicCdnUploadUrl(pv);
   }
   const hg =
     typeof raw.frontHoverGif === "string" ? raw.frontHoverGif.trim() : "";
   if (hg && isSafeFrontHoverMotionPath(hg)) {
-    card.frontHoverGif = hg;
+    card.frontHoverGif = publicCdnUploadUrl(hg);
   }
   const bt = parseIdList(raw.boughtTogetherIds);
   if (bt) {
@@ -335,17 +336,17 @@ function normalizeCard(raw: Record<string, unknown>): StoredCard {
   const legacyBgImage =
     typeof raw.bgImage === "string" ? raw.bgImage.trim() : "";
   if (categoryBgRaw) {
-    card.categoryBg = categoryBgRaw;
+    card.categoryBg = publicCdnUploadUrl(categoryBgRaw);
   } else if (legacyBgImage) {
-    card.categoryBg = legacyBgImage;
+    card.categoryBg = publicCdnUploadUrl(legacyBgImage);
   }
   const heroBgRaw = typeof raw.heroBg === "string" ? raw.heroBg.trim() : "";
   if (heroBgRaw) {
-    card.heroBg = heroBgRaw;
+    card.heroBg = publicCdnUploadUrl(heroBgRaw);
   }
   const ultraBgRaw = typeof raw.ultraBg === "string" ? raw.ultraBg.trim() : "";
   if (ultraBgRaw) {
-    card.ultraBg = ultraBgRaw;
+    card.ultraBg = publicCdnUploadUrl(ultraBgRaw);
   }
   const ff = parseImageFocus(raw.frontImageFocus);
   if (ff) {
@@ -358,7 +359,7 @@ function normalizeCard(raw: Record<string, unknown>): StoredCard {
   const midImg =
     typeof raw.middleImage === "string" ? raw.middleImage.trim() : "";
   if (midImg) {
-    card.middleImage = midImg;
+    card.middleImage = publicCdnUploadUrl(midImg);
   }
   const mf = parseImageFocus(raw.middleImageFocus);
   if (mf && card.middleImage?.trim()) {
@@ -433,4 +434,17 @@ export function parseCardsJson(json: string): StoredCard[] {
   } catch {
     return [];
   }
+}
+
+/** Главная не тащит описания и отзывы в клиентский бандл. */
+export function toStorefrontCard(card: StoredCard): StoredCard {
+  return {
+    ...card,
+    description: "",
+    reviews: undefined,
+    boughtTogetherIds: undefined,
+    recommendedIds: undefined,
+    productVideo: undefined,
+    productVideoFocus: undefined,
+  };
 }

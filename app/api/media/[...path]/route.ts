@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { loadDurableUpload } from "@/app/lib/durableJson";
 
-export const dynamic = "force-dynamic";
+/** Чтобы CDN мог кэшировать картинки. `force-dynamic` на проде даёт 3–10 с на каждый файл. */
+export const revalidate = 86400;
 
 function contentTypeFor(name: string): string {
   const n = name.toLowerCase();
@@ -28,7 +29,8 @@ export async function GET(
   return new NextResponse(new Uint8Array(bytes), {
     headers: {
       "Content-Type": contentTypeFor(relative),
-      "Cache-Control": "public, max-age=31536000, immutable",
+      "Cache-Control":
+        "public, max-age=31536000, s-maxage=31536000, immutable",
     },
   });
 }

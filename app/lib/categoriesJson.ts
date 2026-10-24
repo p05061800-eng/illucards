@@ -1,5 +1,6 @@
 import { parseImageFocus, type ImageFocus } from "@/app/lib/imageFocus";
 import { bucketCardArtFrameAspectCssFromDimensions } from "@/app/lib/cardAspectRatio";
+import { publicCdnUploadUrl } from "@/app/lib/serverImage";
 
 export type TmntSubcollectionTile = {
   id: "turtles" | "foes";
@@ -52,14 +53,15 @@ export function parseCategoriesJson(raw: unknown): CategoryTile[] {
     const o = row as Record<string, unknown>;
     const tile: CategoryTile = {
       name: typeof o.name === "string" ? o.name : "",
-      image: typeof o.image === "string" ? o.image : "",
+      image:
+        typeof o.image === "string" ? publicCdnUploadUrl(o.image) : "",
     };
     const f = parseImageFocus(o.imageFocus);
     if (f) {
       tile.imageFocus = f;
     }
     if (typeof o.plateImage === "string" && o.plateImage.trim()) {
-      tile.plateImage = o.plateImage.trim();
+      tile.plateImage = publicCdnUploadUrl(o.plateImage.trim());
     }
     const pf = parseImageFocus(o.plateImageFocus);
     if (pf) {

@@ -58,7 +58,11 @@ async function ensureFile() {
 export async function GET() {
   const raw = await loadDurableJsonText(DURABLE_JSON_KEYS.categories, filePath);
   const data = raw ?? defaultJson;
-  return NextResponse.json(parseCategoriesJson(JSON.parse(data)));
+  return NextResponse.json(parseCategoriesJson(JSON.parse(data)), {
+    headers: {
+      "Cache-Control": "public, s-maxage=60, stale-while-revalidate=300",
+    },
+  });
 }
 
 export async function POST(req: NextRequest) {

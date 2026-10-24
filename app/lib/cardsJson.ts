@@ -25,8 +25,8 @@ import {
   isSafeImageUrl,
   isSafeUploadPublicPath,
   isSafeVercelBlobUrl,
-  publicCdnUploadUrl,
 } from "@/app/lib/serverImage";
+import { publicCdnUploadUrl } from "@/app/lib/publicCdnUploadUrl";
 
 const DEFAULT_STATS: CardStats = {
   power: 50,

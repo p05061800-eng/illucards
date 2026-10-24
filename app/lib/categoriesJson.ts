@@ -1,6 +1,6 @@
 import { parseImageFocus, type ImageFocus } from "@/app/lib/imageFocus";
 import { bucketCardArtFrameAspectCssFromDimensions } from "@/app/lib/cardAspectRatio";
-import { publicCdnUploadUrl } from "@/app/lib/serverImage";
+import { publicCdnUploadUrl } from "@/app/lib/publicCdnUploadUrl";
 
 export type TmntSubcollectionTile = {
   id: "turtles" | "foes";

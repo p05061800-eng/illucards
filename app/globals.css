@@ -1762,6 +1762,11 @@ body::after {
       100%,
       calc(16.75rem * 3 / 2 * 761 / 1024)
     );
+    /* Берсерк 596/819: та же высота, что у 2:3. */
+    --hero-novelty-card-width-berserk: min(
+      100%,
+      calc(16.75rem * 3 / 2 * 596 / 819)
+    );
     --hero-novelties-title-band: clamp(2.35rem, 3.4vw, 3.35rem);
     --hero-gap-novelties-title-to-card: clamp(0.2rem, 0.45vw, 0.35rem);
     --hero-gap-hero-card-to-name: clamp(0.28rem, 0.55vw, 0.45rem);
@@ -2030,6 +2035,16 @@ body::after {
   .hero-right-side--tmnt.hero-right-side--novelty .hero-card.hero-novelty-card-wrap {
     width: var(--hero-novelty-card-width-tmnt);
     max-width: var(--hero-novelty-card-width-tmnt);
+    min-width: 0;
+    margin-inline: auto;
+    padding-inline: 0;
+    flex: 0 0 auto;
+  }
+
+  .hero-right-side--berserk.hero-right-side--novelty .hero-novelty-card-wrap,
+  .hero-right-side--berserk.hero-right-side--novelty .hero-card.hero-novelty-card-wrap {
+    width: var(--hero-novelty-card-width-berserk);
+    max-width: var(--hero-novelty-card-width-berserk);
     min-width: 0;
     margin-inline: auto;
     padding-inline: 0;
@@ -3079,6 +3094,12 @@ body::after {
   aspect-ratio: 761 / 1024;
 }
 
+.hero-right-side--berserk.hero-right-side--novelty .hero-cards-main {
+  width: var(--hero-novelty-card-width-berserk);
+  max-width: min(100%, var(--hero-novelty-card-width-berserk));
+  aspect-ratio: 596 / 819;
+}
+
 .hero-right-side--novelty .hero-cards-main .product-card-page-stack,
 .hero-right-side--novelty .hero-cards-main .hero-card-stack-visual,
 .hero-right-side--novelty .hero-cards-main .illucards-card,
@@ -3098,6 +3119,10 @@ body::after {
 
 .hero-right-side--tmnt.hero-right-side--novelty .hero-cards-main .hero-card-stack-sizer {
   aspect-ratio: 761 / 1024 !important;
+}
+
+.hero-right-side--berserk.hero-right-side--novelty .hero-cards-main .hero-card-stack-sizer {
+  aspect-ratio: 596 / 819 !important;
 }
 
 .hero-right-side--novelty .hero-cards-main .card-main img,
@@ -3177,6 +3202,13 @@ body::after {
     max-width: min(12.15rem, 62vw);
     max-height: min(42vh, 18.25rem);
     aspect-ratio: 761 / 1024;
+  }
+
+  .hero-product-layout .hero-right-side--berserk.hero-right-side--novelty .hero-cards-main {
+    width: min(12.15rem, 62vw);
+    max-width: min(12.15rem, 62vw);
+    max-height: min(42vh, 18.25rem);
+    aspect-ratio: 596 / 819;
   }
 
   .hero-product-layout .hero-right-side--novelty .hero-cards-main .card-main img,
@@ -3547,6 +3579,14 @@ body::after {
     padding-inline: 0 !important;
   }
 
+  .hero-right-side--berserk.hero-right-side--novelty .hero-novelty-card-wrap,
+  .hero-right-side--berserk.hero-right-side--novelty .hero-card.hero-novelty-card-wrap {
+    width: var(--hero-novelty-card-width-berserk) !important;
+    max-width: var(--hero-novelty-card-width-berserk) !important;
+    margin-inline: auto !important;
+    padding-inline: 0 !important;
+  }
+
   .hero-right-side--marvel.hero-right-side--novelty .hero-right-product > div,
   .hero-right-side--tmnt.hero-right-side--novelty .hero-right-product > div {
     max-width: 100% !important;
@@ -3687,6 +3727,10 @@ body::after {
       100%,
       calc(18rem * 3 / 2 * 761 / 1024)
     );
+    --hero-novelty-card-width-berserk: min(
+      100%,
+      calc(18rem * 3 / 2 * 596 / 819)
+    );
   }
 }
 
@@ -3723,6 +3767,13 @@ body::after {
     width: min(11rem, 60vw);
     max-width: min(11rem, 60vw);
     max-height: min(40vh, 16.5rem);
+  }
+
+  .hero-product-layout .hero-right-side--berserk.hero-right-side--novelty .hero-cards-main {
+    width: min(11rem, 60vw);
+    max-width: min(11rem, 60vw);
+    max-height: min(40vh, 16.5rem);
+    aspect-ratio: 596 / 819;
   }
 
   .hero-product-layout .hero-categories .category-item {

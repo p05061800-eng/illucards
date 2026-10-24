@@ -6,6 +6,7 @@ import {
   imageBufferLogoWebp,
   imageBufferPromoBannerWebp,
   imageBufferTo34Webp,
+  imageBufferToBerserkPosterWebp,
   imageBufferToTmntPosterWebp,
 } from "@/app/lib/serverImage";
 
@@ -64,7 +65,9 @@ export async function POST(req: NextRequest) {
           ? await imageBufferLogoWebp(buffer)
           : cardCategory === "TMNT"
             ? await imageBufferToTmntPosterWebp(buffer)
-            : await imageBufferTo34Webp(buffer);
+            : cardCategory === "Берсерк"
+              ? await imageBufferToBerserkPosterWebp(buffer)
+              : await imageBufferTo34Webp(buffer);
     } catch {
       if (usePromoPipeline) {
         try {

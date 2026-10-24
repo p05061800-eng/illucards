@@ -79,6 +79,7 @@ export default function PromoSlider({
   }, [cards]);
 
   useEffect(() => {
+    if (cards.length > 0) return;
     let cancelled = false;
     fetch(apiUrl("/api/cards"))
       .then((r) => (r.ok ? r.json() : Promise.reject()))
@@ -90,9 +91,16 @@ export default function PromoSlider({
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [cards.length]);
 
   useEffect(() => {
+    const hasInitialArt =
+      configFromProps(initialConfig, initialSlides).customOrder.imageUrl.trim()
+        .length > 0 ||
+      configFromProps(initialConfig, initialSlides).items.some(
+        (s) => s.imageUrl.trim().length > 0,
+      );
+    if (hasInitialArt) return;
     let cancelled = false;
     fetch(apiUrl("/api/promo-slides"))
       .then((r) => (r.ok ? r.json() : Promise.reject()))
@@ -117,7 +125,7 @@ export default function PromoSlider({
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [initialConfig, initialSlides]);
 
   const orderTile = customOrderForHero(config.customOrder);
   const orderCards = resolveCustomOrderHeroCards(

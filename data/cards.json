@@ -8917,8 +8917,8 @@
     "description": "Одинокий воин, бросивший вызов самой судьбе. ⚔️ Гатс прошёл через бесчисленные сражения, предательства и испытания, но так и не позволил тьме сломить свою волю. Его гигантский меч способен сокрушить любого врага, а несгибаемый дух помогает идти вперёд даже тогда, когда надежды почти не осталось. В мире, где человеческими судьбами управляют загадочные силы, Гатс продолжает сражаться за собственную свободу, доказывая, что даже перед лицом неизбежного человек способен сопротивляться.",
     "category": "Берсерк",
     "subcategory": "",
-    "frontImage": "/api/media/1792812744967-8e9ee0dd.webp",
-    "backImage": "/api/media/1792812753973-1d561067.webp",
+    "frontImage": "/api/media/1792818122287-b9cb0e75.webp",
+    "backImage": "/api/media/1792818136107-80227030.webp",
     "price": 30,
     "rarity": "novelty",
     "stats": {
@@ -8939,7 +8939,7 @@
     ],
     "noveltySince": "2026-10-24T03:39:58.197Z",
     "effect": "vario",
-    "categoryBg": "/api/media/1792813174560-9a220d26.webp",
+    "categoryBg": "/api/media/1792818107636-1ed8e6e4.webp",
     "frontImageFocus": {
       "x": 50,
       "y": 50
@@ -8955,8 +8955,8 @@
     "priceRub": 800,
     "categoryOrder": 1,
     "varioSmoothing": 0.18,
-    "frontImageWidth": 600,
-    "frontImageHeight": 900
+    "frontImageWidth": 596,
+    "frontImageHeight": 819
   },
   {
     "id": "23a6c001-1f88-4fb0-9162-bf1e58b27611",
@@ -8964,8 +8964,8 @@
     "description": "За маской непреклонного воина скрывается человек, чья жизнь стала бесконечной борьбой с судьбой. ⚔️ Даже после тяжелейших ранений Гатс продолжает идти вперёд, не позволяя боли и отчаянию сломить свою волю. Но даже легендарный Чёрный мечник нуждается в редких мгновениях покоя, чтобы собраться с силами перед новыми испытаниями. Эта особая карточка раскрывает другую сторону Гатса — не только безжалостного бойца, но и человека, который продолжает искать собственный путь в жестоком мире «Берсерка».",
     "category": "Берсерк",
     "subcategory": "",
-    "frontImage": "/api/media/1792813252293-7030f0a9.webp",
-    "backImage": "/api/media/1792813261076-5d14ea6e.webp",
+    "frontImage": "/api/media/1792818081999-5951abeb.webp",
+    "backImage": "/api/media/1792818091776-af42eebe.webp",
     "price": 30,
     "rarity": "novelty",
     "stats": {
@@ -8986,7 +8986,7 @@
     ],
     "noveltySince": "2026-10-24T03:41:08.579Z",
     "effect": "vario",
-    "categoryBg": "/api/media/1792813232422-d62a3b88.webp",
+    "categoryBg": "/api/media/1792818064525-055aab10.webp",
     "frontImageFocus": {
       "x": 50,
       "y": 50
@@ -9002,8 +9002,8 @@
     "priceRub": 800,
     "categoryOrder": 1,
     "varioSmoothing": 0.18,
-    "frontImageWidth": 600,
-    "frontImageHeight": 900
+    "frontImageWidth": 596,
+    "frontImageHeight": 819
   },
   {
     "id": "e228f253-d301-4283-beb7-e22be93650ee",
@@ -9011,8 +9011,8 @@
     "description": "Величественный полководец, чья мечта возвыситься над миром способна вести за собой целые армии. 🦅 Гриффит очаровывает своей харизмой, холодным расчётом и непоколебимой верой в собственное предназначение. Для него замки — не просто крепости, а символы будущего, к которому он стремится любой ценой. Но за ослепительным образом Белого ястреба скрывается опасная решимость: если мечта всё ещё жива, он готов пройти по любому пути, даже если тот вымощен чужими судьбами.",
     "category": "Берсерк",
     "subcategory": "",
-    "frontImage": "/api/media/1792813646285-73829aaf.webp",
-    "backImage": "/api/media/1792813653192-06ce800a.webp",
+    "frontImage": "/api/media/1792818033129-372efebf.webp",
+    "backImage": "/api/media/1792818046028-3387480c.webp",
     "price": 30,
     "rarity": "novelty",
     "stats": {
@@ -9033,7 +9033,7 @@
     ],
     "noveltySince": "2026-10-24T03:47:35.758Z",
     "effect": "vario",
-    "categoryBg": "/api/media/1792813614868-ff258013.webp",
+    "categoryBg": "/api/media/1792818026973-17863f7e.webp",
     "frontImageFocus": {
       "x": 50,
       "y": 50
@@ -9049,8 +9049,8 @@
     "priceRub": 800,
     "categoryOrder": 2,
     "varioSmoothing": 0.18,
-    "frontImageWidth": 600,
-    "frontImageHeight": 900
+    "frontImageWidth": 596,
+    "frontImageHeight": 819
   },
   {
     "id": "f9f83bc7-d2f5-4f5f-b56e-a4cd92ba3726",
@@ -9058,8 +9058,8 @@
     "description": "",
     "category": "Берсерк",
     "subcategory": "",
-    "frontImage": "/api/media/1792813714272-d1f9e76d.webp",
-    "backImage": "/api/media/1792813721785-160bb81b.webp",
+    "frontImage": "/api/media/1792817992493-0af5ec8e.webp",
+    "backImage": "/api/media/1792817998752-83f9bb41.webp",
     "price": 30,
     "rarity": "novelty",
     "stats": {
@@ -9080,7 +9080,7 @@
     ],
     "noveltySince": "2026-10-24T03:48:43.337Z",
     "effect": "vario",
-    "categoryBg": "/api/media/1792813697119-079e53df.webp",
+    "categoryBg": "/api/media/1792817981296-e52a6fac.webp",
     "frontImageFocus": {
       "x": 50,
       "y": 50
@@ -9096,7 +9096,7 @@
     "priceRub": 800,
     "categoryOrder": 2,
     "varioSmoothing": 0.18,
-    "frontImageWidth": 600,
-    "frontImageHeight": 900
+    "frontImageWidth": 596,
+    "frontImageHeight": 819
   }
 ]

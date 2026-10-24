@@ -3,6 +3,8 @@ import { HomeCollection } from "./components/HomeCollection";
 import { parseCardsJson } from "./lib/cardsJson";
 import type { CategoryTile } from "./lib/categoriesJson";
 import { parseCategoriesJson } from "./lib/categoriesJson";
+import { resolveCustomOrderHeroCards } from "./lib/customOrderHeroCarousel";
+import { buildNoveltiesCarouselCards } from "./lib/noveltiesHeroCarousel";
 import {
   parsePromoHomeConfig,
   type PromoHomeConfig,
@@ -13,8 +15,8 @@ import {
 } from "./lib/durableJson";
 import path from "path";
 
-/** Читать `data/*.json` при каждом запросе, а не застывший при билде снимок (акции/каталог). */
-export const dynamic = "force-dynamic";
+/** После сохранения в админке `revalidatePath("/")` сразу обновляет главную. */
+export const revalidate = 60;
 
 export default async function Home() {
   const filePath = path.join(process.cwd(), "data", "cards.json");
@@ -57,11 +59,25 @@ export default async function Home() {
     };
   }
 
+  const customOrderCards = resolveCustomOrderHeroCards(
+    cards,
+    initialPromoConfig.customOrder.imageUrl,
+  );
+  const heroCardIds = new Set<string>();
+  const heroCards = [
+    ...buildNoveltiesCarouselCards(cards),
+    ...customOrderCards,
+  ].filter((card) => {
+    if (heroCardIds.has(card.id)) return false;
+    heroCardIds.add(card.id);
+    return true;
+  });
+
   return (
     <main className="main relative min-h-screen overflow-x-hidden text-white">
       <div className="home-main-stack relative z-10 overflow-x-hidden overflow-y-visible px-0 pb-16 pt-[6px] sm:pb-20 sm:pt-2">
         <HeroSection
-          cards={cards}
+          cards={heroCards}
           initialHeroCategoryName={initialHeroCategoryName}
           initialCategories={categoryTiles}
           initialPromoConfig={initialPromoConfig}

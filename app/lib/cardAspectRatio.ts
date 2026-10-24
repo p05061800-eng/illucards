@@ -10,6 +10,9 @@ export const CARD_ART_PORTRAIT_FRAME_ASPECT_CSS =
 /** Постер TMNT на витрине — как референс 761×1024 (вторая опорная картинка). */
 export const CARD_ART_TMNT_POSTER_ASPECT_CSS = "761 / 1024";
 
+/** Коллекционные карточки Берсерк — референс 596×819. */
+export const CARD_ART_BERSERK_POSTER_ASPECT_CSS = "596 / 819";
+
 /** Горизонтальный баннер на витрине (w > h). */
 export const CARD_ART_LANDSCAPE_FRAME_ASPECT_CSS = "16 / 6";
 
@@ -107,12 +110,21 @@ export const TMNT_REFERENCE_POSTER_DIMENSIONS = {
   height: 1024,
 } as const;
 
+export const BERSERK_REFERENCE_POSTER_DIMENSIONS = {
+  width: 596,
+  height: 819,
+} as const;
+
 function isTmntCategory(card: { category?: string }): boolean {
   return (card.category ?? "").trim().toLowerCase() === "tmnt";
 }
 
+export function isBerserkCategory(category: string | undefined): boolean {
+  return (category ?? "").trim().toLowerCase() === "берсерк";
+}
+
 /**
- * Рамка витрины: TMNT — фикс 761/1024; иначе по API или хуку — баннер 16/6 или постер 2:3.
+ * Рамка витрины: TMNT — 761/1024; Берсерк — 596/819; иначе баннер 16/6 или постер 2:3.
  */
 export function resolveCardArtBoxAspectCss(
   card: {
@@ -128,6 +140,9 @@ export function resolveCardArtBoxAspectCss(
   void _categoryFrameAspectCss;
   if (isTmntCategory(card)) {
     return CARD_ART_TMNT_POSTER_ASPECT_CSS;
+  }
+  if (isBerserkCategory(card.category)) {
+    return CARD_ART_BERSERK_POSTER_ASPECT_CSS;
   }
   if (
     typeof card.frontImageWidth === "number" &&

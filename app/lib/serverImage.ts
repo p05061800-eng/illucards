@@ -1,5 +1,8 @@
 import sharp from "sharp";
-import { TMNT_REFERENCE_POSTER_DIMENSIONS } from "./cardAspectRatio";
+import {
+  BERSERK_REFERENCE_POSTER_DIMENSIONS,
+  TMNT_REFERENCE_POSTER_DIMENSIONS,
+} from "./cardAspectRatio";
 
 /** Выход для лиц карточек после аплоада — 600×900 (2:3). */
 export const UPLOAD_IMAGE_WIDTH = 600;
@@ -25,6 +28,21 @@ export async function imageBufferToTmntPosterWebp(
     .resize(w, h, {
       fit: "cover",
       position: "attention",
+    })
+    .webp({ quality: 86 })
+    .toBuffer();
+}
+
+/** Коллекционные карточки Берсерк — кадр 596×819, арт целиком (без обрезки). */
+export async function imageBufferToBerserkPosterWebp(
+  buffer: Buffer,
+): Promise<Buffer> {
+  const { width: w, height: h } = BERSERK_REFERENCE_POSTER_DIMENSIONS;
+  return sharp(buffer)
+    .rotate()
+    .resize(w, h, {
+      fit: "contain",
+      background: { r: 0, g: 0, b: 0, alpha: 1 },
     })
     .webp({ quality: 86 })
     .toBuffer();

@@ -604,16 +604,16 @@ export function CardStackVisual({
   const fixedShell = cardArtFixedFrameShellClass(fixedCatalogFrame);
   const fixedImg = cardArtFixedFrameImgClass(fixedCatalogFrame);
 
-  /** Герой и каталог: без lazy на лице/обороте/ultra — иначе чёрный фон до decode. */
-  const eagerFaceImages = catalogStack || heroStack;
+  /** Только видимый герой — иначе сетка коллекций качает все webp сразу. */
+  const eagerFaceImages = heroStack;
 
   /** Третий слой: для TMNT фон категории заполняет ту же рамку 761×1024, что лицо. */
   const ultraLayerImgStyle: CSSProperties = useMemo(() => {
     const cat = card.categoryBg?.trim();
     const fromCategoryBg = Boolean(cat && ultraBgUrl === cat);
-    const tmntCover = isTmntCategory(card.category);
+    const posterCover = isTmntCategory(card.category);
 
-    if (productFaceCoversFrame || tmntCover) {
+    if (productFaceCoversFrame || posterCover) {
       if (fromCategoryBg) {
         return categoryFocusCoverStyle(card.categoryBgFocus);
       }

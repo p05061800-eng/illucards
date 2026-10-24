@@ -16,6 +16,7 @@ import path from "path";
 import { maxCategoryOrderInCategory } from "@/app/lib/adminCategoryOrder";
 import {
   imageBufferTo34Webp,
+  imageBufferToBerserkPosterWebp,
   imageBufferToTmntPosterWebp,
   isSafeImageUrl,
   isSafeUploadPublicPath,
@@ -23,6 +24,8 @@ import {
 } from "@/app/lib/serverImage";
 import { readPublicImageDimensions } from "@/app/lib/readPublicImageDimensions";
 import {
+  BERSERK_REFERENCE_POSTER_DIMENSIONS,
+  isBerserkCategory,
   isFixedCardArtFramePreset,
   parseCardArtFramePreset,
   TMNT_REFERENCE_POSTER_DIMENSIONS,
@@ -335,7 +338,34 @@ function parseIdListFromComma(raw: string): string[] {
     .filter(Boolean);
 }
 
-type CardImageSavePipeline = "card34" | "tmntPoster";
+type CardImageSavePipeline = "card34" | "tmntPoster" | "berserkPoster";
+
+function imagePipelineForCategory(category: string): CardImageSavePipeline {
+  if (category === "TMNT") return "tmntPoster";
+  if (isBerserkCategory(category)) return "berserkPoster";
+  return "card34";
+}
+
+function applyCategoryPosterDimensions(
+  card: { frontImageWidth?: number; frontImageHeight?: number },
+  category: string,
+  fallback: { width: number; height: number } | null,
+): void {
+  if (category === "TMNT") {
+    card.frontImageWidth = TMNT_REFERENCE_POSTER_DIMENSIONS.width;
+    card.frontImageHeight = TMNT_REFERENCE_POSTER_DIMENSIONS.height;
+    return;
+  }
+  if (isBerserkCategory(category)) {
+    card.frontImageWidth = BERSERK_REFERENCE_POSTER_DIMENSIONS.width;
+    card.frontImageHeight = BERSERK_REFERENCE_POSTER_DIMENSIONS.height;
+    return;
+  }
+  if (fallback) {
+    card.frontImageWidth = fallback.width;
+    card.frontImageHeight = fallback.height;
+  }
+}
 
 async function saveImageFile(
   file: File,
@@ -346,7 +376,9 @@ async function saveImageFile(
   const processed =
     pipeline === "tmntPoster"
       ? await imageBufferToTmntPosterWebp(buffer)
-      : await imageBufferTo34Webp(buffer);
+      : pipeline === "berserkPoster"
+        ? await imageBufferToBerserkPosterWebp(buffer)
+        : await imageBufferTo34Webp(buffer);
   const filename = `${randomUUID()}.webp`;
   return savePublicUpload(filename, processed, "image/webp");
 }
@@ -423,8 +455,7 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const imagePipe: CardImageSavePipeline =
-    category === "TMNT" ? "tmntPoster" : "card34";
+  const imagePipe: CardImageSavePipeline = imagePipelineForCategory(category);
 
   let frontImagePath: string | null;
   let backImagePath = "";
@@ -484,7 +515,7 @@ export async function POST(req: NextRequest) {
     } else if (categoryBgUpload instanceof File && categoryBgUpload.size > 0) {
       categoryBgPath = await saveImageFile(
         categoryBgUpload,
-        category === "TMNT" ? "tmntPoster" : "card34",
+        imagePipelineForCategory(category),
       );
     }
   } catch (e) {
@@ -624,13 +655,7 @@ export async function POST(req: NextRequest) {
   }
 
   const fdNew = await readPublicImageDimensions(frontImagePath);
-  if (category === "TMNT") {
-    newCard.frontImageWidth = TMNT_REFERENCE_POSTER_DIMENSIONS.width;
-    newCard.frontImageHeight = TMNT_REFERENCE_POSTER_DIMENSIONS.height;
-  } else if (fdNew) {
-    newCard.frontImageWidth = fdNew.width;
-    newCard.frontImageHeight = fdNew.height;
-  }
+  applyCategoryPosterDimensions(newCard, category, fdNew);
 
   const framePost = parseCardArtFramePreset(formData.get("cardArtFramePreset"));
   if (isFixedCardArtFramePreset(framePost)) {
@@ -709,8 +734,7 @@ export async function PATCH(req: NextRequest) {
   }
 
   let frontImagePath = existing.frontImage;
-  const imagePipe: CardImageSavePipeline =
-    category === "TMNT" ? "tmntPoster" : "card34";
+  const imagePipe: CardImageSavePipeline = imagePipelineForCategory(category);
 
   let frontResolved: string | null;
   let backResolved: string | null;
@@ -829,7 +853,7 @@ export async function PATCH(req: NextRequest) {
     try {
       updated.categoryBg = await saveImageFile(
         categoryBgUpload,
-        category === "TMNT" ? "tmntPoster" : "card34",
+        imagePipelineForCategory(category),
       );
     } catch (e) {
       return NextResponse.json(
@@ -1026,13 +1050,7 @@ export async function PATCH(req: NextRequest) {
   }
 
   const fdPatch = await readPublicImageDimensions(frontImagePath.trim());
-  if (category === "TMNT") {
-    updated.frontImageWidth = TMNT_REFERENCE_POSTER_DIMENSIONS.width;
-    updated.frontImageHeight = TMNT_REFERENCE_POSTER_DIMENSIONS.height;
-  } else if (fdPatch) {
-    updated.frontImageWidth = fdPatch.width;
-    updated.frontImageHeight = fdPatch.height;
-  }
+  applyCategoryPosterDimensions(updated, category, fdPatch);
 
   const framePatch = parseCardArtFramePreset(formData.get("cardArtFramePreset"));
   if (isFixedCardArtFramePreset(framePatch)) {

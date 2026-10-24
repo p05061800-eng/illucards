@@ -18,8 +18,12 @@ import {
   resolveTmntCollections,
   type TmntCollectionId,
 } from "../lib/tmntCollections";
-import { resolveCardArtBoxAspectCss } from "../lib/cardAspectRatio";
 import {
+  isBerserkCategory,
+  resolveCardArtBoxAspectCss,
+} from "../lib/cardAspectRatio";
+import {
+  categoryFocusContainStyle,
   categoryFocusCoverStyle,
   DEFAULT_IMAGE_FOCUS,
 } from "../lib/imageFocus";
@@ -46,8 +50,8 @@ async function uploadImageFile(
 ): Promise<string> {
   const fd = new FormData();
   fd.append("file", file);
-  if (opts?.cardCategory === "TMNT") {
-    fd.append("cardCategory", "TMNT");
+  if (opts?.cardCategory === "TMNT" || opts?.cardCategory === "Берсерк") {
+    fd.append("cardCategory", opts.cardCategory);
   }
   const res = await adminFetch("/api/upload", { method: "POST", body: fd });
   const data = (await res.json()) as { url?: string; error?: string };
@@ -288,8 +292,12 @@ export function AdminCardForm({
     ],
   );
 
-  /** Превью: `cover` + фокус; рамка по ориентации, как на витрине. */
-  const adminPreviewObjectFit = "cover" as const;
+  const berserkPreview = isBerserkCategory(category);
+  /** Берсерк: арт целиком в рамке 596×819. Остальные — cover + фокус. */
+  const adminPreviewObjectFit = berserkPreview ? "contain" : "cover";
+  const adminFaceStyle = berserkPreview
+    ? categoryFocusContainStyle
+    : categoryFocusCoverStyle;
 
   async function onHoverMotionChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -310,7 +318,12 @@ export function AdminCardForm({
     setMessage("Загрузка MP4…");
     try {
       const { url, transcoded } = await uploadVideoFile(file, {
-        cardCategory: category === TMNT_PARENT_CATEGORY ? "TMNT" : undefined,
+        cardCategory:
+          category === TMNT_PARENT_CATEGORY
+            ? "TMNT"
+            : category.trim() === "Берсерк"
+              ? "Берсерк"
+              : undefined,
       });
       setHoverMotionUrl(url);
       setStatus("idle");
@@ -337,7 +350,12 @@ export function AdminCardForm({
     setMessage("Загрузка лицевой стороны…");
     try {
       const url = await uploadImageFile(file, {
-        cardCategory: category === TMNT_PARENT_CATEGORY ? "TMNT" : undefined,
+        cardCategory:
+          category === TMNT_PARENT_CATEGORY
+            ? "TMNT"
+            : category.trim() === "Берсерк"
+              ? "Берсерк"
+              : undefined,
       });
       setFrontImageUrl(url);
       setFrontFocus(DEFAULT_IMAGE_FOCUS);
@@ -357,7 +375,12 @@ export function AdminCardForm({
     setMessage("Загрузка средней стороны…");
     try {
       const url = await uploadImageFile(file, {
-        cardCategory: category === TMNT_PARENT_CATEGORY ? "TMNT" : undefined,
+        cardCategory:
+          category === TMNT_PARENT_CATEGORY
+            ? "TMNT"
+            : category.trim() === "Берсерк"
+              ? "Берсерк"
+              : undefined,
       });
       setMiddleImageUrl(url);
       setMiddleFocus(DEFAULT_IMAGE_FOCUS);
@@ -377,7 +400,12 @@ export function AdminCardForm({
     setMessage("Загрузка оборота…");
     try {
       const url = await uploadImageFile(file, {
-        cardCategory: category === TMNT_PARENT_CATEGORY ? "TMNT" : undefined,
+        cardCategory:
+          category === TMNT_PARENT_CATEGORY
+            ? "TMNT"
+            : category.trim() === "Берсерк"
+              ? "Берсерк"
+              : undefined,
       });
       setBackImageUrl(url);
       setBackFocus(DEFAULT_IMAGE_FOCUS);
@@ -395,7 +423,12 @@ export function AdminCardForm({
     if (!file) return;
     try {
       const url = await uploadImageFile(file, {
-        cardCategory: category === TMNT_PARENT_CATEGORY ? "TMNT" : undefined,
+        cardCategory:
+          category === TMNT_PARENT_CATEGORY
+            ? "TMNT"
+            : category.trim() === "Берсерк"
+              ? "Берсерк"
+              : undefined,
       });
       setCategoryBgUrl(url);
       setCategoryBgFocus(DEFAULT_IMAGE_FOCUS);
@@ -690,18 +723,28 @@ export function AdminCardForm({
                 value={categoryBgFocus}
                 onChange={setCategoryBgFocus}
                 aspectRatioCss={
-                  category === TMNT_PARENT_CATEGORY ? resolvedCardArtAspectCss : undefined
+                  category === TMNT_PARENT_CATEGORY || berserkPreview
+                    ? resolvedCardArtAspectCss
+                    : undefined
                 }
-                objectFit={category === TMNT_PARENT_CATEGORY ? adminPreviewObjectFit : undefined}
+                objectFit={
+                  category === TMNT_PARENT_CATEGORY || berserkPreview
+                    ? adminPreviewObjectFit
+                    : undefined
+                }
                 imageStyle={
                   category === TMNT_PARENT_CATEGORY
                     ? categoryFocusCoverStyle(categoryBgFocus)
-                    : undefined
+                    : berserkPreview
+                      ? categoryFocusContainStyle(categoryBgFocus)
+                      : undefined
                 }
                 hint={
                   category === TMNT_PARENT_CATEGORY
                     ? "Для TMNT — тот же кадр 761×1024, что лицо и оборот. Фокус — для витрины."
-                    : "По размеру файла, без обрезки. Фокус в данных — для витрины."
+                    : berserkPreview
+                      ? "Для Берсерка — кадр 596×819, картинка целиком в рамке."
+                      : "По размеру файла, без обрезки. Фокус в данных — для витрины."
                 }
               />
             </div>
@@ -956,7 +999,7 @@ export function AdminCardForm({
                 onChange={setFrontFocus}
                 aspectRatioCss={resolvedCardArtAspectCss}
                 objectFit={adminPreviewObjectFit}
-                imageStyle={categoryFocusCoverStyle(frontFocus)}
+                imageStyle={adminFaceStyle(frontFocus)}
               />
             </div>
           </div>
@@ -1000,8 +1043,8 @@ export function AdminCardForm({
                     controls
                     muted
                     playsInline
-                    className="absolute inset-0 h-full w-full object-cover"
-                    style={categoryFocusCoverStyle(frontFocus)}
+                    className={`absolute inset-0 h-full w-full ${berserkPreview ? "object-contain" : "object-cover"}`}
+                    style={adminFaceStyle(frontFocus)}
                   />
                 </div>
               ) : (
@@ -1070,7 +1113,7 @@ export function AdminCardForm({
                 onChange={setMiddleFocus}
                 aspectRatioCss={resolvedCardArtAspectCss}
                 objectFit={adminPreviewObjectFit}
-                imageStyle={categoryFocusCoverStyle(middleFocus)}
+                imageStyle={adminFaceStyle(middleFocus)}
               />
             </div>
           </div>
@@ -1128,7 +1171,7 @@ export function AdminCardForm({
                 onChange={setBackFocus}
                 aspectRatioCss={resolvedCardArtAspectCss}
                 objectFit={adminPreviewObjectFit}
-                imageStyle={categoryFocusCoverStyle(backFocus)}
+                imageStyle={adminFaceStyle(backFocus)}
               />
             </div>
           </div>

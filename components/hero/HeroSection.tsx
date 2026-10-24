@@ -81,6 +81,7 @@ export default function HeroSection({
     () => initialCategories
   );
   useEffect(() => {
+    if (initialCategories.length > 0) return;
     fetch(apiUrl("/api/categories"))
       .then((res) => (res.ok ? res.json() : Promise.reject(new Error(String(res.status)))))
       .then((data: unknown) => {
@@ -89,7 +90,7 @@ export default function HeroSection({
         }
       })
       .catch(() => {});
-  }, []);
+  }, [initialCategories.length]);
 
   const catStripRef = useRef<HTMLDivElement>(null);
   const [catCanScrollStart, setCatCanScrollStart] = useState(false);
@@ -414,6 +415,7 @@ export default function HeroSection({
   const stackCategoryLower = (stackCard.category ?? "").trim().toLowerCase();
   const isMarvelHeroCard = stackCategoryLower === "marvel";
   const isTmntHeroCard = stackCategoryLower === "tmnt";
+  const isBerserkHeroCard = stackCategoryLower === "берсерк";
 
   return (
     <div
@@ -568,6 +570,7 @@ export default function HeroSection({
                     "hero-right-side--product",
                     isMarvelHeroCard ? "hero-right-side--marvel" : "",
                     isTmntHeroCard ? "hero-right-side--tmnt" : "",
+                    isBerserkHeroCard ? "hero-right-side--berserk" : "",
                   ]
                     .filter(Boolean)
                     .join(" ")}

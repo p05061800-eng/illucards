@@ -80,11 +80,6 @@ export default function HeroSection({
   const [apiCategories, setApiCategories] = useState<CategoryTile[]>(
     () => initialCategories
   );
-  /** Явный выбор в слайдере; до клика используем `autoCategoryName`. */
-  const [userSelectedCategory, setUserSelectedCategory] = useState<
-    string | null
-  >(null);
-
   useEffect(() => {
     fetch(apiUrl("/api/categories"))
       .then((res) => (res.ok ? res.json() : Promise.reject(new Error(String(res.status)))))
@@ -159,7 +154,7 @@ export default function HeroSection({
   }, [apiCategories, cards]);
 
   const selectedCategoryName =
-    userSelectedCategory ?? autoCategoryName ?? initialHeroCategoryName;
+    autoCategoryName ?? initialHeroCategoryName;
 
   const filteredCards = useMemo(() => {
     if (!selectedCategoryName) return cards;
@@ -181,8 +176,7 @@ export default function HeroSection({
     [cards],
   );
 
-  const showNoveltiesHeroChrome =
-    userSelectedCategory == null && allNoveltiesCards.length > 0;
+  const showNoveltiesHeroChrome = allNoveltiesCards.length > 0;
 
   const activeBrowseCards = showNoveltiesHeroChrome
     ? allNoveltiesCards
@@ -256,7 +250,7 @@ export default function HeroSection({
 
   useEffect(() => {
     setBrowseIndex(0);
-  }, [browseCarouselKey, selectedCategoryName]);
+  }, [browseCarouselKey]);
 
   useEffect(() => {
     setBrowseIndex((i) => {
@@ -493,18 +487,24 @@ export default function HeroSection({
                     key={cat.name}
                     type="button"
                     onClick={() => {
-                      setUserSelectedCategory(cat.name);
-                      router.push(`/#${collectionSectionId(cat.name)}`);
+                      const id = collectionSectionId(cat.name);
+                      const el = document.getElementById(id);
+                      if (el) {
+                        el.scrollIntoView({ behavior: "smooth", block: "start" });
+                        return;
+                      }
+                      document
+                        .getElementById("collection")
+                        ?.scrollIntoView({ behavior: "smooth", block: "start" });
                     }}
                     aria-label={cat.name}
                     aria-current={selected}
                     className={[
-                      "category-item group shrink-0 cursor-pointer overflow-hidden rounded-2xl bg-zinc-950",
+                      "category-item group shrink-0 cursor-pointer overflow-hidden rounded-2xl",
                       "will-change-transform [transform:translateZ(0)]",
                       "transition-transform duration-300 ease-out",
                       "hover:scale-[1.08] active:scale-[1.04]",
                       "hover:shadow-xl hover:shadow-zinc-500/25",
-                      selected ? "ring-2 ring-inset ring-zinc-400" : "",
                     ]
                       .filter(Boolean)
                       .join(" ")}
@@ -515,7 +515,7 @@ export default function HeroSection({
                         <img
                           src={plateSrc}
                           alt=""
-                          className="category-tile-img h-full w-full max-h-full max-w-full rounded-[inherit] object-contain"
+                          className="category-tile-img h-full w-full max-h-full max-w-full rounded-[inherit] object-cover"
                           style={categoryFocusToStyle(plateFocus)}
                           draggable={false}
                         />

@@ -252,8 +252,7 @@ html.home-one-screen main.home-one-screen-main {
 }
 
 /*
- * Баннер строки категории в «Коллекциях»: высота по файлу (как раньше), ширина 100%;
- * скругление рамки — в разметке + overflow hidden.
+ * Баннер строки категории в «Коллекциях»: ширина 100%, высота по файлу, без рамки.
  */
 .category-row-banner-card {
   position: relative;
@@ -261,8 +260,12 @@ html.home-one-screen main.home-one-screen-main {
   width: 100%;
   max-width: 100%;
   height: auto;
-  overflow: hidden;
+  overflow: visible;
   box-sizing: border-box;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  border: 0;
 }
 
 .category-row-banner-card img {
@@ -273,15 +276,17 @@ html.home-one-screen main.home-one-screen-main {
   height: auto;
   max-width: 100%;
   max-height: none;
+  border-radius: 0;
 }
 
 /* Плитки категорий (герой, «Коллекции», слайдер): без object-fit — центрирование в разметке */
 img.category-tile-img {
   display: block;
+  width: 100%;
+  height: 100%;
   max-width: 100%;
-  width: auto;
-  height: auto;
-  margin: auto;
+  margin: 0;
+  object-fit: cover;
 }
 
 /*
@@ -4903,6 +4908,23 @@ body::after {
 
 .illucards-card .card-main {
   height: auto;
+  min-height: 0;
+}
+
+/*
+ * Лицо/оборот стопки — всегда на весь кадр.
+ * Иначе `.card-main { position: relative }` и `height: auto` перебивают
+ * Tailwind `absolute inset-0`, картинка с `h-full` схлопывается до 0
+ * и проявляется только при hover (новый stacking / transform).
+ */
+.card-stack-visual-art .card-face-lenticular-thick > .card-main,
+.card-stack-visual-art .card-vario-front,
+.card-stack-visual-art .card-vario-back,
+.card-stack-visual-art .card-vario-middle {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
   min-height: 0;
 }
 

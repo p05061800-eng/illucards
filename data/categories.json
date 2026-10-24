@@ -125,5 +125,44 @@
       "x": 50,
       "y": 50
     }
+  },
+  {
+    "name": "Берсерк",
+    "image": "/api/media/1792812304468-7f37bab2.webp",
+    "imageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "plateImage": "/api/media/1792812294934-9e39d5d4.webp",
+    "plateImageFocus": {
+      "x": 50,
+      "y": 50
+    }
+  },
+  {
+    "name": "One Piece",
+    "image": "/api/media/1792812342673-864633e4.webp",
+    "imageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "plateImage": "/api/media/1792812333879-f1040427.webp",
+    "plateImageFocus": {
+      "x": 50,
+      "y": 50
+    }
+  },
+  {
+    "name": "Attack on Titan",
+    "image": "/api/media/1792812423607-f73f37ad.webp",
+    "imageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "plateImage": "/api/media/1792812407768-061bb17b.webp",
+    "plateImageFocus": {
+      "x": 50,
+      "y": 50
+    }
   }
 ]

@@ -8398,5 +8398,705 @@
     "varioSmoothing": 0.18,
     "frontImageWidth": 600,
     "frontImageHeight": 900
+  },
+  {
+    "id": "70fd1851-ea8d-4cec-945d-e43e9711b703",
+    "title": "Пицца пепперони",
+    "description": "Любимая классика черепашек-ниндзя! 🍕 Пицца — настоящий заряд энергии. Когда на кону любимая еда, даже самые серьёзные споры отходят на второй план. Готовься к новым победам вместе с легендарным лакомством из вселенной «Наследие Хамато»!",
+    "category": "TMNT",
+    "subcategory": "foes",
+    "frontImage": "/api/media/1792811137321-76747102.webp",
+    "backImage": "/api/media/1792811141558-3aa358bc.webp",
+    "price": 25,
+    "rarity": "novelty",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "isNew": false,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": true,
+    "ratingAvg": 5,
+    "reviewCount": 0,
+    "rarities": [
+      "novelty",
+      "common"
+    ],
+    "noveltySince": "2026-10-24T03:05:44.151Z",
+    "effect": "vario",
+    "categoryBg": "/api/media/1792811119474-8b5b1d2a.webp",
+    "frontImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "backImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "priceRub": 750,
+    "categoryOrder": 32,
+    "varioSmoothing": 0.18,
+    "frontImageWidth": 761,
+    "frontImageHeight": 1024
+  },
+  {
+    "id": "ab206da9-e69c-4aa7-83de-62a30da72327",
+    "title": "Микеланджело",
+    "description": "Весёлый, дерзкий и непредсказуемый ниндзя, который превращает каждый бой в настоящее шоу! 🐢 Вооружённый нунчаками и неиссякаемым чувством юмора, Микеланджело готов доказать, что за беззаботной улыбкой скрывается настоящий мастер боевых искусств. В киберпространстве его скорость и сила выходят на новый уровень, превращая каждую атаку в вихрь цифровой энергии. Новая эра приключений начинается!",
+    "category": "TMNT",
+    "subcategory": "foes",
+    "frontImage": "/api/media/1792811387628-e9bcab06.webp",
+    "backImage": "/api/media/1792811393439-df7eb728.webp",
+    "price": 25,
+    "rarity": "novelty",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "isNew": false,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": true,
+    "ratingAvg": 5,
+    "reviewCount": 0,
+    "rarities": [
+      "novelty",
+      "common"
+    ],
+    "noveltySince": "2026-10-24T03:09:54.300Z",
+    "effect": "vario",
+    "categoryBg": "/api/media/1792811381625-ef71eb84.webp",
+    "frontImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "backImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "priceRub": 750,
+    "categoryOrder": 33,
+    "varioSmoothing": 0.18,
+    "frontImageWidth": 761,
+    "frontImageHeight": 1024
+  },
+  {
+    "id": "a7d85f28-5437-46ea-b713-4e0a7ba13f4d",
+    "title": "Меч Тенгу",
+    "description": "Древнее оружие, в котором заключена разрушительная магия! ⚔️ Меч Тенгу способен ослабить любого противника. Его клинок несёт силу, перед которой не устоят даже самые искусные воины. В мире «Наследия Хамато» одно прикосновение этого легендарного оружия может изменить исход сражения!",
+    "category": "TMNT",
+    "subcategory": "foes",
+    "frontImage": "/api/media/1792811491236-61f28d8c.webp",
+    "backImage": "/api/media/1792811495170-ce7ae088.webp",
+    "price": 25,
+    "rarity": "novelty",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "isNew": false,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": true,
+    "ratingAvg": 5,
+    "reviewCount": 0,
+    "rarities": [
+      "novelty",
+      "common"
+    ],
+    "noveltySince": "2026-10-24T03:11:37.986Z",
+    "effect": "vario",
+    "categoryBg": "/api/media/1792811440994-e4f343e8.webp",
+    "frontImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "backImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "priceRub": 750,
+    "categoryOrder": 39,
+    "varioSmoothing": 0.18,
+    "frontImageWidth": 761,
+    "frontImageHeight": 1024
+  },
+  {
+    "id": "d1dedd92-8e4f-4125-b9c0-608cc35fb081",
+    "title": "Универсальный ниндзя",
+    "description": "Мастер скрытности и смертоносных атак, владеющий древними техниками клана Фут! 🥷 Вооружённый легендарными клинками и обладающий невероятной ловкостью, этот опасный противник готов вступить в бой с любым, кто осмелится бросить ему вызов. Хладнокровие, точность и безжалостность делают его грозным врагом, способным изменить ход любого сражения. В мире «Наследия Хамато» даже тень может оказаться смертельной угрозой!",
+    "category": "TMNT",
+    "subcategory": "foes",
+    "frontImage": "/api/media/1792811574172-27061e65.webp",
+    "backImage": "/api/media/1792811578226-3d336580.webp",
+    "price": 25,
+    "rarity": "novelty",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "isNew": false,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": true,
+    "ratingAvg": 5,
+    "reviewCount": 0,
+    "rarities": [
+      "novelty",
+      "common"
+    ],
+    "noveltySince": "2026-10-24T03:13:05.475Z",
+    "effect": "vario",
+    "categoryBg": "/api/media/1792811563796-6c1aaad7.webp",
+    "frontImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "backImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "priceRub": 750,
+    "categoryOrder": 40,
+    "varioSmoothing": 0.18,
+    "frontImageWidth": 761,
+    "frontImageHeight": 1024
+  },
+  {
+    "id": "e386d2b9-8ac2-418e-94b9-41b1eb7f5fff",
+    "title": "Леонардо",
+    "description": "Бесстрашный лидер черепашек-ниндзя, для которого честь, дисциплина и мастерство меча превыше всего! 🐢 Вооружённый катанами и готовый к любым испытаниям, Леонардо всегда ведёт свою команду к победе. Но в киберпространстве его способности выходят на совершенно новый уровень: тело становится живым кодом, а каждый взмах клинка рассекает цифровую реальность. Легендарный ниндзя вступает в новую эру сражений!",
+    "category": "TMNT",
+    "subcategory": "foes",
+    "frontImage": "/api/media/1792811675267-d9fbe2fb.webp",
+    "backImage": "/api/media/1792811679483-c8268a7f.webp",
+    "price": 25,
+    "rarity": "novelty",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "isNew": false,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": true,
+    "ratingAvg": 5,
+    "reviewCount": 0,
+    "rarities": [
+      "novelty",
+      "common"
+    ],
+    "noveltySince": "2026-10-24T03:14:40.894Z",
+    "effect": "vario",
+    "categoryBg": "/api/media/1792811664241-ca844073.webp",
+    "frontImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "backImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "priceRub": 750,
+    "categoryOrder": 42,
+    "varioSmoothing": 0.18,
+    "frontImageWidth": 761,
+    "frontImageHeight": 1024
+  },
+  {
+    "id": "4261e640-91e6-4fbe-b111-f864e4fb8423",
+    "title": "Донателло",
+    "description": "Гениальный изобретатель и мастер боевых искусств, который способен превратить технологии в настоящее оружие! 🐢 Вооружённый боевым посохом и обладающий выдающимся интеллектом, Донателло всегда находит нестандартный выход даже из самых сложных ситуаций. Но в киберпространстве его разум сливается с цифровым миром, превращая каждый удар боевого посоха в разрушительный поток кода, способный менять саму реальность. Когда интеллект встречается с силой, рождается новая легенда «Наследия Хамато»!",
+    "category": "TMNT",
+    "subcategory": "foes",
+    "frontImage": "/api/media/1792811779116-bde4edc9.webp",
+    "backImage": "/api/media/1792811784162-4895ec3e.webp",
+    "price": 25,
+    "rarity": "novelty",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "isNew": false,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": true,
+    "ratingAvg": 5,
+    "reviewCount": 0,
+    "rarities": [
+      "novelty",
+      "common"
+    ],
+    "noveltySince": "2026-10-24T03:16:30.035Z",
+    "effect": "vario",
+    "categoryBg": "/api/media/1792811761656-907da329.webp",
+    "frontImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "backImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "priceRub": 750,
+    "categoryOrder": 47,
+    "varioSmoothing": 0.18,
+    "frontImageWidth": 761,
+    "frontImageHeight": 1024
+  },
+  {
+    "id": "d3bc39f4-852d-40a3-9905-1badaf6dc3f4",
+    "title": "Посох войны",
+    "description": "Древнее оружие, наполненное разрушительной магией и невероятной силой! ⚡ Посох войны способен усилить мастерство своего владельца на 500 баллов, превращая каждый удар в сокрушительную атаку. Его энергия пробуждает древнюю мощь, перед которой трудно устоять даже самым сильным противникам. В мире «Наследия Хамато» этот артефакт станет настоящим преимуществом в борьбе за победу!",
+    "category": "TMNT",
+    "subcategory": "foes",
+    "frontImage": "/api/media/1792811841832-03818fa6.webp",
+    "backImage": "/api/media/1792811848290-edd5ca84.webp",
+    "price": 25,
+    "rarity": "novelty",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "isNew": false,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": true,
+    "ratingAvg": 5,
+    "reviewCount": 0,
+    "rarities": [
+      "novelty",
+      "common"
+    ],
+    "noveltySince": "2026-10-24T03:17:36.663Z",
+    "effect": "vario",
+    "categoryBg": "/api/media/1792811977566-22fb0151.webp",
+    "frontImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "backImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "priceRub": 750,
+    "categoryOrder": 52,
+    "varioSmoothing": 0.18,
+    "frontImageWidth": 761,
+    "frontImageHeight": 1024
+  },
+  {
+    "id": "5ddc6ad5-e2b2-4cb3-b6a8-52964cb089eb",
+    "title": "Рафаэль",
+    "description": "Самый вспыльчивый и бесстрашный боец среди черепашек-ниндзя! 🐢 Рафаэль никогда не отступает перед опасностью и полагается на свою невероятную силу, мастерство сай и несгибаемый характер. В киберпространстве его ярость превращается в чистую цифровую энергию, а каждый удар способен стереть противника из системы. Когда Рафаэль вступает в бой, врагам остаётся только готовиться к настоящему хаосу!",
+    "category": "TMNT",
+    "subcategory": "foes",
+    "frontImage": "/api/media/1792812094159-7f78d1ef.webp",
+    "backImage": "/api/media/1792812099397-18dd91df.webp",
+    "price": 25,
+    "rarity": "novelty",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "isNew": false,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": true,
+    "ratingAvg": 5,
+    "reviewCount": 0,
+    "rarities": [
+      "novelty",
+      "common"
+    ],
+    "noveltySince": "2026-10-24T03:21:43.969Z",
+    "effect": "vario",
+    "categoryBg": "/api/media/1792812078667-0a52fc37.webp",
+    "frontImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "backImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "priceRub": 750,
+    "categoryOrder": 53,
+    "varioSmoothing": 0.18,
+    "frontImageWidth": 761,
+    "frontImageHeight": 1024
+  },
+  {
+    "id": "9b94284d-6767-4220-841f-919fb38a3a84",
+    "title": "Горилла",
+    "description": "Рождённый в глубинах непроходимых джунглей, этот свирепый мутант превратил свою ярость в настоящее оружие! 🦍 Обладая чудовищной силой и невероятной выносливостью, Горилла способен сокрушить любого, кто встанет у него на пути. Его устрашающий взгляд и острые клыки предупреждают врагов об опасности: когда этот гигант вступает в бой, джунгли содрогаются от каждого его шага. В мире «Наследия Хамато» выживает сильнейший!",
+    "category": "TMNT",
+    "subcategory": "foes",
+    "frontImage": "/api/media/1792812147545-267b4a75.webp",
+    "backImage": "/api/media/1792812156049-43cd1497.webp",
+    "price": 25,
+    "rarity": "limited",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "isNew": false,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": true,
+    "ratingAvg": 5,
+    "reviewCount": 0,
+    "effect": "vario",
+    "categoryBg": "/api/media/1792812127292-8e38078c.webp",
+    "frontImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "backImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "priceRub": 750,
+    "categoryOrder": 54,
+    "varioSmoothing": 0.18,
+    "frontImageWidth": 761,
+    "frontImageHeight": 1024
+  },
+  {
+    "id": "2461ed2f-a7b3-41cb-9d82-7f09b41f0307",
+    "title": "Медведь",
+    "description": "",
+    "category": "TMNT",
+    "subcategory": "foes",
+    "frontImage": "/api/media/1792812230292-5b237ef2.webp",
+    "backImage": "/api/media/1792812235164-cbfb9e37.webp",
+    "price": 25,
+    "rarity": "novelty",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "isNew": false,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": true,
+    "ratingAvg": 5,
+    "reviewCount": 0,
+    "rarities": [
+      "common",
+      "novelty"
+    ],
+    "noveltySince": "2026-10-24T03:24:00.916Z",
+    "effect": "vario",
+    "categoryBg": "/api/media/1792812205219-0b0332ee.webp",
+    "frontImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "backImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "priceRub": 750,
+    "categoryOrder": 59,
+    "varioSmoothing": 0.18,
+    "frontImageWidth": 761,
+    "frontImageHeight": 1024
+  },
+  {
+    "id": "f3e35f52-86a4-4975-8034-7cc7e7babf50",
+    "title": "Паучья тайна",
+    "description": "Даже если ты только что вышел из душа, время спасать мир не ждёт! 🕷️ Когда злодеи нападают в самый неподходящий момент, этот бонус поможет быстро собраться с силами. Карточка позволяет молниеносно уклоняться от атак и опережать противников. Ведь настоящий герой готов к приключениям в любой ситуации!",
+    "category": "Marvel",
+    "subcategory": "",
+    "frontImage": "/api/media/1792812634936-46c31238.webp",
+    "backImage": "/api/media/1792812644764-bc102b72.webp",
+    "price": 30,
+    "rarity": "adult",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "isNew": false,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": true,
+    "ratingAvg": 5,
+    "reviewCount": 0,
+    "rarities": [
+      "adult",
+      "novelty"
+    ],
+    "noveltySince": "2026-10-24T03:30:46.892Z",
+    "effect": "vario",
+    "categoryBg": "/api/media/1792812598825-105c314c.webp",
+    "frontImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "backImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "priceRub": 800,
+    "categoryOrder": 66,
+    "varioSmoothing": 0.18,
+    "frontImageWidth": 600,
+    "frontImageHeight": 900
+  },
+  {
+    "id": "8a611bb3-a084-402e-b735-034c357961ab",
+    "title": "Гатс — Чёрный мечник",
+    "description": "Одинокий воин, бросивший вызов самой судьбе. ⚔️ Гатс прошёл через бесчисленные сражения, предательства и испытания, но так и не позволил тьме сломить свою волю. Его гигантский меч способен сокрушить любого врага, а несгибаемый дух помогает идти вперёд даже тогда, когда надежды почти не осталось. В мире, где человеческими судьбами управляют загадочные силы, Гатс продолжает сражаться за собственную свободу, доказывая, что даже перед лицом неизбежного человек способен сопротивляться.",
+    "category": "Берсерк",
+    "subcategory": "",
+    "frontImage": "/api/media/1792812744967-8e9ee0dd.webp",
+    "backImage": "/api/media/1792812753973-1d561067.webp",
+    "price": 30,
+    "rarity": "novelty",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "isNew": false,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": true,
+    "ratingAvg": 5,
+    "reviewCount": 0,
+    "rarities": [
+      "common",
+      "novelty"
+    ],
+    "noveltySince": "2026-10-24T03:39:58.197Z",
+    "effect": "vario",
+    "categoryBg": "/api/media/1792813174560-9a220d26.webp",
+    "frontImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "backImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "priceRub": 800,
+    "categoryOrder": 1,
+    "varioSmoothing": 0.18,
+    "frontImageWidth": 600,
+    "frontImageHeight": 900
+  },
+  {
+    "id": "23a6c001-1f88-4fb0-9162-bf1e58b27611",
+    "title": "Гатс — Чёрный мечник (Особая)",
+    "description": "За маской непреклонного воина скрывается человек, чья жизнь стала бесконечной борьбой с судьбой. ⚔️ Даже после тяжелейших ранений Гатс продолжает идти вперёд, не позволяя боли и отчаянию сломить свою волю. Но даже легендарный Чёрный мечник нуждается в редких мгновениях покоя, чтобы собраться с силами перед новыми испытаниями. Эта особая карточка раскрывает другую сторону Гатса — не только безжалостного бойца, но и человека, который продолжает искать собственный путь в жестоком мире «Берсерка».",
+    "category": "Берсерк",
+    "subcategory": "",
+    "frontImage": "/api/media/1792813252293-7030f0a9.webp",
+    "backImage": "/api/media/1792813261076-5d14ea6e.webp",
+    "price": 30,
+    "rarity": "novelty",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "isNew": false,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": true,
+    "ratingAvg": 5,
+    "reviewCount": 0,
+    "rarities": [
+      "novelty",
+      "common"
+    ],
+    "noveltySince": "2026-10-24T03:41:08.579Z",
+    "effect": "vario",
+    "categoryBg": "/api/media/1792813232422-d62a3b88.webp",
+    "frontImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "backImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "priceRub": 800,
+    "categoryOrder": 1,
+    "varioSmoothing": 0.18,
+    "frontImageWidth": 600,
+    "frontImageHeight": 900
+  },
+  {
+    "id": "e228f253-d301-4283-beb7-e22be93650ee",
+    "title": "Гриффит — Белый ястреб",
+    "description": "Величественный полководец, чья мечта возвыситься над миром способна вести за собой целые армии. 🦅 Гриффит очаровывает своей харизмой, холодным расчётом и непоколебимой верой в собственное предназначение. Для него замки — не просто крепости, а символы будущего, к которому он стремится любой ценой. Но за ослепительным образом Белого ястреба скрывается опасная решимость: если мечта всё ещё жива, он готов пройти по любому пути, даже если тот вымощен чужими судьбами.",
+    "category": "Берсерк",
+    "subcategory": "",
+    "frontImage": "/api/media/1792813646285-73829aaf.webp",
+    "backImage": "/api/media/1792813653192-06ce800a.webp",
+    "price": 30,
+    "rarity": "novelty",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "isNew": false,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": true,
+    "ratingAvg": 5,
+    "reviewCount": 0,
+    "rarities": [
+      "novelty",
+      "common"
+    ],
+    "noveltySince": "2026-10-24T03:47:35.758Z",
+    "effect": "vario",
+    "categoryBg": "/api/media/1792813614868-ff258013.webp",
+    "frontImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "backImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "priceRub": 800,
+    "categoryOrder": 2,
+    "varioSmoothing": 0.18,
+    "frontImageWidth": 600,
+    "frontImageHeight": 900
+  },
+  {
+    "id": "f9f83bc7-d2f5-4f5f-b56e-a4cd92ba3726",
+    "title": "Гриффит — Белый ястреб (Особая)",
+    "description": "",
+    "category": "Берсерк",
+    "subcategory": "",
+    "frontImage": "/api/media/1792813714272-d1f9e76d.webp",
+    "backImage": "/api/media/1792813721785-160bb81b.webp",
+    "price": 30,
+    "rarity": "novelty",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "isNew": false,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": true,
+    "ratingAvg": 5,
+    "reviewCount": 0,
+    "rarities": [
+      "common",
+      "novelty"
+    ],
+    "noveltySince": "2026-10-24T03:48:43.337Z",
+    "effect": "vario",
+    "categoryBg": "/api/media/1792813697119-079e53df.webp",
+    "frontImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "backImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "priceRub": 800,
+    "categoryOrder": 2,
+    "varioSmoothing": 0.18,
+    "frontImageWidth": 600,
+    "frontImageHeight": 900
   }
 ]

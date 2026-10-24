@@ -171,60 +171,23 @@ function CollectionTextHeading({
   );
 }
 
-/** Баннер строки категории: высота по изображению, скруглённые углы. */
+/** Баннер строки категории: только картинка, без рамки и нижней плашки. */
 function CategoryRowBanner({
   banner,
-  heading,
-  sectionId,
-  compact,
-  eyebrow,
 }: {
   banner: CategoryTile;
-  heading: string;
-  sectionId: string;
-  compact?: boolean;
-  eyebrow?: string;
 }) {
+  if (!banner.image) return null;
   return (
-    <div className="category-row-banner-card relative w-full overflow-hidden rounded-2xl bg-zinc-950">
-      {banner.image ? (
-        <>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={banner.image}
-            alt=""
-            className="pointer-events-none"
-            style={categoryFocusToStyle(banner.imageFocus)}
-            draggable={false}
-          />
-        </>
-      ) : (
-        <div
-          className="absolute inset-0 bg-gradient-to-br from-zinc-900 via-zinc-950 to-[#070510]"
-          aria-hidden
-        />
-      )}
-      <div
-        className="pointer-events-none absolute inset-0 z-[1] bg-gradient-to-t from-black/88 via-black/15 to-transparent"
-        aria-hidden
+    <div className="category-row-banner-card relative w-full">
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src={banner.image}
+        alt=""
+        className="pointer-events-none"
+        style={categoryFocusToStyle(banner.imageFocus)}
+        draggable={false}
       />
-      <h2
-        id={`${sectionId}-heading`}
-        className={`absolute left-0 right-0 z-[2] max-w-none truncate px-4 font-bold tracking-tight text-white drop-shadow-md sm:px-6 ${
-          compact
-            ? "bottom-1 text-xs sm:bottom-1.5 sm:text-sm"
-            : eyebrow
-              ? "bottom-2 text-sm sm:bottom-3 sm:text-base md:text-lg"
-              : "bottom-2 text-base sm:bottom-3 sm:px-10 sm:text-lg md:text-xl"
-        }`}
-      >
-        {eyebrow ? (
-          <span className="block truncate text-[10px] font-semibold uppercase tracking-[0.2em] text-white/75 sm:text-xs">
-            {eyebrow}
-          </span>
-        ) : null}
-        <span className="block truncate">{heading}</span>
-      </h2>
     </div>
   );
 }
@@ -800,12 +763,7 @@ export function HomeCollection({
                     className="relative z-0 -mx-6 w-[calc(100%+3rem)] max-w-none scroll-mt-24 sm:-mx-10 sm:w-[calc(100%+5rem)]"
                     role="presentation"
                   >
-                    <CategoryRowBanner
-                      banner={section.banner}
-                      heading={TMNT_PARENT_CATEGORY}
-                      sectionId={tmntParentBannerDomId()}
-                      compact={viewportCompact}
-                    />
+                    <CategoryRowBanner banner={section.banner} />
                   </div>
                 ) : null}
                 {section.titleMode === "text" ? (
@@ -816,18 +774,20 @@ export function HomeCollection({
                     afterParentBanner={showTmntParentBanner}
                   />
                 ) : section.titleMode === "banner" ? (
-                  <div
-                    className="relative z-0 -mx-6 w-[calc(100%+3rem)] max-w-none sm:-mx-10 sm:w-[calc(100%+5rem)]"
-                    role="presentation"
-                  >
-                    <CategoryRowBanner
-                      banner={section.banner}
+                  <>
+                    <div
+                      className="relative z-0 -mx-6 w-[calc(100%+3rem)] max-w-none sm:-mx-10 sm:w-[calc(100%+5rem)]"
+                      role="presentation"
+                    >
+                      <CategoryRowBanner banner={section.banner} />
+                    </div>
+                    <CollectionTextHeading
                       heading={section.heading}
-                      eyebrow={section.eyebrow}
                       sectionId={sectionId}
                       compact={viewportCompact}
+                      afterParentBanner
                     />
-                  </div>
+                  </>
                 ) : null}
 
                 {sectionCards.length > 0 ? (

@@ -20,6 +20,13 @@ const nextConfig: NextConfig = {
     ],
   },
   turbopack: {},
+  /**
+   * Картинки из `public/uploads` отдаёт CDN, не serverless.
+   * Иначе `/api/cards` превышает лимит Vercel (250 MB uncompressed).
+   */
+  outputFileTracingExcludes: {
+    "*": ["./public/uploads/**", "./public/uploads/**/*"],
+  },
   /** Меньше модулей в бандле при импорте из barrel-пакетов (легче dev/build). */
   experimental: {
     optimizePackageImports: ["lucide-react"],

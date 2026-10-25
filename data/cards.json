@@ -8373,7 +8373,7 @@
       "intelligence": 50,
       "magic": 50
     },
-    "isNew": false,
+    "isNew": true,
     "isPopular": false,
     "isSale": false,
     "inStock": true,
@@ -8406,8 +8406,8 @@
     "description": "Любимая классика черепашек-ниндзя! 🍕 Пицца — настоящий заряд энергии. Когда на кону любимая еда, даже самые серьёзные споры отходят на второй план. Готовься к новым победам вместе с легендарным лакомством из вселенной «Наследие Хамато»!",
     "category": "TMNT",
     "subcategory": "foes",
-    "frontImage": "/api/media/1792811137321-76747102.webp",
-    "backImage": "/api/media/1792811141558-3aa358bc.webp",
+    "frontImage": "/uploads/1792811137321-76747102.webp",
+    "backImage": "/uploads/1792811141558-3aa358bc.webp",
     "price": 25,
     "rarity": "novelty",
     "stats": {
@@ -8416,7 +8416,7 @@
       "intelligence": 50,
       "magic": 50
     },
-    "isNew": false,
+    "isNew": true,
     "isPopular": false,
     "isSale": false,
     "inStock": true,
@@ -8428,7 +8428,7 @@
     ],
     "noveltySince": "2026-10-24T03:05:44.151Z",
     "effect": "vario",
-    "categoryBg": "/api/media/1792811119474-8b5b1d2a.webp",
+    "categoryBg": "/uploads/1792811119474-8b5b1d2a.webp",
     "frontImageFocus": {
       "x": 50,
       "y": 50
@@ -8453,8 +8453,8 @@
     "description": "Весёлый, дерзкий и непредсказуемый ниндзя, который превращает каждый бой в настоящее шоу! 🐢 Вооружённый нунчаками и неиссякаемым чувством юмора, Микеланджело готов доказать, что за беззаботной улыбкой скрывается настоящий мастер боевых искусств. В киберпространстве его скорость и сила выходят на новый уровень, превращая каждую атаку в вихрь цифровой энергии. Новая эра приключений начинается!",
     "category": "TMNT",
     "subcategory": "foes",
-    "frontImage": "/api/media/1792811387628-e9bcab06.webp",
-    "backImage": "/api/media/1792811393439-df7eb728.webp",
+    "frontImage": "/uploads/1792811387628-e9bcab06.webp",
+    "backImage": "/uploads/1792811393439-df7eb728.webp",
     "price": 25,
     "rarity": "novelty",
     "stats": {
@@ -8463,7 +8463,7 @@
       "intelligence": 50,
       "magic": 50
     },
-    "isNew": false,
+    "isNew": true,
     "isPopular": false,
     "isSale": false,
     "inStock": true,
@@ -8475,7 +8475,7 @@
     ],
     "noveltySince": "2026-10-24T03:09:54.300Z",
     "effect": "vario",
-    "categoryBg": "/api/media/1792811381625-ef71eb84.webp",
+    "categoryBg": "/uploads/1792811381625-ef71eb84.webp",
     "frontImageFocus": {
       "x": 50,
       "y": 50
@@ -8500,8 +8500,8 @@
     "description": "Древнее оружие, в котором заключена разрушительная магия! ⚔️ Меч Тенгу способен ослабить любого противника. Его клинок несёт силу, перед которой не устоят даже самые искусные воины. В мире «Наследия Хамато» одно прикосновение этого легендарного оружия может изменить исход сражения!",
     "category": "TMNT",
     "subcategory": "foes",
-    "frontImage": "/api/media/1792811491236-61f28d8c.webp",
-    "backImage": "/api/media/1792811495170-ce7ae088.webp",
+    "frontImage": "/uploads/1792811491236-61f28d8c.webp",
+    "backImage": "/uploads/1792811495170-ce7ae088.webp",
     "price": 25,
     "rarity": "novelty",
     "stats": {
@@ -8510,7 +8510,7 @@
       "intelligence": 50,
       "magic": 50
     },
-    "isNew": false,
+    "isNew": true,
     "isPopular": false,
     "isSale": false,
     "inStock": true,
@@ -8522,7 +8522,7 @@
     ],
     "noveltySince": "2026-10-24T03:11:37.986Z",
     "effect": "vario",
-    "categoryBg": "/api/media/1792811440994-e4f343e8.webp",
+    "categoryBg": "/uploads/1792811440994-e4f343e8.webp",
     "frontImageFocus": {
       "x": 50,
       "y": 50
@@ -8547,8 +8547,8 @@
     "description": "Мастер скрытности и смертоносных атак, владеющий древними техниками клана Фут! 🥷 Вооружённый легендарными клинками и обладающий невероятной ловкостью, этот опасный противник готов вступить в бой с любым, кто осмелится бросить ему вызов. Хладнокровие, точность и безжалостность делают его грозным врагом, способным изменить ход любого сражения. В мире «Наследия Хамато» даже тень может оказаться смертельной угрозой!",
     "category": "TMNT",
     "subcategory": "foes",
-    "frontImage": "/api/media/1792811574172-27061e65.webp",
-    "backImage": "/api/media/1792811578226-3d336580.webp",
+    "frontImage": "/uploads/1792811574172-27061e65.webp",
+    "backImage": "/uploads/1792811578226-3d336580.webp",
     "price": 25,
     "rarity": "novelty",
     "stats": {
@@ -8557,7 +8557,7 @@
       "intelligence": 50,
       "magic": 50
     },
-    "isNew": false,
+    "isNew": true,
     "isPopular": false,
     "isSale": false,
     "inStock": true,
@@ -8569,7 +8569,7 @@
     ],
     "noveltySince": "2026-10-24T03:13:05.475Z",
     "effect": "vario",
-    "categoryBg": "/api/media/1792811563796-6c1aaad7.webp",
+    "categoryBg": "/uploads/1792811563796-6c1aaad7.webp",
     "frontImageFocus": {
       "x": 50,
       "y": 50
@@ -8594,8 +8594,8 @@
     "description": "Бесстрашный лидер черепашек-ниндзя, для которого честь, дисциплина и мастерство меча превыше всего! 🐢 Вооружённый катанами и готовый к любым испытаниям, Леонардо всегда ведёт свою команду к победе. Но в киберпространстве его способности выходят на совершенно новый уровень: тело становится живым кодом, а каждый взмах клинка рассекает цифровую реальность. Легендарный ниндзя вступает в новую эру сражений!",
     "category": "TMNT",
     "subcategory": "foes",
-    "frontImage": "/api/media/1792811675267-d9fbe2fb.webp",
-    "backImage": "/api/media/1792811679483-c8268a7f.webp",
+    "frontImage": "/uploads/1792811675267-d9fbe2fb.webp",
+    "backImage": "/uploads/1792811679483-c8268a7f.webp",
     "price": 25,
     "rarity": "novelty",
     "stats": {
@@ -8604,7 +8604,7 @@
       "intelligence": 50,
       "magic": 50
     },
-    "isNew": false,
+    "isNew": true,
     "isPopular": false,
     "isSale": false,
     "inStock": true,
@@ -8616,7 +8616,7 @@
     ],
     "noveltySince": "2026-10-24T03:14:40.894Z",
     "effect": "vario",
-    "categoryBg": "/api/media/1792811664241-ca844073.webp",
+    "categoryBg": "/uploads/1792811664241-ca844073.webp",
     "frontImageFocus": {
       "x": 50,
       "y": 50
@@ -8641,8 +8641,8 @@
     "description": "Гениальный изобретатель и мастер боевых искусств, который способен превратить технологии в настоящее оружие! 🐢 Вооружённый боевым посохом и обладающий выдающимся интеллектом, Донателло всегда находит нестандартный выход даже из самых сложных ситуаций. Но в киберпространстве его разум сливается с цифровым миром, превращая каждый удар боевого посоха в разрушительный поток кода, способный менять саму реальность. Когда интеллект встречается с силой, рождается новая легенда «Наследия Хамато»!",
     "category": "TMNT",
     "subcategory": "foes",
-    "frontImage": "/api/media/1792811779116-bde4edc9.webp",
-    "backImage": "/api/media/1792811784162-4895ec3e.webp",
+    "frontImage": "/uploads/1792811779116-bde4edc9.webp",
+    "backImage": "/uploads/1792811784162-4895ec3e.webp",
     "price": 25,
     "rarity": "novelty",
     "stats": {
@@ -8651,7 +8651,7 @@
       "intelligence": 50,
       "magic": 50
     },
-    "isNew": false,
+    "isNew": true,
     "isPopular": false,
     "isSale": false,
     "inStock": true,
@@ -8663,7 +8663,7 @@
     ],
     "noveltySince": "2026-10-24T03:16:30.035Z",
     "effect": "vario",
-    "categoryBg": "/api/media/1792811761656-907da329.webp",
+    "categoryBg": "/uploads/1792811761656-907da329.webp",
     "frontImageFocus": {
       "x": 50,
       "y": 50
@@ -8688,8 +8688,8 @@
     "description": "Древнее оружие, наполненное разрушительной магией и невероятной силой! ⚡ Посох войны способен усилить мастерство своего владельца на 500 баллов, превращая каждый удар в сокрушительную атаку. Его энергия пробуждает древнюю мощь, перед которой трудно устоять даже самым сильным противникам. В мире «Наследия Хамато» этот артефакт станет настоящим преимуществом в борьбе за победу!",
     "category": "TMNT",
     "subcategory": "foes",
-    "frontImage": "/api/media/1792811841832-03818fa6.webp",
-    "backImage": "/api/media/1792811848290-edd5ca84.webp",
+    "frontImage": "/uploads/1792811841832-03818fa6.webp",
+    "backImage": "/uploads/1792811848290-edd5ca84.webp",
     "price": 25,
     "rarity": "novelty",
     "stats": {
@@ -8698,7 +8698,7 @@
       "intelligence": 50,
       "magic": 50
     },
-    "isNew": false,
+    "isNew": true,
     "isPopular": false,
     "isSale": false,
     "inStock": true,
@@ -8710,7 +8710,7 @@
     ],
     "noveltySince": "2026-10-24T03:17:36.663Z",
     "effect": "vario",
-    "categoryBg": "/api/media/1792811977566-22fb0151.webp",
+    "categoryBg": "/uploads/1792811977566-22fb0151.webp",
     "frontImageFocus": {
       "x": 50,
       "y": 50
@@ -8735,8 +8735,8 @@
     "description": "Самый вспыльчивый и бесстрашный боец среди черепашек-ниндзя! 🐢 Рафаэль никогда не отступает перед опасностью и полагается на свою невероятную силу, мастерство сай и несгибаемый характер. В киберпространстве его ярость превращается в чистую цифровую энергию, а каждый удар способен стереть противника из системы. Когда Рафаэль вступает в бой, врагам остаётся только готовиться к настоящему хаосу!",
     "category": "TMNT",
     "subcategory": "foes",
-    "frontImage": "/api/media/1792812094159-7f78d1ef.webp",
-    "backImage": "/api/media/1792812099397-18dd91df.webp",
+    "frontImage": "/uploads/1792812094159-7f78d1ef.webp",
+    "backImage": "/uploads/1792812099397-18dd91df.webp",
     "price": 25,
     "rarity": "novelty",
     "stats": {
@@ -8745,7 +8745,7 @@
       "intelligence": 50,
       "magic": 50
     },
-    "isNew": false,
+    "isNew": true,
     "isPopular": false,
     "isSale": false,
     "inStock": true,
@@ -8757,7 +8757,7 @@
     ],
     "noveltySince": "2026-10-24T03:21:43.969Z",
     "effect": "vario",
-    "categoryBg": "/api/media/1792812078667-0a52fc37.webp",
+    "categoryBg": "/uploads/1792812078667-0a52fc37.webp",
     "frontImageFocus": {
       "x": 50,
       "y": 50
@@ -8782,8 +8782,8 @@
     "description": "Рождённый в глубинах непроходимых джунглей, этот свирепый мутант превратил свою ярость в настоящее оружие! 🦍 Обладая чудовищной силой и невероятной выносливостью, Горилла способен сокрушить любого, кто встанет у него на пути. Его устрашающий взгляд и острые клыки предупреждают врагов об опасности: когда этот гигант вступает в бой, джунгли содрогаются от каждого его шага. В мире «Наследия Хамато» выживает сильнейший!",
     "category": "TMNT",
     "subcategory": "foes",
-    "frontImage": "/api/media/1792812147545-267b4a75.webp",
-    "backImage": "/api/media/1792812156049-43cd1497.webp",
+    "frontImage": "/uploads/1792812147545-267b4a75.webp",
+    "backImage": "/uploads/1792812156049-43cd1497.webp",
     "price": 25,
     "rarity": "limited",
     "stats": {
@@ -8799,7 +8799,7 @@
     "ratingAvg": 5,
     "reviewCount": 0,
     "effect": "vario",
-    "categoryBg": "/api/media/1792812127292-8e38078c.webp",
+    "categoryBg": "/uploads/1792812127292-8e38078c.webp",
     "frontImageFocus": {
       "x": 50,
       "y": 50
@@ -8824,8 +8824,8 @@
     "description": "",
     "category": "TMNT",
     "subcategory": "foes",
-    "frontImage": "/api/media/1792812230292-5b237ef2.webp",
-    "backImage": "/api/media/1792812235164-cbfb9e37.webp",
+    "frontImage": "/uploads/1792812230292-5b237ef2.webp",
+    "backImage": "/uploads/1792812235164-cbfb9e37.webp",
     "price": 25,
     "rarity": "novelty",
     "stats": {
@@ -8834,7 +8834,7 @@
       "intelligence": 50,
       "magic": 50
     },
-    "isNew": false,
+    "isNew": true,
     "isPopular": false,
     "isSale": false,
     "inStock": true,
@@ -8846,7 +8846,7 @@
     ],
     "noveltySince": "2026-10-24T03:24:00.916Z",
     "effect": "vario",
-    "categoryBg": "/api/media/1792812205219-0b0332ee.webp",
+    "categoryBg": "/uploads/1792812205219-0b0332ee.webp",
     "frontImageFocus": {
       "x": 50,
       "y": 50
@@ -8871,8 +8871,8 @@
     "description": "Даже если ты только что вышел из душа, время спасать мир не ждёт! 🕷️ Когда злодеи нападают в самый неподходящий момент, этот бонус поможет быстро собраться с силами. Карточка позволяет молниеносно уклоняться от атак и опережать противников. Ведь настоящий герой готов к приключениям в любой ситуации!",
     "category": "Marvel",
     "subcategory": "",
-    "frontImage": "/api/media/1792812634936-46c31238.webp",
-    "backImage": "/api/media/1792812644764-bc102b72.webp",
+    "frontImage": "/uploads/1792812634936-46c31238.webp",
+    "backImage": "/uploads/1792812644764-bc102b72.webp",
     "price": 30,
     "rarity": "adult",
     "stats": {
@@ -8881,7 +8881,7 @@
       "intelligence": 50,
       "magic": 50
     },
-    "isNew": false,
+    "isNew": true,
     "isPopular": false,
     "isSale": false,
     "inStock": true,
@@ -8893,7 +8893,7 @@
     ],
     "noveltySince": "2026-10-24T03:30:46.892Z",
     "effect": "vario",
-    "categoryBg": "/api/media/1792812598825-105c314c.webp",
+    "categoryBg": "/uploads/1792812598825-105c314c.webp",
     "frontImageFocus": {
       "x": 50,
       "y": 50
@@ -8918,8 +8918,8 @@
     "description": "Одинокий воин, бросивший вызов самой судьбе. ⚔️ Гатс прошёл через бесчисленные сражения, предательства и испытания, но так и не позволил тьме сломить свою волю. Его гигантский меч способен сокрушить любого врага, а несгибаемый дух помогает идти вперёд даже тогда, когда надежды почти не осталось. В мире, где человеческими судьбами управляют загадочные силы, Гатс продолжает сражаться за собственную свободу, доказывая, что даже перед лицом неизбежного человек способен сопротивляться.",
     "category": "Берсерк",
     "subcategory": "",
-    "frontImage": "/api/media/1792818122287-b9cb0e75.webp",
-    "backImage": "/api/media/1792818136107-80227030.webp",
+    "frontImage": "/uploads/1792818122287-b9cb0e75.webp",
+    "backImage": "/uploads/1792818136107-80227030.webp",
     "price": 30,
     "rarity": "novelty",
     "stats": {
@@ -8928,7 +8928,7 @@
       "intelligence": 50,
       "magic": 50
     },
-    "isNew": false,
+    "isNew": true,
     "isPopular": false,
     "isSale": false,
     "inStock": true,
@@ -8940,7 +8940,7 @@
     ],
     "noveltySince": "2026-10-24T03:39:58.197Z",
     "effect": "vario",
-    "categoryBg": "/api/media/1792818107636-1ed8e6e4.webp",
+    "categoryBg": "/uploads/1792818107636-1ed8e6e4.webp",
     "frontImageFocus": {
       "x": 50,
       "y": 50
@@ -8965,8 +8965,8 @@
     "description": "За маской непреклонного воина скрывается человек, чья жизнь стала бесконечной борьбой с судьбой. ⚔️ Даже после тяжелейших ранений Гатс продолжает идти вперёд, не позволяя боли и отчаянию сломить свою волю. Но даже легендарный Чёрный мечник нуждается в редких мгновениях покоя, чтобы собраться с силами перед новыми испытаниями. Эта особая карточка раскрывает другую сторону Гатса — не только безжалостного бойца, но и человека, который продолжает искать собственный путь в жестоком мире «Берсерка».",
     "category": "Берсерк",
     "subcategory": "",
-    "frontImage": "/api/media/1792818081999-5951abeb.webp",
-    "backImage": "/api/media/1792818091776-af42eebe.webp",
+    "frontImage": "/uploads/1792818081999-5951abeb.webp",
+    "backImage": "/uploads/1792818091776-af42eebe.webp",
     "price": 30,
     "rarity": "novelty",
     "stats": {
@@ -8975,7 +8975,7 @@
       "intelligence": 50,
       "magic": 50
     },
-    "isNew": false,
+    "isNew": true,
     "isPopular": false,
     "isSale": false,
     "inStock": true,
@@ -8987,7 +8987,7 @@
     ],
     "noveltySince": "2026-10-24T03:41:08.579Z",
     "effect": "vario",
-    "categoryBg": "/api/media/1792818064525-055aab10.webp",
+    "categoryBg": "/uploads/1792818064525-055aab10.webp",
     "frontImageFocus": {
       "x": 50,
       "y": 50
@@ -9012,8 +9012,8 @@
     "description": "Величественный полководец, чья мечта возвыситься над миром способна вести за собой целые армии. 🦅 Гриффит очаровывает своей харизмой, холодным расчётом и непоколебимой верой в собственное предназначение. Для него замки — не просто крепости, а символы будущего, к которому он стремится любой ценой. Но за ослепительным образом Белого ястреба скрывается опасная решимость: если мечта всё ещё жива, он готов пройти по любому пути, даже если тот вымощен чужими судьбами.",
     "category": "Берсерк",
     "subcategory": "",
-    "frontImage": "/api/media/1792818033129-372efebf.webp",
-    "backImage": "/api/media/1792818046028-3387480c.webp",
+    "frontImage": "/uploads/1792818033129-372efebf.webp",
+    "backImage": "/uploads/1792818046028-3387480c.webp",
     "price": 30,
     "rarity": "novelty",
     "stats": {
@@ -9022,7 +9022,7 @@
       "intelligence": 50,
       "magic": 50
     },
-    "isNew": false,
+    "isNew": true,
     "isPopular": false,
     "isSale": false,
     "inStock": true,
@@ -9034,7 +9034,7 @@
     ],
     "noveltySince": "2026-10-24T03:47:35.758Z",
     "effect": "vario",
-    "categoryBg": "/api/media/1792818026973-17863f7e.webp",
+    "categoryBg": "/uploads/1792818026973-17863f7e.webp",
     "frontImageFocus": {
       "x": 50,
       "y": 50
@@ -9059,8 +9059,8 @@
     "description": "",
     "category": "Берсерк",
     "subcategory": "",
-    "frontImage": "/api/media/1792817992493-0af5ec8e.webp",
-    "backImage": "/api/media/1792817998752-83f9bb41.webp",
+    "frontImage": "/uploads/1792817992493-0af5ec8e.webp",
+    "backImage": "/uploads/1792817998752-83f9bb41.webp",
     "price": 30,
     "rarity": "novelty",
     "stats": {
@@ -9069,7 +9069,7 @@
       "intelligence": 50,
       "magic": 50
     },
-    "isNew": false,
+    "isNew": true,
     "isPopular": false,
     "isSale": false,
     "inStock": true,
@@ -9081,7 +9081,7 @@
     ],
     "noveltySince": "2026-10-24T03:48:43.337Z",
     "effect": "vario",
-    "categoryBg": "/api/media/1792817981296-e52a6fac.webp",
+    "categoryBg": "/uploads/1792817981296-e52a6fac.webp",
     "frontImageFocus": {
       "x": 50,
       "y": 50
@@ -9099,5 +9099,329 @@
     "varioSmoothing": 0.18,
     "frontImageWidth": 596,
     "frontImageHeight": 819
+  },
+  {
+    "id": "11412586-d1d1-4826-a965-029338df02f7",
+    "title": "Танос — Распад",
+    "description": "Титан, перед которым дрожали целые миры, наконец сталкивается с силой, способной обратить в прах даже его самого. 💀 Обладая невероятной мощью и несокрушимой волей, Танос казался непобедимым, но ничто не вечно — даже величайшие завоеватели. Его тело рассыпается на тысячи частиц, словно сама реальность стирает его существование. Грандиозный финал легенды, доказавший, что даже самый могущественный враг не способен избежать расплаты.",
+    "category": "Marvel",
+    "subcategory": "",
+    "frontImage": "/uploads/1792897811511-81170794.webp",
+    "backImage": "/uploads/1792897825045-8f4fbed2.webp",
+    "price": 40,
+    "rarity": "limited",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "isNew": true,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": true,
+    "ratingAvg": 5,
+    "reviewCount": 0,
+    "rarities": [
+      "novelty",
+      "limited"
+    ],
+    "noveltySince": "2026-10-25T03:11:07.344Z",
+    "effect": "vario",
+    "categoryBg": "/uploads/1792897790558-bc524a75.webp",
+    "frontImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "backImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "middleImage": "/uploads/1792897817855-bcd21386.webp",
+    "middleImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "priceRub": 1000,
+    "categoryOrder": 70,
+    "varioSmoothing": 0.18,
+    "frontImageWidth": 600,
+    "frontImageHeight": 900
+  },
+  {
+    "id": "c187f688-3dd0-4521-a6d8-4200f7d62c45",
+    "title": "Джаггернаут",
+    "description": "Неудержимая машина разрушения, которую практически невозможно остановить! 💥 Обладая чудовищной силой, невероятной выносливостью и прочной бронёй, Джаггернаут сметает всё на своём пути. Каждый его удар превращает поле боя в руины, а столкновение с ним становится настоящим испытанием даже для сильнейших противников. Когда этот гигант набирает ход, остаётся лишь одно — попытаться пережить его сокрушительный натиск!",
+    "category": "Marvel",
+    "subcategory": "",
+    "frontImage": "/uploads/1792898539099-746065bb.webp",
+    "backImage": "",
+    "price": 25,
+    "rarity": "novelty",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "isNew": true,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": true,
+    "ratingAvg": 5,
+    "reviewCount": 0,
+    "rarities": [
+      "common",
+      "novelty"
+    ],
+    "noveltySince": "2026-10-25T03:22:25.227Z",
+    "effect": "3d-horizontal",
+    "categoryBg": "/uploads/1792898502473-650187c1.webp",
+    "frontImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "priceRub": 750,
+    "categoryOrder": 69,
+    "frontImageWidth": 600,
+    "frontImageHeight": 900
+  },
+  {
+    "id": "b0192b7d-2f2d-4373-865a-de90300fc1f0",
+    "title": "Неуязвимая броня",
+    "description": "Технология, превращающая обычную защиту в оружие невероятной мощи! 🦾 Созданная для противостояния самым опасным противникам, эта броня выдерживает сокрушительные удары и позволяет своему владельцу сражаться даже в самых экстремальных условиях. Карточка  усиливает боевой потенциал и открывая новые возможности в сражении. Когда на кону судьба мира, настоящая сила начинается с идеальной защиты!",
+    "category": "Marvel",
+    "subcategory": "",
+    "frontImage": "/uploads/1792898618524-5f3e96b1.webp",
+    "backImage": "",
+    "price": 25,
+    "rarity": "novelty",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "isNew": true,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": true,
+    "ratingAvg": 5,
+    "reviewCount": 0,
+    "rarities": [
+      "common",
+      "novelty"
+    ],
+    "noveltySince": "2026-10-25T03:24:00.983Z",
+    "effect": "3d-horizontal",
+    "categoryBg": "/uploads/1792898741160-59dba6fe.webp",
+    "frontImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "priceRub": 750,
+    "categoryOrder": 68,
+    "frontImageWidth": 600,
+    "frontImageHeight": 900
+  },
+  {
+    "id": "1a5909c5-60cc-4c54-bd9b-4357aed7a6f9",
+    "title": "Звёздная пустошь",
+    "description": "Затерянный край Вселенной, где раскалённые небеса встречаются с бесконечной тьмой космоса. 🌌 Среди обломков далёких миров и бушующих космических бурь скрываются тайны, способные изменить судьбу целых галактик. Здесь нет привычных законов и безопасных путей — только бескрайнее пространство, древние руины и неизведанные горизонты. Звёздная пустошь станет идеальным местом для тех, кто готов отправиться навстречу неизвестности и бросить вызов самой Вселенной!",
+    "category": "Marvel",
+    "subcategory": "",
+    "frontImage": "/uploads/1792898673343-b6fc2d4a.webp",
+    "backImage": "",
+    "price": 25,
+    "rarity": "novelty",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "isNew": true,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": true,
+    "ratingAvg": 5,
+    "reviewCount": 0,
+    "rarities": [
+      "common",
+      "novelty"
+    ],
+    "noveltySince": "2026-10-25T03:24:49.170Z",
+    "effect": "3d-horizontal",
+    "categoryBg": "/uploads/1792898653255-393c0935.webp",
+    "frontImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "priceRub": 750,
+    "categoryOrder": 67,
+    "frontImageWidth": 600,
+    "frontImageHeight": 900
+  },
+  {
+    "id": "4a3f302f-a115-4f05-b6c0-859042aa570d",
+    "title": "Эрен Йегер",
+    "description": "Человек, чья жажда свободы оказалась сильнее страха, боли и самой судьбы. 🔥 Эрен Йегер прошёл путь от мальчика, мечтавшего увидеть мир за стенами, до обладателя силы, способной изменить судьбу всего человечества. Его решимость не знает границ, а каждый шаг приближает мир к необратимым переменам. За яростью и холодным взглядом скрывается человек, готовый заплатить любую цену за собственное понимание свободы. Но чем дальше он идёт, тем страшнее становится вопрос: можно ли обрести свободу, отняв её у других?",
+    "category": "Attack on Titan",
+    "subcategory": "",
+    "frontImage": "/uploads/1792898989081-7b0fbfb2.webp",
+    "backImage": "/uploads/1792898996340-c7e034d0.webp",
+    "price": 25,
+    "rarity": "novelty",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "isNew": true,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": true,
+    "ratingAvg": 5,
+    "reviewCount": 0,
+    "rarities": [
+      "common",
+      "novelty"
+    ],
+    "noveltySince": "2026-10-25T03:31:42.811Z",
+    "effect": "vario",
+    "categoryBg": "/uploads/1792898950348-857a31a7.webp",
+    "frontImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "backImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "priceRub": 750,
+    "categoryOrder": 1,
+    "varioSmoothing": 0.18,
+    "frontImageWidth": 600,
+    "frontImageHeight": 900
+  },
+  {
+    "id": "032661cb-1d3b-4c2f-8bb7-0d42ab0f593c",
+    "title": "Райнер Браун — Бронированный титан",
+    "description": "За суровой внешностью Райнера скрывается человек, разрываемый между долгом, чувством вины и желанием обрести покой. Обладая силой Бронированного титана, он способен выдерживать сокрушительные удары и превращать собственное тело в непробиваемую защиту. Но даже самая крепкая броня не спасает от внутренних ран. Райнер прошёл через предательство, потери и мучительный выбор между двумя мирами, пытаясь найти искупление за свои поступки. Его история — это борьба человека, который слишком долго нёс чужие ожидания на своих плечах.",
+    "category": "Attack on Titan",
+    "subcategory": "",
+    "frontImage": "/uploads/1792899306563-ce2c1e10.webp",
+    "backImage": "/uploads/1792899321802-517aa8f0.webp",
+    "price": 25,
+    "rarity": "novelty",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "isNew": true,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": true,
+    "ratingAvg": 5,
+    "reviewCount": 0,
+    "rarities": [
+      "common",
+      "novelty"
+    ],
+    "noveltySince": "2026-10-25T03:35:28.070Z",
+    "effect": "vario",
+    "categoryBg": "/uploads/1792899225317-6a26e3ed.webp",
+    "frontImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "backImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "priceRub": 750,
+    "categoryOrder": 2,
+    "varioSmoothing": 0.18,
+    "frontImageWidth": 600,
+    "frontImageHeight": 900
+  },
+  {
+    "id": "10cde4e3-c39a-451a-9ba6-8fd16aa7bf83",
+    "title": "Колоссальный титан",
+    "description": "Колоссальный титан — воплощение разрушительной мощи и ужаса, способное одним появлением изменить ход целой войны. Его исполинские размеры позволяют возвышаться над крепостными стенами, а превращение сопровождается чудовищным взрывом, сметающим всё вокруг. Его тело излучает колоссальное количество тепла, превращая приближение к нему в смертельно опасное испытание. За этой силой скрывается одна из самых страшных особенностей титанов: достаточно одного решения, чтобы целые города оказались на грани уничтожения.",
+    "category": "Attack on Titan",
+    "subcategory": "",
+    "frontImage": "/uploads/1792899414501-01352617.webp",
+    "backImage": "/uploads/1792899463556-17535989.webp",
+    "price": 25,
+    "rarity": "novelty",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "effect": "vario",
+    "isNew": false,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": true,
+    "ratingAvg": 5,
+    "reviewCount": 0,
+    "categoryBg": "/uploads/1792899379922-eddc433b.webp",
+    "frontImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "backImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "middleImage": "/uploads/1792899455121-9e9e2067.webp",
+    "middleImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryOrder": 3,
+    "priceRub": 750,
+    "varioSmoothing": 0.18,
+    "frontImageWidth": 600,
+    "frontImageHeight": 900,
+    "rarities": [
+      "common",
+      "novelty"
+    ],
+    "noveltySince": "2026-10-25T03:37:48.675Z"
   }
 ]

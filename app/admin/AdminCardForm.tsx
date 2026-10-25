@@ -725,26 +725,26 @@ export function AdminCardForm({
                 value={categoryBgFocus}
                 onChange={setCategoryBgFocus}
                 aspectRatioCss={
-                  category === TMNT_PARENT_CATEGORY || berserkPreview
+                  category === TMNT_PARENT_CATEGORY || posterContainPreview
                     ? resolvedCardArtAspectCss
                     : undefined
                 }
                 objectFit={
-                  category === TMNT_PARENT_CATEGORY || berserkPreview
+                  category === TMNT_PARENT_CATEGORY || posterContainPreview
                     ? adminPreviewObjectFit
                     : undefined
                 }
                 imageStyle={
                   category === TMNT_PARENT_CATEGORY
                     ? categoryFocusCoverStyle(categoryBgFocus)
-                    : berserkPreview
+                    : posterContainPreview
                       ? categoryFocusContainStyle(categoryBgFocus)
                       : undefined
                 }
                 hint={
                   category === TMNT_PARENT_CATEGORY
                     ? "Для TMNT — тот же кадр 761×1024, что лицо и оборот. Фокус — для витрины."
-                    : berserkPreview
+                    : posterContainPreview
                       ? "Для Берсерка — кадр 596×819, картинка целиком в рамке."
                       : "По размеру файла, без обрезки. Фокус в данных — для витрины."
                 }
@@ -1045,7 +1045,7 @@ export function AdminCardForm({
                     controls
                     muted
                     playsInline
-                    className={`absolute inset-0 h-full w-full ${berserkPreview ? "object-contain" : "object-cover"}`}
+                    className={`absolute inset-0 h-full w-full ${posterContainPreview ? "object-contain" : "object-cover"}`}
                     style={adminFaceStyle(frontFocus)}
                   />
                 </div>

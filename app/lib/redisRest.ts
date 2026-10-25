@@ -172,7 +172,7 @@ export async function redisCommand(
 ): Promise<{ result?: unknown; error?: string } | null> {
   const cred = redisRestCredentials();
   if (!cred) {
-    console.error("Redis REST credentials are missing.", presentRedisEnvNames());
+    /* Локально Redis не задан — каталог и админка читают git-файлы. */
     return null;
   }
 

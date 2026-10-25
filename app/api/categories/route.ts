@@ -5,9 +5,9 @@ import path from "path";
 import { parseCategoriesJson } from "@/app/lib/categoriesJson";
 import {
   DURABLE_JSON_KEYS,
-  loadDurableJsonText,
   saveDurableJsonText,
 } from "@/app/lib/durableJson";
+import { loadCategoryTiles } from "@/app/lib/loadCategoryTiles";
 
 const filePath = path.join(process.cwd(), "data", "categories.json");
 
@@ -56,9 +56,8 @@ async function ensureFile() {
 }
 
 export async function GET() {
-  const raw = await loadDurableJsonText(DURABLE_JSON_KEYS.categories, filePath);
-  const data = raw ?? defaultJson;
-  return NextResponse.json(parseCategoriesJson(JSON.parse(data)), {
+  const tiles = await loadCategoryTiles();
+  return NextResponse.json(tiles.length > 0 ? tiles : parseCategoriesJson(JSON.parse(defaultJson)), {
     headers: {
       "Cache-Control": "public, s-maxage=60, stale-while-revalidate=300",
     },

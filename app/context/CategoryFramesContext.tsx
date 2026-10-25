@@ -11,6 +11,7 @@ import {
 import { apiUrl } from "@/app/lib/apiUrl";
 import {
   parseCategoriesJson,
+  mergeCategoryTiles,
   categoryFrameAspectCssFromTiles,
   type CategoryTile,
 } from "@/app/lib/categoriesJson";
@@ -35,7 +36,7 @@ export function CategoryFramesProvider({ children }: { children: ReactNode }) {
       .then((r) => (r.ok ? r.json() : null))
       .then((data: unknown) => {
         if (!Array.isArray(data)) return;
-        setTiles(parseCategoriesJson(data));
+        setTiles(mergeCategoryTiles(STATIC_TILES, parseCategoriesJson(data)));
       })
       .catch(() => {});
   }, []);

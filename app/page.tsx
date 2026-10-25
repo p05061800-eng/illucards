@@ -1,8 +1,6 @@
 import HeroSection from "@/components/hero/HeroSection";
 import { HomeCollection } from "./components/HomeCollection";
 import { toStorefrontCard } from "./lib/cardsJson";
-import type { CategoryTile } from "./lib/categoriesJson";
-import { parseCategoriesJson } from "./lib/categoriesJson";
 import { resolveCustomOrderHeroCards } from "./lib/customOrderHeroCarousel";
 import { buildNoveltiesCarouselCards } from "./lib/noveltiesHeroCarousel";
 import {
@@ -14,47 +12,35 @@ import {
   loadDurableJsonText,
 } from "./lib/durableJson";
 import { loadCatalogCards } from "./lib/loadCatalogCards";
+import { loadCategoryTiles } from "./lib/loadCategoryTiles";
 import path from "path";
 
 /** После сохранения в админке `revalidatePath("/")` сразу обновляет главную. */
 export const revalidate = 60;
 
 export default async function Home() {
-  const cards = (await loadCatalogCards()).map(toStorefrontCard);
-
-  const categoriesPath = path.join(process.cwd(), "data", "categories.json");
-  let categoryTiles: CategoryTile[] = [];
-  try {
-    const raw = await loadDurableJsonText(
-      DURABLE_JSON_KEYS.categories,
-      categoriesPath,
-    );
-    categoryTiles = raw ? parseCategoriesJson(JSON.parse(raw)) : [];
-  } catch {
-    categoryTiles = [];
-  }
+  const emptyPromo: PromoHomeConfig = {
+    customOrder: { imageUrl: "", href: "" },
+    items: [],
+  };
+  const promoPath = path.join(process.cwd(), "data", "promo-slides.json");
+  const [cardsRaw, categoryTiles, promoRaw] = await Promise.all([
+    loadCatalogCards(),
+    loadCategoryTiles(),
+    loadDurableJsonText(DURABLE_JSON_KEYS.promo, promoPath),
+  ]);
+  const cards = cardsRaw.map(toStorefrontCard);
 
   const initialHeroCategoryName =
     cards[0]?.category?.trim() ? cards[0].category.trim() : null;
 
-  let initialPromoConfig: PromoHomeConfig = {
-    customOrder: { imageUrl: "", href: "" },
-    items: [],
-  };
+  let initialPromoConfig: PromoHomeConfig = emptyPromo;
   try {
-    const promoPath = path.join(process.cwd(), "data", "promo-slides.json");
-    const promoRaw = await loadDurableJsonText(
-      DURABLE_JSON_KEYS.promo,
-      promoPath,
-    );
     initialPromoConfig = promoRaw
       ? parsePromoHomeConfig(JSON.parse(promoRaw))
-      : initialPromoConfig;
+      : emptyPromo;
   } catch {
-    initialPromoConfig = {
-      customOrder: { imageUrl: "", href: "" },
-      items: [],
-    };
+    initialPromoConfig = emptyPromo;
   }
 
   const customOrderCards = resolveCustomOrderHeroCards(

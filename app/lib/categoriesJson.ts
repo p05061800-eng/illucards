@@ -89,6 +89,64 @@ export function parseCategoriesJson(raw: unknown): CategoryTile[] {
   return withCustomOrderCategoryFirst(parsed);
 }
 
+function tileKey(name: string): string {
+  return name.trim().toLowerCase();
+}
+
+function pickImage(primary: string | undefined, fallback: string | undefined): string {
+  const a = primary?.trim() ?? "";
+  if (a) return a;
+  return fallback?.trim() ?? "";
+}
+
+/**
+ * Git — полный набор плашек. Redis может быть короче после сброса:
+ * не выкидываем git-категории и не затираем пустым image.
+ */
+export function mergeCategoryTiles(
+  fileTiles: readonly CategoryTile[],
+  redisTiles: readonly CategoryTile[],
+): CategoryTile[] {
+  if (redisTiles.length === 0) return [...fileTiles];
+  if (fileTiles.length === 0) return [...redisTiles];
+
+  const byKey = new Map<string, CategoryTile>();
+  const order: string[] = [];
+
+  const remember = (tile: CategoryTile, overlay: boolean) => {
+    const key = tileKey(tile.name);
+    if (!key) return;
+    const prev = byKey.get(key);
+    if (!prev) {
+      byKey.set(key, { ...tile });
+      order.push(key);
+      return;
+    }
+    if (!overlay) return;
+    byKey.set(key, {
+      ...prev,
+      ...tile,
+      name: tile.name.trim() || prev.name,
+      image: pickImage(tile.image, prev.image),
+      plateImage: pickImage(tile.plateImage, prev.plateImage) || undefined,
+      imageFocus: tile.imageFocus ?? prev.imageFocus,
+      plateImageFocus: tile.plateImageFocus ?? prev.plateImageFocus,
+      tmntSubcollections:
+        tile.tmntSubcollections && tile.tmntSubcollections.length > 0
+          ? tile.tmntSubcollections
+          : prev.tmntSubcollections,
+      cardFrameWidth: tile.cardFrameWidth ?? prev.cardFrameWidth,
+      cardFrameHeight: tile.cardFrameHeight ?? prev.cardFrameHeight,
+    });
+  };
+
+  for (const tile of fileTiles) remember(tile, false);
+  for (const tile of redisTiles) remember(tile, true);
+  return withCustomOrderCategoryFirst(
+    order.map((key) => byKey.get(key)!).filter(Boolean),
+  );
+}
+
 /**
  * Сопоставление строки `category` из карточки с плиткой категории
  * (учёт регистра, Marvel ↔ Spider-Man, Stranger Things).

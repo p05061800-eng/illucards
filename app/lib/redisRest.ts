@@ -144,6 +144,7 @@ async function postRedis(
   token: string,
   payload: unknown,
   cacheMode: "no-store" | "catalog" = "no-store",
+  timeoutMs?: number,
 ): Promise<{ status: number; body: RedisBody }> {
   const res = await fetch(url, {
     method: "POST",
@@ -152,6 +153,8 @@ async function postRedis(
       "Content-Type": "application/json",
     },
     body: JSON.stringify(payload),
+    signal:
+      timeoutMs && timeoutMs > 0 ? AbortSignal.timeout(timeoutMs) : undefined,
     ...(cacheMode === "catalog"
       ? { next: { revalidate: 60, tags: ["catalog-json"] } }
       : { cache: "no-store" as const }),
@@ -173,12 +176,17 @@ export async function redisCommand(
     return null;
   }
 
+  const catalogFast = cacheMode === "catalog";
+  const timeoutMs = catalogFast ? 400 : undefined;
+
   try {
-    const attempts: { url: string; payload: unknown }[] = [
-      { url: cred.url, payload: cmd },
-      { url: cred.url, payload: [cmd] },
-      { url: `${cred.url}/pipeline`, payload: [cmd] },
-    ];
+    const attempts: { url: string; payload: unknown }[] = catalogFast
+      ? [{ url: cred.url, payload: cmd }]
+      : [
+          { url: cred.url, payload: cmd },
+          { url: cred.url, payload: [cmd] },
+          { url: `${cred.url}/pipeline`, payload: [cmd] },
+        ];
     let last: { status: number; body: RedisBody } | null = null;
     for (const attempt of attempts) {
       last = await postRedis(
@@ -186,6 +194,7 @@ export async function redisCommand(
         cred.token,
         attempt.payload,
         cacheMode,
+        timeoutMs,
       );
       if (!last.body.error && last.status >= 200 && last.status < 300) {
         return last.body;
@@ -201,6 +210,12 @@ export async function redisCommand(
     return null;
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown error";
+    if (
+      error instanceof Error &&
+      (error.name === "TimeoutError" || error.name === "AbortError")
+    ) {
+      return null;
+    }
     console.error("Upstash Redis request failed:", message);
     return { error: message };
   }

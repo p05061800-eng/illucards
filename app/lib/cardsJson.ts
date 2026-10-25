@@ -436,15 +436,55 @@ export function parseCardsJson(json: string): StoredCard[] {
   }
 }
 
-/** Главная не тащит описания и отзывы в клиентский бандл. */
+const EMPTY_STATS = {
+  power: 0,
+  speed: 0,
+  intelligence: 0,
+  magic: 0,
+};
+
+/** Сетка коллекции: только то, что видно в плитке, без vario/видео. */
 export function toStorefrontCard(card: StoredCard): StoredCard {
-  return {
-    ...card,
+  const out: StoredCard = {
+    id: card.id,
+    title: card.title,
     description: "",
-    reviews: undefined,
-    boughtTogetherIds: undefined,
-    recommendedIds: undefined,
-    productVideo: undefined,
-    productVideoFocus: undefined,
+    category: card.category ?? "",
+    subcategory: card.subcategory ?? "",
+    frontImage: card.frontImage,
+    backImage: "",
+    inStock: card.inStock,
+    ratingAvg: card.ratingAvg,
+    reviewCount: card.reviewCount,
+    isNew: card.isNew,
+    isPopular: card.isPopular,
+    isSale: card.isSale,
+    price: card.price,
+    rarity: card.rarity,
+    stats: EMPTY_STATS,
+    effect: "3d-horizontal",
   };
+  if (card.priceRub != null) out.priceRub = card.priceRub;
+  if (card.rarities?.length) out.rarities = card.rarities;
+  if (card.noveltySince) out.noveltySince = card.noveltySince;
+  if (card.categoryOrder != null) out.categoryOrder = card.categoryOrder;
+  if (card.frontImageWidth) out.frontImageWidth = card.frontImageWidth;
+  if (card.frontImageHeight) out.frontImageHeight = card.frontImageHeight;
+  if (card.cardArtFramePreset) out.cardArtFramePreset = card.cardArtFramePreset;
+  if (card.frontImageFocus) out.frontImageFocus = card.frontImageFocus;
+  return out;
+}
+
+/** Герой «Новинки»: оставляем vario-слои, без описаний и отзывов. */
+export function toHeroStorefrontCard(card: StoredCard): StoredCard {
+  const out = toStorefrontCard(card);
+  out.backImage = card.backImage ?? "";
+  out.effect = card.effect;
+  if (card.middleImage) out.middleImage = card.middleImage;
+  if (card.middleImageFocus) out.middleImageFocus = card.middleImageFocus;
+  if (card.backImageFocus) out.backImageFocus = card.backImageFocus;
+  if (card.categoryBg) out.categoryBg = card.categoryBg;
+  if (card.varioSmoothing != null) out.varioSmoothing = card.varioSmoothing;
+  if (card.varioSmoothBlend) out.varioSmoothBlend = true;
+  return out;
 }

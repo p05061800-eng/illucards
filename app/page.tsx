@@ -1,6 +1,6 @@
 import HeroSection from "@/components/hero/HeroSection";
 import { HomeCollection } from "./components/HomeCollection";
-import { toStorefrontCard } from "./lib/cardsJson";
+import { toHeroStorefrontCard, toStorefrontCard } from "./lib/cardsJson";
 import { resolveCustomOrderHeroCards } from "./lib/customOrderHeroCarousel";
 import { buildNoveltiesCarouselCards } from "./lib/noveltiesHeroCarousel";
 import {
@@ -41,18 +41,20 @@ export default async function Home() {
   }
 
   const customOrderCards = resolveCustomOrderHeroCards(
-    cards,
+    cardsRaw,
     initialPromoConfig.customOrder.imageUrl,
   );
   const heroCardIds = new Set<string>();
   const heroCards = [
-    ...buildNoveltiesCarouselCards(cards),
+    ...buildNoveltiesCarouselCards(cardsRaw),
     ...customOrderCards,
-  ].filter((card) => {
-    if (heroCardIds.has(card.id)) return false;
-    heroCardIds.add(card.id);
-    return true;
-  });
+  ]
+    .filter((card) => {
+      if (heroCardIds.has(card.id)) return false;
+      heroCardIds.add(card.id);
+      return true;
+    })
+    .map(toHeroStorefrontCard);
 
   return (
     <main className="main relative min-h-screen overflow-x-hidden text-white">

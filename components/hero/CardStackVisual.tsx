@@ -13,6 +13,7 @@ import {
 } from "react";
 import type { StoredCard } from "@/app/api/cards/route";
 import {
+  cardHasKnownArtBoxAspect,
   isFixedCardArtFramePreset,
   resolveCardArtBoxAspectCss,
 } from "@/app/lib/cardAspectRatio";
@@ -161,9 +162,17 @@ export function CardStackVisual({
   const catalogFaceContain = catalogStack && !fixedCatalogFrame;
   const productFaceCoversFrame =
     (heroDiagonalLayout || catalogStack) && !fixedCatalogFrame;
-  /** Всегда подмешиваем интринсик лица в resolve — спейсер ниже только по `stackBoxAspectCss`. */
+  const artRootRef = useRef<HTMLDivElement>(null);
+  const [mediaInView, setMediaInView] = useState(
+    () => heroStack || heroDiagonalLayout,
+  );
+  const [extrasReady, setExtrasReady] = useState(
+    () => heroStack || heroDiagonalLayout,
+  );
+  const knownArtBox = cardHasKnownArtBoxAspect(card);
+  /** Не качаем лицо через `new Image()`, если рамка уже известна из JSON. */
   const { aspectRatioCss: spacerIntrinsicCss } = useIntrinsicImageAspect(
-    frontSrc || undefined,
+    knownArtBox || !mediaInView ? undefined : frontSrc || undefined,
   );
   const stackBoxAspectCss = resolveCardArtBoxAspectCss(
     card,
@@ -180,6 +189,30 @@ export function CardStackVisual({
 
   const { visible: tiltHintVisible, dismiss: dismissTiltHint } =
     useFirstVisitCardTiltHint(Boolean(heroStack));
+
+  useEffect(() => {
+    if (mediaInView) return;
+    const el = artRootRef.current;
+    if (!el) {
+      setMediaInView(true);
+      return;
+    }
+    if (typeof IntersectionObserver === "undefined") {
+      setMediaInView(true);
+      return;
+    }
+    const io = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((entry) => entry.isIntersecting)) {
+          setMediaInView(true);
+          io.disconnect();
+        }
+      },
+      { rootMargin: "480px 0px", threshold: 0.01 },
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, [mediaInView]);
 
   useEffect(() => {
     const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -357,11 +390,12 @@ export function CardStackVisual({
       if (rafRef.current !== 0) cancelAnimationFrame(rafRef.current);
       rafRef.current = requestAnimationFrame(applyTilt);
     },
-    [applyTilt, dismissTiltHint, heroStack]
+    [applyTilt, dismissTiltHint, heroStack, navigationTapSafe]
   );
 
   const onPointerEnter = useCallback(
     (e: PointerEvent<HTMLDivElement>) => {
+      setExtrasReady(true);
       setHoverMotionEngaged(true);
       void hoverMotionVideoRef.current?.play()?.catch(() => {});
       if ((heroStack || navigationTapSafe) && e.pointerType === "touch") return;
@@ -369,7 +403,7 @@ export function CardStackVisual({
       if (rafRef.current !== 0) cancelAnimationFrame(rafRef.current);
       rafRef.current = requestAnimationFrame(applyTilt);
     },
-    [applyTilt, heroStack]
+    [applyTilt, heroStack, navigationTapSafe]
   );
 
   /**
@@ -380,6 +414,7 @@ export function CardStackVisual({
   const onPointerDown = useCallback((e: PointerEvent<HTMLDivElement>) => {
     dismissTiltHint();
     /* На таче внутри ссылки: наклон/vario только после сдвига пальца — иначе первый тап не открывает карточку. */
+    setExtrasReady(true);
     if (e.pointerType === "touch" || e.pointerType === "pen") {
       if (navigationTapSafe || catalogStack || heroStack || heroDiagonalLayout) {
         return;
@@ -407,7 +442,7 @@ export function CardStackVisual({
         /* ignore */
       }
     }
-  }, [heroStack]);
+  }, [heroStack, navigationTapSafe]);
 
   /** Сброс наклона/vario после ухода курсора или при смене карточки (без remount всего стека). */
   const resetInteractiveState = useCallback(() => {
@@ -539,6 +574,7 @@ export function CardStackVisual({
 
     const onTouchStart = (e: TouchEvent) => {
       if (e.touches.length === 0) return;
+      setExtrasReady(true);
       touchStart = touchPoint(e.touches[0]!);
       dragActive = false;
     };
@@ -604,8 +640,7 @@ export function CardStackVisual({
   const fixedShell = cardArtFixedFrameShellClass(fixedCatalogFrame);
   const fixedImg = cardArtFixedFrameImgClass(fixedCatalogFrame);
 
-  /** Только видимый герой — иначе сетка коллекций качает все webp сразу. */
-  const eagerFaceImages = heroStack;
+  const eagerFaceImages = heroStack || heroDiagonalLayout;
 
   /** Третий слой: для TMNT фон категории заполняет ту же рамку 761×1024, что лицо. */
   const ultraLayerImgStyle: CSSProperties = useMemo(() => {
@@ -644,6 +679,14 @@ export function CardStackVisual({
 
   const back = card.backImage?.trim() ?? "";
   const middle = card.middleImage?.trim() ?? "";
+  const frontMediaSrc = mediaInView ? front : "";
+  const ultraMediaSrc =
+    mediaInView && !hideUltraLayer ? ultraBgUrl.trim() : "";
+  const extraMediaReady =
+    mediaInView &&
+    (eagerFaceImages || extrasReady || coarsePointerOrHoverNone);
+  const backMediaSrc = extraMediaReady ? back : "";
+  const middleMediaSrc = extraMediaReady ? middle : "";
   const frontPosStyle: CSSProperties = catalogFaceContain
     ? categoryFocusContainStyle(card.frontImageFocus)
     : productFaceCoversFrame
@@ -694,6 +737,7 @@ export function CardStackVisual({
 
   return (
     <div
+      ref={artRootRef}
       className={[
         "illucards-card group/cardstack-hover card-stack-visual-art min-w-0 max-w-full",
         resolvedRoot,
@@ -713,14 +757,10 @@ export function CardStackVisual({
       >
       <div className="relative block w-full max-w-full min-h-0 min-w-0">
         {frontSrc ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={frontSrc}
-            alt=""
+          <div
             aria-hidden
-            className="hero-card-stack-sizer block h-auto w-full max-h-full max-w-full rounded-2xl object-contain opacity-0 pointer-events-none select-none"
+            className="hero-card-stack-sizer block h-auto w-full max-h-full max-w-full rounded-2xl pointer-events-none select-none"
             style={{ aspectRatio: stackBoxAspectCss }}
-            draggable={false}
           />
         ) : null}
 
@@ -736,8 +776,9 @@ export function CardStackVisual({
                 ].join(" ")}
               >
                 {/* eslint-disable-next-line @next/next/no-img-element */}
+                {ultraMediaSrc ? (
                 <img
-                  src={ultraBgUrl}
+                  src={ultraMediaSrc}
                   alt=""
                   className={`card-side-img rounded-2xl ${faceCls} ${
                     catalogFaceContain
@@ -760,6 +801,7 @@ export function CardStackVisual({
                   decoding="async"
                   loading={eagerFaceImages ? "eager" : "lazy"}
                 />
+                ) : null}
               </div>
             </div>
           </div>
@@ -821,10 +863,10 @@ export function CardStackVisual({
                               : fixedShell
                           }
                         >
-                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          {backMediaSrc ? (
                           <img
                             ref={cardBackImgRef}
-                            src={back}
+                            src={backMediaSrc}
                             alt=""
                             className={faceImgClass}
                             style={
@@ -841,6 +883,7 @@ export function CardStackVisual({
                             decoding="async"
                             loading={eagerFaceImages ? "eager" : "lazy"}
                           />
+                          ) : null}
                         </div>
                       </div>
                       {middle ? (
@@ -863,9 +906,9 @@ export function CardStackVisual({
                                 : fixedShell
                             }
                           >
-                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            {middleMediaSrc ? (
                             <img
-                              src={middle}
+                              src={middleMediaSrc}
                               alt=""
                               className={faceImgClass}
                               style={
@@ -882,6 +925,7 @@ export function CardStackVisual({
                               decoding="async"
                               loading={eagerFaceImages ? "eager" : "lazy"}
                             />
+                            ) : null}
                           </div>
                         </div>
                       ) : null}
@@ -904,10 +948,10 @@ export function CardStackVisual({
                               : `relative ${fixedShell}`
                           }
                         >
-                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          {frontMediaSrc ? (
                           <img
                             ref={morphActive ? cardFrontImgRef : undefined}
-                            src={front}
+                            src={frontMediaSrc}
                             alt={card.title}
                             className={faceImgClass}
                             style={
@@ -923,8 +967,10 @@ export function CardStackVisual({
                             draggable={false}
                             decoding="async"
                             loading={eagerFaceImages ? "eager" : "lazy"}
+                            fetchPriority={eagerFaceImages ? "high" : "low"}
                           />
-                          {hoverMotion ? (
+                          ) : null}
+                          {hoverMotion && extraMediaReady ? (
                             <FrontHoverMotionOverlay
                               url={hoverMotion}
                               videoRef={hoverMotionVideoRef}
@@ -955,9 +1001,9 @@ export function CardStackVisual({
                             : `${fixedShell} overflow-visible`
                         }`}
                       >
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        {frontMediaSrc ? (
                         <img
-                          src={front}
+                          src={frontMediaSrc}
                           alt={card.title}
                           className={faceImgClass}
                           style={
@@ -973,8 +1019,10 @@ export function CardStackVisual({
                           draggable={false}
                           decoding="async"
                           loading={eagerFaceImages ? "eager" : "lazy"}
+                          fetchPriority={eagerFaceImages ? "high" : "low"}
                         />
-                        {hoverMotion ? (
+                        ) : null}
+                        {hoverMotion && extraMediaReady ? (
                           <FrontHoverMotionOverlay
                             url={hoverMotion}
                             videoRef={hoverMotionVideoRef}

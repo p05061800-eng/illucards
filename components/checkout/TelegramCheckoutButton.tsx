@@ -27,6 +27,7 @@ export function TelegramCheckoutButton({
     deliveryCountry,
     orderTotalByn,
     markCartActive,
+    clearCart,
   } = useCart();
   const { primaryTelegramUserId, user } = useAuth();
   const [submitting, setSubmitting] = useState(false);
@@ -89,6 +90,7 @@ export function TelegramCheckoutButton({
         return;
       }
       onBeforeNavigate?.();
+      clearCart();
       redirectToTelegramUrl(result.botUrl);
     } catch {
       setError("Сеть недоступна. Попробуйте ещё раз.");
@@ -96,6 +98,7 @@ export function TelegramCheckoutButton({
     }
   }, [
     cartItems,
+    clearCart,
     deliveryCountry,
     hydrated,
     markCartActive,
@@ -132,6 +135,12 @@ export function TelegramCheckoutButton({
 
   const disabled =
     cartItems.length === 0 || !deliveryCountry || submitting;
+  const disabledHint =
+    cartItems.length === 0
+      ? "Корзина пуста"
+      : !deliveryCountry
+        ? "Укажите страну доставки"
+        : null;
 
   return (
     <div className="w-full">
@@ -164,6 +173,8 @@ export function TelegramCheckoutButton({
         <p className="mt-2 text-center text-sm text-red-400" role="alert">
           {error}
         </p>
+      ) : disabledHint && !submitting ? (
+        <p className="mt-2 text-center text-sm text-zinc-500">{disabledHint}</p>
       ) : null}
     </div>
   );

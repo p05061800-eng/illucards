@@ -520,6 +520,8 @@ export default function HeroSection({
                           className="category-tile-img h-full w-full max-h-full max-w-full rounded-[inherit] object-cover"
                           style={categoryFocusToStyle(plateFocus)}
                           draggable={false}
+                          loading="lazy"
+                          decoding="async"
                         />
                       </div>
                     ) : (
@@ -722,7 +724,8 @@ export default function HeroSection({
                                       alt=""
                                       className="block h-12 w-9 object-cover object-center sm:h-14 sm:w-10"
                                       draggable={false}
-                                      loading="lazy"
+                                      loading={i < 8 ? "eager" : "lazy"}
+                                      fetchPriority={i < 4 ? "high" : "low"}
                                       decoding="async"
                                     />
                                   </button>
@@ -807,16 +810,6 @@ export default function HeroSection({
               </div>
             </div>
 
-              <div
-                className="hero-mobile-akcii mt-4 w-full min-w-0 shrink-0"
-                aria-label="Карточка на заказ и акции"
-              >
-                <PromoSlider
-                  cards={cards}
-                  initialConfig={initialPromoConfig}
-                  initialSlides={initialPromoSlides}
-                />
-              </div>
             </div>
             </div>
             </div>

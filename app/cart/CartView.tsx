@@ -72,6 +72,10 @@ export default function CartView() {
                         }
                         className="h-auto w-full rounded-lg"
                         sizes="80px"
+                        unoptimized={
+                          line.frontImage.startsWith("/") ||
+                          line.frontImage.startsWith("data:")
+                        }
                         style={{
                           width: "100%",
                           height: "auto",

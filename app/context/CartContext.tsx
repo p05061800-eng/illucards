@@ -516,8 +516,9 @@ export function CartProvider({ children }: { children: ReactNode }) {
       setCartItems((prev) => prev.filter((l) => l.id !== id));
       return;
     }
+    const capped = Math.min(99, q);
     setCartItems((prev) =>
-      prev.map((l) => (l.id === id ? { ...l, quantity: q } : l))
+      prev.map((l) => (l.id === id ? { ...l, quantity: capped } : l))
     );
   }, []);
 

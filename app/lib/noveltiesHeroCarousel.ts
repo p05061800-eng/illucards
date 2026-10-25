@@ -20,9 +20,7 @@ function noveltySortKey(card: StoredCard): number {
 
 export function isHeroNoveltyCard(card: StoredCard): boolean {
   if (!card.frontImage?.trim()) return false;
-  if (card.isNew || cardHasRarityTag(card, "novelty")) return true;
-  /** В карусели героя остаются и те, у кого метка уже снялась по сроку. */
-  return parseNoveltySinceMs(card.noveltySince) != null;
+  return card.isNew === true || cardHasRarityTag(card, "novelty");
 }
 
 /** Новинки в герое: сначала свежие, затем по порядку в файле. */
@@ -41,7 +39,7 @@ export function sortNoveltiesForHeroCarousel(
 
 /**
  * Полный список карточек для карусели «Новинки» в герое:
- * все с активной меткой «Новинки» (не старше 30 дней) или флагом isNew.
+ * все с активной меткой «Новинки» (не старше календарного месяца) или флагом isNew.
  * Если заданы `cardIds`, они идут первыми по порядку, затем остальные из пула.
  */
 export function buildNoveltiesCarouselCards(

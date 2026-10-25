@@ -5811,7 +5811,7 @@
     "subcategory": "",
     "frontImage": "/uploads/1781651904071-b27dee60.webp",
     "backImage": "/uploads/1781651908559-32d7818e.webp",
-    "price": 0,
+    "price": 20,
     "rarity": "common",
     "stats": {
       "power": 50,
@@ -5839,6 +5839,7 @@
       "x": 50,
       "y": 50
     },
+    "priceRub": 600,
     "categoryOrder": 4,
     "varioSmoothing": 0.18,
     "frontImageWidth": 600,

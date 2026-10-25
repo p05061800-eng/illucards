@@ -13,6 +13,39 @@ export type SubmitTelegramCheckoutResult =
     }
   | { ok: false; error: string; status?: number };
 
+function checkoutIdempotencyKey(input: {
+  userId: number;
+  deliveryCountry: DeliveryCountry;
+  cartItems: CartLine[];
+  orderTotalByn: number;
+}): string {
+  const fingerprint = [
+    input.userId,
+    input.deliveryCountry,
+    input.orderTotalByn.toFixed(2),
+    ...input.cartItems.map((l) => `${l.id}:${l.quantity}`),
+  ].join("|");
+  const storageKey = `illucards_checkout_id:${fingerprint}`;
+  if (typeof window !== "undefined") {
+    try {
+      const existing = sessionStorage.getItem(storageKey)?.trim() ?? "";
+      if (
+        /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+          existing,
+        )
+      ) {
+        return existing;
+      }
+      const created = crypto.randomUUID();
+      sessionStorage.setItem(storageKey, created);
+      return created;
+    } catch {
+      /* private mode */
+    }
+  }
+  return crypto.randomUUID();
+}
+
 export async function submitTelegramCheckoutOrder(input: {
   userId: number;
   username?: string | null;
@@ -37,6 +70,7 @@ export async function submitTelegramCheckoutOrder(input: {
     total: input.orderTotalByn,
     delivery: input.deliveryCountry,
     user_id: input.userId,
+    client_order_id: checkoutIdempotencyKey(input),
   };
   if (input.username?.trim()) {
     orderPayload.username = input.username.trim();

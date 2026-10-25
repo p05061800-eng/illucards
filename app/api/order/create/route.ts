@@ -2,11 +2,13 @@ import type { NextRequest } from "next/server";
 import { after, NextResponse } from "next/server";
 import {
   normalizeOrderItems,
+  parseClientOrderId,
   parseDeliveryCountry,
   parseOptionalTelegramUserId,
   parseOptionalUsername,
   persistOrder,
 } from "@/app/lib/orderCreateShared";
+import { COOKIE_TELEGRAM_USER_ID } from "@/app/lib/telegramUserIdentity";
 import { syncOrderToTelegramBot } from "@/app/lib/telegramCartBotSync";
 import { recordAndNotifyTelegramOrder } from "@/app/lib/telegramOrderNotify";
 import { telegramOrderStartPayload } from "@/app/lib/telegramOrderStartPayload";
@@ -50,7 +52,18 @@ export async function POST(request: NextRequest) {
 
   const total =
     typeof o.total === "number" ? o.total : Number(o.total);
-  const userId = parseOptionalTelegramUserId(o.user_id);
+  const cookieUserId = parseOptionalTelegramUserId(
+    request.cookies.get(COOKIE_TELEGRAM_USER_ID)?.value,
+  );
+  const bodyUserId = parseOptionalTelegramUserId(o.user_id);
+  if (
+    cookieUserId != null &&
+    bodyUserId != null &&
+    cookieUserId !== bodyUserId
+  ) {
+    return NextResponse.json({ error: "Сессия не совпадает" }, { status: 403 });
+  }
+  const userId = cookieUserId ?? bodyUserId;
   if (userId == null) {
     return NextResponse.json(
       { error: "Сначала войдите через Telegram" },
@@ -58,8 +71,10 @@ export async function POST(request: NextRequest) {
     );
   }
   const username = parseOptionalUsername(o.username);
+  const clientOrderId = parseClientOrderId(o.client_order_id);
 
   const result = await persistOrder({
+    orderId: clientOrderId,
     deliveryCountry: delivery,
     items,
     userId,
@@ -69,6 +84,20 @@ export async function POST(request: NextRequest) {
 
   if (!result.ok) {
     return NextResponse.json({ error: result.error }, { status: result.status });
+  }
+
+  if (result.reused) {
+    return NextResponse.json({
+      order_id: result.orderId,
+      total: result.totalByn,
+      ...(result.buyerSeq != null ? { buyer_seq: result.buyerSeq } : {}),
+      telegram_recorded: true,
+      telegram_sent: true,
+      telegram_bot_start: telegramOrderStartPayload(
+        result.orderId,
+        result.buyerSeq,
+      ),
+    });
   }
 
   const syncInput = {

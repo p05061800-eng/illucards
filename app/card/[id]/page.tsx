@@ -30,9 +30,26 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   if (!card) {
     return { title: "Карточка не найдена — IlluCards" };
   }
+  const description = (card.description || "")
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, 180);
+  const image = card.frontImage?.trim() || "/icon.png";
+  const url = `https://www.illucards.by/card/${card.id}`;
   return {
     title: `${card.title} — IlluCards`,
-    description: card.description || undefined,
+    description: description || `${card.title} — коллекционная карточка IlluCards`,
+    alternates: { canonical: url },
+    openGraph: {
+      type: "website",
+      locale: "ru_BY",
+      url,
+      siteName: "IlluCards",
+      title: `${card.title} — IlluCards`,
+      description:
+        description || `${card.title} — коллекционная карточка IlluCards`,
+      images: [{ url: image, alt: card.title }],
+    },
   };
 }
 

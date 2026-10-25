@@ -4,10 +4,22 @@ import Link from "next/link";
 import { useId } from "react";
 import { TelegramCheckoutButton } from "@/components/checkout/TelegramCheckoutButton";
 import { DeliveryCountryField } from "@/app/components/DeliveryCountryField";
+import { CartOrderTotals } from "@/app/components/cart/CartOrderTotals";
 import { useCart } from "@/app/context/CartContext";
 
 export default function CheckoutPageClient() {
-  const { hydrated, deliveryCountry, setDeliveryCountry } = useCart();
+  const {
+    hydrated,
+    cartItems,
+    deliveryCountry,
+    setDeliveryCountry,
+    totalPriceByn,
+    totalPriceRub,
+    deliveryPriceByn,
+    deliveryPriceRub,
+    orderTotalByn,
+    orderTotalRub,
+  } = useCart();
   const deliveryFieldId = useId();
 
   if (!hydrated) {
@@ -21,6 +33,36 @@ export default function CheckoutPageClient() {
       <h1 className="mb-3 text-center text-2xl font-semibold tracking-tight text-white sm:text-3xl">
         Заказ
       </h1>
+      {cartItems.length === 0 ? (
+        <p className="mb-6 text-center text-sm text-zinc-400">
+          Корзина пуста — добавьте карточки, затем оформите заказ.
+        </p>
+      ) : (
+        <div className="mb-6 rounded-2xl border border-white/10 bg-white/[0.03] p-4">
+          <ul className="mb-3 space-y-1.5 text-sm text-zinc-200">
+            {cartItems.map((line) => (
+              <li
+                key={line.id}
+                className="flex items-baseline justify-between gap-3"
+              >
+                <span className="min-w-0 truncate">{line.title}</span>
+                <span className="shrink-0 tabular-nums text-zinc-400">
+                  ×{line.quantity}
+                </span>
+              </li>
+            ))}
+          </ul>
+          <CartOrderTotals
+            deliveryCountry={deliveryCountry}
+            totalPriceByn={totalPriceByn}
+            totalPriceRub={totalPriceRub}
+            deliveryPriceByn={deliveryPriceByn}
+            deliveryPriceRub={deliveryPriceRub}
+            orderTotalByn={orderTotalByn}
+            orderTotalRub={orderTotalRub}
+          />
+        </div>
+      )}
       <DeliveryCountryField
         id={deliveryFieldId}
         value={deliveryCountry}

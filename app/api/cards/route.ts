@@ -198,7 +198,7 @@ export type StoredCard = {
   rarity: CardRarity;
   /** Несколько меток редкости (если одна — поле не пишется, только `rarity`). */
   rarities?: CardRarity[];
-  /** Когда карточке назначили «Новинки» — метка скрывается через 7 дней. */
+  /** Когда карточке назначили «Новинки» — метка скрывается через календарный месяц. */
   noveltySince?: string;
   stats: CardStats;
   effect?: string;

@@ -4,7 +4,6 @@ import {
   createContext,
   useCallback,
   useContext,
-  useEffect,
   useMemo,
   useState,
   type ReactNode,
@@ -40,10 +39,6 @@ export function CategoryFramesProvider({ children }: { children: ReactNode }) {
       })
       .catch(() => {});
   }, []);
-
-  useEffect(() => {
-    refreshTiles();
-  }, [refreshTiles]);
 
   const value = useMemo(
     () => ({ tiles, refreshTiles }),

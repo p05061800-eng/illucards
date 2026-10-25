@@ -123,6 +123,21 @@ export function isBerserkCategory(category: string | undefined): boolean {
   return (category ?? "").trim().toLowerCase() === "берсерк";
 }
 
+/** Размеры рамки уже известны из категории или метаданных файла — не качать webp ради aspect-ratio. */
+export function cardHasKnownArtBoxAspect(card: {
+  category?: string;
+  frontImageWidth?: number;
+  frontImageHeight?: number;
+}): boolean {
+  if (isTmntCategory(card) || isBerserkCategory(card.category)) return true;
+  return (
+    typeof card.frontImageWidth === "number" &&
+    typeof card.frontImageHeight === "number" &&
+    card.frontImageWidth > 0 &&
+    card.frontImageHeight > 0
+  );
+}
+
 /**
  * Рамка витрины: TMNT — 761/1024; Берсерк — 596/819; иначе баннер 16/6 или постер 2:3.
  */

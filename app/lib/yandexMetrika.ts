@@ -37,7 +37,6 @@ export function isTelegramExternalUrl(url: string): boolean {
 
 export function trackTelegramClick(): void {
   if (typeof window === "undefined") return;
-  console.log("telegram_click fired");
   window.ym?.(YANDEX_METRIKA_ID, "reachGoal", YANDEX_METRIKA_TELEGRAM_GOAL);
 }
 

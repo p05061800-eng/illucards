@@ -187,6 +187,29 @@ function isHttpHref(href: string) {
   return /^https?:\/\//i.test(href);
 }
 
+function promoInternalPath(href: string): string | null {
+  const trimmed = href.trim();
+  if (!trimmed) return null;
+  if (trimmed.startsWith("/") && !trimmed.startsWith("//")) {
+    const hashParts = trimmed.split("#");
+    if (hashParts.length > 2) {
+      return `${hashParts[0]}#${hashParts[1]}`;
+    }
+    return trimmed;
+  }
+  try {
+    const url = new URL(trimmed, "https://www.illucards.by");
+    const host = url.hostname.replace(/^www\./, "");
+    if (host !== "illucards.by") return null;
+    const hash = url.hash.includes("#", 1)
+      ? `#${url.hash.slice(1).split("#")[0]}`
+      : url.hash;
+    return `${url.pathname}${url.search}${hash}` || "/";
+  } catch {
+    return null;
+  }
+}
+
 function PromoLinkedMedia({
   src,
   href,
@@ -226,6 +249,15 @@ function PromoLinkedMedia({
 
   const linkClass =
     "hero-promo-tile-link hero-promo-tile-hit outline-none focus-visible:ring-2 focus-visible:ring-violet-500/60";
+
+  const internal = promoInternalPath(trimmed);
+  if (internal) {
+    return (
+      <Link href={internal} className={linkClass} aria-label={label}>
+        {image}
+      </Link>
+    );
+  }
 
   if (isHttpHref(trimmed)) {
     return (

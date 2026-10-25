@@ -2,7 +2,11 @@ import { randomUUID } from "crypto";
 import { parseCardRarity } from "@/app/lib/cardRarityTags";
 import { deliveryCharge, normalizeDeliveryCountry, type DeliveryCountry } from "@/app/lib/delivery";
 import type { OrderLineIn, OrderRecord } from "@/app/lib/orderTypes";
-import { assignBuyerSeqForNewOrder, saveOrderRecord } from "@/app/lib/ordersStore";
+import {
+  assignBuyerSeqForNewOrder,
+  getOrder,
+  saveOrderRecord,
+} from "@/app/lib/ordersStore";
 import { sanitizeOrderLineImageUrl } from "@/app/lib/sanitizeOrderLineImageUrl";
 
 export { ORDERS_DIR } from "@/app/lib/orderPaths";
@@ -72,6 +76,19 @@ export function normalizeOrderItems(raw: unknown): OrderLineIn[] | null {
 
 const TOTAL_EPS = 0.05;
 
+export function parseClientOrderId(v: unknown): string | undefined {
+  if (typeof v !== "string") return undefined;
+  const id = v.trim();
+  if (
+    !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+      id,
+    )
+  ) {
+    return undefined;
+  }
+  return id;
+}
+
 export type PersistOrderInput = {
   orderId?: string;
   deliveryCountry: DeliveryCountry;
@@ -87,6 +104,7 @@ export type PersistOrderResult =
       orderId: string;
       totalByn: number;
       buyerSeq?: number;
+      reused?: boolean;
     }
   | { ok: false; error: string; status: number };
 
@@ -116,6 +134,32 @@ export async function persistOrder(
 
   if (Math.abs(orderBynCharged - clientTotalByn) > TOTAL_EPS) {
     return { ok: false, error: "Сумма заказа не совпадает с корзиной", status: 400 };
+  }
+
+  if (requestedOrderId) {
+    const existing = await getOrder(requestedOrderId);
+    if (existing) {
+      const sameUser =
+        userId == null ||
+        existing.user_id == null ||
+        existing.user_id === userId;
+      if (!sameUser) {
+        return { ok: false, error: "Заказ уже существует", status: 409 };
+      }
+      return {
+        ok: true,
+        orderId: requestedOrderId,
+        totalByn:
+          typeof existing.total === "number" && Number.isFinite(existing.total)
+            ? existing.total
+            : orderBynCharged,
+        buyerSeq:
+          existing.buyer_seq != null && existing.buyer_seq > 0
+            ? existing.buyer_seq
+            : undefined,
+        reused: true,
+      };
+    }
   }
 
   const orderId = requestedOrderId ?? randomUUID();

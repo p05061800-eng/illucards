@@ -286,7 +286,7 @@ function normalizeCard(raw: Record<string, unknown>): StoredCard {
     price: parsePrice(raw.priceByn ?? raw.price),
     rarity: rarityValue,
     stats: parseStats(raw.stats),
-    isNew: parseCardFlag(raw.isNew),
+    isNew: rarityTags.includes("novelty"),
     isPopular: parseCardFlag(raw.isPopular),
     isSale: parseCardFlag(raw.isSale),
     inStock:

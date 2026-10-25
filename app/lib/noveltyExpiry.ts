@@ -1,7 +1,13 @@
 import type { CardRarity } from "@/app/lib/cardRarityTags";
 
-/** Срок показа метки «Новинки» на карточке (30 дней). */
-export const NOVELTY_TTL_MS = 30 * 24 * 60 * 60 * 1000;
+/** Срок показа метки «Новинки»: календарный месяц от даты начала статуса. */
+export function noveltyExpiresAtMs(sinceMs: number): number {
+  const start = new Date(sinceMs);
+  if (!Number.isFinite(start.getTime())) return sinceMs;
+  const end = new Date(start.getTime());
+  end.setMonth(end.getMonth() + 1);
+  return end.getTime();
+}
 
 export type NoveltyTimingSource = {
   noveltySince?: unknown;
@@ -43,8 +49,8 @@ export function isNoveltyActive(
   now = Date.now(),
 ): boolean {
   const since = resolveNoveltySinceMs(card);
-  if (since == null) return true;
-  return now - since < NOVELTY_TTL_MS;
+  if (since == null) return false;
+  return now < noveltyExpiresAtMs(since);
 }
 
 export function withoutExpiredNovelty(

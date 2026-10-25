@@ -45,6 +45,26 @@ export const metadata: Metadata = {
   title: "IlluCards — премиальные коллекционные карточки",
   description:
     "Премиальные 3D и Vario коллекционные карточки с голографическими эффектами.",
+  alternates: {
+    canonical: "https://www.illucards.by/",
+  },
+  openGraph: {
+    type: "website",
+    locale: "ru_BY",
+    url: "https://www.illucards.by/",
+    siteName: "IlluCards",
+    title: "IlluCards — премиальные коллекционные карточки",
+    description:
+      "Премиальные 3D и Vario коллекционные карточки с голографическими эффектами.",
+    images: [{ url: "/icon.png", width: 512, height: 512, alt: "IlluCards" }],
+  },
+  twitter: {
+    card: "summary",
+    title: "IlluCards — премиальные коллекционные карточки",
+    description:
+      "Премиальные 3D и Vario коллекционные карточки с голографическими эффектами.",
+    images: ["/icon.png"],
+  },
   icons: {
     icon: [
       { url: "/favicon.ico", sizes: "any" },

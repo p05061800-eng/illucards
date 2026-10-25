@@ -9828,6 +9828,7 @@
     ],
     "noveltySince": "2026-10-25T19:33:36.568Z",
     "effect": "vario",
+    "categoryBg": "/uploads/1792957324884-00b7f3b0.webp",
     "frontImageFocus": {
       "x": 50,
       "y": 50
@@ -9836,16 +9837,15 @@
       "x": 50,
       "y": 50
     },
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    },
     "priceRub": 750,
     "categoryOrder": 16,
     "varioSmoothing": 0.18,
     "frontImageWidth": 600,
-    "frontImageHeight": 900,
-    "categoryBg": "/uploads/1792957324884-00b7f3b0.webp",
-    "categoryBgFocus": {
-      "x": 50,
-      "y": 50
-    }
+    "frontImageHeight": 900
   },
   {
     "id": "3c897ff8-5f4a-49d4-bf5f-a06ab131a0d9",
@@ -10180,5 +10180,94 @@
     "varioSmoothing": 0.18,
     "frontImageWidth": 600,
     "frontImageHeight": 900
+  },
+  {
+    "id": "8ab1e1b9-1c32-4467-86e1-9549196a44be",
+    "title": "Энни Леонхарт",
+    "description": "Энни Леонхарт — холодная, расчётливая и невероятно опасная воительница, чья сила скрывается за спокойным взглядом. Мастер рукопашного боя, она превращает каждое движение в точный удар, не оставляя противнику времени на ответ. Её железная воля, молниеносная реакция и способность адаптироваться к любому противнику делают её настоящим кошмаром на поле боя. За внешним хладнокровием скрывается боец, который никогда не сдаётся и всегда сражается на собственных условиях.",
+    "category": "Attack on Titan",
+    "subcategory": "",
+    "frontImage": "/uploads/1792958242947-bfcd6497.webp",
+    "backImage": "/uploads/1792958257940-e6286558.webp",
+    "price": 30,
+    "rarity": "adult",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "isNew": true,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": true,
+    "ratingAvg": 5,
+    "reviewCount": 0,
+    "rarities": [
+      "adult",
+      "novelty"
+    ],
+    "noveltySince": "2026-10-25T19:57:39.820Z",
+    "effect": "vario",
+    "categoryBg": "/uploads/1792958226070-5c69ee6d.webp",
+    "frontImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "backImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "priceRub": 800,
+    "categoryOrder": 2,
+    "varioSmoothing": 0.18,
+    "frontImageWidth": 600,
+    "frontImageHeight": 900
+  },
+  {
+    "id": "3d3de2e3-174f-450a-a24e-2de921e790f0",
+    "title": "Микаса Аккерман",
+    "description": "Микаса Аккерман — воплощение скорости, точности и безграничной преданности. Её мастерство владения клинками и молниеносная реакция позволяют ей расправляться даже с самыми опасными противниками за считаные секунды. Благодаря невероятной физической подготовке, холодному расчёту и инстинкту настоящего воина Микаса становится неудержимой силой на поле боя. Когда она обнажает клинки, у врага остаётся лишь один шанс — не оказаться у неё на пути.",
+    "category": "Attack on Titan",
+    "subcategory": "",
+    "frontImage": "/uploads/1792958316785-fe0b0a20.webp",
+    "backImage": "",
+    "price": 30,
+    "rarity": "novelty",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "effect": "3d-horizontal",
+    "isNew": false,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": true,
+    "ratingAvg": 5,
+    "reviewCount": 0,
+    "categoryBg": "/uploads/1792958306515-34b526e8.webp",
+    "frontImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryOrder": 3,
+    "priceRub": 800,
+    "frontImageWidth": 600,
+    "frontImageHeight": 900,
+    "rarities": [
+      "novelty",
+      "common"
+    ],
+    "noveltySince": "2026-10-25T19:58:40.155Z"
   }
 ]

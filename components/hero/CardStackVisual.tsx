@@ -208,7 +208,7 @@ export function CardStackVisual({
           io.disconnect();
         }
       },
-      { rootMargin: "480px 0px", threshold: 0.01 },
+      { rootMargin: "120px 0px", threshold: 0.01 },
     );
     io.observe(el);
     return () => io.disconnect();
@@ -626,6 +626,7 @@ export function CardStackVisual({
   /** Тач / без hover — подстраховка `play()` после монтирования (вместе с `autoPlay` на `<video>`). */
   useEffect(() => {
     if (typeof window === "undefined") return;
+    if (catalogStack) return;
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
     const hm = effectiveHoverMotionUrl(card.frontHoverGif);
     if (!hm) return;
@@ -683,8 +684,7 @@ export function CardStackVisual({
   const ultraMediaSrc =
     mediaInView && !hideUltraLayer ? ultraBgUrl.trim() : "";
   const extraMediaReady =
-    mediaInView &&
-    (eagerFaceImages || extrasReady || coarsePointerOrHoverNone);
+    mediaInView && (eagerFaceImages || extrasReady);
   const backMediaSrc = extraMediaReady ? back : "";
   const middleMediaSrc = extraMediaReady ? middle : "";
   const frontPosStyle: CSSProperties = catalogFaceContain
@@ -727,7 +727,7 @@ export function CardStackVisual({
     : frontPosStyle;
 
   const showHoverMotionLayer =
-    coarsePointerOrHoverNone || hoverMotionEngaged;
+    (!catalogStack && coarsePointerOrHoverNone) || hoverMotionEngaged;
   const hoverMotionLayerClass = showHoverMotionLayer
     ? "pointer-events-none absolute inset-0 z-[4] flex min-h-0 min-w-0 items-center justify-center overflow-hidden rounded-2xl bg-black opacity-100 transition-opacity duration-200 motion-reduce:opacity-0"
     : [

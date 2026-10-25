@@ -509,7 +509,7 @@ export default function HeroSection({
                       ref={catStripRef}
                       className="hero-categories hero-categories-strip relative flex min-w-0 w-full justify-start overflow-x-auto overflow-y-hidden py-0 scrollbar-hide md:py-0"
                     >
-              {apiCategories.map((cat) => {
+              {apiCategories.map((cat, catIndex) => {
                 const selected =
                   selectedCategoryName != null &&
                   cat.name.trim() === selectedCategoryName.trim();
@@ -553,7 +553,7 @@ export default function HeroSection({
                           className="category-tile-img h-full w-full max-h-full max-w-full rounded-[inherit] object-cover"
                           style={categoryFocusToStyle(plateFocus)}
                           draggable={false}
-                          loading="lazy"
+                          loading={catIndex < 3 ? "eager" : "lazy"}
                           decoding="async"
                         />
                       </div>
@@ -758,8 +758,8 @@ export default function HeroSection({
                                       alt=""
                                       className="block h-12 w-9 object-cover object-center sm:h-14 sm:w-10"
                                       draggable={false}
-                                      loading={i < 8 ? "eager" : "lazy"}
-                                      fetchPriority={i < 4 ? "high" : "low"}
+                                      loading={i < 2 ? "eager" : "lazy"}
+                                      fetchPriority={i === 0 ? "high" : "low"}
                                       decoding="async"
                                     />
                                   </button>

@@ -57,4 +57,7 @@ async function readCategoryTiles(): Promise<CategoryTile[]> {
   return inflight;
 }
 
+/** Главная: плашки из git, без ожидания Redis. */
+export const loadGitCategoryTiles = cache(readFileTiles);
+
 export const loadCategoryTiles = cache(readCategoryTiles);

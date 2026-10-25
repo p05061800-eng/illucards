@@ -59,5 +59,8 @@ async function readCatalogCards(): Promise<StoredCard[]> {
   return inflight;
 }
 
+/** Главная: только git-файл, без ожидания Redis. */
+export const loadGitCatalogCards = cache(readFileCards);
+
 /** Один каталог на запрос (metadata + page) и не чаще раза в минуту на инстанс. */
 export const loadCatalogCards = cache(readCatalogCards);

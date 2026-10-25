@@ -7,12 +7,9 @@ import {
   parsePromoHomeConfig,
   type PromoHomeConfig,
 } from "./lib/promoSlidesJson";
-import {
-  DURABLE_JSON_KEYS,
-  loadDurableJsonText,
-} from "./lib/durableJson";
-import { loadCatalogCards } from "./lib/loadCatalogCards";
-import { loadCategoryTiles } from "./lib/loadCategoryTiles";
+import { promises as fs } from "fs";
+import { loadGitCatalogCards } from "./lib/loadCatalogCards";
+import { loadGitCategoryTiles } from "./lib/loadCategoryTiles";
 import path from "path";
 
 /** После сохранения в админке `revalidatePath("/")` сразу обновляет главную. */
@@ -24,10 +21,10 @@ export default async function Home() {
     items: [],
   };
   const promoPath = path.join(process.cwd(), "data", "promo-slides.json");
-  const [cardsRaw, categoryTiles, promoRaw] = await Promise.all([
-    loadCatalogCards(),
-    loadCategoryTiles(),
-    loadDurableJsonText(DURABLE_JSON_KEYS.promo, promoPath),
+  const [cardsRaw, categoryTiles, promoFile] = await Promise.all([
+    loadGitCatalogCards(),
+    loadGitCategoryTiles(),
+    fs.readFile(promoPath, "utf-8").catch(() => null),
   ]);
   const cards = cardsRaw.map(toStorefrontCard);
 
@@ -36,8 +33,8 @@ export default async function Home() {
 
   let initialPromoConfig: PromoHomeConfig = emptyPromo;
   try {
-    initialPromoConfig = promoRaw
-      ? parsePromoHomeConfig(JSON.parse(promoRaw))
+    initialPromoConfig = promoFile
+      ? parsePromoHomeConfig(JSON.parse(promoFile))
       : emptyPromo;
   } catch {
     initialPromoConfig = emptyPromo;

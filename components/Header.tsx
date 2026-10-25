@@ -68,7 +68,7 @@ export default function Header() {
   ]);
 
   const handleSearchSubmit = useCallback(() => {
-    if (pathname === "/") {
+    if (pathname.startsWith("/collection/")) {
       window.dispatchEvent(new Event("illucards:catalog-search-submit"));
       return;
     }
@@ -77,7 +77,7 @@ export default function Header() {
     } catch {
       /* ignore */
     }
-    router.push("/#collection");
+    router.push("/collection");
   }, [pathname, router]);
 
   const catalogFiltersActive = useMemo(() => {

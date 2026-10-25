@@ -3,6 +3,7 @@
 import { useRef } from "react";
 import { useRouter } from "next/navigation";
 import { categories } from "@/data/categories";
+import { collectionPath } from "@/app/lib/collectionAnchor";
 
 type NavigateProps = {
   behavior: "navigate";
@@ -35,7 +36,7 @@ export default function CategorySlider(props: CategorySliderProps) {
     if (behavior === "callback") {
       props.onSelect(name);
     } else {
-      router.push("/#collection");
+      router.push(collectionPath(name));
     }
   };
 

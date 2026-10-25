@@ -1,6 +1,6 @@
+import Link from "next/link";
 import HeroSection from "@/components/hero/HeroSection";
-import { HomeCollection } from "./components/HomeCollection";
-import { toHeroStorefrontCard, toStorefrontCard } from "./lib/cardsJson";
+import { toHeroStorefrontCard } from "./lib/cardsJson";
 import { resolveCustomOrderHeroCards } from "./lib/customOrderHeroCarousel";
 import { buildNoveltiesCarouselCards } from "./lib/noveltiesHeroCarousel";
 import {
@@ -26,10 +26,9 @@ export default async function Home() {
     loadGitCategoryTiles(),
     fs.readFile(promoPath, "utf-8").catch(() => null),
   ]);
-  const cards = cardsRaw.map(toStorefrontCard);
 
   const initialHeroCategoryName =
-    cards[0]?.category?.trim() ? cards[0].category.trim() : null;
+    cardsRaw[0]?.category?.trim() ? cardsRaw[0].category.trim() : null;
 
   let initialPromoConfig: PromoHomeConfig = emptyPromo;
   try {
@@ -68,12 +67,16 @@ export default async function Home() {
 
         <section
           id="collection"
-          className="mx-auto w-full max-w-[min(100%,1800px)] scroll-mt-24 px-5 pb-8 pt-0 sm:px-10 sm:pb-12"
+          className="mx-auto w-full max-w-[min(100%,1800px)] scroll-mt-24 px-5 pb-8 pt-6 sm:px-10 sm:pb-12 sm:pt-8"
         >
-          <h2 className="site-heading mb-10 text-2xl font-bold tracking-tight text-balance sm:text-3xl">
-            Коллекции
-          </h2>
-          <HomeCollection cards={cards} categories={categoryTiles} />
+          <div className="flex justify-center">
+            <Link
+              href="/collection"
+              className="inline-flex items-center justify-center rounded-xl border border-violet-500/35 bg-violet-950/35 px-8 py-3 text-sm font-semibold text-violet-100 shadow-[0_0_24px_rgba(139,92,246,0.15)] transition hover:border-violet-400/55 hover:bg-violet-900/45 hover:text-white"
+            >
+              Смотреть все коллекции
+            </Link>
+          </div>
         </section>
       </div>
     </main>

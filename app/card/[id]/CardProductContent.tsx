@@ -23,9 +23,8 @@ import {
   catalogCardAnchorId,
   rememberCatalogReturnCardId,
 } from "../../lib/catalogScrollRestore";
-import { collectionSectionId } from "../../lib/collectionAnchor";
+import { collectionPath } from "../../lib/collectionAnchor";
 import {
-  catalogSectionIdForCard,
   isTmntCategory,
   resolveTmntCollections,
   tmntCollectionName,
@@ -232,7 +231,7 @@ export default function CardProductContent({
   const addToCartWithFeedback = useAddToCartWithFeedback();
   const rarityUi = primaryRarityForUi(card);
   const rarityLine = formatRarityLabelsRu(card);
-  const backHref = `/#${catalogCardAnchorId(card.id)}`;
+  const backHref = `${collectionPath(card.category)}#${catalogCardAnchorId(card.id)}`;
   const inStock = card.inStock !== false;
   const merged = useMergedRating(card);
   const adminReviews = card.reviews ?? [];
@@ -278,10 +277,10 @@ export default function CardProductContent({
       }
 
       setSearch("");
-      setCategoryFilter(categoryName);
+      setCategoryFilter("");
       setTypeFilter(EMPTY_TYPE_FILTER);
       setPriceSort("default");
-      router.push("/#collection");
+      router.push(collectionPath(categoryName));
     },
     [
       firstCardIdByCategory,
@@ -487,7 +486,7 @@ export default function CardProductContent({
 
             <div className="mb-4 flex flex-wrap items-center gap-x-2.5 gap-y-1 text-xs text-zinc-400 sm:text-sm">
               <Link
-                href={`/#${isTmntCategory(card.category) ? catalogSectionIdForCard(card) : collectionSectionId(card.category)}`}
+                href={collectionPath(card.category)}
                 className="font-medium text-violet-300/95 transition hover:text-violet-200 hover:underline"
               >
                 {card.category}

@@ -433,7 +433,7 @@ async function persistCards(cards: StoredCard[]): Promise<void> {
   );
   revalidatePath("/");
   revalidatePath("/admin");
-  revalidatePath("/collection");
+  revalidatePath("/collection", "layout");
   revalidatePath("/card", "layout");
 }
 

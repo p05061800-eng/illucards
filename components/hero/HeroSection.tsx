@@ -17,7 +17,7 @@ import type { CategoryTile } from "@/app/lib/categoriesJson";
 import type { PromoHomeConfig, PromoSlide } from "@/app/lib/promoSlidesJson";
 import PromoSlider from "@/components/PromoSlider";
 import { apiUrl } from "@/app/lib/apiUrl";
-import { collectionSectionId } from "@/app/lib/collectionAnchor";
+import { collectionPath } from "@/app/lib/collectionAnchor";
 import { saveCurrentScrollPosition } from "@/app/lib/catalogScrollRestore";
 import { stashProductCard } from "@/app/lib/productCardPreview";
 import { restorePageScrollAfterLayoutChange } from "@/app/lib/preservePageScroll";
@@ -522,15 +522,7 @@ export default function HeroSection({
                     key={cat.name}
                     type="button"
                     onClick={() => {
-                      const id = collectionSectionId(cat.name);
-                      const el = document.getElementById(id);
-                      if (el) {
-                        el.scrollIntoView({ behavior: "smooth", block: "start" });
-                        return;
-                      }
-                      document
-                        .getElementById("collection")
-                        ?.scrollIntoView({ behavior: "smooth", block: "start" });
+                      router.push(collectionPath(cat.name));
                     }}
                     aria-label={cat.name}
                     aria-current={selected}

@@ -19,19 +19,19 @@
     {
       "id": "5c446568-34a0-4df3-a50e-2f8ccf5d5b2d",
       "imageUrl": "/uploads/1791775269346-4147b77e.webp",
-      "href": "/#catalog-card-b29b06bc-32d0-4854-89df-68bddb673cdd",
+      "href": "https://www.illucards.by/card/b29b06bc-32d0-4854-89df-68bddb673cdd",
       "active": true
     },
     {
       "id": "8e8ee0db-eecf-42ba-b73c-655e6e9c8daf",
       "imageUrl": "/uploads/1791775553074-1dab72ff.webp",
-      "href": "https://www.illucards.by/#collection-marvel",
+      "href": "https://www.illucards.by/collection/marvel",
       "active": true
     },
     {
       "id": "e58c37da-b021-48d8-80e4-619d507d5989",
       "imageUrl": "/uploads/1791775625650-81e77271.webp",
-      "href": "https://www.illucards.by/#collection-stranger-things",
+      "href": "https://www.illucards.by/collection/stranger-things",
       "active": true
     }
   ]

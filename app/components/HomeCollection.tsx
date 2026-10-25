@@ -49,6 +49,7 @@ import {
   type CatalogCollectionSection,
 } from "../lib/tmntCollections";
 import { stashProductCard } from "../lib/productCardPreview";
+import { collectionPath } from "../lib/collectionAnchor";
 import { CardPreview } from "./CardPreview";
 
 type Props = {
@@ -56,6 +57,8 @@ type Props = {
   categories: CategoryTile[];
   /** Компактный каталог под главную «в один экран». */
   viewportCompact?: boolean;
+  /** Одна коллекция на своей странице: баннер сверху, карточки снизу. */
+  lockedCategory?: string;
 };
 
 const filterLabelClass =
@@ -197,6 +200,7 @@ export function HomeCollection({
   cards,
   categories,
   viewportCompact = false,
+  lockedCategory,
 }: Props) {
   const router = useRouter();
   const pathname = usePathname();
@@ -316,14 +320,16 @@ export function HomeCollection({
     return merged.sort((a, b) => a.localeCompare(b, "ru"));
   }, [apiOrder, orphanNames]);
 
+  const lockedName = lockedCategory?.trim() ?? "";
+
   const filteredRaw = useMemo(
     () =>
       filterCollectionCards(cards, {
         search,
-        category: categoryFilter,
+        category: lockedName ? "" : categoryFilter,
         typeFilter,
       }),
-    [cards, search, categoryFilter, typeFilter]
+    [cards, search, categoryFilter, typeFilter, lockedName]
   );
 
   const filteredSorted = useMemo(
@@ -338,13 +344,13 @@ export function HomeCollection({
       orphanNames,
       tmntCollections,
     );
-    const filter = categoryFilter.trim();
+    const filter = lockedName || categoryFilter.trim();
     if (!filter) return base;
     if (filter === TMNT_PARENT_CATEGORY) {
       return base.filter((s) => s.parentCategory === TMNT_PARENT_CATEGORY);
     }
     return base.filter((s) => s.parentCategory === filter);
-  }, [apiOrder, orphanNames, categoryFilter]);
+  }, [apiOrder, orphanNames, categoryFilter, lockedName]);
 
   /** Одна плашка TMNT перед первой видимой подколлекцией. */
   const catalogRows = useMemo(() => {
@@ -361,7 +367,7 @@ export function HomeCollection({
 
   const hasActiveFilters =
     search.trim() !== "" ||
-    categoryFilter.trim() !== "" ||
+    (!lockedName && categoryFilter.trim() !== "") ||
     typeFilter.adult ||
     typeFilter.limited ||
     typeFilter.common ||
@@ -370,13 +376,17 @@ export function HomeCollection({
     typeFilter.novelties ||
     priceSort !== "default";
 
-  /** Одна строка превью + «Смотреть ещё» только на главной без фильтров. */
-  const useCategoryRowPreview = !hasActiveFilters;
+  /** На странице одной коллекции показываем все карточки сразу. */
+  const useCategoryRowPreview = !lockedName && !hasActiveFilters;
 
   const pendingCatalogScrollIdRef = useRef<string | null>(null);
 
   useLayoutEffect(() => {
-    if (pathname !== "/" || typeof window === "undefined") return;
+    if (
+      (pathname !== "/" && !pathname.startsWith("/collection/")) ||
+      typeof window === "undefined"
+    )
+      return;
 
     const fromHash = parseCatalogCardIdFromHash(window.location.hash);
     const fromStorage = peekCatalogReturnCardId();
@@ -473,7 +483,9 @@ export function HomeCollection({
   ]);
 
   useEffect(() => {
-    if (pathname !== "/") pendingCatalogScrollIdRef.current = null;
+    if (pathname !== "/" && !pathname.startsWith("/collection/")) {
+      pendingCatalogScrollIdRef.current = null;
+    }
   }, [pathname]);
 
   if (sections.length === 0) {
@@ -587,8 +599,19 @@ export function HomeCollection({
                   <div className="relative">
                     <select
                       id="collection-category"
-                      value={categoryFilter}
-                      onChange={(e) => setCategoryFilter(e.target.value)}
+                      value={lockedName || categoryFilter}
+                      onChange={(e) => {
+                        const next = e.target.value;
+                        if (lockedName) {
+                          if (!next) {
+                            router.push("/collection");
+                            return;
+                          }
+                          router.push(collectionPath(next));
+                          return;
+                        }
+                        setCategoryFilter(next);
+                      }}
                       className="w-full cursor-pointer appearance-none rounded-lg border border-white/10 bg-black/35 py-2 pl-3 pr-9 text-[13px] text-zinc-100 focus:border-violet-400/45 focus:outline-none focus:ring-2 focus:ring-violet-500/15"
                     >
                       <option value="">Все категории</option>

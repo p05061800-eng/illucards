@@ -33,7 +33,7 @@ type CatalogFilterContextValue = {
   setFiltersOpen: Dispatch<SetStateAction<boolean>>;
   /** Свернуть панель фильтров на телефоне (перед переходом на карточку). */
   collapseMobileFilters: () => void;
-  /** Прокрутить к блоку «Коллекции» на главной или перейти на `/#collection` — без открытия панели фильтров */
+  /** Прокрутить к каталогу или перейти на `/collection` */
   scrollToCollection: () => void;
   /** Открыть панель фильтров и прокрутить к блоку «Коллекции» */
   openFiltersAndScrollToCollection: () => void;
@@ -91,15 +91,19 @@ export function CatalogFilterProvider({ children }: { children: ReactNode }) {
   }, [pathname, setSearch]);
 
   const scrollToCollection = useCallback(() => {
-    if (pathname === "/") {
+    if (pathname === "/collection" || pathname.startsWith("/collection/")) {
       requestAnimationFrame(() => {
         document
           .getElementById("collection")
           ?.scrollIntoView({ behavior: "smooth", block: "start" });
       });
-    } else {
-      router.push("/#collection");
+      return;
     }
+    if (pathname === "/") {
+      router.push("/collection");
+      return;
+    }
+    router.push("/collection");
   }, [pathname, router]);
 
   const openFiltersAndScrollToCollection = useCallback(() => {

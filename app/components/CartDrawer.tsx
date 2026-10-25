@@ -290,7 +290,7 @@ export function CartDrawer() {
                 Пока здесь пусто — добавьте карточки из каталога.
               </p>
               <Link
-                href="/#collection"
+                href="/collection"
                 onClick={closeCart}
                 className="mt-8 inline-flex items-center justify-center rounded-full bg-gradient-to-r from-purple-600 via-violet-600 to-fuchsia-600 px-8 py-3 text-sm font-semibold text-white shadow-[0_0_32px_rgba(168,85,247,0.45)] ring-1 ring-purple-400/35 transition hover:from-purple-500 hover:via-violet-500 hover:to-fuchsia-500 hover:shadow-[0_0_44px_rgba(192,132,252,0.55)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-400/80"
               >

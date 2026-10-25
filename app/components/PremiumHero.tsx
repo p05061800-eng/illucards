@@ -93,13 +93,13 @@ export function PremiumHero() {
 
           <div className="mt-10 flex flex-wrap gap-4">
             <Link
-              href="#collection"
+              href="/collection"
               className="inline-flex min-h-[48px] min-w-[160px] items-center justify-center rounded-xl bg-gradient-to-b from-red-600 to-red-700 px-8 py-3.5 text-sm font-semibold text-white shadow-[0_8px_32px_rgba(220,38,38,0.45),0_0_0_1px_rgba(0,0,0,0.2)_inset] transition hover:from-red-500 hover:to-red-600 hover:shadow-[0_12px_40px_rgba(220,38,38,0.55)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400/90 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
             >
               Купить
             </Link>
             <Link
-              href="#collection"
+              href="/collection"
               className="inline-flex min-h-[48px] min-w-[160px] items-center justify-center rounded-xl border border-white/12 bg-zinc-950/90 px-8 py-3.5 text-sm font-semibold text-zinc-200 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] transition hover:border-white/20 hover:bg-zinc-900 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-500/50 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
             >
               Подробнее

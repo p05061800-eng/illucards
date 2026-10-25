@@ -205,7 +205,7 @@ export function UserReviewForm({
             В корзину
           </Link>
           <Link
-            href="/#collection"
+            href="/collection"
             className="inline-flex rounded-lg border border-white/15 px-4 py-2 text-sm text-zinc-300 transition hover:border-white/25 hover:text-white"
           >
             В каталог

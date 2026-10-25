@@ -45,7 +45,7 @@ export default function CartView() {
           <div className="rounded-2xl border border-white/10 bg-white/[0.03] px-6 py-12 text-center">
             <p className="text-zinc-400">Корзина пуста</p>
             <Link
-              href="/#collection"
+              href="/collection"
               className="mt-5 inline-flex rounded-full border border-purple-500/40 bg-purple-950/40 px-6 py-2.5 text-sm font-medium text-purple-200 transition hover:border-purple-400/60 hover:bg-purple-900/50"
             >
               В каталог

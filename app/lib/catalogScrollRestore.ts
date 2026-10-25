@@ -23,7 +23,11 @@ export function rememberCatalogReturnCardId(cardId: string): void {
   try {
     if (typeof sessionStorage === "undefined") return;
     sessionStorage.setItem(STORAGE_KEY, cardId);
-    if (typeof window !== "undefined" && window.location.pathname === "/") {
+    if (
+      typeof window !== "undefined" &&
+      (window.location.pathname === "/" ||
+        window.location.pathname.startsWith("/collection"))
+    ) {
       saveCurrentScrollPosition();
     }
   } catch {

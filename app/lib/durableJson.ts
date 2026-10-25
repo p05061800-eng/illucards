@@ -52,6 +52,8 @@ export async function saveDurableJsonText(
   const fileOk = await writeFileText(filePath, text);
   if (redis.ok || fileOk) {
     revalidateTag("catalog-json", "max");
+    const { clearCatalogCardsMemo } = await import("@/app/lib/loadCatalogCards");
+    clearCatalogCardsMemo();
     return;
   }
   const cred = redisRestCredentials();

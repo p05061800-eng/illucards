@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import path from "path";
+import { promises as fs } from "fs";
 import { notFound } from "next/navigation";
 import type { StoredCard } from "../../api/cards/route";
 import { parseCardsJson, toStorefrontCard } from "../../lib/cardsJson";
@@ -9,16 +10,29 @@ import {
   DURABLE_JSON_KEYS,
   loadDurableJsonText,
 } from "@/app/lib/durableJson";
+import { loadCatalogCards } from "@/app/lib/loadCatalogCards";
+import { sortSectionCardsForDefaultCatalog } from "@/app/lib/collectionFilter";
 import { resolveTmntCollections } from "@/app/lib/tmntCollections";
 import CardProductContent from "./CardProductContent";
 
-/** Как главная: не ходить в Redis на каждый клик — иначе прод открывается на секунды. */
+/** CDN-кэш страницы; каталог после сохранения сбрасывается через revalidatePath. */
 export const revalidate = 60;
+export const dynamicParams = true;
+
+export async function generateStaticParams(): Promise<{ id: string }[]> {
+  try {
+    const raw = await fs.readFile(
+      path.join(process.cwd(), "data", "cards.json"),
+      "utf-8",
+    );
+    return parseCardsJson(raw).map((card) => ({ id: card.id }));
+  } catch {
+    return [];
+  }
+}
 
 async function loadCards(): Promise<StoredCard[]> {
-  const filePath = path.join(process.cwd(), "data", "cards.json");
-  const fileData = await loadDurableJsonText(DURABLE_JSON_KEYS.cards, filePath);
-  return fileData ? parseCardsJson(fileData) : [];
+  return loadCatalogCards();
 }
 
 type PageProps = {
@@ -67,6 +81,20 @@ export default async function CardPage({ params }: PageProps) {
       ? storefront.filter((c) => (c.category?.trim() ?? "") === cat)
       : [toStorefrontCard(card)];
 
+  const firstCardIdByCategory: Record<string, string> = {};
+  const names = [
+    ...new Set(
+      storefront
+        .map((c) => c.category?.trim() ?? "")
+        .filter((n) => n.length > 0),
+    ),
+  ].sort((a, b) => a.localeCompare(b, "ru"));
+  for (const name of names) {
+    const inCat = storefront.filter((c) => (c.category?.trim() ?? "") === name);
+    const first = sortSectionCardsForDefaultCatalog(inCat, storefront)[0];
+    if (first) firstCardIdByCategory[name] = first.id;
+  }
+
   let categoryTiles: CategoryTile[] = [];
   try {
     const categoriesPath = path.join(process.cwd(), "data", "categories.json");
@@ -98,7 +126,8 @@ export default async function CardPage({ params }: PageProps) {
       <CardProductContent
         card={card}
         categoryCards={categoryCards}
-        allCards={storefront}
+        categoryNames={names}
+        firstCardIdByCategory={firstCardIdByCategory}
         tmntCollections={tmntCollections}
       />
     </main>

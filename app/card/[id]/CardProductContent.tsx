@@ -197,15 +197,16 @@ function CardMiniRail({
 type Props = {
   card: StoredCard;
   categoryCards: StoredCard[];
-  /** Весь каталог — для листания галереи и сортировки «ещё из категории». */
-  allCards?: StoredCard[];
+  categoryNames?: string[];
+  firstCardIdByCategory?: Record<string, string>;
   tmntCollections?: readonly TmntCollectionDef[];
 };
 
 export default function CardProductContent({
   card,
   categoryCards,
-  allCards = [],
+  categoryNames = [],
+  firstCardIdByCategory = {},
   tmntCollections = resolveTmntCollections(),
 }: Props) {
   const [favoritePopup, setFavoritePopup] = useState(false);
@@ -254,27 +255,22 @@ export default function CardProductContent({
   const moreFromCategory = categoryCards.filter((c) => c.id !== card.id);
 
   const allCategoryNames = useMemo(() => {
+    if (categoryNames.length > 0) return categoryNames;
     return [
       ...new Set(
-        allCards
+        categoryCards
           .map((c) => c.category?.trim() ?? "")
-          .filter((n) => n.length > 0)
+          .filter((n) => n.length > 0),
       ),
     ].sort((a, b) => a.localeCompare(b, "ru"));
-  }, [allCards]);
+  }, [categoryNames, categoryCards]);
 
   const openCategory = useCallback(
     (categoryName: string) => {
       const normalized = categoryName.trim();
-      const categoryCards = allCards.filter(
-        (c) => (c.category?.trim() ?? "") === normalized
-      );
-      const firstCard = categoryCards.length
-        ? sortSectionCardsForDefaultCatalog(categoryCards, allCards)[0]
-        : undefined;
-
-      if (firstCard) {
-        router.push(`/card/${firstCard.id}`);
+      const firstId = firstCardIdByCategory[normalized];
+      if (firstId) {
+        router.push(`/card/${firstId}`);
         return;
       }
 
@@ -284,7 +280,14 @@ export default function CardProductContent({
       setPriceSort("default");
       router.push("/#collection");
     },
-    [allCards, router, setCategoryFilter, setPriceSort, setSearch, setTypeFilter]
+    [
+      firstCardIdByCategory,
+      router,
+      setCategoryFilter,
+      setPriceSort,
+      setSearch,
+      setTypeFilter,
+    ],
   );
 
   const openFilterPanel = useCallback(() => {
@@ -298,15 +301,14 @@ export default function CardProductContent({
   const galleryBrowseCards = useMemo(() => {
     const scopeCategory =
       categoryFilter.trim() || card.category?.trim() || "";
+    const pool = categoryCards.length > 0 ? categoryCards : [card];
     const inCategory = scopeCategory
-      ? allCards.filter((c) => (c.category?.trim() ?? "") === scopeCategory)
-      : categoryCards.length > 0
-        ? categoryCards
-        : [card];
+      ? pool.filter((c) => (c.category?.trim() ?? "") === scopeCategory)
+      : pool;
 
     const base =
       inCategory.length > 0
-        ? sortSectionCardsForDefaultCatalog([...inCategory], allCards)
+        ? sortSectionCardsForDefaultCatalog([...inCategory], pool)
         : [card];
 
     const filtered = filterCollectionCards(base, {
@@ -319,7 +321,6 @@ export default function CardProductContent({
     if (sorted.some((c) => c.id === card.id)) return sorted;
     return [card, ...sorted];
   }, [
-    allCards,
     categoryCards,
     card,
     search,

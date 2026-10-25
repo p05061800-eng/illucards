@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import path from "path";
 import { notFound } from "next/navigation";
 import type { StoredCard } from "../../api/cards/route";
-import { parseCardsJson } from "../../lib/cardsJson";
+import { parseCardsJson, toStorefrontCard } from "../../lib/cardsJson";
 import type { CategoryTile } from "@/app/lib/categoriesJson";
 import { parseCategoriesJson } from "@/app/lib/categoriesJson";
 import {
@@ -12,7 +12,8 @@ import {
 import { resolveTmntCollections } from "@/app/lib/tmntCollections";
 import CardProductContent from "./CardProductContent";
 
-export const dynamic = "force-dynamic";
+/** Как главная: не ходить в Redis на каждый клик — иначе прод открывается на секунды. */
+export const revalidate = 60;
 
 async function loadCards(): Promise<StoredCard[]> {
   const filePath = path.join(process.cwd(), "data", "cards.json");
@@ -59,11 +60,12 @@ export default async function CardPage({ params }: PageProps) {
   const card = all.find((c) => c.id === id);
   if (!card) notFound();
 
+  const storefront = all.map(toStorefrontCard);
   const cat = card.category?.trim() ?? "";
   const categoryCards =
     cat.length > 0
-      ? all.filter((c) => (c.category?.trim() ?? "") === cat)
-      : [card];
+      ? storefront.filter((c) => (c.category?.trim() ?? "") === cat)
+      : [toStorefrontCard(card)];
 
   let categoryTiles: CategoryTile[] = [];
   try {
@@ -96,7 +98,7 @@ export default async function CardPage({ params }: PageProps) {
       <CardProductContent
         card={card}
         categoryCards={categoryCards}
-        allCards={all}
+        allCards={storefront}
         tmntCollections={tmntCollections}
       />
     </main>

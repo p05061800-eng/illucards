@@ -147,6 +147,7 @@ export function CardItem({ card, hideUltraLayer = false }: Props) {
         <Link
           ref={flyRef}
           href={cardHref}
+          prefetch
           className={cardNavLinkClass}
           aria-label={`Открыть карточку: ${card.title}`}
           onClick={handleCardLinkClick}

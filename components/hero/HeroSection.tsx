@@ -282,6 +282,12 @@ export default function HeroSection({
     );
   }, [focusCard, displayCard, activeBrowseCards, filteredCards, cards]);
 
+  useEffect(() => {
+    const id = (heroShowcaseCard ?? focusCard)?.id?.trim();
+    if (!id) return;
+    router.prefetch(`/card/${id}`);
+  }, [heroShowcaseCard, focusCard, router]);
+
   const noCardsInCategory =
     selectedCategoryName != null &&
     filteredCards.length === 0 &&

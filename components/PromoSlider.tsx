@@ -307,7 +307,7 @@ function PromoLinkedMedia({
   const internal = promoInternalPath(trimmed);
   if (internal) {
     return (
-      <Link href={internal} className={linkClass} aria-label={label} {...touchProps}>
+      <Link href={internal} prefetch className={linkClass} aria-label={label} {...touchProps}>
         {image}
       </Link>
     );

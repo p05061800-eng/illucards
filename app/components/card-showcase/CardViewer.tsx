@@ -275,6 +275,7 @@ export function CardViewer({
           ) : (
             <Link
               href={cardHref}
+              prefetch
               aria-label={`Открыть ${active.title}`}
               className={`${clickableStackClass(hideNavigation, layout)} touch-manipulation`}
               onClick={handleCardClick}

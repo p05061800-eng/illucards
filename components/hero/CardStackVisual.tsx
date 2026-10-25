@@ -39,7 +39,6 @@ import {
   FirstVisitCardTiltHint,
   useFirstVisitCardTiltHint,
 } from "./FirstVisitCardTiltHint";
-
 const HOLO_GRAIN =
   "url(\"data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.45'/%3E%3C/svg%3E\")";
 
@@ -159,17 +158,18 @@ export function CardStackVisual({
   /**
    * Каталог и постеры Берсерк/Трансформеры: картинка целиком (`contain`).
    * Герой / страница товара для остальных категорий — `cover`.
+   * Рамка (absolute inset + высота) у постеров та же, что у остальных
+   * карточек каталога — иначе `h-full` в flex `items-start` схлопывается
+   * и виден только чёрный `.bg-black`.
    */
   const posterContainFace = cardUsesPosterContainFit(card.category);
   const catalogFaceContain =
     ((catalogStack && !fixedCatalogFrame) || posterContainFace);
   const productFaceCoversFrame =
-    (heroDiagonalLayout || catalogStack) &&
-    !fixedCatalogFrame &&
-    !posterContainFace;
+    (heroDiagonalLayout || catalogStack) && !fixedCatalogFrame;
   const artRootRef = useRef<HTMLDivElement>(null);
   const [mediaInView, setMediaInView] = useState(
-    () => heroStack || heroDiagonalLayout,
+    () => heroStack || heroDiagonalLayout || posterContainFace,
   );
   const [extrasReady, setExtrasReady] = useState(
     () => heroStack || heroDiagonalLayout,
@@ -653,7 +653,8 @@ export function CardStackVisual({
   const fixedShell = cardArtFixedFrameShellClass(fixedCatalogFrame);
   const fixedImg = cardArtFixedFrameImgClass(fixedCatalogFrame);
 
-  const eagerFaceImages = heroStack || heroDiagonalLayout;
+  const eagerFaceImages =
+    heroStack || heroDiagonalLayout || posterContainFace;
 
   /** Третий слой: для TMNT фон категории заполняет ту же рамку 761×1024, что лицо. */
   const ultraLayerImgStyle: CSSProperties = useMemo(() => {
@@ -723,7 +724,7 @@ export function CardStackVisual({
     ? "relative flex h-full min-h-0 w-full min-w-0 overflow-hidden rounded-2xl"
     : fixedShell;
   const faceImgClass = catalogFaceContain
-    ? `block h-full min-h-0 w-full min-w-0 max-h-full max-w-full rounded-2xl object-contain ${faceCls}`.trim()
+    ? `block h-full min-h-0 w-full min-w-0 max-h-full max-w-full rounded-2xl object-contain [transform:translateZ(0)] [backface-visibility:hidden] ${faceCls}`.trim()
     : productFaceCoversFrame
       ? `block h-full min-h-0 w-full min-w-0 max-h-full max-w-full rounded-2xl object-cover ${faceCls}`.trim()
       : `${fixedImg} rounded-2xl ${faceCls}`;
@@ -754,6 +755,7 @@ export function CardStackVisual({
         "illucards-card group/cardstack-hover card-stack-visual-art min-w-0 max-w-full",
         resolvedRoot,
         catalogStack ? "catalog-card-stack overflow-visible" : "",
+        posterContainFace ? "card-stack-poster-contain" : "",
         heroStack || heroDiagonalLayout ? "hero-card-stack-visual" : "",
         (heroStack && catalogLikeDiagonal) || heroDiagonalLayout
           ? "hero-stack-catalog-diagonal"
@@ -855,7 +857,9 @@ export function CardStackVisual({
               <div className="absolute inset-0 [transform-style:preserve-3d]">
                 <div
                   key={`${card.id}-${hasVario ? "vario" : "face"}`}
-                  className="card-face-lenticular-thick absolute inset-0 isolate overflow-visible rounded-2xl bg-black"
+                  className={`card-face-lenticular-thick absolute inset-0 isolate overflow-hidden rounded-2xl ${
+                    catalogStack ? "bg-zinc-950" : "bg-black"
+                  }`}
                 >
                   {hasVario ? (
                     <>

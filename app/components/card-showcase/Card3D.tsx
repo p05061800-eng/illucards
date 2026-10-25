@@ -155,7 +155,7 @@ export function Card3D({ card }: Props) {
   const faceFillClass = faceFitCover
     ? `h-full w-full object-cover rounded-2xl ${faceCls}`
     : posterContainFace
-      ? `h-full w-full object-contain rounded-2xl ${faceCls}`
+      ? `h-full w-full object-contain rounded-2xl [transform:translateZ(0)] [backface-visibility:hidden] ${faceCls}`
       : `${fixedImg} rounded-2xl ${faceCls}`;
   const rarity = primaryRarityForUi(card);
   const magneticRef = useRef<HTMLDivElement>(null);

@@ -211,6 +211,25 @@ html.home-one-screen main.home-one-screen-main {
   object-fit: contain !important;
 }
 
+/* Постеры Берсерк/Трансформеры: без 3D-filter/translateZ на лице — иначе Safari рисует чёрный кадр. */
+.card-stack-poster-contain .card-face-lenticular-thick {
+  filter: none;
+  transform: none;
+  transform-style: flat;
+}
+
+.card-stack-poster-contain .card-thickness-facets {
+  mix-blend-mode: normal;
+  opacity: 0.4;
+}
+
+.card-stack-poster-contain .card-main img,
+.card-stack-poster-contain .card-back img,
+.card-stack-poster-contain .card-vario-middle img {
+  transform: translateZ(0);
+  backface-visibility: hidden;
+}
+
 @media (max-width: 639px) {
   .collection-card-grid .catalog-card-content {
     gap: 0.375rem;

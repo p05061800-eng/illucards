@@ -19,6 +19,7 @@ import {
   cardArtFixedFrameShellClass,
 } from "../../lib/imageFocus";
 import { RARITY_STYLES } from "../../lib/cardRarityUi";
+import { stashProductCard } from "../../lib/productCardPreview";
 import { Card3D } from "./Card3D";
 
 function categoryGlowRgba(category: string | undefined): string {
@@ -175,7 +176,9 @@ export function CardStack({
   const go = (delta: -1 | 1) => {
     if (n <= 1) return;
     const ni = (idx + delta + n) % n;
-    const nextId = cards[ni].id;
+    const next = cards[ni];
+    const nextId = next.id;
+    stashProductCard(next);
     if (onNavigate) {
       onNavigate(nextId);
     } else {

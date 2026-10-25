@@ -19,6 +19,7 @@ import PromoSlider from "@/components/PromoSlider";
 import { apiUrl } from "@/app/lib/apiUrl";
 import { collectionSectionId } from "@/app/lib/collectionAnchor";
 import { saveCurrentScrollPosition } from "@/app/lib/catalogScrollRestore";
+import { stashProductCard } from "@/app/lib/productCardPreview";
 import { restorePageScrollAfterLayoutChange } from "@/app/lib/preservePageScroll";
 import { categoryFocusToStyle } from "@/app/lib/imageFocus";
 import { buildNoveltiesCarouselCards } from "@/app/lib/noveltiesHeroCarousel";
@@ -62,10 +63,11 @@ export default function HeroSection({
     (cardId: string) => {
       const id = String(cardId || "").trim();
       if (!id) return;
+      stashProductCard(cards.find((c) => c.id === id));
       saveCurrentScrollPosition();
       router.push(`/card/${id}`);
     },
-    [router],
+    [cards, router],
   );
   const heroCardFlyRef = useRef<HTMLDivElement>(null);
   const noveltyDragStartRef = useRef<{ x: number; y: number } | null>(null);

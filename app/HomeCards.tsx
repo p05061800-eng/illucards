@@ -25,6 +25,7 @@ import { PurchaseModal } from "./components/PurchaseModal";
 import { RARITY_STYLES } from "./lib/cardRarityUi";
 import { useAdultContentGateOptional } from "./context/AdultContentContext";
 import { cardRequiresAgeConfirmation } from "./lib/cardRequiresAgeConfirmation";
+import { stashProductCard } from "./lib/productCardPreview";
 import { useCardLinkTouchNav } from "./lib/useCardLinkTouchNav";
 import { isAdultAgeGateTarget } from "./components/AdultContentBlurGate";
 import { CatalogCardRarityFrame } from "./components/CatalogCardRarityFrame";
@@ -72,8 +73,9 @@ function CardItem({
 
   const openNav = useCallback(() => {
     if (adultBlockedNav) return;
+    stashProductCard(card);
     router.push(cardHref);
-  }, [adultBlockedNav, cardHref, router]);
+  }, [adultBlockedNav, card, cardHref, router]);
 
   const cardTouchNav = useCardLinkTouchNav(openNav, {
     shouldIgnoreTarget: isAdultAgeGateTarget,
@@ -158,6 +160,7 @@ function CardItem({
           href={cardHref}
           className={`${linkClass} touch-manipulation`}
           onClick={(e) => {
+            stashProductCard(card);
             if (cardTouchNav.consumeTouchNavigationClick()) {
               e.preventDefault();
             }

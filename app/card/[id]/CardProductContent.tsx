@@ -44,6 +44,7 @@ import {
 import {
   cardRequiresAgeConfirmation,
 } from "../../lib/cardRequiresAgeConfirmation";
+import { stashProductCard } from "../../lib/productCardPreview";
 import { useCardLinkTouchNav } from "../../lib/useCardLinkTouchNav";
 import { CatalogCardRarityFrame } from "../../components/CatalogCardRarityFrame";
 import { useAdultContentGateOptional } from "../../context/AdultContentContext";
@@ -93,8 +94,9 @@ function MiniRailCard({ card: c }: { card: StoredCard }) {
 
   const openNav = useCallback(() => {
     if (blocked) return;
+    stashProductCard(c);
     router.push(href);
-  }, [blocked, href, router]);
+  }, [blocked, c, href, router]);
 
   const railTouchNav = useCardLinkTouchNav(openNav, {
     shouldIgnoreTarget: isAdultAgeGateTarget,
@@ -160,6 +162,7 @@ function MiniRailCard({ card: c }: { card: StoredCard }) {
       href={href}
       className={railClass}
       onClick={(e) => {
+        stashProductCard(c);
         if (railTouchNav.consumeTouchNavigationClick()) {
           e.preventDefault();
         }

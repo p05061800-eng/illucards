@@ -12,6 +12,7 @@ import type { StoredCard } from "../../api/cards/route";
 import { isAdultAgeGateTarget } from "@/app/components/AdultContentBlurGate";
 import { useAdultContentGateOptional } from "../../context/AdultContentContext";
 import { cardRequiresAgeConfirmation } from "../../lib/cardRequiresAgeConfirmation";
+import { stashProductCard } from "../../lib/productCardPreview";
 import { useCardLinkTouchNav } from "../../lib/useCardLinkTouchNav";
 import { ultraOrHeroBgUrl } from "../../lib/cardUltraBg";
 import { CardStackVisual } from "@/components/hero/CardStackVisual";
@@ -151,6 +152,7 @@ export function CardViewer({
 
   const openCardNav = useCallback(() => {
     if (!active || !clickable || adultLocked) return;
+    stashProductCard(active);
     onCardClick?.(active.id);
   }, [active, adultLocked, clickable, onCardClick]);
 
@@ -192,11 +194,12 @@ export function CardViewer({
     (delta: -1 | 1) => {
       if (n <= 1) return;
       const ni = (idx + delta + n) % n;
-      const nextId = browseCards[ni]!.id;
+      const next = browseCards[ni]!;
+      stashProductCard(next);
       if (onNavigate) {
-        onNavigate(nextId);
+        onNavigate(next.id);
       } else {
-        router.push(`/card/${nextId}`);
+        router.push(`/card/${next.id}`);
       }
     },
     [n, idx, browseCards, onNavigate, router]

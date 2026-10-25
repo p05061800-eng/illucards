@@ -6,6 +6,7 @@ import { useCallback, useMemo } from "react";
 import type { StoredCard } from "@/app/api/cards/route";
 import { useAdultContentGateOptional } from "@/app/context/AdultContentContext";
 import { cardRequiresAgeConfirmation } from "@/app/lib/cardRequiresAgeConfirmation";
+import { stashProductCard } from "@/app/lib/productCardPreview";
 import { useCardLinkTouchNav } from "@/app/lib/useCardLinkTouchNav";
 import { isAdultAgeGateTarget } from "@/app/components/AdultContentBlurGate";
 import { PRODUCT_PAGE_STACK_ROOT_CLASS } from "@/app/components/card-showcase/CardViewer";
@@ -44,8 +45,9 @@ export function HeroCardStack({
 
   const openCardNav = useCallback(() => {
     if (adultLocked) return;
+    stashProductCard(displayCard);
     router.push(href);
-  }, [adultLocked, href, router]);
+  }, [adultLocked, displayCard, href, router]);
 
   const cardTouchNav = useCardLinkTouchNav(openCardNav, {
     shouldIgnoreTarget: isAdultAgeGateTarget,
@@ -121,6 +123,7 @@ export function HeroCardStack({
             aria-label={`Открыть ${displayCard.title}`}
             suppressHydrationWarning
             onClick={(e) => {
+              stashProductCard(displayCard);
               if (cardTouchNav.consumeTouchNavigationClick()) {
                 e.preventDefault();
               }

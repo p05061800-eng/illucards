@@ -48,6 +48,7 @@ import {
   tmntParentBannerDomId,
   type CatalogCollectionSection,
 } from "../lib/tmntCollections";
+import { stashProductCard } from "../lib/productCardPreview";
 import { CardPreview } from "./CardPreview";
 
 type Props = {
@@ -259,6 +260,7 @@ export function HomeCollection({
       if (exact) {
         setSearch("");
         collapseMobileFilters();
+        stashProductCard(exact);
         router.push(`/card/${exact.id}`);
         return;
       }
@@ -266,6 +268,7 @@ export function HomeCollection({
       if (byTitle.length === 1) {
         setSearch("");
         collapseMobileFilters();
+        stashProductCard(byTitle[0]);
         router.push(`/card/${byTitle[0].id}`);
         return;
       }

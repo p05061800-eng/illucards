@@ -12,6 +12,7 @@ import type { StoredCard } from "@/app/api/cards/route";
 import { FavoritePopup } from "@/app/components/FavoritePopup";
 import { useFavorites } from "@/app/context/FavoritesContext";
 import { useAddToCartWithFeedback } from "@/app/lib/cartUx/useAddToCartWithFeedback";
+import { stashProductCard } from "@/app/lib/productCardPreview";
 
 type Props = {
   card: StoredCard;
@@ -51,6 +52,7 @@ export function HeroCatalogCardFooter({
       <div className="hero-limited-card-titlebar">
         <Link
           href={`/card/${card.id}`}
+          onClick={() => stashProductCard(card)}
           className="min-w-0 flex-1 touch-manipulation text-center transition hover:text-amber-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300/60"
         >
           <h3

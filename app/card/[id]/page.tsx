@@ -1,21 +1,11 @@
 import type { Metadata } from "next";
 import path from "path";
 import { promises as fs } from "fs";
-import { notFound } from "next/navigation";
-import type { StoredCard } from "../../api/cards/route";
-import { parseCardsJson, toStorefrontCard } from "../../lib/cardsJson";
-import type { CategoryTile } from "@/app/lib/categoriesJson";
-import { parseCategoriesJson } from "@/app/lib/categoriesJson";
-import {
-  DURABLE_JSON_KEYS,
-  loadDurableJsonText,
-} from "@/app/lib/durableJson";
-import { loadCatalogCards } from "@/app/lib/loadCatalogCards";
-import { sortSectionCardsForDefaultCatalog } from "@/app/lib/collectionFilter";
-import { resolveTmntCollections } from "@/app/lib/tmntCollections";
+import { parseCardsJson } from "../../lib/cardsJson";
+import { loadProductPageData } from "@/app/lib/loadProductPageData";
 import CardProductContent from "./CardProductContent";
+import { CardProductClientFallback } from "./CardProductClientFallback";
 
-/** CDN-кэш страницы; каталог после сохранения сбрасывается через revalidatePath. */
 export const revalidate = 60;
 export const dynamicParams = true;
 
@@ -31,20 +21,17 @@ export async function generateStaticParams(): Promise<{ id: string }[]> {
   }
 }
 
-async function loadCards(): Promise<StoredCard[]> {
-  return loadCatalogCards();
-}
-
 type PageProps = {
   params: Promise<{ id: string }>;
 };
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { id } = await params;
-  const card = (await loadCards()).find((c) => c.id === id);
-  if (!card) {
-    return { title: "Карточка не найдена — IlluCards" };
+  const data = await loadProductPageData(id);
+  if (!data) {
+    return { title: "IlluCards" };
   }
+  const { card } = data;
   const description = (card.description || "")
     .replace(/\s+/g, " ")
     .trim()
@@ -70,43 +57,10 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
 export default async function CardPage({ params }: PageProps) {
   const { id } = await params;
-  const all = await loadCards();
-  const card = all.find((c) => c.id === id);
-  if (!card) notFound();
-
-  const storefront = all.map(toStorefrontCard);
-  const cat = card.category?.trim() ?? "";
-  const categoryCards =
-    cat.length > 0
-      ? storefront.filter((c) => (c.category?.trim() ?? "") === cat)
-      : [toStorefrontCard(card)];
-
-  const firstCardIdByCategory: Record<string, string> = {};
-  const names = [
-    ...new Set(
-      storefront
-        .map((c) => c.category?.trim() ?? "")
-        .filter((n) => n.length > 0),
-    ),
-  ].sort((a, b) => a.localeCompare(b, "ru"));
-  for (const name of names) {
-    const inCat = storefront.filter((c) => (c.category?.trim() ?? "") === name);
-    const first = sortSectionCardsForDefaultCatalog(inCat, storefront)[0];
-    if (first) firstCardIdByCategory[name] = first.id;
+  const data = await loadProductPageData(id);
+  if (!data) {
+    return <CardProductClientFallback id={id} />;
   }
-
-  let categoryTiles: CategoryTile[] = [];
-  try {
-    const categoriesPath = path.join(process.cwd(), "data", "categories.json");
-    const raw = await loadDurableJsonText(
-      DURABLE_JSON_KEYS.categories,
-      categoriesPath,
-    );
-    categoryTiles = raw ? parseCategoriesJson(JSON.parse(raw)) : [];
-  } catch {
-    categoryTiles = [];
-  }
-  const tmntCollections = resolveTmntCollections(categoryTiles);
 
   return (
     <main className="main relative overflow-x-hidden text-white">
@@ -124,11 +78,11 @@ export default async function CardPage({ params }: PageProps) {
       />
 
       <CardProductContent
-        card={card}
-        categoryCards={categoryCards}
-        categoryNames={names}
-        firstCardIdByCategory={firstCardIdByCategory}
-        tmntCollections={tmntCollections}
+        card={data.card}
+        categoryCards={data.categoryCards}
+        categoryNames={data.categoryNames}
+        firstCardIdByCategory={data.firstCardIdByCategory}
+        tmntCollections={data.tmntCollections}
       />
     </main>
   );

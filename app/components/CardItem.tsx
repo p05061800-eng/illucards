@@ -10,6 +10,7 @@ import { useCatalogFilter } from "../context/CatalogFilterContext";
 import { useMergedRating } from "../context/CardRatingsContext";
 import { useFavorites } from "../context/FavoritesContext";
 import { cardRequiresAgeConfirmation } from "../lib/cardRequiresAgeConfirmation";
+import { stashProductCard } from "../lib/productCardPreview";
 import { useCardLinkTouchNav } from "../lib/useCardLinkTouchNav";
 import { isAdultAgeGateTarget } from "./AdultContentBlurGate";
 import { CatalogCardRarityFrame } from "./CatalogCardRarityFrame";
@@ -50,9 +51,10 @@ export function CardItem({ card, hideUltraLayer = false }: Props) {
   const cardHref = `/card/${card.id}`;
 
   const navigateToCard = useCallback(() => {
+    stashProductCard(card);
     collapseMobileFilters();
     router.push(cardHref);
-  }, [cardHref, collapseMobileFilters, router]);
+  }, [card, cardHref, collapseMobileFilters, router]);
 
   const cardTouchNav = useCardLinkTouchNav(navigateToCard, {
     shouldIgnoreTarget: isAdultAgeGateTarget,
@@ -69,13 +71,14 @@ export function CardItem({ card, hideUltraLayer = false }: Props) {
 
   const handleCardLinkClick = useCallback(
     (e: MouseEvent<HTMLAnchorElement>) => {
+      stashProductCard(card);
       if (cardTouchNav.consumeTouchNavigationClick()) {
         e.preventDefault();
         return;
       }
       collapseMobileFilters();
     },
-    [cardTouchNav, collapseMobileFilters],
+    [card, cardTouchNav, collapseMobileFilters],
   );
 
   const cardImageStack = (

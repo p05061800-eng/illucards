@@ -29,8 +29,8 @@ type Props = {
 const ADULT_BADGE_CLASS =
   "pointer-events-none absolute right-1 top-1 z-[130] rounded border border-rose-400/85 bg-rose-950/92 px-1.5 py-0.5 text-[10px] font-extrabold uppercase leading-none tracking-wide text-rose-50 shadow-[0_0_12px_rgba(244,63,94,0.35)]";
 
-const imageLinkClass =
-  "catalog-card-image-link relative block w-full min-w-0 shrink-0 cursor-pointer overflow-visible";
+const cardNavLinkClass =
+  "catalog-card-image-link relative flex min-h-0 min-w-0 w-full flex-1 cursor-pointer flex-col overflow-visible touch-manipulation";
 
 export function CardItem({ card, hideUltraLayer = false }: Props) {
   const router = useRouter();
@@ -100,51 +100,14 @@ export function CardItem({ card, hideUltraLayer = false }: Props) {
     </CatalogCardRarityFrame>
   );
 
-  return (
-    <div className="card flex h-full min-h-0 min-w-0 w-full flex-col overflow-visible text-left">
-      <FavoritePopup show={showPopup} onClose={closePopup} />
-
-      {adultBlockedNav ? (
-        <div
-          className={imageLinkClass}
-          aria-label={`${card.title} — подтвердите возраст 18+ на карточке`}
-        >
-          {cardImageStack}
-        </div>
-      ) : (
-        <Link
-          ref={flyRef}
-          href={cardHref}
-          prefetch={false}
-          className={imageLinkClass}
-          aria-label={`Открыть карточку: ${card.title}`}
-          onClick={handleCardLinkClick}
-          onTouchStartCapture={cardTouchNav.onTouchStartCapture}
-          onTouchMoveCapture={cardTouchNav.onTouchMoveCapture}
-          onTouchEnd={cardTouchNav.onTouchEnd}
-          onTouchCancel={cardTouchNav.onTouchCancel}
-        >
-          {cardImageStack}
-        </Link>
-      )}
-
+  const cardBody = (
+    <>
+      {cardImageStack}
       <div className="card-content catalog-card-content flex min-h-0 min-w-0 flex-1 flex-col gap-2 rounded-b-2xl border-t border-white/[0.06] bg-zinc-950/70 p-3 pt-2.5">
         <div className="min-h-0 w-full shrink-0">
-          {adultBlockedNav ? (
-            <p className="card-title text-sm font-semibold leading-snug text-white sm:text-base">
-              {card.title}
-            </p>
-          ) : (
-            <Link
-              href={cardHref}
-              onClick={handleCardLinkClick}
-              className="block w-full text-left transition hover:text-purple-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-500/50"
-            >
-              <h3 className="card-title text-sm font-semibold leading-snug text-white sm:text-base">
-                {card.title}
-              </h3>
-            </Link>
-          )}
+          <h3 className="card-title text-sm font-semibold leading-snug text-white sm:text-base">
+            {card.title}
+          </h3>
         </div>
 
         <div className="card-bottom catalog-card-bottom flex w-full min-w-0 shrink-0 flex-col gap-2 border-t border-white/[0.06] pt-2.5">
@@ -156,44 +119,78 @@ export function CardItem({ card, hideUltraLayer = false }: Props) {
           </div>
 
           <div className="catalog-card-price-row flex min-h-[2.25rem] min-w-0 flex-nowrap items-center justify-between gap-1 sm:gap-2">
-            <div className="min-w-0 flex-[1_1_auto] pr-0 sm:pr-0">
+            <div className="min-w-0 flex-[1_1_auto] pr-[4.25rem] sm:pr-[5.25rem]">
               <CardPriceDualRow
                 card={card}
                 variant="catalog"
                 className="text-[10px] font-semibold leading-tight sm:text-sm sm:leading-normal md:text-base"
               />
             </div>
-            <div className="flex shrink-0 items-center gap-0 sm:gap-1">
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleFavorite(e);
-                }}
-                className={`shrink-0 rounded-full p-1 text-sm transition hover:brightness-125 active:opacity-80 sm:p-2 sm:text-lg ${
-                  liked ? "text-red-400" : "text-white/85"
-                }`}
-                aria-label={liked ? "Убрать из избранного" : "В избранное"}
-                aria-pressed={liked}
-              >
-                {liked ? "❤️" : "🤍"}
-              </button>
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  addToCartWithFeedback(card, flyRef.current);
-                }}
-                className="shrink-0 rounded-full bg-green-500 p-1 text-white transition-all duration-300 ease-out hover:shadow-lg hover:shadow-green-500/35 hover:brightness-110 active:opacity-90 sm:p-2"
-                aria-label="В корзину"
-              >
-                <ShoppingBag
-                  className="h-4 w-4 text-white sm:h-5 sm:w-5"
-                  aria-hidden
-                />
-              </button>
-            </div>
           </div>
+        </div>
+      </div>
+    </>
+  );
+
+  return (
+    <div className="card relative flex h-full min-h-0 min-w-0 w-full flex-col overflow-visible text-left">
+      <FavoritePopup show={showPopup} onClose={closePopup} />
+
+      {adultBlockedNav ? (
+        <div
+          className={cardNavLinkClass}
+          aria-label={`${card.title} — подтвердите возраст 18+ на карточке`}
+        >
+          {cardBody}
+        </div>
+      ) : (
+        <Link
+          ref={flyRef}
+          href={cardHref}
+          className={cardNavLinkClass}
+          aria-label={`Открыть карточку: ${card.title}`}
+          onClick={handleCardLinkClick}
+          onTouchStartCapture={cardTouchNav.onTouchStartCapture}
+          onTouchMoveCapture={cardTouchNav.onTouchMoveCapture}
+          onTouchEnd={cardTouchNav.onTouchEnd}
+          onTouchCancel={cardTouchNav.onTouchCancel}
+        >
+          {cardBody}
+        </Link>
+      )}
+
+      <div className="pointer-events-none absolute inset-x-0 bottom-0 z-[6] flex justify-end px-[0.45rem] pb-[0.55rem] sm:px-3 sm:pb-3">
+        <div className="pointer-events-auto flex shrink-0 items-center gap-0 sm:gap-1">
+          <button
+            type="button"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              handleFavorite(e);
+            }}
+            className={`shrink-0 rounded-full p-1 text-sm transition hover:brightness-125 active:opacity-80 sm:p-2 sm:text-lg ${
+              liked ? "text-red-400" : "text-white/85"
+            }`}
+            aria-label={liked ? "Убрать из избранного" : "В избранное"}
+            aria-pressed={liked}
+          >
+            {liked ? "❤️" : "🤍"}
+          </button>
+          <button
+            type="button"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              addToCartWithFeedback(card, flyRef.current);
+            }}
+            className="shrink-0 rounded-full bg-green-500 p-1 text-white transition-all duration-300 ease-out hover:shadow-lg hover:shadow-green-500/35 hover:brightness-110 active:opacity-90 sm:p-2"
+            aria-label="В корзину"
+          >
+            <ShoppingBag
+              className="h-4 w-4 text-white sm:h-5 sm:w-5"
+              aria-hidden
+            />
+          </button>
         </div>
       </div>
     </div>

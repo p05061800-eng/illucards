@@ -336,6 +336,9 @@ export default function HeroSection({
         return;
       }
       blockHeroCardLinkClickRef.current = true;
+      window.setTimeout(() => {
+        blockHeroCardLinkClickRef.current = false;
+      }, 450);
       if (dx < 0) {
         setBrowseIndex((i) => (i + 1) % activeBrowseCards.length);
       } else {
@@ -362,10 +365,30 @@ export default function HeroSection({
       )
         return;
       noveltyDragStartRef.current = { x: e.clientX, y: e.clientY };
-      try {
-        e.currentTarget.setPointerCapture(e.pointerId);
-      } catch {
-        /* ignore */
+      /* Не захватываем указатель на pointerdown: иначе первый клик не доходит до ссылки карточки. */
+    },
+    [activeBrowseCards.length]
+  );
+
+  const onNoveltyPointerMove = useCallback(
+    (e: PointerEvent<HTMLDivElement>) => {
+      if (e.pointerType !== "mouse" && e.pointerType !== "pen") return;
+      const start = noveltyDragStartRef.current;
+      if (!start || activeBrowseCards.length < 2) return;
+      const dx = e.clientX - start.x;
+      const dy = e.clientY - start.y;
+      if (
+        Math.abs(dx) < NOVELTY_SWIPE_MIN_PX ||
+        Math.abs(dx) < Math.abs(dy)
+      ) {
+        return;
+      }
+      if (!e.currentTarget.hasPointerCapture(e.pointerId)) {
+        try {
+          e.currentTarget.setPointerCapture(e.pointerId);
+        } catch {
+          /* ignore */
+        }
       }
     },
     [activeBrowseCards.length]
@@ -377,7 +400,9 @@ export default function HeroSection({
       const start = noveltyDragStartRef.current;
       noveltyDragStartRef.current = null;
       try {
-        e.currentTarget.releasePointerCapture(e.pointerId);
+        if (e.currentTarget.hasPointerCapture(e.pointerId)) {
+          e.currentTarget.releasePointerCapture(e.pointerId);
+        }
       } catch {
         /* ignore */
       }
@@ -619,6 +644,7 @@ export default function HeroSection({
                         <div
                           ref={heroCardFlyRef}
                           onPointerDown={onNoveltyPointerDown}
+                          onPointerMove={onNoveltyPointerMove}
                           onPointerUp={onNoveltyPointerUp}
                           onPointerCancel={onNoveltyPointerCancel}
                           onClickCapture={(e) => {

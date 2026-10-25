@@ -1,8 +1,11 @@
-/** Допуск смещения пальца при тапе по карточке (переход на страницу товара). */
-export const CARD_LINK_TAP_MAX_PX = 22;
+/** Допуск смещения при тапе по карточке (переход на страницу товара). */
+export const CARD_LINK_TAP_MAX_PX = 28;
 
-/** Минимальный сдвиг, после которого жест считается «крутить карточку», а не тапом. */
-export const CARD_TILT_DRAG_MIN_PX = 10;
+/**
+ * Vario/наклон на таче начинается только после этого сдвига.
+ * Должен быть ≥ CARD_LINK_TAP_MAX_PX, иначе короткий тап «съедается» 3D и страница не открывается.
+ */
+export const CARD_TILT_DRAG_MIN_PX = CARD_LINK_TAP_MAX_PX;
 
 export function isCardLinkTap(
   start: { x: number; y: number },

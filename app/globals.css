@@ -748,6 +748,8 @@ body::after {
   display: block;
   width: 100%;
   min-width: 0;
+  touch-action: manipulation;
+  cursor: pointer;
 }
 
 .hero-promo-tile-hit {

@@ -116,7 +116,7 @@ export function HeroCardStack({
         ) : (
           <Link
             href={href}
-            className={buttonClass}
+            className={`${buttonClass} touch-manipulation`}
             aria-label={`Открыть ${displayCard.title}`}
             suppressHydrationWarning
             onClick={(e) => {

@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { ChevronDown } from "lucide-react";
 import {
   useCallback,
@@ -13,6 +14,7 @@ import {
   type PointerEvent,
   type ReactNode,
 } from "react";
+import { useCardLinkTouchNav } from "@/app/lib/useCardLinkTouchNav";
 import type { StoredCard } from "@/app/api/cards/route";
 import { apiUrl } from "@/app/lib/apiUrl";
 import { resolveCustomOrderHeroCards } from "@/app/lib/customOrderHeroCarousel";
@@ -210,6 +212,33 @@ function promoInternalPath(href: string): string | null {
   }
 }
 
+function navigatePromoHref(href: string, router: ReturnType<typeof useRouter>) {
+  const internal = promoInternalPath(href);
+  if (internal) {
+    const hashAt = internal.indexOf("#");
+    if (hashAt >= 0) {
+      const path = internal.slice(0, hashAt) || "/";
+      const id = decodeURIComponent(internal.slice(hashAt + 1));
+      if (
+        (path === "/" || path === "") &&
+        typeof window !== "undefined" &&
+        window.location.pathname === "/"
+      ) {
+        document.getElementById(id)?.scrollIntoView({
+          behavior: "smooth",
+          block: "start",
+        });
+        return;
+      }
+    }
+    router.push(internal);
+    return;
+  }
+  if (isHttpHref(href) && typeof window !== "undefined") {
+    window.open(href, "_blank", "noopener,noreferrer");
+  }
+}
+
 function PromoLinkedMedia({
   src,
   href,
@@ -221,6 +250,7 @@ function PromoLinkedMedia({
   eager?: boolean;
   label: string;
 }) {
+  const router = useRouter();
   const [loadFailed, setLoadFailed] = useState(false);
   const image =
     loadFailed || !src ? (
@@ -235,7 +265,8 @@ function PromoLinkedMedia({
       <img
         src={src}
         alt=""
-        className="hero-promo-tile-img"
+        className="hero-promo-tile-img pointer-events-none"
+        draggable={false}
         loading={eager ? "eager" : "lazy"}
         decoding="async"
         onError={() => setLoadFailed(true)}
@@ -243,17 +274,40 @@ function PromoLinkedMedia({
     );
 
   const trimmed = href.trim();
+  const goPromo = useCallback(() => {
+    if (!trimmed) return;
+    navigatePromoHref(trimmed, router);
+  }, [router, trimmed]);
+  const promoTouchNav = useCardLinkTouchNav(goPromo);
+
   if (!trimmed) {
     return image;
   }
 
   const linkClass =
-    "hero-promo-tile-link hero-promo-tile-hit outline-none focus-visible:ring-2 focus-visible:ring-violet-500/60";
+    "hero-promo-tile-link hero-promo-tile-hit touch-manipulation outline-none focus-visible:ring-2 focus-visible:ring-violet-500/60";
+
+  const onPromoClick = (e: MouseEvent<HTMLAnchorElement>) => {
+    if (promoTouchNav.consumeTouchNavigationClick()) {
+      e.preventDefault();
+      return;
+    }
+    e.preventDefault();
+    goPromo();
+  };
+
+  const touchProps = {
+    onClick: onPromoClick,
+    onTouchStartCapture: promoTouchNav.onTouchStartCapture,
+    onTouchMoveCapture: promoTouchNav.onTouchMoveCapture,
+    onTouchEnd: promoTouchNav.onTouchEnd,
+    onTouchCancel: promoTouchNav.onTouchCancel,
+  };
 
   const internal = promoInternalPath(trimmed);
   if (internal) {
     return (
-      <Link href={internal} className={linkClass} aria-label={label}>
+      <Link href={internal} className={linkClass} aria-label={label} {...touchProps}>
         {image}
       </Link>
     );
@@ -267,6 +321,7 @@ function PromoLinkedMedia({
         rel="noopener noreferrer"
         className={linkClass}
         aria-label={label}
+        {...touchProps}
       >
         {image}
       </a>
@@ -274,7 +329,7 @@ function PromoLinkedMedia({
   }
 
   return (
-    <Link href={trimmed} className={linkClass} aria-label={label}>
+    <Link href={trimmed} className={linkClass} aria-label={label} {...touchProps}>
       {image}
     </Link>
   );

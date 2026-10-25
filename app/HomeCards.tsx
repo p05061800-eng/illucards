@@ -156,7 +156,7 @@ function CardItem({
         ) : (
         <Link
           href={cardHref}
-          className={linkClass}
+          className={`${linkClass} touch-manipulation`}
           onClick={(e) => {
             if (cardTouchNav.consumeTouchNavigationClick()) {
               e.preventDefault();

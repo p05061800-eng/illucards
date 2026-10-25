@@ -51,7 +51,7 @@ export function HeroCatalogCardFooter({
       <div className="hero-limited-card-titlebar">
         <Link
           href={`/card/${card.id}`}
-          className="min-w-0 flex-1 text-center transition hover:text-amber-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300/60"
+          className="min-w-0 flex-1 touch-manipulation text-center transition hover:text-amber-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300/60"
         >
           <h3
             className={`hero-limited-card-title font-semibold text-white ${

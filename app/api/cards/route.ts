@@ -532,12 +532,19 @@ export async function POST(req: NextRequest) {
   }
 
   const cards = await readCards();
+  const requestedId = String(formData.get("id") ?? "").trim();
+  const newId =
+    requestedId &&
+    /^[a-zA-Z0-9._:-]+$/.test(requestedId) &&
+    !cards.some((c) => c.id === requestedId)
+      ? requestedId
+      : randomUUID();
   const subcategory = parseSubcategoryForCategory(
     category,
     formData.get("subcategory"),
   );
   const newCard: StoredCard = {
-    id: randomUUID(),
+    id: newId,
     title,
     description,
     category,

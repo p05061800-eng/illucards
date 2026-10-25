@@ -41,8 +41,8 @@ export function FrontHoverMotionOverlay({
       <video
         ref={videoRef}
         src={t}
-        className={mediaClass}
-        style={style}
+        className={`${mediaClass} bg-transparent`}
+        style={{ backgroundColor: "transparent", ...style }}
         muted
         playsInline
         loop

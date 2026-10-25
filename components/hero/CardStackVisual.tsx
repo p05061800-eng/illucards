@@ -738,12 +738,12 @@ export function CardStackVisual({
       : categoryFocusCoverStyle(card.frontImageFocus)
     : frontPosStyle;
 
-  const showHoverMotionLayer =
-    (!catalogStack && coarsePointerOrHoverNone) || hoverMotionEngaged;
+  /** Поверх лица, без чёрной подложки: иначе 3D/телефон показывают чёрный кадр, пока видео не стартануло. */
+  const showHoverMotionLayer = hoverMotionEngaged;
   const hoverMotionLayerClass = showHoverMotionLayer
-    ? "pointer-events-none absolute inset-0 z-[4] flex min-h-0 min-w-0 items-center justify-center overflow-hidden rounded-2xl bg-black opacity-100 transition-opacity duration-200 motion-reduce:opacity-0"
+    ? "pointer-events-none absolute inset-0 z-[4] flex min-h-0 min-w-0 items-center justify-center overflow-hidden rounded-2xl bg-transparent opacity-100 transition-opacity duration-200 motion-reduce:opacity-0"
     : [
-        "pointer-events-none absolute inset-0 z-[4] flex min-h-0 min-w-0 items-center justify-center overflow-hidden rounded-2xl bg-black",
+        "pointer-events-none absolute inset-0 z-[4] flex min-h-0 min-w-0 items-center justify-center overflow-hidden rounded-2xl bg-transparent",
         "opacity-100 transition-opacity duration-200 motion-reduce:opacity-0 [@media(hover:hover)_and_(pointer:fine)]:opacity-0 [@media(hover:hover)_and_(pointer:fine)]:group-hover/cardstack-hover:opacity-100",
       ].join(" ");
 

@@ -181,8 +181,7 @@ export function Card3D({ card }: Props) {
   const [reduceMotion, setReduceMotion] = useState(false);
   const [hoverMotionEngaged, setHoverMotionEngaged] = useState(false);
   const coarsePointerOrHoverNone = useCoarsePointerOrHoverNone();
-  const showHoverMotionLayer =
-    coarsePointerOrHoverNone || hoverMotionEngaged;
+  const showHoverMotionLayer = hoverMotionEngaged;
 
   useEffect(() => {
     flippedRef.current = flipped;
@@ -501,9 +500,9 @@ export function Card3D({ card }: Props) {
     Boolean(backSrc);
 
   const hoverMotionLayerClass = showHoverMotionLayer
-    ? "pointer-events-none absolute inset-0 z-[5] flex min-h-0 min-w-0 items-center justify-center overflow-hidden rounded-2xl bg-black opacity-100 transition-opacity duration-200 motion-reduce:opacity-0"
+    ? "pointer-events-none absolute inset-0 z-[5] flex min-h-0 min-w-0 items-center justify-center overflow-hidden rounded-2xl bg-transparent opacity-100 transition-opacity duration-200 motion-reduce:opacity-0"
     : [
-        "pointer-events-none absolute inset-0 z-[5] flex min-h-0 min-w-0 items-center justify-center overflow-hidden rounded-2xl bg-black",
+        "pointer-events-none absolute inset-0 z-[5] flex min-h-0 min-w-0 items-center justify-center overflow-hidden rounded-2xl bg-transparent",
         "opacity-100 transition-opacity duration-200 motion-reduce:opacity-0 [@media(hover:hover)_and_(pointer:fine)]:opacity-0 [@media(hover:hover)_and_(pointer:fine)]:group-hover/card3d:opacity-100",
       ].join(" ");
 
@@ -599,11 +598,7 @@ export function Card3D({ card }: Props) {
                     <img
                       src={frontSrc}
                       alt={`${card.title} — лицевая сторона`}
-                      className={`${faceFillClass}${
-                        hoverVideoSrc && !reduceMotion && !showHoverMotionLayer
-                          ? " opacity-0 transition-opacity duration-200 [@media(hover:hover)_and_(pointer:fine)]:opacity-100 [@media(hover:hover)_and_(pointer:fine)]:group-hover/card3d:opacity-0"
-                          : ""
-                      }`}
+                      className={faceFillClass}
                       style={
                         faceFitCover
                           ? categoryFocusCoverStyle(card.frontImageFocus)
@@ -641,11 +636,11 @@ export function Card3D({ card }: Props) {
                   ) : null}
                 </div>
 
+                {canFlip && backSrc ? (
                 <div
                   className={`absolute inset-0 z-[1] overflow-visible rounded-2xl bg-black [backface-visibility:hidden] [transform:rotateY(180deg)] ${cardFaceShellClass}`}
                 >
-                  {backSrc ? (
-                    // eslint-disable-next-line @next/next/no-img-element
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                       src={backSrc}
                       alt={`${card.title} — оборот`}
@@ -663,10 +658,8 @@ export function Card3D({ card }: Props) {
                       draggable={false}
                       decoding="async"
                     />
-                  ) : (
-                    <ImagePlaceholder />
-                  )}
                 </div>
+                ) : null}
 
                 {!reduceMotion ? (
                   <>

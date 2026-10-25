@@ -14,6 +14,7 @@ import type { CardRarity } from "../../lib/cardRarityTags";
 import { primaryRarityForUi } from "../../lib/cardRarityTags";
 import {
   DEFAULT_CARD_ASPECT_RATIO_CSS,
+  cardUsesPosterContainFit,
   isFixedCardArtFramePreset,
   resolveCardArtBoxAspectCss,
 } from "../../lib/cardAspectRatio";
@@ -24,6 +25,7 @@ import {
   cardArtFaceObjectFitClass,
   cardArtFixedFrameImgClass,
   cardArtFixedFrameShellClass,
+  categoryFocusContainStyle,
   categoryFocusCoverStyle,
 } from "../../lib/imageFocus";
 import { FrontHoverMotionOverlay } from "../FrontHoverMotionOverlay";
@@ -145,9 +147,16 @@ export function Card3D({ card }: Props) {
     spacerIntrinsicCss,
     null,
   );
+  const posterContainFace = cardUsesPosterContainFit(card.category);
+  const faceFitCover = !fixedCatalogFrame && !posterContainFace;
   const cardFaceShellClass = fixedCatalogFrame
     ? fixedShell
     : "absolute inset-0 overflow-hidden rounded-2xl bg-black";
+  const faceFillClass = faceFitCover
+    ? `h-full w-full object-cover rounded-2xl ${faceCls}`
+    : posterContainFace
+      ? `h-full w-full object-contain rounded-2xl ${faceCls}`
+      : `${fixedImg} rounded-2xl ${faceCls}`;
   const rarity = primaryRarityForUi(card);
   const magneticRef = useRef<HTMLDivElement>(null);
   const wrapperRef = useRef<HTMLDivElement>(null);
@@ -590,22 +599,20 @@ export function Card3D({ card }: Props) {
                     <img
                       src={frontSrc}
                       alt={`${card.title} — лицевая сторона`}
-                      className={`${
-                        fixedCatalogFrame
-                          ? `${fixedImg} rounded-2xl ${faceCls}`
-                          : `h-full w-full object-cover rounded-2xl ${faceCls}`
-                      }${
+                      className={`${faceFillClass}${
                         hoverVideoSrc && !reduceMotion && !showHoverMotionLayer
                           ? " opacity-0 transition-opacity duration-200 [@media(hover:hover)_and_(pointer:fine)]:opacity-100 [@media(hover:hover)_and_(pointer:fine)]:group-hover/card3d:opacity-0"
                           : ""
                       }`}
                       style={
-                        fixedCatalogFrame
-                          ? cardArtFaceFitStyle(
-                              card.cardArtFramePreset,
-                              card.frontImageFocus,
-                            )
-                          : categoryFocusCoverStyle(card.frontImageFocus)
+                        faceFitCover
+                          ? categoryFocusCoverStyle(card.frontImageFocus)
+                          : posterContainFace
+                            ? categoryFocusContainStyle(card.frontImageFocus)
+                            : cardArtFaceFitStyle(
+                                card.cardArtFramePreset,
+                                card.frontImageFocus,
+                              )
                       }
                       draggable={false}
                       decoding="async"
@@ -619,12 +626,14 @@ export function Card3D({ card }: Props) {
                       videoRef={hoverMotionVideoRef}
                       className={hoverMotionLayerClass}
                       style={
-                        fixedCatalogFrame
-                          ? cardArtFaceFitStyle(
-                              card.cardArtFramePreset,
-                              card.frontImageFocus,
-                            )
-                          : categoryFocusCoverStyle(card.frontImageFocus)
+                        faceFitCover
+                          ? categoryFocusCoverStyle(card.frontImageFocus)
+                          : posterContainFace
+                            ? categoryFocusContainStyle(card.frontImageFocus)
+                            : cardArtFaceFitStyle(
+                                card.cardArtFramePreset,
+                                card.frontImageFocus,
+                              )
                       }
                       fillFaceFrame={!fixedCatalogFrame}
                       autoPlay={showHoverMotionLayer}
@@ -640,18 +649,16 @@ export function Card3D({ card }: Props) {
                     <img
                       src={backSrc}
                       alt={`${card.title} — оборот`}
-                      className={
-                        fixedCatalogFrame
-                          ? `${fixedImg} rounded-2xl ${faceCls}`
-                          : `h-full w-full object-cover rounded-2xl ${faceCls}`
-                      }
+                      className={faceFillClass}
                       style={
-                        fixedCatalogFrame
-                          ? cardArtFaceFitStyle(
-                              card.cardArtFramePreset,
-                              card.backImageFocus,
-                            )
-                          : categoryFocusCoverStyle(card.backImageFocus)
+                        faceFitCover
+                          ? categoryFocusCoverStyle(card.backImageFocus)
+                          : posterContainFace
+                            ? categoryFocusContainStyle(card.backImageFocus)
+                            : cardArtFaceFitStyle(
+                                card.cardArtFramePreset,
+                                card.backImageFocus,
+                              )
                       }
                       draggable={false}
                       decoding="async"

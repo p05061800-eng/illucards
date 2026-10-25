@@ -19,8 +19,7 @@ import {
   type TmntCollectionId,
 } from "../lib/tmntCollections";
 import {
-  isBerserkCategory,
-  isTransformersPrimeCategory,
+  cardUsesPosterContainFit,
   resolveCardArtBoxAspectCss,
 } from "../lib/cardAspectRatio";
 import {
@@ -45,13 +44,20 @@ type AdminCardFormProps = {
   forcedEffect?: "vario";
 };
 
+function uploadPipelineCategory(category: string): string | undefined {
+  const t = category.trim();
+  if (t === TMNT_PARENT_CATEGORY || t === "TMNT") return "TMNT";
+  if (cardUsesPosterContainFit(t)) return t;
+  return undefined;
+}
+
 async function uploadImageFile(
   file: File,
   opts?: { cardCategory?: string },
 ): Promise<string> {
   const fd = new FormData();
   fd.append("file", file);
-  if (opts?.cardCategory === "TMNT" || opts?.cardCategory === "Берсерк") {
+  if (opts?.cardCategory) {
     fd.append("cardCategory", opts.cardCategory);
   }
   const res = await adminFetch("/api/upload", { method: "POST", body: fd });
@@ -293,8 +299,7 @@ export function AdminCardForm({
     ],
   );
 
-  const posterContainPreview =
-    isBerserkCategory(category) || isTransformersPrimeCategory(category);
+  const posterContainPreview = cardUsesPosterContainFit(category);
   /** Берсерк / Трансформеры: арт целиком в рамке постера. Остальные — cover + фокус. */
   const adminPreviewObjectFit = posterContainPreview ? "contain" : "cover";
   const adminFaceStyle = posterContainPreview
@@ -320,12 +325,7 @@ export function AdminCardForm({
     setMessage("Загрузка MP4…");
     try {
       const { url, transcoded } = await uploadVideoFile(file, {
-        cardCategory:
-          category === TMNT_PARENT_CATEGORY
-            ? "TMNT"
-            : category.trim() === "Берсерк"
-              ? "Берсерк"
-              : undefined,
+        cardCategory: uploadPipelineCategory(category),
       });
       setHoverMotionUrl(url);
       setStatus("idle");
@@ -352,12 +352,7 @@ export function AdminCardForm({
     setMessage("Загрузка лицевой стороны…");
     try {
       const url = await uploadImageFile(file, {
-        cardCategory:
-          category === TMNT_PARENT_CATEGORY
-            ? "TMNT"
-            : category.trim() === "Берсерк"
-              ? "Берсерк"
-              : undefined,
+        cardCategory: uploadPipelineCategory(category),
       });
       setFrontImageUrl(url);
       setFrontFocus(DEFAULT_IMAGE_FOCUS);
@@ -377,12 +372,7 @@ export function AdminCardForm({
     setMessage("Загрузка средней стороны…");
     try {
       const url = await uploadImageFile(file, {
-        cardCategory:
-          category === TMNT_PARENT_CATEGORY
-            ? "TMNT"
-            : category.trim() === "Берсерк"
-              ? "Берсерк"
-              : undefined,
+        cardCategory: uploadPipelineCategory(category),
       });
       setMiddleImageUrl(url);
       setMiddleFocus(DEFAULT_IMAGE_FOCUS);
@@ -402,12 +392,7 @@ export function AdminCardForm({
     setMessage("Загрузка оборота…");
     try {
       const url = await uploadImageFile(file, {
-        cardCategory:
-          category === TMNT_PARENT_CATEGORY
-            ? "TMNT"
-            : category.trim() === "Берсерк"
-              ? "Берсерк"
-              : undefined,
+        cardCategory: uploadPipelineCategory(category),
       });
       setBackImageUrl(url);
       setBackFocus(DEFAULT_IMAGE_FOCUS);
@@ -425,12 +410,7 @@ export function AdminCardForm({
     if (!file) return;
     try {
       const url = await uploadImageFile(file, {
-        cardCategory:
-          category === TMNT_PARENT_CATEGORY
-            ? "TMNT"
-            : category.trim() === "Берсерк"
-              ? "Берсерк"
-              : undefined,
+        cardCategory: uploadPipelineCategory(category),
       });
       setCategoryBgUrl(url);
       setCategoryBgFocus(DEFAULT_IMAGE_FOCUS);
@@ -745,7 +725,7 @@ export function AdminCardForm({
                   category === TMNT_PARENT_CATEGORY
                     ? "Для TMNT — тот же кадр 761×1024, что лицо и оборот. Фокус — для витрины."
                     : posterContainPreview
-                      ? "Для Берсерка — кадр 596×819, картинка целиком в рамке."
+                      ? "Для Берсерка и Трансформеров — картинка целиком в рамке постера, без обрезки."
                       : "По размеру файла, без обрезки. Фокус в данных — для витрины."
                 }
               />
@@ -979,6 +959,11 @@ export function AdminCardForm({
           {category === TMNT_PARENT_CATEGORY ? (
             <span className="mt-0.5 block text-xs font-normal text-zinc-500">
               Для TMNT изображение сохраняется как 761×1024 (как фон категории).
+            </span>
+          ) : posterContainPreview ? (
+            <span className="mt-0.5 block text-xs font-normal text-zinc-500">
+              Картинка сохраняется целиком в рамке постера, без обрезки. Сначала
+              выберите категорию, затем файл.
             </span>
           ) : null}
         </label>

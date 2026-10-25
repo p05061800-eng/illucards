@@ -14,6 +14,7 @@ import {
 import type { StoredCard } from "@/app/api/cards/route";
 import {
   cardHasKnownArtBoxAspect,
+  cardUsesPosterContainFit,
   isFixedCardArtFramePreset,
   resolveCardArtBoxAspectCss,
 } from "@/app/lib/cardAspectRatio";
@@ -156,12 +157,16 @@ export function CardStackVisual({
 
   const fixedCatalogFrame = isFixedCardArtFramePreset(card.cardArtFramePreset);
   /**
-   * Каталог: картинка целиком (`contain` + фокус). Герой / диагональ — `cover`.
-   * Жёсткий пресет — contain через cardArtFaceFitStyle.
+   * Каталог и постеры Берсерк/Трансформеры: картинка целиком (`contain`).
+   * Герой / страница товара для остальных категорий — `cover`.
    */
-  const catalogFaceContain = catalogStack && !fixedCatalogFrame;
+  const posterContainFace = cardUsesPosterContainFit(card.category);
+  const catalogFaceContain =
+    ((catalogStack && !fixedCatalogFrame) || posterContainFace);
   const productFaceCoversFrame =
-    (heroDiagonalLayout || catalogStack) && !fixedCatalogFrame;
+    (heroDiagonalLayout || catalogStack) &&
+    !fixedCatalogFrame &&
+    !posterContainFace;
   const artRootRef = useRef<HTMLDivElement>(null);
   const [mediaInView, setMediaInView] = useState(
     () => heroStack || heroDiagonalLayout,

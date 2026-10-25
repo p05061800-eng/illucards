@@ -138,6 +138,15 @@ export function isTransformersPrimeCategory(
   return n === "трансформеры прайм" || n.includes("трансформер");
 }
 
+/** Берсерк / Трансформеры: арт целиком (`contain`), без cover-обрезки рамкой 2:3. */
+export function cardUsesPosterContainFit(
+  category: string | undefined,
+): boolean {
+  return (
+    isBerserkCategory(category) || isTransformersPrimeCategory(category)
+  );
+}
+
 /** Размеры рамки уже известны из категории или метаданных файла — не качать webp ради aspect-ratio. */
 export function cardHasKnownArtBoxAspect(card: {
   category?: string;

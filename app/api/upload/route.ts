@@ -10,6 +10,10 @@ import {
   imageBufferToTransformersPrimePosterWebp,
   imageBufferToTmntPosterWebp,
 } from "@/app/lib/serverImage";
+import {
+  isBerserkCategory,
+  isTransformersPrimeCategory,
+} from "@/app/lib/cardAspectRatio";
 
 function isUploadBlob(value: FormDataEntryValue | null): value is File {
   return (
@@ -66,9 +70,9 @@ export async function POST(req: NextRequest) {
           ? await imageBufferLogoWebp(buffer)
           : cardCategory === "TMNT"
             ? await imageBufferToTmntPosterWebp(buffer)
-            : cardCategory === "Берсерк"
+            : isBerserkCategory(cardCategory)
               ? await imageBufferToBerserkPosterWebp(buffer)
-              : cardCategory.trim().toLowerCase().includes("трансформер")
+              : isTransformersPrimeCategory(cardCategory)
                 ? await imageBufferToTransformersPrimePosterWebp(buffer)
                 : await imageBufferTo34Webp(buffer);
     } catch {

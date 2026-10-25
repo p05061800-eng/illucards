@@ -114,7 +114,7 @@ export function DraggableImageFrame({
               src={src}
               alt=""
               draggable={false}
-              className="pointer-events-none max-h-full max-w-full"
+              className="pointer-events-none h-full w-full object-contain"
               style={imageStyle}
             />
           </div>

@@ -423,7 +423,8 @@ async function persistCards(cards: StoredCard[]): Promise<void> {
 
 export async function GET() {
   await ensureStorage();
-  const cards = await readCards();
+  const { loadCatalogCards } = await import("@/app/lib/loadCatalogCards");
+  const cards = await loadCatalogCards();
   return NextResponse.json(cards, {
     headers: {
       "Cache-Control": "public, s-maxage=60, stale-while-revalidate=300",

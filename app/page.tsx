@@ -1,6 +1,6 @@
 import HeroSection from "@/components/hero/HeroSection";
 import { HomeCollection } from "./components/HomeCollection";
-import { parseCardsJson, toStorefrontCard } from "./lib/cardsJson";
+import { toStorefrontCard } from "./lib/cardsJson";
 import type { CategoryTile } from "./lib/categoriesJson";
 import { parseCategoriesJson } from "./lib/categoriesJson";
 import { resolveCustomOrderHeroCards } from "./lib/customOrderHeroCarousel";
@@ -13,16 +13,14 @@ import {
   DURABLE_JSON_KEYS,
   loadDurableJsonText,
 } from "./lib/durableJson";
+import { loadCatalogCards } from "./lib/loadCatalogCards";
 import path from "path";
 
 /** После сохранения в админке `revalidatePath("/")` сразу обновляет главную. */
 export const revalidate = 60;
 
 export default async function Home() {
-  const filePath = path.join(process.cwd(), "data", "cards.json");
-  const fileData =
-    (await loadDurableJsonText(DURABLE_JSON_KEYS.cards, filePath)) ?? "[]";
-  const cards = parseCardsJson(fileData).map(toStorefrontCard);
+  const cards = (await loadCatalogCards()).map(toStorefrontCard);
 
   const categoriesPath = path.join(process.cwd(), "data", "categories.json");
   let categoryTiles: CategoryTile[] = [];

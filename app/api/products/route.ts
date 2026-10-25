@@ -1,18 +1,11 @@
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
-import path from "path";
 import type { StoredCard } from "@/app/api/cards/route";
-import { parseCardsJson } from "@/app/lib/cardsJson";
-import {
-  DURABLE_JSON_KEYS,
-  loadDurableJsonText,
-} from "@/app/lib/durableJson";
+import { loadCatalogCards } from "@/app/lib/loadCatalogCards";
 import {
   effectiveCardPriceByn,
   effectiveCardPriceRub,
 } from "@/app/lib/formatPrice";
-
-const DATA_PATH = path.join(process.cwd(), "data", "cards.json");
 
 export type BotProduct = {
   id: string;
@@ -31,8 +24,7 @@ export type BotProduct = {
 
 async function readCards(): Promise<StoredCard[]> {
   try {
-    const raw = await loadDurableJsonText(DURABLE_JSON_KEYS.cards, DATA_PATH);
-    return raw ? parseCardsJson(raw) : [];
+    return await loadCatalogCards();
   } catch {
     return [];
   }

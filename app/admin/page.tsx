@@ -1,12 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import path from "path";
 import type { StoredCard } from "../api/cards/route";
-import { parseCardsJson } from "../lib/cardsJson";
-import {
-  DURABLE_JSON_KEYS,
-  loadDurableJsonText,
-} from "../lib/durableJson";
+import { loadCatalogCards } from "../lib/loadCatalogCards";
 import { listRecentOrders } from "@/app/lib/ordersStore";
 import { AdminTabs } from "./AdminTabs";
 import { AdminLogoutButton } from "./AdminLogoutButton";
@@ -18,12 +13,7 @@ export const metadata: Metadata = {
 
 async function loadCards(): Promise<StoredCard[]> {
   try {
-    const filePath = path.join(process.cwd(), "data", "cards.json");
-    const fileData = await loadDurableJsonText(
-      DURABLE_JSON_KEYS.cards,
-      filePath,
-    );
-    return fileData ? parseCardsJson(fileData) : [];
+    return await loadCatalogCards();
   } catch {
     return [];
   }

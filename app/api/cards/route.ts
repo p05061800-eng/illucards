@@ -17,6 +17,7 @@ import { maxCategoryOrderInCategory } from "@/app/lib/adminCategoryOrder";
 import {
   imageBufferTo34Webp,
   imageBufferToBerserkPosterWebp,
+  imageBufferToTransformersPrimePosterWebp,
   imageBufferToTmntPosterWebp,
   isSafeImageUrl,
   isSafeUploadPublicPath,
@@ -25,7 +26,9 @@ import {
 import { readPublicImageDimensions } from "@/app/lib/readPublicImageDimensions";
 import {
   BERSERK_REFERENCE_POSTER_DIMENSIONS,
+  TRANSFORMERS_PRIME_REFERENCE_POSTER_DIMENSIONS,
   isBerserkCategory,
+  isTransformersPrimeCategory,
   isFixedCardArtFramePreset,
   parseCardArtFramePreset,
   TMNT_REFERENCE_POSTER_DIMENSIONS,
@@ -338,11 +341,16 @@ function parseIdListFromComma(raw: string): string[] {
     .filter(Boolean);
 }
 
-type CardImageSavePipeline = "card34" | "tmntPoster" | "berserkPoster";
+type CardImageSavePipeline =
+  | "card34"
+  | "tmntPoster"
+  | "berserkPoster"
+  | "transformersPrimePoster";
 
 function imagePipelineForCategory(category: string): CardImageSavePipeline {
   if (category === "TMNT") return "tmntPoster";
   if (isBerserkCategory(category)) return "berserkPoster";
+  if (isTransformersPrimeCategory(category)) return "transformersPrimePoster";
   return "card34";
 }
 
@@ -359,6 +367,12 @@ function applyCategoryPosterDimensions(
   if (isBerserkCategory(category)) {
     card.frontImageWidth = BERSERK_REFERENCE_POSTER_DIMENSIONS.width;
     card.frontImageHeight = BERSERK_REFERENCE_POSTER_DIMENSIONS.height;
+    return;
+  }
+  if (isTransformersPrimeCategory(category)) {
+    card.frontImageWidth = TRANSFORMERS_PRIME_REFERENCE_POSTER_DIMENSIONS.width;
+    card.frontImageHeight =
+      TRANSFORMERS_PRIME_REFERENCE_POSTER_DIMENSIONS.height;
     return;
   }
   if (fallback) {
@@ -378,7 +392,9 @@ async function saveImageFile(
       ? await imageBufferToTmntPosterWebp(buffer)
       : pipeline === "berserkPoster"
         ? await imageBufferToBerserkPosterWebp(buffer)
-        : await imageBufferTo34Webp(buffer);
+        : pipeline === "transformersPrimePoster"
+          ? await imageBufferToTransformersPrimePosterWebp(buffer)
+          : await imageBufferTo34Webp(buffer);
   const filename = `${randomUUID()}.webp`;
   return savePublicUpload(filename, processed, "image/webp");
 }

@@ -6,7 +6,9 @@ import type {
 } from "@/app/api/cards/route";
 import {
   BERSERK_REFERENCE_POSTER_DIMENSIONS,
+  TRANSFORMERS_PRIME_REFERENCE_POSTER_DIMENSIONS,
   isBerserkCategory,
+  isTransformersPrimeCategory,
   isFixedCardArtFramePreset,
   parseCardArtFramePreset,
   TMNT_REFERENCE_POSTER_DIMENSIONS,
@@ -400,6 +402,9 @@ function normalizeCard(raw: Record<string, unknown>): StoredCard {
   } else if (isBerserkCategory(card.category)) {
     card.frontImageWidth = BERSERK_REFERENCE_POSTER_DIMENSIONS.width;
     card.frontImageHeight = BERSERK_REFERENCE_POSTER_DIMENSIONS.height;
+  } else if (isTransformersPrimeCategory(card.category)) {
+    card.frontImageWidth = TRANSFORMERS_PRIME_REFERENCE_POSTER_DIMENSIONS.width;
+    card.frontImageHeight = TRANSFORMERS_PRIME_REFERENCE_POSTER_DIMENSIONS.height;
   }
   const framePreset = parseCardArtFramePreset(raw.cardArtFramePreset);
   if (isFixedCardArtFramePreset(framePreset)) {

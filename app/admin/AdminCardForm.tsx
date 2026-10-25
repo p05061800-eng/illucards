@@ -20,6 +20,7 @@ import {
 } from "../lib/tmntCollections";
 import {
   isBerserkCategory,
+  isTransformersPrimeCategory,
   resolveCardArtBoxAspectCss,
 } from "../lib/cardAspectRatio";
 import {
@@ -292,10 +293,11 @@ export function AdminCardForm({
     ],
   );
 
-  const berserkPreview = isBerserkCategory(category);
-  /** Берсерк: арт целиком в рамке 596×819. Остальные — cover + фокус. */
-  const adminPreviewObjectFit = berserkPreview ? "contain" : "cover";
-  const adminFaceStyle = berserkPreview
+  const posterContainPreview =
+    isBerserkCategory(category) || isTransformersPrimeCategory(category);
+  /** Берсерк / Трансформеры: арт целиком в рамке постера. Остальные — cover + фокус. */
+  const adminPreviewObjectFit = posterContainPreview ? "contain" : "cover";
+  const adminFaceStyle = posterContainPreview
     ? categoryFocusContainStyle
     : categoryFocusCoverStyle;
 

@@ -13,6 +13,9 @@ export const CARD_ART_TMNT_POSTER_ASPECT_CSS = "761 / 1024";
 /** Коллекционные карточки Берсерк — референс 596×819. */
 export const CARD_ART_BERSERK_POSTER_ASPECT_CSS = "596 / 819";
 
+/** Трансформеры Прайм — референс скана карточки 589×819. */
+export const CARD_ART_TRANSFORMERS_PRIME_POSTER_ASPECT_CSS = "589 / 819";
+
 /** Горизонтальный баннер на витрине (w > h). */
 export const CARD_ART_LANDSCAPE_FRAME_ASPECT_CSS = "16 / 6";
 
@@ -115,6 +118,11 @@ export const BERSERK_REFERENCE_POSTER_DIMENSIONS = {
   height: 819,
 } as const;
 
+export const TRANSFORMERS_PRIME_REFERENCE_POSTER_DIMENSIONS = {
+  width: 589,
+  height: 819,
+} as const;
+
 function isTmntCategory(card: { category?: string }): boolean {
   return (card.category ?? "").trim().toLowerCase() === "tmnt";
 }
@@ -123,13 +131,26 @@ export function isBerserkCategory(category: string | undefined): boolean {
   return (category ?? "").trim().toLowerCase() === "берсерк";
 }
 
+export function isTransformersPrimeCategory(
+  category: string | undefined,
+): boolean {
+  const n = (category ?? "").trim().toLowerCase();
+  return n === "трансформеры прайм" || n.includes("трансформер");
+}
+
 /** Размеры рамки уже известны из категории или метаданных файла — не качать webp ради aspect-ratio. */
 export function cardHasKnownArtBoxAspect(card: {
   category?: string;
   frontImageWidth?: number;
   frontImageHeight?: number;
 }): boolean {
-  if (isTmntCategory(card) || isBerserkCategory(card.category)) return true;
+  if (
+    isTmntCategory(card) ||
+    isBerserkCategory(card.category) ||
+    isTransformersPrimeCategory(card.category)
+  ) {
+    return true;
+  }
   return (
     typeof card.frontImageWidth === "number" &&
     typeof card.frontImageHeight === "number" &&
@@ -139,7 +160,7 @@ export function cardHasKnownArtBoxAspect(card: {
 }
 
 /**
- * Рамка витрины: TMNT — 761/1024; Берсерк — 596/819; иначе баннер 16/6 или постер 2:3.
+ * Рамка витрины: TMNT — 761/1024; Берсерк — 596/819; Трансформеры — 589/819; иначе 2:3.
  */
 export function resolveCardArtBoxAspectCss(
   card: {
@@ -158,6 +179,9 @@ export function resolveCardArtBoxAspectCss(
   }
   if (isBerserkCategory(card.category)) {
     return CARD_ART_BERSERK_POSTER_ASPECT_CSS;
+  }
+  if (isTransformersPrimeCategory(card.category)) {
+    return CARD_ART_TRANSFORMERS_PRIME_POSTER_ASPECT_CSS;
   }
   if (
     typeof card.frontImageWidth === "number" &&

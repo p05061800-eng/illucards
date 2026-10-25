@@ -9388,13 +9388,18 @@
       "intelligence": 50,
       "magic": 50
     },
-    "effect": "vario",
-    "isNew": false,
+    "isNew": true,
     "isPopular": false,
     "isSale": false,
     "inStock": true,
     "ratingAvg": 5,
     "reviewCount": 0,
+    "rarities": [
+      "common",
+      "novelty"
+    ],
+    "noveltySince": "2026-10-25T03:37:48.675Z",
+    "effect": "vario",
     "categoryBg": "/uploads/1792899379922-eddc433b.webp",
     "frontImageFocus": {
       "x": 50,
@@ -9413,15 +9418,767 @@
       "x": 50,
       "y": 50
     },
-    "categoryOrder": 3,
     "priceRub": 750,
+    "categoryOrder": 3,
     "varioSmoothing": 0.18,
     "frontImageWidth": 600,
-    "frontImageHeight": 900,
+    "frontImageHeight": 900
+  },
+  {
+    "id": "42279c1c-3fc7-4802-bba3-b52596b9b3bf",
+    "title": "Оптимус Прайм — Воплощение огневой мощи",
+    "description": "Лидер автоботов превращается в настоящую боевую машину, способную сокрушить даже самых опасных противников. Его тяжёлое вооружение и невероятная огневая мощь превращают каждую атаку в шквал разрушительных залпов. За стальной бронёй скрывается непоколебимая воля защитника, который никогда не отступит перед угрозой. Когда Оптимус переходит в боевой режим, врагам остаётся лишь надеяться, что они не окажутся на линии огня.",
+    "category": "Трансформеры Прайм",
+    "subcategory": "",
+    "frontImage": "/uploads/1792951324791-f661dc82.webp",
+    "backImage": "/uploads/1792951351961-3112b95a.webp",
+    "price": 40,
+    "rarity": "novelty",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "isNew": true,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": true,
+    "ratingAvg": 5,
+    "reviewCount": 0,
+    "rarities": [
+      "novelty",
+      "common"
+    ],
+    "noveltySince": "2026-10-25T19:18:31.686Z",
+    "effect": "vario",
+    "categoryBg": "/uploads/1792951316158-fde36e60.webp",
+    "frontImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "backImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "middleImage": "/uploads/1792951340109-093c057d.webp",
+    "middleImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "priceRub": 1000,
+    "categoryOrder": 1,
+    "varioSmoothing": 0.18,
+    "frontImageWidth": 589,
+    "frontImageHeight": 819
+  },
+  {
+    "id": "a9630108-be0d-4bff-94ba-9fea8802c43a",
+    "title": "Черепашки-ниндзя — Наследники драконьей силы",
+    "description": "Получив силу древних амулетов, Леонардо, Рафаэль, Донателло и Микеланджело пробудили своих драконьих аватаров. Теперь каждый из братьев способен управлять невероятной энергией, превращая боевые навыки в разрушительную мощь. Объединившись, они становятся практически непобедимой командой, в которой мастерство, скорость, сила и интеллект достигают предела. Их главная сила — не только древняя магия, но и нерушимая связь четырёх братьев.",
+    "category": "TMNT",
+    "subcategory": "foes",
+    "frontImage": "/uploads/1792956008557-ff552a40.webp",
+    "backImage": "/uploads/1792956016174-37c4071d.webp",
+    "price": 25,
+    "rarity": "novelty",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "isNew": true,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": true,
+    "ratingAvg": 5,
+    "reviewCount": 0,
     "rarities": [
       "common",
       "novelty"
     ],
-    "noveltySince": "2026-10-25T03:37:48.675Z"
+    "noveltySince": "2026-10-25T19:20:29.290Z",
+    "effect": "vario",
+    "categoryBg": "/uploads/1792955996672-19f4d298.webp",
+    "frontImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "backImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "priceRub": 750,
+    "categoryOrder": 35,
+    "varioSmoothing": 0.18,
+    "frontImageWidth": 761,
+    "frontImageHeight": 1024
+  },
+  {
+    "id": "e64507a3-9cb4-4734-8189-bc0a2b372db2",
+    "title": "Тони Кроос",
+    "description": "Тони Кроос — маэстро футбола, чьи передачи способны изменить ход любого матча. Хладнокровие, феноменальное видение поля и безупречная точность делают его настоящим дирижёром полузащиты. Он контролирует темп игры, находит идеальные решения там, где другие видят лишь хаос, и создаёт возможности для решающих атак. Его удары издали и фирменные передачи стали символом футбольного мастерства. Даже завершив карьеру, Кроос навсегда останется одним из величайших полузащитников своего поколения.",
+    "category": "Football",
+    "subcategory": "",
+    "frontImage": "/uploads/1792956101395-f761ad2c.webp",
+    "backImage": "/uploads/1792956107506-7857d735.webp",
+    "price": 20,
+    "rarity": "novelty",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "isNew": true,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": true,
+    "ratingAvg": 5,
+    "reviewCount": 0,
+    "rarities": [
+      "common",
+      "novelty"
+    ],
+    "noveltySince": "2026-10-25T19:22:02.216Z",
+    "effect": "vario",
+    "categoryBg": "/uploads/1792956072868-8d62e98d.webp",
+    "frontImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "backImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "priceRub": 600,
+    "categoryOrder": 30,
+    "varioSmoothing": 0.18,
+    "frontImageWidth": 600,
+    "frontImageHeight": 900
+  },
+  {
+    "id": "491af932-84d0-4b1a-8e4c-49061f9e3955",
+    "title": "Джордан Пикфорд",
+    "description": "Джордан Пикфорд — бесстрашный страж ворот, способный остановить даже самый опасный удар. Молниеносная реакция, невероятная прыгучесть и железные нервы делают его настоящим кошмаром для нападающих. Он не боится выходить навстречу сопернику, руководит обороной и сражается за каждый мяч до последней секунды. Когда команда оказывается под давлением, Пикфорд становится её последней надеждой. Для него каждый сейв — это ещё один шаг к победе!",
+    "category": "Football",
+    "subcategory": "",
+    "frontImage": "/uploads/1792956170254-b815bf9f.webp",
+    "backImage": "",
+    "price": 20,
+    "rarity": "novelty",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "isNew": true,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": true,
+    "ratingAvg": 5,
+    "reviewCount": 0,
+    "rarities": [
+      "common",
+      "novelty"
+    ],
+    "noveltySince": "2026-10-25T19:23:28.523Z",
+    "effect": "3d-horizontal",
+    "categoryBg": "/uploads/1792956156916-279038b3.webp",
+    "frontImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "priceRub": 600,
+    "categoryOrder": 27,
+    "frontImageWidth": 600,
+    "frontImageHeight": 900
+  },
+  {
+    "id": "183efb35-7ccc-4fcd-a716-ccdf5ac66c0f",
+    "title": "Фил Фоден",
+    "description": "Мастер игры между линиями, способный одним касанием изменить ход матча. Его невероятная техника, взрывное ускорение и футбольный интеллект делают его кошмаром для любой обороны. Фоден виртуозно находит свободные зоны, обыгрывает соперников на ограниченном пространстве и наносит точные удары в самые неожиданные моменты. Универсальность позволяет ему создавать опасность с разных позиций, а хладнокровие в решающие минуты превращает талант в настоящий результат. Маленький маэстро «Манчестер Сити», который доказывает: гениальность не зависит от роста.",
+    "category": "Football",
+    "subcategory": "",
+    "frontImage": "/uploads/1792956315384-a0df70b6.webp",
+    "backImage": "/uploads/1792956323984-8ad1074d.webp",
+    "price": 20,
+    "rarity": "novelty",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "isNew": true,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": true,
+    "ratingAvg": 5,
+    "reviewCount": 0,
+    "rarities": [
+      "novelty",
+      "common"
+    ],
+    "noveltySince": "2026-10-25T19:25:24.764Z",
+    "effect": "vario",
+    "categoryBg": "/uploads/1792956300734-d1070248.webp",
+    "frontImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "backImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "priceRub": 600,
+    "categoryOrder": 28,
+    "varioSmoothing": 0.18,
+    "frontImageWidth": 600,
+    "frontImageHeight": 900
+  },
+  {
+    "id": "c8bffe32-39a5-4713-81dd-55a8f0db5125",
+    "title": "Лука Модрич",
+    "description": "Легендарный хорватский полузащитник, чьё видение поля и филигранная техника способны перевернуть ход любого матча. Модрич управляет темпом игры, разрезает оборону точными передачами и находит решения там, где другие видят тупик. Несмотря на скромные физические данные, он компенсирует всё невероятным интеллектом, выносливостью и хладнокровием. Обладатель «Золотого мяча» и символ целой футбольной эпохи, Лука доказывает, что настоящее величие определяется не силой, а мастерством.",
+    "category": "Football",
+    "subcategory": "",
+    "frontImage": "/uploads/1792956378280-754e02b7.webp",
+    "backImage": "/uploads/1792956382297-2ef40a86.webp",
+    "price": 30,
+    "rarity": "novelty",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "isNew": true,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": true,
+    "ratingAvg": 5,
+    "reviewCount": 0,
+    "rarities": [
+      "common",
+      "novelty"
+    ],
+    "noveltySince": "2026-10-25T19:26:27.054Z",
+    "effect": "vario",
+    "categoryBg": "/uploads/1792956363733-71adf7cd.webp",
+    "frontImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "backImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "priceRub": 800,
+    "categoryOrder": 11,
+    "varioSmoothing": 0.18,
+    "frontImageWidth": 600,
+    "frontImageHeight": 900
+  },
+  {
+    "id": "08423564-983a-410f-a5e9-2dee45b9c3e7",
+    "title": "Карен Уилер",
+    "description": "Заботливая мать, которая всегда ставит близких на первое место. Карен не боится бороться за своих детей и готова пойти на всё, чтобы защитить семью. За внешним спокойствием скрываются сильный характер, проницательность и любопытство, позволяющее замечать то, что ускользает от других. Даже когда окружающие не воспринимают её всерьёз, Карен продолжает искать правду. В мире, полном тайн и опасностей, её любовь и решительность становятся настоящей силой.",
+    "category": "Stranger Things",
+    "subcategory": "",
+    "frontImage": "/uploads/1792956500053-b61816f6.webp",
+    "backImage": "/uploads/1792956550597-046039a4.webp",
+    "price": 25,
+    "rarity": "novelty",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "isNew": true,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": true,
+    "ratingAvg": 5,
+    "reviewCount": 0,
+    "rarities": [
+      "common",
+      "novelty"
+    ],
+    "noveltySince": "2026-10-25T19:30:27.575Z",
+    "effect": "vario",
+    "categoryBg": "/uploads/1792956492921-a059a454.webp",
+    "frontImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "backImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "priceRub": 750,
+    "categoryOrder": 24,
+    "varioSmoothing": 0.18,
+    "frontImageWidth": 600,
+    "frontImageHeight": 900
+  },
+  {
+    "id": "8b089d14-ec02-4f90-9c13-eef73f3fa190",
+    "title": "Аргайл",
+    "description": "Беззаботный парень с длинными волосами, яркими кепками и вечной любовью к пицце. Аргайл умеет сохранять спокойствие даже в самых безумных ситуациях и превращает любую поездку в приключение. Работая в пиццерии Surfer Boy Pizza, он не только развозит заказы, но и неожиданно оказывается втянутым в опасные события. Его верность друзьям, чувство юмора и умение не паниковать делают его незаменимым членом команды.",
+    "category": "Stranger Things",
+    "subcategory": "",
+    "frontImage": "/uploads/1792956757979-c1abdddf.webp",
+    "backImage": "/uploads/1792956765999-156a8595.webp",
+    "price": 25,
+    "rarity": "novelty",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "isNew": true,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": true,
+    "ratingAvg": 5,
+    "reviewCount": 0,
+    "rarities": [
+      "common",
+      "novelty"
+    ],
+    "noveltySince": "2026-10-25T19:32:49.315Z",
+    "effect": "vario",
+    "categoryBg": "/uploads/1792956739820-1510383d.webp",
+    "frontImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "backImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "priceRub": 750,
+    "categoryOrder": 24,
+    "varioSmoothing": 0.18,
+    "frontImageWidth": 600,
+    "frontImageHeight": 900
+  },
+  {
+    "id": "f61bfc49-612f-409d-af9e-e8ce8fec7199",
+    "title": "Мартин Бреннер",
+    "description": "Холодный и расчётливый учёный, готовый переступить любые границы ради своих экспериментов. Доктор Бреннер руководит секретной лабораторией и изучает способности детей, пытаясь раскрыть тайны Изнанки. За его спокойной манерой скрываются одержимость контролем и безжалостность. Для него люди становятся частью большого эксперимента, а забота нередко оказывается лишь инструментом управления. Его интеллект и глубокая связь с паранормальными исследованиями делают его одним из самых опасных людей в Хоукинсе.",
+    "category": "Stranger Things",
+    "subcategory": "",
+    "frontImage": "/uploads/1792956809910-bb3bd22e.webp",
+    "backImage": "/uploads/1792956815540-ac2e109c.webp",
+    "price": 25,
+    "rarity": "novelty",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "isNew": true,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": true,
+    "ratingAvg": 5,
+    "reviewCount": 0,
+    "rarities": [
+      "common",
+      "novelty"
+    ],
+    "noveltySince": "2026-10-25T19:33:36.568Z",
+    "effect": "vario",
+    "frontImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "backImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "priceRub": 750,
+    "categoryOrder": 16,
+    "varioSmoothing": 0.18,
+    "frontImageWidth": 600,
+    "frontImageHeight": 900,
+    "categoryBg": "/uploads/1792957324884-00b7f3b0.webp",
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    }
+  },
+  {
+    "id": "3c897ff8-5f4a-49d4-bf5f-a06ab131a0d9",
+    "title": "Виктория Нойман",
+    "description": "Хладнокровная и расчётливая супергероиня, скрывающая за образом политика смертельно опасную способность управлять кровью. Одного взгляда достаточно, чтобы превратить противника в кровавое месиво. Виктория мастерски манипулирует людьми, плетёт интриги и уничтожает врагов, оставаясь в тени. Её главная сила — не только разрушительная мощь, но и умение контролировать ситуацию задолго до начала битвы. В мире, где власть решает всё, она готова пролить любую кровь ради достижения своих целей.",
+    "category": "The Boys",
+    "subcategory": "",
+    "frontImage": "/uploads/1792956874712-536e1864.webp",
+    "backImage": "/uploads/1792956879315-ee5b88f7.webp",
+    "price": 25,
+    "rarity": "novelty",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "isNew": true,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": true,
+    "ratingAvg": 5,
+    "reviewCount": 0,
+    "rarities": [
+      "common",
+      "novelty"
+    ],
+    "noveltySince": "2026-10-25T19:34:46.385Z",
+    "effect": "vario",
+    "categoryBg": "/uploads/1792956865554-46288a73.webp",
+    "frontImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "backImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "priceRub": 750,
+    "categoryOrder": 15,
+    "varioSmoothing": 0.18,
+    "frontImageWidth": 600,
+    "frontImageHeight": 900
+  },
+  {
+    "id": "725de12d-c0a7-44ee-840a-fddd0e319516",
+    "title": "Райан",
+    "description": "Сын Хоумлендера, унаследовавший невероятную силу и способности, способные изменить судьбу всего мира. Несмотря на огромный потенциал, Райан остаётся обычным мальчиком, которому приходится выбирать между спокойной жизнью и наследием самого опасного супергероя. Его сила может превзойти даже силу отца, но кем он станет — защитником или угрозой для человечества — зависит от того, кто повлияет на его будущее. Райан — символ надежды и одновременно потенциальной катастрофы.",
+    "category": "The Boys",
+    "subcategory": "",
+    "frontImage": "/uploads/1792956927097-e4d98de8.webp",
+    "backImage": "/uploads/1792956930688-2669acad.webp",
+    "price": 25,
+    "rarity": "novelty",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "isNew": true,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": true,
+    "ratingAvg": 5,
+    "reviewCount": 0,
+    "rarities": [
+      "novelty",
+      "common"
+    ],
+    "noveltySince": "2026-10-25T19:35:31.575Z",
+    "effect": "vario",
+    "categoryBg": "/uploads/1792956922356-bbd95bdd.webp",
+    "frontImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "backImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "priceRub": 750,
+    "categoryOrder": 14,
+    "varioSmoothing": 0.18,
+    "frontImageWidth": 600,
+    "frontImageHeight": 900
+  },
+  {
+    "id": "915e4ce6-60b7-424c-9dc2-fb6975c82b72",
+    "title": "Наруто Узумаки",
+    "description": "Непреклонная воля, безграничная энергия и сила, способная изменить судьбу целого мира. Наруто никогда не отступает перед трудностями и готов сражаться до последнего ради своих друзей и родной деревни. Внутри него скрыта невероятная мощь, но его главное оружие — не только чакра Девятихвостого, а несгибаемый дух и вера в собственные идеалы. От одинокого мальчишки до величайшего ниндзя — его путь доказывает, что настоящая сила рождается из упорства, дружбы и мечты, от которой невозможно отказаться.",
+    "category": "Naruto",
+    "subcategory": "",
+    "frontImage": "/uploads/1792956991073-a25d6351.webp",
+    "backImage": "/uploads/1792957001272-e4602d99.webp",
+    "price": 25,
+    "rarity": "novelty",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "isNew": true,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": true,
+    "ratingAvg": 5,
+    "reviewCount": 0,
+    "rarities": [
+      "common",
+      "novelty"
+    ],
+    "noveltySince": "2026-10-25T19:36:42.884Z",
+    "effect": "vario",
+    "categoryBg": "/uploads/1792956980160-ce293581.webp",
+    "frontImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "backImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "middleImage": "/uploads/1792956996931-5213b159.webp",
+    "middleImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "priceRub": 750,
+    "categoryOrder": 10,
+    "varioSmoothing": 0.18,
+    "frontImageWidth": 600,
+    "frontImageHeight": 900
+  },
+  {
+    "id": "566c2aee-07ac-4ce2-b81a-a83cc3c3663d",
+    "title": "Френчи",
+    "description": "Френчи — мастер тактики, взрывчатки и нестандартных решений. Его хладнокровие, техническая смекалка и богатый боевой опыт превращают любую ситуацию в поле для хитроумной операции. Он умеет находить слабые места противника, импровизировать под давлением и наносить удар там, где его совсем не ждут. За суровым характером скрывается человек, для которого верность своим товарищам значит не меньше, чем победа.",
+    "category": "The Boys",
+    "subcategory": "",
+    "frontImage": "/uploads/1792957054048-65984e16.webp",
+    "backImage": "/uploads/1792957059402-036bae7a.webp",
+    "price": 25,
+    "rarity": "novelty",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "isNew": true,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": true,
+    "ratingAvg": 5,
+    "reviewCount": 0,
+    "rarities": [
+      "common",
+      "novelty"
+    ],
+    "noveltySince": "2026-10-25T19:37:54.225Z",
+    "effect": "vario",
+    "categoryBg": "/uploads/1792957048664-b7b7daea.webp",
+    "frontImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "backImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "priceRub": 750,
+    "categoryOrder": 16,
+    "varioSmoothing": 0.18,
+    "frontImageWidth": 600,
+    "frontImageHeight": 900
+  },
+  {
+    "id": "5aba3c4f-42a5-4aee-a116-a8272052d4da",
+    "title": "ММ",
+    "description": "ММ — мозг и опора «Пацанов», человек, который удерживает команду от хаоса. За его суровым характером скрываются железная дисциплина, стратегическое мышление и непоколебимая преданность своим близким. Он не обладает сверхспособностями, но компенсирует это выдержкой, опытом и умением принимать решения в самых опасных ситуациях. Когда остальные готовы сорваться в бой, ММ просчитывает последствия и ищет путь к победе. Его главная сила — не физическая мощь, а способность оставаться опорой команды даже тогда, когда весь мир рушится вокруг.",
+    "category": "The Boys",
+    "subcategory": "",
+    "frontImage": "/uploads/1792957152395-425ee84a.webp",
+    "backImage": "/uploads/1792957161881-61c18a1a.webp",
+    "price": 25,
+    "rarity": "novelty",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "isNew": true,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": true,
+    "ratingAvg": 5,
+    "reviewCount": 0,
+    "rarities": [
+      "novelty",
+      "common"
+    ],
+    "noveltySince": "2026-10-25T19:39:23.467Z",
+    "effect": "vario",
+    "categoryBg": "/uploads/1792957135792-9d9d8b45.webp",
+    "frontImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "backImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "priceRub": 750,
+    "categoryOrder": 8,
+    "varioSmoothing": 0.18,
+    "frontImageWidth": 600,
+    "frontImageHeight": 900
+  },
+  {
+    "id": "d160b4a8-cffc-4a4f-88d5-a04f525f638f",
+    "title": "Кали Прасад",
+    "description": "Кали Прасад — мастер иллюзий, способная превратить восприятие противника в его главную слабость. Её сила позволяет создавать обманчивые образы и скрывать реальность прямо перед глазами врага, заставляя его сомневаться в каждом движении. Независимая, решительная и непредсказуемая, Кали не привыкла подчиняться чужим правилам. Она сражается на собственных условиях, используя хитрость, психологическое давление и способности, против которых невозможно защититься, если не понимаешь, что реально, а что лишь иллюзия.",
+    "category": "Stranger Things",
+    "subcategory": "",
+    "frontImage": "/uploads/1792957230478-97b83a35.webp",
+    "backImage": "/uploads/1792957234452-8acdb7f4.webp",
+    "price": 25,
+    "rarity": "novelty",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "isNew": true,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": true,
+    "ratingAvg": 5,
+    "reviewCount": 0,
+    "rarities": [
+      "novelty",
+      "common"
+    ],
+    "noveltySince": "2026-10-25T19:40:36.007Z",
+    "effect": "vario",
+    "categoryBg": "/uploads/1792957207141-fd67cddb.webp",
+    "frontImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "backImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "priceRub": 750,
+    "categoryOrder": 8,
+    "varioSmoothing": 0.18,
+    "frontImageWidth": 600,
+    "frontImageHeight": 900
+  },
+  {
+    "id": "b40a1705-87a7-4520-a759-b45f581d2daa",
+    "title": "Кимико",
+    "description": "Кимико — неудержимая сила, сочетающая невероятную скорость, свирепость и почти мгновенную регенерацию. Она способна выдерживать тяжелейшие ранения, восстанавливаться после смертельных повреждений и продолжать бой с пугающей яростью. В ближнем бою Кимико превращается в настоящую машину разрушения: её молниеносные атаки не оставляют противнику времени на ответ. За внешней жестокостью скрывается девушка, пережившая немыслимые испытания и нашедшая в своей новой семье причину продолжать борьбу. Чем сильнее враг пытается её остановить, тем опаснее становится Кимико.",
+    "category": "The Boys",
+    "subcategory": "",
+    "frontImage": "/uploads/1792957285493-4b2ab2d3.webp",
+    "backImage": "/uploads/1792957288234-d5aa3123.webp",
+    "price": 25,
+    "rarity": "novelty",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "isNew": true,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": true,
+    "ratingAvg": 5,
+    "reviewCount": 0,
+    "rarities": [
+      "novelty",
+      "common"
+    ],
+    "noveltySince": "2026-10-25T19:41:28.869Z",
+    "effect": "vario",
+    "categoryBg": "/uploads/1792957279302-b8fc798f.webp",
+    "frontImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "backImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "priceRub": 750,
+    "categoryOrder": 7,
+    "varioSmoothing": 0.18,
+    "frontImageWidth": 600,
+    "frontImageHeight": 900
   }
 ]

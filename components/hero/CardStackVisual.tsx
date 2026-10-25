@@ -539,6 +539,13 @@ export function CardStackVisual({
         if (fi) fi.style.transform = "";
         if (bi) bi.style.transform = "";
       }
+    } else {
+      /* Карусель новинок не размонтирует стопку: opacity с варио иначе
+         остаётся на переиспользованном .card-main → чёрная карточка. */
+      if (front) front.style.opacity = "1";
+      if (back) back.style.opacity = "";
+      if (mid) mid.style.opacity = "";
+      if (ultra) ultra.style.opacity = "1";
     }
     if (lenticularRef.current) {
       lenticularRef.current.style.setProperty("--lenticular-x", "0.5");
@@ -685,7 +692,7 @@ export function CardStackVisual({
 
   const back = card.backImage?.trim() ?? "";
   const middle = card.middleImage?.trim() ?? "";
-  const frontMediaSrc = mediaInView ? front : "";
+  const frontMediaSrc = front;
   const ultraMediaSrc =
     mediaInView && !hideUltraLayer ? ultraBgUrl.trim() : "";
   const extraMediaReady =
@@ -846,7 +853,10 @@ export function CardStackVisual({
               }}
             >
               <div className="absolute inset-0 [transform-style:preserve-3d]">
-                <div className="card-face-lenticular-thick absolute inset-0 isolate overflow-visible rounded-2xl bg-black">
+                <div
+                  key={`${card.id}-${hasVario ? "vario" : "face"}`}
+                  className="card-face-lenticular-thick absolute inset-0 isolate overflow-visible rounded-2xl bg-black"
+                >
                   {hasVario ? (
                     <>
                       <div

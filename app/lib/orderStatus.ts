@@ -93,14 +93,12 @@ export function isCustomerAccountOrderStatus(status: OrderStatus): boolean {
   return status !== "new" && status !== "confirmed";
 }
 
-/** Корзина на сайте очищается в момент оплаты, не раньше. */
+/**
+ * Корзина на сайте очищается только когда оплата подтверждена (`paid`).
+ * «Принят», отправка и доставка сами по себе корзину не трогают.
+ */
 export function shouldClearSiteCartForOrderStatus(status: OrderStatus): boolean {
-  return (
-    status === "paid" ||
-    status === "shipped" ||
-    status === "sent" ||
-    status === "delivered"
-  );
+  return status === "paid";
 }
 
 /** Три основных состояния в ЛК + отмена. */

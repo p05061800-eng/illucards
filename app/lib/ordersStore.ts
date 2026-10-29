@@ -802,6 +802,21 @@ export async function listRecentOrders(limit = 40): Promise<AdminOrderRow[]> {
   });
 }
 
+async function clearSiteCartAfterPayment(userId: number): Promise<void> {
+  try {
+    const st = await clearSyncedCartForTelegramUser(userId);
+    await notifyTelegramWebhookUserState({
+      userId,
+      cart: st.cart,
+      favorites: st.favorites,
+      deliveryCountry: st.deliveryCountry,
+      cartClearedAt: st.cartClearedAt,
+    });
+  } catch {
+    /* очистка корзины не должна ломать смену статуса */
+  }
+}
+
 export async function updateOrderStatus(
   orderId: string,
   status: OrderStatus,
@@ -816,6 +831,14 @@ export async function updateOrderStatus(
     return { ok: false, error: "Заказ не найден", status: 404 };
   }
   if (isOrderStatusRegression(existing.status, status)) {
+    if (
+      status === "paid" &&
+      existing.status !== "paid" &&
+      existing.user_id != null &&
+      existing.user_id > 0
+    ) {
+      await clearSiteCartAfterPayment(Math.floor(existing.user_id));
+    }
     return { ok: true };
   }
 
@@ -847,19 +870,7 @@ export async function updateOrderStatus(
     existing.user_id != null &&
     existing.user_id > 0
   ) {
-    const uid = Math.floor(existing.user_id);
-    try {
-      const st = await clearSyncedCartForTelegramUser(uid);
-      await notifyTelegramWebhookUserState({
-        userId: uid,
-        cart: st.cart,
-        favorites: st.favorites,
-        deliveryCountry: st.deliveryCountry,
-        cartClearedAt: st.cartClearedAt,
-      });
-    } catch {
-      /* очистка корзины не должна ломать смену статуса */
-    }
+    await clearSiteCartAfterPayment(Math.floor(existing.user_id));
   }
 
   return { ok: true };

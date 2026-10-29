@@ -33,7 +33,7 @@ function writeScroll(key: string, y: number): void {
 }
 
 function shouldDeferToCatalogAnchor(pathname: string): boolean {
-  if (pathname !== "/") return false;
+  if (pathname !== "/" && !pathname.startsWith("/collection/")) return false;
   if (peekCatalogReturnCardId()) return true;
   if (typeof window !== "undefined" && parseCatalogCardIdFromHash(window.location.hash)) {
     return true;

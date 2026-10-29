@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { BadgePercent, Heart, ShieldCheck, SlidersHorizontal, Truck } from "lucide-react";
+import { BadgePercent, Heart, ShieldCheck, Truck } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { StoredCard } from "../../api/cards/route";
 import type { UserReviewEntry } from "@/app/lib/userReviews";
@@ -14,16 +14,14 @@ import { useMergedRating } from "../../context/CardRatingsContext";
 import { useFavorites } from "../../context/FavoritesContext";
 import { useAddToCartWithFeedback } from "../../lib/cartUx/useAddToCartWithFeedback";
 import {
-  EMPTY_TYPE_FILTER,
   filterCollectionCards,
   sortCardsByPrice,
   sortSectionCardsForDefaultCatalog,
 } from "@/app/lib/collectionFilter";
-import {
-  catalogCardAnchorId,
-  rememberCatalogReturnCardId,
-} from "../../lib/catalogScrollRestore";
+import { rememberCatalogReturnCardId } from "../../lib/catalogScrollRestore";
+import { CatalogBackLink } from "@/app/components/CatalogBackLink";
 import { collectionPath } from "../../lib/collectionAnchor";
+import { IMAGE_W, sizedImageSrc } from "../../lib/sizedImage";
 import {
   isTmntCategory,
   resolveTmntCollections,
@@ -35,6 +33,7 @@ import {
   cardArtFaceObjectFitClass,
 } from "../../lib/imageFocus";
 import { useCatalogFilter } from "@/app/context/CatalogFilterContext";
+import { useCategoryPlateHighlight } from "@/app/context/CategoryFramesContext";
 import { CardPriceDualRow } from "../../components/CardPriceDualRow";
 import {
   AdultContentBlurGate,
@@ -49,6 +48,8 @@ import { CatalogCardRarityFrame } from "../../components/CatalogCardRarityFrame"
 import { useAdultContentGateOptional } from "../../context/AdultContentContext";
 import { ProductReviewsSection } from "../../components/ProductReviewsSection";
 import { CardProductGallery } from "./CardProductGallery";
+import { CustomOrderBuyPanel } from "./CustomOrderBuyPanel";
+import { isCustomOrderCategory } from "@/app/lib/customOrderHeroCarousel";
 import type { CardRarity } from "../../lib/cardRarityTags";
 import {
   formatRarityLabelsRu,
@@ -119,7 +120,7 @@ function MiniRailCard({ card: c }: { card: StoredCard }) {
           <AdultContentBlurGate isAdult={needs18} cardId={c.id}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
-              src={img}
+              src={sizedImageSrc(img, IMAGE_W.compact)}
               alt=""
               className={`block h-auto w-full max-w-full ${cardArtFaceObjectFitClass(c.cardArtFramePreset)}`}
               style={cardArtFaceFitStyle(
@@ -207,31 +208,27 @@ type Props = {
 export default function CardProductContent({
   card,
   categoryCards,
-  categoryNames = [],
-  firstCardIdByCategory = {},
   tmntCollections = resolveTmntCollections(),
 }: Props) {
   const [favoritePopup, setFavoritePopup] = useState(false);
   const { isFavorite, toggleFavorite } = useFavorites();
   const {
     search,
-    setSearch,
     categoryFilter,
-    setCategoryFilter,
     typeFilter,
-    setTypeFilter,
     toggleType,
     priceSort,
-    setPriceSort,
     filtersOpen,
-    setFiltersOpen,
   } = useCatalogFilter();
+  const { setHighlightCategory } = useCategoryPlateHighlight();
   const router = useRouter();
   const liked = isFavorite(card.id);
   const addToCartWithFeedback = useAddToCartWithFeedback();
   const rarityUi = primaryRarityForUi(card);
   const rarityLine = formatRarityLabelsRu(card);
-  const backHref = `${collectionPath(card.category)}#${catalogCardAnchorId(card.id)}`;
+  const backHref = card.category?.trim()
+    ? collectionPath(card.category)
+    : "/collection";
   const inStock = card.inStock !== false;
   const merged = useMergedRating(card);
   const adminReviews = card.reviews ?? [];
@@ -254,47 +251,13 @@ export default function CardProductContent({
     rememberCatalogReturnCardId(card.id);
   }, [card.id]);
 
+  useEffect(() => {
+    const name = card.category?.trim() ?? "";
+    setHighlightCategory(name);
+    return () => setHighlightCategory("");
+  }, [card.category, card.id, setHighlightCategory]);
+
   const moreFromCategory = categoryCards.filter((c) => c.id !== card.id);
-
-  const allCategoryNames = useMemo(() => {
-    if (categoryNames.length > 0) return categoryNames;
-    return [
-      ...new Set(
-        categoryCards
-          .map((c) => c.category?.trim() ?? "")
-          .filter((n) => n.length > 0),
-      ),
-    ].sort((a, b) => a.localeCompare(b, "ru"));
-  }, [categoryNames, categoryCards]);
-
-  const openCategory = useCallback(
-    (categoryName: string) => {
-      const normalized = categoryName.trim();
-      const firstId = firstCardIdByCategory[normalized];
-      if (firstId) {
-        router.push(`/card/${firstId}`);
-        return;
-      }
-
-      setSearch("");
-      setCategoryFilter("");
-      setTypeFilter(EMPTY_TYPE_FILTER);
-      setPriceSort("default");
-      router.push(collectionPath(categoryName));
-    },
-    [
-      firstCardIdByCategory,
-      router,
-      setCategoryFilter,
-      setPriceSort,
-      setSearch,
-      setTypeFilter,
-    ],
-  );
-
-  const openFilterPanel = useCallback(() => {
-    setFiltersOpen((open) => !open);
-  }, [setFiltersOpen]);
 
   /**
    * Листание стрелками: только карточки выбранной категории (или категории текущей карточки),
@@ -341,111 +304,37 @@ export default function CardProductContent({
     <>
       <FavoritePopup show={favoritePopup} onClose={() => setFavoritePopup(false)} />
 
-      <div className="relative z-10 mx-auto flex w-full max-w-[1200px] flex-col gap-7 px-4 pb-20 pt-5 sm:gap-8 sm:px-5 sm:pt-8 lg:gap-10 lg:px-8 xl:max-w-[1240px] xl:px-10">
-        <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <Link
-            href={backHref}
-            className="inline-flex items-center gap-1.5 text-xs font-medium text-zinc-400 transition-colors hover:text-purple-300 sm:text-sm"
-          >
-            <span aria-hidden className="text-base leading-none sm:text-lg">
-              ←
-            </span>
-            Назад к коллекции
-          </Link>
-
-          <div className="flex min-w-0 flex-1 items-center justify-end gap-2">
-            <div className="flex min-w-0 flex-wrap gap-2 overflow-x-auto pb-1 scrollbar-hide">
-              {allCategoryNames.map((name) => (
-                <button
-                  key={name}
-                  type="button"
-                  onClick={() => openCategory(name)}
-                  className={`inline-flex shrink-0 items-center justify-center rounded-full border px-3 py-1.5 text-xs font-semibold transition ${
-                    name === card.category
-                      ? "border-violet-400/70 bg-violet-500/15 text-violet-100"
-                      : "border-white/10 bg-white/5 text-zinc-300 hover:border-violet-400/30 hover:bg-white/10 hover:text-white"
-                  }`}
-                >
-                  {name}
-                </button>
-              ))}
-            </div>
-            <button
-              type="button"
-              onClick={openFilterPanel}
-              className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-black/60 px-4 py-2 text-sm font-semibold text-white transition hover:border-violet-400/30 hover:bg-violet-950/60"
-            >
-              <SlidersHorizontal className="h-4 w-4 text-violet-300" aria-hidden />
-              {filtersOpen ? "Свернуть фильтр" : "Фильтр"}
-            </button>
-          </div>
-        </div>
+      <div className="relative z-10 mx-auto flex w-full max-w-[1200px] flex-col gap-5 px-4 pb-20 pt-2 sm:gap-6 sm:px-5 sm:pt-4 lg:gap-8 lg:px-8 xl:max-w-[1240px] xl:px-10">
+        <CatalogBackLink href={backHref} parent="collection" showFilter />
 
         {filtersOpen ? (
           <div className="mb-4 rounded-2xl border border-white/10 bg-zinc-950/80 p-4 text-sm text-zinc-200 shadow-[0_0_30px_rgba(0,0,0,0.25)]">
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div>
-                <label className="mb-2 block text-xs font-semibold uppercase tracking-wide text-zinc-400">
-                  Категория
-                </label>
-                <div className="flex flex-wrap gap-2">
+            <div>
+              <label className="mb-2 block text-xs font-semibold uppercase tracking-wide text-zinc-400">
+                Тип карточки
+              </label>
+              <div className="grid gap-2 sm:grid-cols-2">
+                {[
+                  { key: "adult", label: "18+" },
+                  { key: "limited", label: "Лимитированные" },
+                  { key: "common", label: "Обычные" },
+                  { key: "replica", label: "Реплики" },
+                  { key: "hotPrice", label: "Горячая цена" },
+                  { key: "novelties", label: "Новинки" },
+                ].map(({ key, label }) => (
                   <button
+                    key={key}
                     type="button"
-                    onClick={() => {
-                      setCategoryFilter("");
-                    }}
+                    onClick={() => toggleType(key as keyof typeof typeFilter)}
                     className={`inline-flex items-center justify-center rounded-full border px-3 py-1.5 text-xs font-semibold transition ${
-                      !categoryFilter
+                      typeFilter[key as keyof typeof typeFilter]
                         ? "border-violet-400/70 bg-violet-500/15 text-violet-100"
                         : "border-white/10 bg-white/5 text-zinc-300 hover:border-violet-400/30 hover:bg-white/10 hover:text-white"
                     }`}
                   >
-                    Все категории
+                    {label}
                   </button>
-                  {allCategoryNames.map((name) => (
-                    <button
-                      key={`filter-${name}`}
-                      type="button"
-                      onClick={() => setCategoryFilter(name)}
-                      className={`inline-flex shrink-0 items-center justify-center rounded-full border px-3 py-1.5 text-xs font-semibold transition ${
-                        categoryFilter === name
-                          ? "border-violet-400/70 bg-violet-500/15 text-violet-100"
-                          : "border-white/10 bg-white/5 text-zinc-300 hover:border-violet-400/30 hover:bg-white/10 hover:text-white"
-                      }`}
-                    >
-                      {name}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div>
-                <label className="mb-2 block text-xs font-semibold uppercase tracking-wide text-zinc-400">
-                  Тип карточки
-                </label>
-                <div className="grid gap-2 sm:grid-cols-2">
-                  {[
-                    { key: "adult", label: "18+" },
-                    { key: "limited", label: "Лимитированные" },
-                    { key: "common", label: "Обычные" },
-                    { key: "replica", label: "Реплики" },
-                    { key: "hotPrice", label: "Горячая цена" },
-                    { key: "novelties", label: "Новинки" },
-                  ].map(({ key, label }) => (
-                    <button
-                      key={key}
-                      type="button"
-                      onClick={() => toggleType(key as keyof typeof typeFilter)}
-                      className={`inline-flex items-center justify-center rounded-full border px-3 py-1.5 text-xs font-semibold transition ${
-                        typeFilter[key as keyof typeof typeFilter]
-                          ? "border-violet-400/70 bg-violet-500/15 text-violet-100"
-                          : "border-white/10 bg-white/5 text-zinc-300 hover:border-violet-400/30 hover:bg-white/10 hover:text-white"
-                      }`}
-                    >
-                      {label}
-                    </button>
-                  ))}
-                </div>
+                ))}
               </div>
             </div>
           </div>
@@ -541,35 +430,59 @@ export default function CardProductContent({
 
             <CardPriceDualRow card={card} variant="product" />
 
-            <div className="mb-6 flex w-full max-w-xl flex-col gap-2.5 sm:max-w-none sm:flex-row sm:gap-3">
-              <button
-                type="button"
-                disabled={!inStock}
-                onClick={() => {
-                  const source = document.querySelector("[data-cart-fly-source]");
-                  addToCartWithFeedback(card, source as HTMLElement | null);
-                }}
-                className="w-full rounded-xl border border-purple-500/45 bg-purple-950/40 px-4 py-2.5 text-sm font-semibold text-purple-100 transition hover:border-purple-400/55 hover:bg-purple-900/50 disabled:cursor-not-allowed disabled:opacity-40"
-              >
-                В корзину
-              </button>
-              <button
-                type="button"
-                onClick={onFavoriteClick}
-                aria-pressed={liked}
-                className={`flex w-full items-center justify-center gap-2 rounded-xl py-2.5 text-sm font-semibold transition sm:min-w-[160px] ${
-                  liked
-                    ? "border border-rose-500/50 bg-rose-950/50 text-rose-100 shadow-[0_0_24px_rgba(244,63,94,0.2)] ring-1 ring-rose-400/35 hover:bg-rose-950/70"
-                    : "border border-white/15 bg-zinc-900/80 text-zinc-100 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] hover:border-rose-500/40 hover:bg-zinc-800/90 hover:text-white"
-                }`}
-              >
-                <Heart
-                  className={`h-4 w-4 shrink-0 ${liked ? "fill-rose-400 text-rose-400" : "text-zinc-300"}`}
-                  aria-hidden
-                />
-                {liked ? "В избранном" : "В избранное"}
-              </button>
-            </div>
+            {isCustomOrderCategory(card.category) ? (
+              <>
+                <CustomOrderBuyPanel card={card} inStock={inStock} />
+                <div className="mb-6 flex w-full max-w-xl sm:max-w-none">
+                  <button
+                    type="button"
+                    onClick={onFavoriteClick}
+                    aria-pressed={liked}
+                    className={`flex w-full items-center justify-center gap-2 rounded-xl py-2.5 text-sm font-semibold transition sm:min-w-[160px] ${
+                      liked
+                        ? "border border-rose-500/50 bg-rose-950/50 text-rose-100 shadow-[0_0_24px_rgba(244,63,94,0.2)] ring-1 ring-rose-400/35 hover:bg-rose-950/70"
+                        : "border border-white/15 bg-zinc-900/80 text-zinc-100 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] hover:border-rose-500/40 hover:bg-zinc-800/90 hover:text-white"
+                    }`}
+                  >
+                    <Heart
+                      className={`h-4 w-4 shrink-0 ${liked ? "fill-rose-400 text-rose-400" : "text-zinc-300"}`}
+                      aria-hidden
+                    />
+                    {liked ? "В избранном" : "В избранное"}
+                  </button>
+                </div>
+              </>
+            ) : (
+              <div className="mb-6 flex w-full max-w-xl flex-col gap-2.5 sm:max-w-none sm:flex-row sm:gap-3">
+                <button
+                  type="button"
+                  disabled={!inStock}
+                  onClick={() => {
+                    const source = document.querySelector("[data-cart-fly-source]");
+                    addToCartWithFeedback(card, source as HTMLElement | null);
+                  }}
+                  className="w-full rounded-xl border border-purple-500/45 bg-purple-950/40 px-4 py-2.5 text-sm font-semibold text-purple-100 transition hover:border-purple-400/55 hover:bg-purple-900/50 disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  В корзину
+                </button>
+                <button
+                  type="button"
+                  onClick={onFavoriteClick}
+                  aria-pressed={liked}
+                  className={`flex w-full items-center justify-center gap-2 rounded-xl py-2.5 text-sm font-semibold transition sm:min-w-[160px] ${
+                    liked
+                      ? "border border-rose-500/50 bg-rose-950/50 text-rose-100 shadow-[0_0_24px_rgba(244,63,94,0.2)] ring-1 ring-rose-400/35 hover:bg-rose-950/70"
+                      : "border border-white/15 bg-zinc-900/80 text-zinc-100 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] hover:border-rose-500/40 hover:bg-zinc-800/90 hover:text-white"
+                  }`}
+                >
+                  <Heart
+                    className={`h-4 w-4 shrink-0 ${liked ? "fill-rose-400 text-rose-400" : "text-zinc-300"}`}
+                    aria-hidden
+                  />
+                  {liked ? "В избранном" : "В избранное"}
+                </button>
+              </div>
+            )}
 
             <section className="mb-6 rounded-xl border border-white/[0.06] bg-black/20 p-4 sm:p-5">
               <h2 className="mb-2 text-xs font-semibold uppercase tracking-wide text-zinc-500">

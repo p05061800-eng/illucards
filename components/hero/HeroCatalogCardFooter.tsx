@@ -53,7 +53,7 @@ export function HeroCatalogCardFooter({
         <Link
           href={`/card/${card.id}`}
           onClick={() => stashProductCard(card)}
-          className="min-w-0 flex-1 touch-manipulation text-center transition hover:text-amber-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300/60"
+          className="hero-limited-card-title-link min-w-0 flex-1 touch-manipulation text-center transition hover:text-amber-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300/60"
         >
           <h3
             className={`hero-limited-card-title font-semibold text-white ${
@@ -64,7 +64,7 @@ export function HeroCatalogCardFooter({
           </h3>
         </Link>
 
-        <div className="flex shrink-0 items-center gap-2">
+        <div className="hero-limited-card-actions flex shrink-0 items-center gap-2">
           <button
             type="button"
             onClick={handleFavorite}

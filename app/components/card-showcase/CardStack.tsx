@@ -20,6 +20,7 @@ import {
 } from "../../lib/imageFocus";
 import { RARITY_STYLES } from "../../lib/cardRarityUi";
 import { stashProductCard } from "../../lib/productCardPreview";
+import { IMAGE_W, sizedImageSrc } from "../../lib/sizedImage";
 import { Card3D } from "./Card3D";
 
 function categoryGlowRgba(category: string | undefined): string {
@@ -55,7 +56,7 @@ function DecorCard({
       ? `0 0 40px ${glow}, 0 12px 32px rgba(0,0,0,0.32)`
       : `0 0 26px ${glow}, 0 12px 30px rgba(0,0,0,0.34)`;
 
-  const src = safeFront(card.frontImage);
+  const src = sizedImageSrc(safeFront(card.frontImage), IMAGE_W.compact);
   const faceCls = cardArtFaceObjectFitClass(card.cardArtFramePreset);
   const fixed = isFixedCardArtFramePreset(card.cardArtFramePreset);
   const fixedShell = cardArtFixedFrameShellClass(fixed);

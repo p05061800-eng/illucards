@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { notFound } from "next/navigation";
+import { CatalogBackLink } from "@/app/components/CatalogBackLink";
 import { HomeCollection } from "@/app/components/HomeCollection";
 import { toStorefrontCard } from "@/app/lib/cardsJson";
 import {
@@ -82,14 +82,9 @@ export default async function CollectionSlugPage({ params }: PageProps) {
     <main className="main relative min-h-screen overflow-x-hidden text-white">
       <div
         id="collection"
-        className="mx-auto w-full max-w-[min(100%,1800px)] scroll-mt-24 px-5 pb-16 pt-6 sm:px-10 sm:pb-20 sm:pt-8"
+        className="mx-auto w-full max-w-[min(100%,1800px)] scroll-mt-24 px-5 pb-16 pt-3 sm:px-10 sm:pb-20 sm:pt-5"
       >
-        <Link
-          href="/collection"
-          className="mb-6 inline-flex text-sm font-medium text-violet-300/90 transition hover:text-violet-200 hover:underline"
-        >
-          ← Все коллекции
-        </Link>
+        <CatalogBackLink href="/collection" parent="categories" showFilter />
         <h1 className="sr-only">{data.name}</h1>
         <HomeCollection
           cards={data.cards}

@@ -2,15 +2,18 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useId } from "react";
+import { useId, useMemo } from "react";
 import { useCart } from "../context/CartContext";
+import { CartLineQtyBlock } from "../components/cart/CartLineQtyBlock";
+import { cartLineKey, isCustomOrderLine } from "../lib/customOrderPricing";
 import { useCurrency } from "../context/CurrencyContext";
 import { useCategoryTiles } from "../context/CategoryFramesContext";
 import { getCardArtIntrinsicSize } from "../lib/cardArtIntrinsicSize";
-import { displayCurrencyForDelivery, formatCardPrice } from "../lib/formatPrice";
+import { displayCurrencyForDelivery } from "../lib/formatPrice";
 import { TelegramCheckoutButton } from "@/components/checkout/TelegramCheckoutButton";
 import { DeliveryCountryField } from "../components/DeliveryCountryField";
 import { CartOrderTotals } from "../components/cart/CartOrderTotals";
+import { IMAGE_W, sizedImageSrc } from "../lib/sizedImage";
 
 export default function CartView() {
   const {
@@ -25,12 +28,24 @@ export default function CartView() {
     orderTotalRub,
     removeFromCart,
     setQuantity,
+    setCopyQuantity,
     hydrated,
   } = useCart();
   const { currency, setCurrency } = useCurrency();
   const priceCurrency = displayCurrencyForDelivery(deliveryCountry);
   const categoryTiles = useCategoryTiles();
   const deliveryFieldId = useId();
+  const customIndexByKey = useMemo(() => {
+    const map = new Map<string, number>();
+    let n = 0;
+    for (const line of cartItems) {
+      if (isCustomOrderLine(line)) {
+        n += 1;
+        map.set(cartLineKey(line), n);
+      }
+    }
+    return map;
+  }, [cartItems]);
 
   return (
     <>
@@ -56,13 +71,13 @@ export default function CartView() {
             <ul className="space-y-2">
               {cartItems.map((line) => (
                 <li
-                  key={line.id}
+                  key={cartLineKey(line)}
                   className="flex items-center gap-3 rounded-xl border border-white/10 bg-white/[0.04] p-2.5 sm:p-3"
                 >
                   <div className="flex w-[4.25rem] shrink-0 items-start justify-center self-start overflow-visible rounded-lg bg-zinc-900 ring-1 ring-white/10 sm:w-[5rem]">
                     {line.frontImage ? (
                       <Image
-                        src={line.frontImage}
+                        src={sizedImageSrc(line.frontImage, IMAGE_W.thumb)}
                         alt={line.title}
                         width={
                           getCardArtIntrinsicSize(line.category, categoryTiles).width
@@ -72,10 +87,7 @@ export default function CartView() {
                         }
                         className="h-auto w-full rounded-lg"
                         sizes="80px"
-                        unoptimized={
-                          line.frontImage.startsWith("/") ||
-                          line.frontImage.startsWith("data:")
-                        }
+                        unoptimized
                         style={{
                           width: "100%",
                           height: "auto",
@@ -88,57 +100,14 @@ export default function CartView() {
                       </div>
                     )}
                   </div>
-                  <div className="flex min-w-0 flex-1 flex-col gap-1.5">
-                    <Link
-                      href={`/card/${line.id}`}
-                      className="line-clamp-2 text-sm font-semibold leading-snug text-white transition hover:text-purple-200 sm:text-base"
-                    >
-                      {line.title}
-                    </Link>
-                    <p className="text-sm font-medium tabular-nums text-purple-200/90">
-                      {formatCardPrice(
-                        line.priceByn * line.quantity,
-                        priceCurrency,
-                        priceCurrency === "RUB"
-                          ? line.priceRub * line.quantity
-                          : undefined,
-                      )}
-                      <span className="font-normal text-zinc-500">
-                        {" "}
-                        · {line.quantity} шт.
-                      </span>
-                    </p>
-                    <div className="flex items-center gap-2">
-                      <div className="inline-flex items-center rounded-md border border-white/15 bg-black/30 text-sm">
-                        <button
-                          type="button"
-                          onClick={() => setQuantity(line.id, line.quantity - 1)}
-                          className="px-2.5 py-1 text-zinc-300 transition hover:bg-white/10 hover:text-white"
-                          aria-label="Уменьшить"
-                        >
-                          −
-                        </button>
-                        <span className="min-w-[1.75rem] px-1.5 text-center tabular-nums text-zinc-200">
-                          {line.quantity}
-                        </span>
-                        <button
-                          type="button"
-                          onClick={() => setQuantity(line.id, line.quantity + 1)}
-                          className="px-2.5 py-1 text-zinc-300 transition hover:bg-white/10 hover:text-white"
-                          aria-label="Увеличить"
-                        >
-                          +
-                        </button>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => removeFromCart(line.id)}
-                        className="text-xs text-zinc-500 transition hover:text-red-400"
-                      >
-                        Удалить
-                      </button>
-                    </div>
-                  </div>
+                  <CartLineQtyBlock
+                    line={line}
+                    customIndex={customIndexByKey.get(cartLineKey(line)) ?? null}
+                    priceCurrency={priceCurrency}
+                    onSetQuantity={setQuantity}
+                    onSetCopyQuantity={setCopyQuantity}
+                    onRemove={removeFromCart}
+                  />
                 </li>
               ))}
             </ul>

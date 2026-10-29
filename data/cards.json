@@ -10244,13 +10244,18 @@
       "intelligence": 50,
       "magic": 50
     },
-    "effect": "3d-horizontal",
-    "isNew": false,
+    "isNew": true,
     "isPopular": false,
     "isSale": false,
     "inStock": true,
     "ratingAvg": 5,
     "reviewCount": 0,
+    "rarities": [
+      "novelty",
+      "common"
+    ],
+    "noveltySince": "2026-10-25T19:58:40.155Z",
+    "effect": "3d-horizontal",
     "categoryBg": "/uploads/1792958306515-34b526e8.webp",
     "frontImageFocus": {
       "x": 50,
@@ -10260,14 +10265,150 @@
       "x": 50,
       "y": 50
     },
-    "categoryOrder": 3,
     "priceRub": 800,
+    "categoryOrder": 3,
+    "frontImageWidth": 600,
+    "frontImageHeight": 900
+  },
+  {
+    "id": "eedad9d1-f941-4946-9997-abb745ddcc48",
+    "title": "Серебряный Страж",
+    "description": "Серебряный Страж — живая крепость, чья невероятная физическая мощь сочетается с несокрушимой волей. Его прочное тело выдерживает сокрушительные удары, а каждый выпад способен переломить ход сражения. Когда он высвобождает свою энергию, тело окутывает ослепительное голубое сияние, превращая его в настоящую бурю силы. Хладнокровный, выносливый и беспощадный к врагам, он не отступает даже перед самым опасным противником. Когда вспыхивает синяя молния, становится ясно: на поле боя появился тот, кого невозможно остановить.",
+    "category": "TMNT",
+    "subcategory": "foes",
+    "frontImage": "/uploads/1792970288091-976123e4.webp",
+    "backImage": "/uploads/1792970294370-5e5bb02e.webp",
+    "price": 25,
+    "rarity": "novelty",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "isNew": true,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": true,
+    "ratingAvg": 5,
+    "reviewCount": 0,
+    "rarities": [
+      "common",
+      "novelty"
+    ],
+    "noveltySince": "2026-10-25T23:18:24.051Z",
+    "effect": "vario",
+    "categoryBg": "/uploads/1792970054675-a44c4a1f.webp",
+    "frontImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "backImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "priceRub": 750,
+    "categoryOrder": 34,
+    "varioSmoothing": 0.18,
+    "frontImageWidth": 761,
+    "frontImageHeight": 1024
+  },
+  {
+    "id": "271ceee7-160c-472e-b8ed-977db276902f",
+    "title": "Какаши Хатаке",
+    "description": "Какаши Хатаке — гениальный ниндзя, чьё спокойствие скрывает смертоносную точность и огромный боевой опыт. Прозванный Копирующим ниндзя, он способен предугадывать движения противника, мгновенно анализировать ситуацию и обращать чужие техники против их владельца. Его Шаринган открывает доступ к невероятным возможностям, а техника «Чидори» превращает молнию в оружие сокрушительной силы. За маской невозмутимости скрывается стратег, который на несколько шагов опережает врага. Какаши не нужно превосходить противника силой — ему достаточно понять его слабость раньше, чем тот успеет нанести удар.",
+    "category": "Naruto",
+    "subcategory": "",
+    "frontImage": "/uploads/1792970380137-62d46587.webp",
+    "backImage": "/uploads/1792970385581-b5f32b50.webp",
+    "price": 25,
+    "rarity": "novelty",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "isNew": true,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": true,
+    "ratingAvg": 5,
+    "reviewCount": 0,
+    "rarities": [
+      "common",
+      "novelty"
+    ],
+    "noveltySince": "2026-10-25T23:19:46.686Z",
+    "effect": "vario",
+    "categoryBg": "/uploads/1792970358786-933c41fc.webp",
+    "frontImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "backImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "priceRub": 750,
+    "categoryOrder": 9,
+    "varioSmoothing": 0.18,
+    "frontImageWidth": 600,
+    "frontImageHeight": 900
+  },
+  {
+    "id": "9d147fed-ed96-4190-984a-62be81e7f8db",
+    "title": "Саске Учиха",
+    "description": "Саске Учиха — гений клана Учиха, чья сила рождается из непреклонной воли и стремления к совершенству. Обладатель Шарингана, он способен предугадывать движения противника, мгновенно копировать техники и находить слабости даже самых опытных шиноби. Его молниеносная техника «Чидори» превращает чакру в разрушительный разряд, а холодный расчёт делает каждую атаку смертельно точной. За внешней сдержанностью скрывается воин, готовый бросить вызов любому врагу. Когда Саске собирает чакру в ладони, вспышка молнии становится последним предупреждением перед сокрушительным ударом.",
+    "category": "Naruto",
+    "subcategory": "",
+    "frontImage": "/uploads/1792970465857-6c09da6f.webp",
+    "backImage": "/uploads/1792970473934-bdcd8270.webp",
+    "price": 25,
+    "rarity": "novelty",
+    "stats": {
+      "power": 50,
+      "speed": 50,
+      "intelligence": 50,
+      "magic": 50
+    },
+    "effect": "vario",
+    "isNew": false,
+    "isPopular": false,
+    "isSale": false,
+    "inStock": true,
+    "ratingAvg": 5,
+    "reviewCount": 0,
+    "categoryBg": "/uploads/1792970454944-aa4a775b.webp",
+    "frontImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "backImageFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryBgFocus": {
+      "x": 50,
+      "y": 50
+    },
+    "categoryOrder": 8,
+    "priceRub": 750,
+    "varioSmoothing": 0.18,
     "frontImageWidth": 600,
     "frontImageHeight": 900,
     "rarities": [
-      "novelty",
-      "common"
+      "common",
+      "novelty"
     ],
-    "noveltySince": "2026-10-25T19:58:40.155Z"
+    "noveltySince": "2026-10-25T23:21:15.224Z"
   }
 ]

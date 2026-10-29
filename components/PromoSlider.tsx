@@ -27,6 +27,7 @@ import {
   type PromoSlide,
 } from "@/app/lib/promoSlidesJson";
 import { ProductCardNavArrowIcon } from "@/app/components/card-showcase/CardViewer";
+import { IMAGE_W, sizedImageSrc } from "@/app/lib/sizedImage";
 import { CardStackVisual } from "@/components/hero/CardStackVisual";
 
 /** Как в «Новинках»: горизонтальный жест переключает слайд. */
@@ -263,7 +264,7 @@ function PromoLinkedMedia({
     ) : (
       // eslint-disable-next-line @next/next/no-img-element -- баннеры из /uploads/
       <img
-        src={src}
+        src={sizedImageSrc(src, IMAGE_W.banner)}
         alt=""
         className="hero-promo-tile-img pointer-events-none"
         draggable={false}
@@ -335,7 +336,13 @@ function PromoLinkedMedia({
   );
 }
 
-function PromoCtaStack({ examplesHref }: { examplesHref: string }) {
+function PromoCtaStack({
+  examplesHref,
+  orderHref,
+}: {
+  examplesHref: string;
+  orderHref?: string;
+}) {
   return (
     <div className="hero-promo-cta-stack">
       {examplesHref ? (
@@ -354,12 +361,11 @@ function PromoCtaStack({ examplesHref }: { examplesHref: string }) {
           </Link>
         )
       ) : null}
-      <span
-        className="hero-promo-cta hero-promo-cta--coming-soon"
-        aria-disabled="true"
-      >
-        (в разработке)
-      </span>
+      {orderHref ? (
+        <Link href={orderHref} className="hero-promo-cta">
+          Заказать
+        </Link>
+      ) : null}
     </div>
   );
 }
@@ -520,7 +526,10 @@ function CustomOrderCarousel({
                   >
                     <ProductCardNavArrowIcon direction="next" />
                   </button>
-                  <PromoCtaStack examplesHref={examplesHref} />
+                  <PromoCtaStack
+                    examplesHref={examplesHref}
+                    orderHref={`/card/${activeCard.id}`}
+                  />
                 </div>
               </div>
             </div>
@@ -532,7 +541,7 @@ function CustomOrderCarousel({
                 <div className="hero-custom-order-card-shell">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
-                    src={fallbackImageUrl}
+                    src={sizedImageSrc(fallbackImageUrl, IMAGE_W.card)}
                     alt=""
                     className="hero-custom-order-fallback-img"
                     draggable={false}

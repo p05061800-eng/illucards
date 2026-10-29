@@ -1,7 +1,7 @@
 [
   {
     "name": "Marvel",
-    "image": "/uploads/1775862470555-c10f414f.webp",
+    "image": "/uploads/1792976389442-0771a27a.webp",
     "imageFocus": {
       "x": 50,
       "y": 50
@@ -14,7 +14,7 @@
   },
   {
     "name": "DC",
-    "image": "/uploads/1775830368614-503626c4.webp",
+    "image": "/uploads/1792986767468-5fa2017d.webp",
     "imageFocus": {
       "x": 50,
       "y": 50
@@ -27,7 +27,7 @@
   },
   {
     "name": "TMNT",
-    "image": "/uploads/1776041136317-7f9b736c.webp",
+    "image": "/uploads/1792979567701-3ae1f942.webp",
     "imageFocus": {
       "x": 50,
       "y": 50
@@ -50,7 +50,7 @@
   },
   {
     "name": "Stranger Things",
-    "image": "/uploads/1781999142547-2dc7ab13.webp",
+    "image": "/uploads/1792976318723-9d82981f.webp",
     "imageFocus": {
       "x": 50,
       "y": 50
@@ -63,7 +63,7 @@
   },
   {
     "name": "The Boys",
-    "image": "/uploads/1781656371955-38845f86.webp",
+    "image": "/uploads/1792976839918-8df59484.webp",
     "imageFocus": {
       "x": 50,
       "y": 50
@@ -76,7 +76,7 @@
   },
   {
     "name": "Naruto",
-    "image": "/uploads/1781656476170-a3e28ec4.webp",
+    "image": "/uploads/1792979293294-157e7652.webp",
     "imageFocus": {
       "x": 50,
       "y": 50
@@ -89,7 +89,7 @@
   },
   {
     "name": "Football",
-    "image": "/uploads/1775867363437-40963d7b.webp",
+    "image": "/uploads/1792978359286-9d734e97.webp",
     "imageFocus": {
       "x": 50,
       "y": 50
@@ -102,7 +102,7 @@
   },
   {
     "name": "Динамо Минск",
-    "image": "/uploads/1791852378360-f3e1c098.webp",
+    "image": "/uploads/1792979975719-703bd88c.webp",
     "imageFocus": {
       "x": 50,
       "y": 50
@@ -115,7 +115,7 @@
   },
   {
     "name": "Трансформеры Прайм",
-    "image": "/uploads/1791852430059-7fa5f2b7.webp",
+    "image": "/uploads/1792980307164-8b668c1e.webp",
     "imageFocus": {
       "x": 50,
       "y": 50
@@ -128,12 +128,12 @@
   },
   {
     "name": "Берсерк",
-    "image": "/api/media/1792812304468-7f37bab2.webp",
+    "image": "/uploads/1792979131826-573e2b95.webp",
     "imageFocus": {
       "x": 50,
       "y": 50
     },
-    "plateImage": "/api/media/1792812294934-9e39d5d4.webp",
+    "plateImage": "/uploads/1792812294934-9e39d5d4.webp",
     "plateImageFocus": {
       "x": 50,
       "y": 50
@@ -141,12 +141,12 @@
   },
   {
     "name": "One Piece",
-    "image": "/api/media/1792812342673-864633e4.webp",
+    "image": "/uploads/1792977737807-e26acd18.webp",
     "imageFocus": {
       "x": 50,
       "y": 50
     },
-    "plateImage": "/api/media/1792812333879-f1040427.webp",
+    "plateImage": "/uploads/1792812333879-f1040427.webp",
     "plateImageFocus": {
       "x": 50,
       "y": 50
@@ -154,12 +154,12 @@
   },
   {
     "name": "Attack on Titan",
-    "image": "/api/media/1792812423607-f73f37ad.webp",
+    "image": "/uploads/1792978641502-1715400f.webp",
     "imageFocus": {
       "x": 50,
       "y": 50
     },
-    "plateImage": "/api/media/1792812407768-061bb17b.webp",
+    "plateImage": "/uploads/1792812407768-061bb17b.webp",
     "plateImageFocus": {
       "x": 50,
       "y": 50

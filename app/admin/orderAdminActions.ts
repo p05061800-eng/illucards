@@ -60,6 +60,14 @@ export async function confirmOrderFromAdmin(
   if (existing.status === "confirmed") {
     return { ok: false, error: "Заказ уже подтверждён" };
   }
+  if (
+    existing.status === "paid" ||
+    existing.status === "shipped" ||
+    existing.status === "sent" ||
+    existing.status === "delivered"
+  ) {
+    return { ok: true };
+  }
   if (!existing.payment_method) {
     return {
       ok: false,

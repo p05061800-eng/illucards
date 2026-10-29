@@ -10,14 +10,22 @@ import { playClick } from "./playClick";
  * Добавление в корзину: звук + полёт превью + обновление `cartItems` в контексте.
  */
 export function useAddToCartWithFeedback() {
-  const { addToCart } = useCart();
+  const { addToCart, addCustomOrderToCart } = useCart();
 
   return useCallback(
-    (card: StoredCard, flySource?: HTMLElement | null) => {
+    (
+      card: StoredCard,
+      flySource?: HTMLElement | null,
+      qty?: { originals?: number; copies?: number },
+    ) => {
       playClick();
       flyToCart(flySource ?? null);
+      if (qty) {
+        addCustomOrderToCart(card, qty.originals ?? 1, qty.copies ?? 0);
+        return;
+      }
       addToCart(card);
     },
-    [addToCart]
+    [addToCart, addCustomOrderToCart]
   );
 }

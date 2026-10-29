@@ -4,7 +4,11 @@ import { parseCardsJson } from "@/app/lib/cardsJson";
 import { parseCardRarity, type CardRarity } from "@/app/lib/cardRarityTags";
 import { normalizeDeliveryCountry, type DeliveryCountry } from "@/app/lib/delivery";
 import { displayRefForRecord } from "@/app/lib/orderDisplayRef";
-import { orderStatusFromStorage } from "@/app/lib/orderStatus";
+import {
+  isOrderStatusRegression,
+  orderStatusFromStorage,
+  shouldClearSiteCartForOrderStatus,
+} from "@/app/lib/orderStatus";
 import { ORDERS_DIR } from "@/app/lib/orderPaths";
 import type { OrderPaymentMethod } from "@/app/lib/orderPayment";
 import { parseOrderPaymentMethod } from "@/app/lib/orderPayment";
@@ -233,10 +237,14 @@ function parseItemsLoose(raw: unknown): OrderLineIn[] | null {
     if (typeof row !== "object" || row === null) return null;
     const o = row as Record<string, unknown>;
     if (typeof o.id !== "string" || typeof o.title !== "string") return null;
+    const cq = Number(o.copyQuantity);
     const line: OrderLineIn = {
       id: o.id,
       title: o.title,
       quantity: Number(o.quantity),
+      ...(Number.isFinite(cq) && cq > 0
+        ? { copyQuantity: Math.min(99, Math.floor(cq)) }
+        : {}),
       priceByn: Number(o.priceByn),
       priceRub: Number(o.priceRub),
     };
@@ -807,6 +815,9 @@ export async function updateOrderStatus(
   if (!existing) {
     return { ok: false, error: "Заказ не найден", status: 404 };
   }
+  if (isOrderStatusRegression(existing.status, status)) {
+    return { ok: true };
+  }
 
   const updated: OrderRecord = {
     ...existing,
@@ -831,7 +842,7 @@ export async function updateOrderStatus(
     /* нет файла или FS только для чтения — статус уже в ORDERS */
   }
   if (
-    (status === "confirmed" || status === "paid") &&
+    shouldClearSiteCartForOrderStatus(status) &&
     existing.status !== status &&
     existing.user_id != null &&
     existing.user_id > 0

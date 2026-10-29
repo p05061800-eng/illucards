@@ -79,7 +79,6 @@ export function CatalogFilterProvider({ children }: { children: ReactNode }) {
     const mobile = isMobileCatalogViewport();
 
     if (pathname.startsWith("/card/")) {
-      setSearch("");
       if (mobile) setFiltersOpen(false);
       return;
     }

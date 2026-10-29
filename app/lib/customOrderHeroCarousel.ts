@@ -6,7 +6,7 @@ function hasFront(card: StoredCard): boolean {
   return Boolean(card.frontImage?.trim());
 }
 
-function isCustomOrderCategory(category: string | undefined): boolean {
+export function isCustomOrderCategory(category: string | undefined): boolean {
   const cat = (category?.trim() ?? "").toLowerCase();
   if (!cat) return false;
   if (cat === CUSTOM_ORDER_CATEGORY_NAME.toLowerCase()) return true;

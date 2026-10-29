@@ -22,14 +22,18 @@ const STATIC_TILES: CategoryTile[] = parseCategoriesJson(fallbackJson);
 type Ctx = {
   tiles: CategoryTile[];
   refreshTiles: () => void;
+  highlightCategory: string;
+  setHighlightCategory: (name: string) => void;
 };
 
 const CategoryFramesContext = createContext<Ctx | null>(null);
 
 const noopRefresh = () => {};
+const noopHighlight = (_name: string) => {};
 
 export function CategoryFramesProvider({ children }: { children: ReactNode }) {
   const [tiles, setTiles] = useState<CategoryTile[]>(STATIC_TILES);
+  const [highlightCategory, setHighlightCategory] = useState("");
 
   const refreshTiles = useCallback(() => {
     fetch(apiUrl("/api/categories"))
@@ -42,8 +46,8 @@ export function CategoryFramesProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const value = useMemo(
-    () => ({ tiles, refreshTiles }),
-    [tiles, refreshTiles],
+    () => ({ tiles, refreshTiles, highlightCategory, setHighlightCategory }),
+    [tiles, refreshTiles, highlightCategory],
   );
   return (
     <CategoryFramesContext.Provider value={value}>
@@ -61,6 +65,17 @@ export function useCategoryFramesRefresh(): () => void {
 export function useCategoryTiles(): CategoryTile[] {
   const ctx = useContext(CategoryFramesContext);
   return ctx?.tiles ?? STATIC_TILES;
+}
+
+export function useCategoryPlateHighlight(): {
+  highlightCategory: string;
+  setHighlightCategory: (name: string) => void;
+} {
+  const ctx = useContext(CategoryFramesContext);
+  return {
+    highlightCategory: ctx?.highlightCategory ?? "",
+    setHighlightCategory: ctx?.setHighlightCategory ?? noopHighlight,
+  };
 }
 
 export function useCategoryFrameAspectCss(

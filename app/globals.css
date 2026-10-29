@@ -1334,6 +1334,151 @@ body::after {
   min-width: 0;
 }
 
+/* Плашки в шапке: тот же размер и ряд на главной, коллекции и карточке. */
+.site-category-plates .site-category-plates-row,
+.site-category-plates .hero-categories-row {
+  margin: 0;
+  padding: 0;
+}
+
+.site-category-plates .hero-categories.hero-categories-strip {
+  gap: 12px;
+  padding-block: 4px;
+}
+
+.site-category-plates .category-item {
+  width: clamp(40px, 6vw, 70px);
+  height: clamp(40px, 6vw, 70px);
+  min-width: clamp(40px, 6vw, 70px);
+  min-height: clamp(40px, 6vw, 70px);
+  max-width: clamp(40px, 6vw, 70px);
+  max-height: clamp(40px, 6vw, 70px);
+}
+
+.site-all-collections-plate {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  height: clamp(40px, 6vw, 70px);
+  width: clamp(148px, 18vw, 260px);
+  min-height: clamp(40px, 6vw, 70px);
+  max-height: clamp(40px, 6vw, 70px);
+  padding: 0.2rem 0.7rem;
+  border-radius: 1rem;
+  border: 1px solid rgba(167, 139, 250, 0.45);
+  background:
+    linear-gradient(180deg, rgba(109, 40, 217, 0.42), rgba(24, 16, 48, 0.92));
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.12),
+    0 8px 18px rgba(0, 0, 0, 0.28);
+  text-align: center;
+  text-decoration: none;
+  transition:
+    transform 0.2s ease,
+    border-color 0.2s ease,
+    background 0.2s ease;
+}
+
+.site-all-collections-plate:hover,
+.site-all-collections-plate:focus-visible {
+  border-color: rgba(196, 181, 253, 0.8);
+  transform: scale(1.04);
+  outline: none;
+}
+
+.site-all-collections-plate[aria-current="page"] {
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.14),
+    0 0 0 2px rgba(167, 139, 250, 0.7);
+}
+
+.site-all-collections-plate-label {
+  display: block;
+  max-width: 100%;
+  font-size: 0.78rem;
+  font-weight: 700;
+  line-height: 1.15;
+  letter-spacing: 0.01em;
+  color: #f3e8ff;
+  text-wrap: balance;
+}
+
+@media (min-width: 769px) {
+  .site-category-plates {
+    gap: 0.35rem;
+    justify-content: flex-start;
+  }
+
+  .site-category-plates-strip {
+    flex: 0 1 auto;
+    width: max-content;
+    max-width: calc(100% - 11.5rem);
+  }
+
+  .site-category-plates .hero-categories-row {
+    width: max-content;
+    max-width: 100%;
+  }
+
+  .site-category-plates .hero-categories.hero-categories-strip {
+    flex: 0 1 auto;
+    width: max-content;
+    max-width: 100%;
+  }
+}
+
+@media (max-width: 768px) {
+  .site-header-hero-logo .hero-scale-wordmark {
+    font-size: clamp(1.7rem, 8vw, 2.25rem);
+  }
+
+  .site-header-hero-logo .hero-scale-tagline {
+    font-size: clamp(0.58rem, 2.6vw, 0.75rem);
+  }
+
+  .hero-product-layout > .hero-left-side > .hero-wordmark-row,
+  .hero-product-layout > .hero-wordmark-row,
+  .hero-left-side > .hero-wordmark-row {
+    display: none;
+  }
+
+  .site-category-plates .hero-categories.hero-categories-strip {
+    gap: 14px;
+    padding-block: 5px;
+  }
+
+  .site-category-plates .category-item {
+    width: clamp(68px, 10vw, 120px);
+    height: clamp(68px, 10vw, 120px);
+    min-width: clamp(68px, 10vw, 120px);
+    min-height: clamp(68px, 10vw, 120px);
+    max-width: clamp(68px, 10vw, 120px);
+    max-height: clamp(68px, 10vw, 120px);
+  }
+
+  .site-category-plates .hero-category-label {
+    font-size: 0.62rem;
+  }
+
+  .site-all-collections-plate {
+    width: clamp(68px, 10vw, 120px);
+    height: clamp(68px, 10vw, 120px);
+    min-width: clamp(68px, 10vw, 120px);
+    min-height: clamp(68px, 10vw, 120px);
+    max-width: clamp(68px, 10vw, 120px);
+    max-height: clamp(68px, 10vw, 120px);
+    border-radius: 1rem;
+    padding: 0.3rem 0.28rem;
+  }
+
+  .site-all-collections-plate-label {
+    font-size: 0.58rem;
+    line-height: 1.12;
+  }
+}
+
 .hero-categories-row .hero-categories.hero-categories-strip {
   flex: 1 1 auto;
   min-width: 0;
@@ -1489,7 +1634,7 @@ body::after {
     grid-template-columns: minmax(0, 1fr);
     grid-template-rows: auto;
     column-gap: 0;
-    row-gap: clamp(0.7rem, 2.4vw, 1.05rem);
+    row-gap: 0.35rem;
     align-items: start;
   }
 
@@ -1499,10 +1644,7 @@ body::after {
 
   .hero-product-layout > .hero-left-side > .hero-wordmark-row,
   .hero-product-layout > .hero-wordmark-row {
-    grid-column: 1;
-    grid-row: 1;
-    width: 100%;
-    margin-bottom: 0;
+    display: none;
   }
 
   .hero-product-layout > .hero-left-side > .hero-categories-row,
@@ -1577,9 +1719,17 @@ body::after {
 
   .hero-product-layout .hero-novelty-header {
     grid-column: 1;
-    grid-row: 3;
+    grid-row: 1;
     align-self: start;
     width: 100%;
+    margin-top: 0.45rem;
+    margin-bottom: 0.15rem;
+  }
+
+  .hero-product-layout .hero-novelties-title,
+  .hero-product-layout .hero-novelties-title.hero-wordmark-shine {
+    font-size: clamp(1.72rem, 7.4vw, 2.2rem);
+    line-height: 1.08;
   }
 
   .hero-product-layout .hero-product-info {
@@ -1588,7 +1738,7 @@ body::after {
 
   .hero-product-layout .hero-cards-stack {
     grid-column: 1;
-    grid-row: 4;
+    grid-row: 2;
     position: relative;
     align-self: start;
     justify-self: stretch;
@@ -1657,14 +1807,37 @@ body::after {
     width: 100%;
   }
 
+  .hero-product-layout .hero-right-side--novelty .hero-product-info,
+  .hero-product-layout .hero-right-side--novelty .hero-limited-card-footer--novelty,
+  .hero-product-layout .hero-right-side--novelty .hero-limited-card-titlebar {
+    display: contents;
+  }
+
+  .hero-product-layout .hero-limited-card-title-link {
+    grid-column: 1;
+    grid-row: 4;
+    width: 100%;
+    padding-inline: 0.75rem;
+    text-align: center;
+  }
+
+  .hero-product-layout .hero-limited-card-actions {
+    grid-column: 1;
+    grid-row: 3;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 0.7rem;
+    width: 100%;
+  }
+
   .hero-product-layout .hero-product-info .hero-limited-card-footer,
-  .hero-product-layout .hero-product-info .hero-limited-card-footer--novelty,
   .hero-product-layout .hero-product-info .hero-limited-card-footer--default {
     display: flex;
     flex-direction: column;
     align-items: center;
     grid-column: 1;
-    grid-row: 6;
+    grid-row: 3;
     position: relative;
     z-index: 5;
     isolation: isolate;
@@ -1673,18 +1846,9 @@ body::after {
     min-width: 0;
     margin: 0;
     padding-inline: 0.75rem;
-    padding-top: 0;
-    padding-bottom: 0.25rem;
+    padding-top: 0.15rem;
+    padding-bottom: 0.1rem;
     box-sizing: border-box;
-  }
-
-  .hero-product-layout .hero-product-info .hero-novelty-buy-first {
-    grid-column: 1;
-    grid-row: 7;
-    width: auto;
-    max-width: min(100%, 17.5rem);
-    margin-inline: auto;
-    margin-top: 0;
   }
 
   .hero-product-layout > .hero-left-side > .hero-category-empty-msg,
@@ -1866,16 +2030,16 @@ body::after {
     position: relative;
     width: 100%;
     --hero-desktop-col-gap: clamp(32px, 2.2vw, 48px);
-    --hero-novelty-card-width: min(100%, 16.75rem);
+    --hero-novelty-card-width: min(100%, 15.25rem);
     /* TMNT 761/1024: та же высота, что у 2:3, без смены пропорций. */
     --hero-novelty-card-width-tmnt: min(
       100%,
-      calc(16.75rem * 3 / 2 * 761 / 1024)
+      calc(15.25rem * 3 / 2 * 761 / 1024)
     );
     /* Берсерк 596/819: та же высота, что у 2:3. */
     --hero-novelty-card-width-berserk: min(
       100%,
-      calc(16.75rem * 3 / 2 * 596 / 819)
+      calc(15.25rem * 3 / 2 * 596 / 819)
     );
     --hero-novelties-title-band: clamp(2.35rem, 3.4vw, 3.35rem);
     --hero-gap-novelties-title-to-card: clamp(0.2rem, 0.45vw, 0.35rem);
@@ -2622,7 +2786,8 @@ body::after {
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
-  animation: hero-novelties-title-shine-move 6s ease-in-out infinite reverse;
+  animation: none;
+  background-position: 48% 50%;
 }
 
 .hero-novelty-heading-group .hero-novelties-title.hero-novelties-title--static {
@@ -2812,9 +2977,10 @@ body::after {
 
 .hero-novelties-thumb-strip {
   -webkit-overflow-scrolling: touch;
-  scroll-snap-type: x proximity;
+  scroll-snap-type: none;
   overscroll-behavior-x: contain;
   overscroll-behavior-y: none;
+  overflow-anchor: none;
   position: relative;
   z-index: 1;
   touch-action: pan-x;
@@ -2828,7 +2994,7 @@ body::after {
 }
 
 .hero-novelties-thumb {
-  scroll-snap-align: center;
+  scroll-snap-align: none;
 }
 
 /* Полоса миниатюр — строго под слотом карточки, не под 3D-слоями. */
@@ -3166,7 +3332,7 @@ body::after {
 .hero-right-side--novelty .hero-product-stage {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  grid-template-rows: auto auto auto auto;
+  grid-template-rows: auto auto auto auto auto;
   align-items: start;
   justify-items: stretch;
 }
@@ -3182,12 +3348,46 @@ body::after {
   align-self: start;
 }
 
-.hero-right-side--novelty .hero-novelties-thumb-strip-wrap {
-  grid-row: 3;
+.hero-right-side--novelty .hero-product-info,
+.hero-right-side--novelty .hero-limited-card-footer--novelty,
+.hero-right-side--novelty .hero-limited-card-titlebar {
+  display: contents;
 }
 
-.hero-right-side--novelty .hero-product-info {
+.hero-right-side--novelty .hero-limited-card-actions {
+  grid-row: 3;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 0.7rem;
+  width: 100%;
+  position: relative;
+  z-index: 40;
+}
+
+.hero-right-side--novelty .hero-limited-card-title-link {
   grid-row: 4;
+  justify-self: stretch;
+  width: 100%;
+  text-align: center;
+}
+
+.hero-right-side--novelty .hero-limited-card-title,
+.hero-right-side--novelty .hero-limited-card-title--novelty {
+  min-height: 2.56em;
+}
+
+.hero-right-side--novelty .hero-novelties-thumb-strip-wrap {
+  grid-row: 5;
+  min-height: 3.6rem;
+}
+
+.hero-right-side--novelty .hero-novelties-thumb-strip {
+  scroll-snap-type: none;
+}
+
+.hero-right-side--novelty .hero-novelties-thumb {
+  scroll-snap-align: none;
 }
 
 .hero-right-side--novelty .hero-cards-main {
@@ -3196,6 +3396,7 @@ body::after {
   aspect-ratio: 2 / 3;
   height: auto;
   position: relative;
+  overflow: visible;
 }
 
 .hero-right-side--tmnt.hero-right-side--novelty .hero-cards-main {
@@ -3259,23 +3460,24 @@ body::after {
 
   .hero-product-layout .hero-right-side--novelty .hero-novelty-header {
     grid-column: 1;
-    grid-row: 3;
+    grid-row: 1;
     position: relative;
     z-index: 3;
     width: 100%;
-    margin-bottom: 0.35rem;
+    margin-top: 0.45rem;
+    margin-bottom: 0.15rem;
   }
 
   .hero-product-layout .hero-right-side--novelty .hero-cards-stack {
     grid-column: 1;
-    grid-row: 4;
+    grid-row: 2;
     position: relative;
     z-index: 1;
     width: 100%;
     max-width: 100%;
-    overflow: hidden;
+    overflow: visible;
     padding-top: 0.2rem;
-    padding-bottom: 0.45rem;
+    padding-bottom: 0.85rem;
     padding-inline-start: 2.1rem;
     padding-inline-end: 2.1rem;
   }
@@ -3286,16 +3488,25 @@ body::after {
     position: relative;
     z-index: 3;
     width: 100%;
-    margin-top: 0.25rem;
+    margin-top: 0.15rem;
   }
 
-  .hero-product-layout .hero-right-side--novelty .hero-product-info {
+  .hero-product-layout .hero-right-side--novelty .hero-product-info,
+  .hero-product-layout .hero-right-side--novelty .hero-limited-card-footer--novelty,
+  .hero-product-layout .hero-right-side--novelty .hero-limited-card-titlebar {
     display: contents;
   }
 
-  .hero-product-layout .hero-product-info .hero-limited-card-footer--novelty {
+  .hero-product-layout .hero-right-side--novelty .hero-limited-card-actions {
+    grid-column: 1;
+    grid-row: 3;
+  }
+
+  .hero-product-layout .hero-right-side--novelty .hero-limited-card-title-link {
+    grid-column: 1;
+    grid-row: 4;
     padding-bottom: 0.08rem;
-    margin-top: -0.12rem;
+    margin-top: 0.1rem;
   }
 
   .hero-product-layout .hero-right-side--novelty .hero-cards-main {
@@ -3351,6 +3562,11 @@ body::after {
     justify-content: flex-start;
     gap: 0.28rem;
     width: 100%;
+  }
+
+  .hero-product-layout .hero-right-side--novelty .hero-product-info .hero-limited-card-footer--novelty,
+  .hero-product-layout .hero-right-side--novelty .hero-product-info .hero-limited-card-titlebar {
+    display: contents;
   }
 
   .hero-product-layout .hero-product-info .hero-limited-card-titlebar::before {
@@ -3437,8 +3653,17 @@ body::after {
 }
 
 @media (min-width: 769px) {
+  .hero-product-layout .hero-right-side--novelty .hero-product-info,
+  .hero-product-layout .hero-right-side--novelty .hero-limited-card-footer--novelty,
+  .hero-product-layout .hero-right-side--novelty .hero-limited-card-titlebar,
   .hero-product-layout .hero-right-side--novelty .hero-product-info .hero-limited-card-titlebar {
-    gap: 0.28rem;
+    display: contents;
+  }
+
+  .hero-product-layout .hero-right-side--novelty .hero-limited-card-actions {
+    display: flex;
+    justify-content: center;
+    width: 100%;
   }
 
   .hero-product-layout .hero-right-side--novelty .hero-product-stage {
@@ -3457,6 +3682,15 @@ body::after {
     padding-bottom: clamp(0.65rem, 4%, 1.15rem);
     box-sizing: border-box;
     max-width: 100%;
+    overflow: visible;
+  }
+
+  .hero-product-layout .hero-right-side--novelty .hero-cards-stack {
+    padding-bottom: 1.15rem;
+    overflow: visible;
+  }
+
+  .hero-product-layout .hero-right-side--novelty .hero-cards-main {
     overflow: visible;
   }
 
@@ -3504,6 +3738,11 @@ body::after {
     justify-content: flex-start;
     gap: 0.5rem;
     width: 100%;
+  }
+
+  .hero-product-layout .hero-right-side--novelty .hero-product-info .hero-limited-card-footer--novelty,
+  .hero-product-layout .hero-right-side--novelty .hero-product-info .hero-limited-card-titlebar {
+    display: contents;
   }
 
   .hero-product-layout .hero-product-info .hero-limited-card-titlebar::before {
@@ -3662,7 +3901,7 @@ body::after {
 
 @media (min-width: 1024px) {
   .hero-right-side--novelty .hero-card-stack-visual .card-side {
-    transform: translate3d(-7%, 9%, 0) rotate(-14deg);
+    transform: translate3d(-6%, 5%, 0) rotate(-12deg);
     transform-origin: 42% 66%;
   }
 }
@@ -3832,14 +4071,14 @@ body::after {
   }
 
   .hero-stage {
-    --hero-novelty-card-width: min(100%, 18rem);
+    --hero-novelty-card-width: min(100%, 16.35rem);
     --hero-novelty-card-width-tmnt: min(
       100%,
-      calc(18rem * 3 / 2 * 761 / 1024)
+      calc(16.35rem * 3 / 2 * 761 / 1024)
     );
     --hero-novelty-card-width-berserk: min(
       100%,
-      calc(18rem * 3 / 2 * 596 / 819)
+      calc(16.35rem * 3 / 2 * 596 / 819)
     );
   }
 }
@@ -4102,7 +4341,7 @@ body::after {
   mix-blend-mode: screen;
   opacity: 0;
   transform: translate3d(-66%, 0, 0) rotate(8deg);
-  animation: hero-limited-card-sheen 7.4s ease-in-out infinite;
+  animation: none;
 }
 
 .hero-limited-card-frame .hero-holo-iridescent {
@@ -4320,9 +4559,11 @@ body::after {
 @media (max-width: 768px) {
   .hero {
     --hero-inline-pad: 12px;
+    --hero-stage-gap: 0.2rem;
     /* stretch: иначе при column-flex align-items:center сжимается поперечная ось —
        левая колонка становится узкой «плашкой» с полями по бокам экрана. */
     align-items: stretch;
+    padding-top: 0;
     padding-left: max(12px, env(safe-area-inset-left, 0px));
     padding-right: max(12px, env(safe-area-inset-right, 0px));
   }
@@ -4333,7 +4574,7 @@ body::after {
   }
 
   .hero-stage {
-    gap: 20px;
+    gap: 0.2rem;
     align-items: stretch;
     width: 100%;
   }
@@ -4348,9 +4589,7 @@ body::after {
   }
 
   .hero-left-side > .hero-wordmark-row {
-    width: 100%;
-    max-width: 100%;
-    margin-bottom: 12px;
+    display: none;
   }
 
   .hero-left-side > .categories.hero-categories-outer {
@@ -4630,7 +4869,8 @@ body::after {
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
-  animation: hero-wordmark-shine-move 8s ease-in-out infinite;
+  animation: none;
+  background-position: 42% 50%;
 }
 
 .hero-wordmark-shine--mirror {

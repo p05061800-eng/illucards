@@ -6,6 +6,11 @@ import { TelegramCheckoutButton } from "@/components/checkout/TelegramCheckoutBu
 import { DeliveryCountryField } from "@/app/components/DeliveryCountryField";
 import { CartOrderTotals } from "@/app/components/cart/CartOrderTotals";
 import { useCart } from "@/app/context/CartContext";
+import {
+  cartLineCopyQuantity,
+  cartLineKey,
+  isCustomOrderLine,
+} from "@/app/lib/customOrderPricing";
 
 export default function CheckoutPageClient() {
   const {
@@ -40,17 +45,32 @@ export default function CheckoutPageClient() {
       ) : (
         <div className="mb-6 rounded-2xl border border-white/10 bg-white/[0.03] p-4">
           <ul className="mb-3 space-y-1.5 text-sm text-zinc-200">
-            {cartItems.map((line) => (
+            {(() => {
+              let customN = 0;
+              return cartItems.map((line) => {
+              const copies = cartLineCopyQuantity(line);
+              const custom = isCustomOrderLine(line);
+              if (custom) customN += 1;
+              return (
               <li
-                key={line.id}
+                key={cartLineKey(line)}
                 className="flex items-baseline justify-between gap-3"
               >
-                <span className="min-w-0 truncate">{line.title}</span>
+                <span className="min-w-0 truncate">
+                  {custom ? `Карточка ${customN}. ` : ""}
+                  {line.title}
+                </span>
                 <span className="shrink-0 tabular-nums text-zinc-400">
-                  ×{line.quantity}
+                  {custom
+                    ? copies > 0
+                      ? `1 + ${copies} коп.`
+                      : "1"
+                    : `×${line.quantity}`}
                 </span>
               </li>
-            ))}
+              );
+            });
+            })()}
           </ul>
           <CartOrderTotals
             deliveryCountry={deliveryCountry}

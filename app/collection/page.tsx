@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { CatalogBackLink } from "@/app/components/CatalogBackLink";
 import { loadGitCategoryTiles } from "@/app/lib/loadCategoryTiles";
 import { collectionPath } from "@/app/lib/collectionAnchor";
 import { categoryFocusToStyle } from "@/app/lib/imageFocus";
@@ -24,7 +25,8 @@ export default async function CollectionIndexPage() {
 
   return (
     <main className="main relative min-h-screen overflow-x-hidden text-white">
-      <div className="collection-index mx-auto w-full max-w-[min(100%,1800px)] px-4 py-6 sm:px-8 sm:py-8">
+      <div className="collection-index mx-auto w-full max-w-[min(100%,1800px)] px-4 py-3 sm:px-8 sm:py-5">
+        <CatalogBackLink href="/" parent="home" />
         <h1
           id="collection"
           className="site-heading scroll-mt-24 text-2xl font-bold tracking-tight text-balance sm:text-3xl"

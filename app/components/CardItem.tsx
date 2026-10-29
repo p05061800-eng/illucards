@@ -10,6 +10,10 @@ import { useCatalogFilter } from "../context/CatalogFilterContext";
 import { useMergedRating } from "../context/CardRatingsContext";
 import { useFavorites } from "../context/FavoritesContext";
 import { cardRequiresAgeConfirmation } from "../lib/cardRequiresAgeConfirmation";
+import {
+  rememberCatalogReturnCardId,
+  saveCurrentScrollPosition,
+} from "../lib/catalogScrollRestore";
 import { stashProductCard } from "../lib/productCardPreview";
 import { useCardLinkTouchNav } from "../lib/useCardLinkTouchNav";
 import { isAdultAgeGateTarget } from "./AdultContentBlurGate";
@@ -52,6 +56,8 @@ export function CardItem({ card, hideUltraLayer = false }: Props) {
 
   const navigateToCard = useCallback(() => {
     stashProductCard(card);
+    rememberCatalogReturnCardId(card.id);
+    saveCurrentScrollPosition();
     collapseMobileFilters();
     router.push(cardHref);
   }, [card, cardHref, collapseMobileFilters, router]);
@@ -72,6 +78,8 @@ export function CardItem({ card, hideUltraLayer = false }: Props) {
   const handleCardLinkClick = useCallback(
     (e: MouseEvent<HTMLAnchorElement>) => {
       stashProductCard(card);
+      rememberCatalogReturnCardId(card.id);
+      saveCurrentScrollPosition();
       if (cardTouchNav.consumeTouchNavigationClick()) {
         e.preventDefault();
         return;

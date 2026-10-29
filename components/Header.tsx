@@ -19,7 +19,11 @@ import { useFavorites } from "@/app/context/FavoritesContext";
 import { SocialLinksBar } from "@/app/components/SocialLinksBar";
 import type { MenuJsonSection } from "@/app/lib/menuJson";
 import { categoryFocusToStyle } from "@/app/lib/imageFocus";
+import { IMAGE_W, sizedImageSrc } from "@/app/lib/sizedImage";
 import { apiUrl } from "@/app/lib/apiUrl";
+import { isCatalogCategoryPlatesPath } from "@/app/lib/catalogCategoryPlatesNav";
+import { CategoryPlateStrip } from "@/components/CategoryPlateStrip";
+import { HeroIlluCardsLogo } from "@/components/hero/HeroIlluCardsLogo";
 
 export default function Header() {
   const pathname = usePathname();
@@ -153,7 +157,7 @@ export default function Header() {
                           {item.image ? (
                             // eslint-disable-next-line @next/next/no-img-element
                             <img
-                              src={item.image}
+                              src={sizedImageSrc(item.image, IMAGE_W.compact)}
                               alt=""
                               className="block h-auto w-full rounded-2xl transition duration-300 group-hover:brightness-110"
                               style={categoryFocusToStyle(item.imageFocus)}
@@ -451,6 +455,23 @@ export default function Header() {
               </div>
             ))}
           </div>
+        </div>
+      ) : null}
+      <div className="site-header-hero-logo mx-auto w-full min-w-0 max-w-[1400px] px-2 pb-1 pl-[max(0.5rem,env(safe-area-inset-left))] pr-[max(0.5rem,env(safe-area-inset-right))] sm:px-6 lg:px-10 md:hidden">
+        <HeroIlluCardsLogo asHeading={false} />
+      </div>
+      {isCatalogCategoryPlatesPath(pathname) ? (
+        <div className="site-category-plates mx-auto flex w-full min-w-0 max-w-[1400px] items-center gap-1.5 px-2 pb-1 pl-[max(0.5rem,env(safe-area-inset-left))] pr-[max(0.5rem,env(safe-area-inset-right))] sm:px-6 sm:pb-2 lg:px-10">
+          <div className="site-category-plates-strip min-w-0 flex-1">
+            <CategoryPlateStrip />
+          </div>
+          <Link
+            href="/collection"
+            className="site-all-collections-plate"
+            aria-current={pathname === "/collection" ? "page" : undefined}
+          >
+            <span className="site-all-collections-plate-label">Все коллекции</span>
+          </Link>
         </div>
       ) : null}
     </header>

@@ -23,7 +23,10 @@ function checkoutIdempotencyKey(input: {
     input.userId,
     input.deliveryCountry,
     input.orderTotalByn.toFixed(2),
-    ...input.cartItems.map((l) => `${l.id}:${l.quantity}`),
+    ...input.cartItems.map(
+      (l) =>
+        `${l.lineKey ?? l.id}:${l.id}:${l.quantity}:${l.copyQuantity ?? 0}`,
+    ),
   ].join("|");
   const storageKey = `illucards_checkout_id:${fingerprint}`;
   if (typeof window !== "undefined") {
@@ -55,8 +58,12 @@ export async function submitTelegramCheckoutOrder(input: {
 }): Promise<SubmitTelegramCheckoutResult> {
   const items = input.cartItems.map((l) => ({
     id: l.id,
+    ...(l.lineKey ? { lineKey: l.lineKey } : {}),
     title: l.title.trim(),
     quantity: l.quantity,
+    ...(l.copyQuantity && l.copyQuantity > 0
+      ? { copyQuantity: l.copyQuantity }
+      : {}),
     priceByn: l.priceByn,
     priceRub: l.priceRub,
     ...(l.frontImage?.trim() ? { frontImage: l.frontImage.trim() } : {}),

@@ -4,8 +4,11 @@ import type { OrderPaymentMethod } from "@/app/lib/orderPayment";
 
 export type OrderLineIn = {
   id: string;
+  lineKey?: string;
   title: string;
   quantity: number;
+  /** Дополнительные копии макета (скидка 50%). */
+  copyQuantity?: number;
   priceByn: number;
   priceRub: number;
   /** Лицевая картинка как в корзине (опционально для старых заказов). */
@@ -17,7 +20,7 @@ export type OrderLineIn = {
 export type OrderStatus =
   | "new"
   | "confirmed"
-  /** Клиент отправил чек оплаты (корзина очищается только при `confirmed`). */
+  /** Клиент отправил чек оплаты — тогда заказ в ЛК, корзина очищается. */
   | "paid"
   | "shipped"
   | "sent"

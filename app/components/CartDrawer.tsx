@@ -19,10 +19,13 @@ import { useCart } from "../context/CartContext";
 import { useCurrency } from "../context/CurrencyContext";
 import { useCategoryTiles } from "../context/CategoryFramesContext";
 import { getCardArtIntrinsicSize } from "../lib/cardArtIntrinsicSize";
-import { displayCurrencyForDelivery, formatCardPrice } from "../lib/formatPrice";
+import { displayCurrencyForDelivery } from "../lib/formatPrice";
 import { TelegramCheckoutButton } from "@/components/checkout/TelegramCheckoutButton";
+import { CartLineQtyBlock } from "./cart/CartLineQtyBlock";
+import { cartLineKey, isCustomOrderLine } from "../lib/customOrderPricing";
 import { DeliveryCountryField } from "./DeliveryCountryField";
 import { CartOrderTotals } from "./cart/CartOrderTotals";
+import { IMAGE_W, sizedImageSrc } from "../lib/sizedImage";
 
 export function CartDrawer() {
   const pathname = usePathname();
@@ -41,6 +44,7 @@ export function CartDrawer() {
     closeCart,
     removeFromCart,
     setQuantity,
+    setCopyQuantity,
   } = useCart();
   const { currency, setCurrency } = useCurrency();
   const priceCurrency = displayCurrencyForDelivery(deliveryCountry);
@@ -48,6 +52,17 @@ export function CartDrawer() {
   const [mounted, setMounted] = useState(false);
   const titleId = useId();
   const deliveryFieldId = useId();
+  const customIndexByKey = useMemo(() => {
+    const map = new Map<string, number>();
+    let n = 0;
+    for (const line of cartItems) {
+      if (isCustomOrderLine(line)) {
+        n += 1;
+        map.set(cartLineKey(line), n);
+      }
+    }
+    return map;
+  }, [cartItems]);
   const asideRef = useRef<HTMLDivElement>(null);
   const [swipePx, setSwipePx] = useState(0);
   const [swipeDragging, setSwipeDragging] = useState(false);
@@ -307,7 +322,7 @@ export function CartDrawer() {
                   );
                   return (
                   <li
-                    key={line.id}
+                    key={cartLineKey(line)}
                     className="flex items-center gap-2.5 rounded-xl border border-white/[0.07] bg-white/[0.03] p-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]"
                   >
                     <div className="flex w-[3.75rem] shrink-0 items-start justify-center self-start overflow-visible rounded-lg bg-zinc-900 ring-1 ring-white/10 sm:w-[4.25rem]">
@@ -320,12 +335,13 @@ export function CartDrawer() {
                           mode="blurOnly"
                         >
                           <Image
-                            src={line.frontImage}
+                            src={sizedImageSrc(line.frontImage, IMAGE_W.thumb)}
                             alt=""
                             width={cartArt.width}
                             height={cartArt.height}
                             className="h-auto w-full rounded-lg"
                             sizes="68px"
+                            unoptimized
                             style={{
                               width: "100%",
                               height: "auto",
@@ -339,62 +355,16 @@ export function CartDrawer() {
                         </div>
                       )}
                     </div>
-                    <div className="flex min-w-0 flex-1 flex-col gap-1.5">
-                      <Link
-                        href={`/card/${line.id}`}
-                        onClick={closeCart}
-                        className="line-clamp-2 text-sm font-semibold leading-snug text-zinc-100 transition hover:text-purple-200"
-                      >
-                        {line.title}
-                      </Link>
-                      <p className="text-xs font-medium tabular-nums text-purple-200/90">
-                        {formatCardPrice(
-                          line.priceByn * line.quantity,
-                          priceCurrency,
-                          priceCurrency === "RUB"
-                            ? line.priceRub * line.quantity
-                            : undefined
-                        )}
-                        <span className="font-normal text-zinc-500">
-                          {" "}
-                          · {line.quantity} шт.
-                        </span>
-                      </p>
-                      <div className="flex items-center gap-1.5">
-                        <div className="inline-flex items-center rounded-md border border-white/12 bg-black/40 text-xs">
-                          <button
-                            type="button"
-                            onClick={() =>
-                              setQuantity(line.id, line.quantity - 1)
-                            }
-                            className="px-2 py-0.5 text-zinc-400 transition hover:bg-white/10 hover:text-white"
-                            aria-label="Уменьшить"
-                          >
-                            −
-                          </button>
-                          <span className="min-w-[1.5rem] px-1 text-center tabular-nums text-zinc-200">
-                            {line.quantity}
-                          </span>
-                          <button
-                            type="button"
-                            onClick={() =>
-                              setQuantity(line.id, line.quantity + 1)
-                            }
-                            className="px-2 py-0.5 text-zinc-400 transition hover:bg-white/10 hover:text-white"
-                            aria-label="Увеличить"
-                          >
-                            +
-                          </button>
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => removeFromCart(line.id)}
-                          className="text-[11px] text-zinc-500 transition hover:text-red-400"
-                        >
-                          ✕
-                        </button>
-                      </div>
-                    </div>
+                    <CartLineQtyBlock
+                      line={line}
+                      customIndex={customIndexByKey.get(cartLineKey(line)) ?? null}
+                      priceCurrency={priceCurrency}
+                      compact
+                      onSetQuantity={setQuantity}
+                      onSetCopyQuantity={setCopyQuantity}
+                      onRemove={removeFromCart}
+                      onTitleClick={closeCart}
+                    />
                   </li>
                   );
                 })}

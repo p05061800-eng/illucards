@@ -17,11 +17,10 @@ import type { CategoryTile } from "@/app/lib/categoriesJson";
 import type { PromoHomeConfig, PromoSlide } from "@/app/lib/promoSlidesJson";
 import PromoSlider from "@/components/PromoSlider";
 import { apiUrl } from "@/app/lib/apiUrl";
-import { collectionPath } from "@/app/lib/collectionAnchor";
+import { IMAGE_W, sizedImageSrc } from "@/app/lib/sizedImage";
 import { saveCurrentScrollPosition } from "@/app/lib/catalogScrollRestore";
 import { stashProductCard } from "@/app/lib/productCardPreview";
 import { restorePageScrollAfterLayoutChange } from "@/app/lib/preservePageScroll";
-import { categoryFocusToStyle } from "@/app/lib/imageFocus";
 import { buildNoveltiesCarouselCards } from "@/app/lib/noveltiesHeroCarousel";
 import { sortSectionCardsForDefaultCatalog } from "@/app/lib/collectionFilter";
 import {
@@ -33,9 +32,6 @@ import { HeroIlluCardsLogo } from "./HeroIlluCardsLogo";
 
 /** Горизонтальный жест мышью по стопке «Новинки» (на таче только стрелки — см. обработчики). */
 const NOVELTY_SWIPE_MIN_PX = 56;
-
-/** Автосмена карточки в блоке «Новинки» (стрелки и ручной свайп по-прежнему доступны). */
-const NOVELTY_AUTO_ADVANCE_MS = 5500;
 
 type Props = {
   cards: StoredCard[];
@@ -76,9 +72,6 @@ export default function HeroSection({
   const preHeroHeightRef = useRef(0);
   /** После свайпа гасим синтетический click по `<Link>` на карточке. */
   const blockHeroCardLinkClickRef = useRef(false);
-  /** Пауза автолистания при наведении на колонку «Новинки». */
-  const noveltyAutoPausedRef = useRef(false);
-  const noveltiesLenRef = useRef(0);
   const [apiCategories, setApiCategories] = useState<CategoryTile[]>(
     () => initialCategories
   );
@@ -93,60 +86,6 @@ export default function HeroSection({
       })
       .catch(() => {});
   }, [initialCategories.length]);
-
-  const catStripRef = useRef<HTMLDivElement>(null);
-  const [catCanScrollStart, setCatCanScrollStart] = useState(false);
-  const [catCanScrollEnd, setCatCanScrollEnd] = useState(true);
-
-  const updateCatStripScroll = useCallback(() => {
-    const el = catStripRef.current;
-    if (!el) {
-      setCatCanScrollStart(false);
-      setCatCanScrollEnd(false);
-      return;
-    }
-    const max = el.scrollWidth - el.clientWidth;
-    const overflow = max > 6;
-    setCatCanScrollStart(overflow && el.scrollLeft > 4);
-    setCatCanScrollEnd(overflow && el.scrollLeft < max - 4);
-  }, []);
-
-  useEffect(() => {
-    const el = catStripRef.current;
-    if (!el) return;
-    const run = () => updateCatStripScroll();
-    run();
-    const raf = requestAnimationFrame(run);
-    el.addEventListener("scroll", run, { passive: true });
-    const ro = new ResizeObserver(run);
-    ro.observe(el);
-    window.addEventListener("resize", run);
-    const imgs = el.querySelectorAll("img");
-    const onImg = () => run();
-    imgs.forEach((img) => {
-      if (!img.complete) img.addEventListener("load", onImg);
-    });
-    return () => {
-      cancelAnimationFrame(raf);
-      el.removeEventListener("scroll", run);
-      ro.disconnect();
-      window.removeEventListener("resize", run);
-      imgs.forEach((img) => img.removeEventListener("load", onImg));
-    };
-  }, [updateCatStripScroll, apiCategories.length]);
-
-  const scrollHeroCategories = useCallback((direction: -1 | 1) => {
-    const el = catStripRef.current;
-    if (!el) return;
-    const max = Math.max(0, el.scrollWidth - el.clientWidth);
-    if (max <= 0) {
-      updateCatStripScroll();
-      return;
-    }
-    const step = Math.max(el.clientWidth * 0.72, 72);
-    el.scrollLeft = Math.min(max, Math.max(0, el.scrollLeft + direction * step));
-    updateCatStripScroll();
-  }, [updateCatStripScroll]);
 
   const autoCategoryName = useMemo(() => {
     if (!apiCategories.length || !cards.length) return null;
@@ -229,29 +168,6 @@ export default function HeroSection({
   );
 
   useEffect(() => {
-    noveltiesLenRef.current = activeBrowseCards.length;
-  }, [activeBrowseCards.length]);
-
-  useEffect(() => {
-    if (!showNoveltiesHeroChrome || activeBrowseCards.length < 2) return;
-    if (typeof window === "undefined") return;
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-      return;
-    }
-
-    const tick = () => {
-      if (noveltyAutoPausedRef.current) return;
-      if (document.visibilityState !== "visible") return;
-      const n = noveltiesLenRef.current;
-      if (n < 2) return;
-      setBrowseIndex((i) => (i + 1) % n);
-    };
-
-    const id = window.setInterval(tick, NOVELTY_AUTO_ADVANCE_MS);
-    return () => window.clearInterval(id);
-  }, [showNoveltiesHeroChrome, activeBrowseCards.length]);
-
-  useEffect(() => {
     setBrowseIndex(0);
   }, [browseCarouselKey]);
 
@@ -307,14 +223,6 @@ export default function HeroSection({
     },
     [activeBrowseCards.length],
   );
-
-  const onNoveltyAutoPauseEnter = useCallback(() => {
-    noveltyAutoPausedRef.current = true;
-  }, []);
-
-  const onNoveltyAutoPauseLeave = useCallback(() => {
-    noveltyAutoPausedRef.current = false;
-  }, []);
 
   const onNoveltyArrowKeyDown = useCallback(
     (e: KeyboardEvent<HTMLButtonElement>) => {
@@ -484,94 +392,8 @@ export default function HeroSection({
                 }`}
               >
                 <div className="hero-left-side min-w-0">
-                  <div className="hero-wordmark-row min-w-0 w-full shrink-0">
+                  <div className="hero-wordmark-row hidden min-w-0 w-full shrink-0 md:block">
                     <HeroIlluCardsLogo />
-                  </div>
-                  <div
-                    className={[
-                      "categories hero-categories-outer hero-categories-row relative w-full min-w-0",
-                      catCanScrollStart ? "is-cat-scrolled" : "",
-                      catCanScrollEnd ? "can-cat-scroll-end" : "",
-                    ]
-                      .filter(Boolean)
-                      .join(" ")}
-                  >
-                    <button
-                      type="button"
-                      className="hero-cat-scroll-btn hero-cat-scroll-btn--prev"
-                      aria-label="Предыдущие категории"
-                      disabled={!catCanScrollStart}
-                      onClick={() => scrollHeroCategories(-1)}
-                    >
-                      <ProductCardNavArrowIcon direction="prev" />
-                    </button>
-                    <div
-                      ref={catStripRef}
-                      className="hero-categories hero-categories-strip relative flex min-w-0 w-full justify-start overflow-x-auto overflow-y-hidden py-0 scrollbar-hide md:py-0"
-                    >
-              {apiCategories.map((cat, catIndex) => {
-                const selected =
-                  selectedCategoryName != null &&
-                  cat.name.trim() === selectedCategoryName.trim();
-                const plateSrc = (cat.plateImage?.trim() || cat.image || "").trim();
-                const plateFocus = cat.plateImage?.trim()
-                  ? cat.plateImageFocus
-                  : cat.imageFocus;
-                return (
-                  <button
-                    key={cat.name}
-                    type="button"
-                    onClick={() => {
-                      router.push(collectionPath(cat.name));
-                    }}
-                    aria-label={cat.name}
-                    aria-current={selected}
-                    className={[
-                      "category-item group shrink-0 cursor-pointer overflow-hidden rounded-2xl",
-                      "will-change-transform [transform:translateZ(0)]",
-                      "transition-transform duration-300 ease-out",
-                      "hover:scale-[1.08] active:scale-[1.04]",
-                      "hover:shadow-xl hover:shadow-zinc-500/25",
-                    ]
-                      .filter(Boolean)
-                      .join(" ")}
-                  >
-                    {plateSrc ? (
-                      <div className="category-tile-wrap">
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img
-                          src={plateSrc}
-                          alt=""
-                          className="category-tile-img h-full w-full max-h-full max-w-full rounded-[inherit] object-cover"
-                          style={categoryFocusToStyle(plateFocus)}
-                          draggable={false}
-                          loading={catIndex < 3 ? "eager" : "lazy"}
-                          decoding="async"
-                        />
-                      </div>
-                    ) : (
-                      <div
-                        className="category-tile-wrap rounded-[inherit] bg-zinc-800"
-                        aria-hidden
-                      />
-                    )}
-
-                    <div className="hero-category-label z-10 text-center leading-tight">
-                      {cat.name}
-                    </div>
-                  </button>
-                );
-              })}
-                    </div>
-                    <button
-                      type="button"
-                      className="hero-cat-scroll-btn hero-cat-scroll-btn--next"
-                      aria-label="Следующие категории"
-                      disabled={!catCanScrollEnd}
-                      onClick={() => scrollHeroCategories(1)}
-                    >
-                      <ProductCardNavArrowIcon direction="next" />
-                    </button>
                   </div>
 
                   <div className="hero-promo-desktop-slot min-w-0">
@@ -610,16 +432,6 @@ export default function HeroSection({
                     ]
                       .filter(Boolean)
                       .join(" ")}
-                    onMouseEnter={
-                      showNoveltiesHeroChrome
-                        ? onNoveltyAutoPauseEnter
-                        : undefined
-                    }
-                    onMouseLeave={
-                      showNoveltiesHeroChrome
-                        ? onNoveltyAutoPauseLeave
-                        : undefined
-                    }
                   >
                   {showNoveltiesHeroChrome ? (
                     <div className="hero-product-section">
@@ -746,7 +558,7 @@ export default function HeroSection({
                                   >
                                     {/* eslint-disable-next-line @next/next/no-img-element */}
                                     <img
-                                      src={thumb}
+                                      src={sizedImageSrc(thumb, IMAGE_W.thumb)}
                                       alt=""
                                       className="block h-12 w-9 object-cover object-center sm:h-14 sm:w-10"
                                       draggable={false}
@@ -767,16 +579,6 @@ export default function HeroSection({
                             flySourceRef={heroCardFlyRef}
                             size="novelty"
                           />
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              openCardPage(stackCard.id);
-                            }}
-                            className="hero-button hero-novelty-buy-first inline-flex min-h-10 w-auto min-w-0 max-w-full shrink-0 items-center justify-center rounded-xl bg-gradient-to-r from-purple-600 via-violet-600 to-fuchsia-600 px-4 py-2 text-xs font-semibold text-white shadow-[0_16px_40px_-12px_rgba(168,85,247,0.55)] transition hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-500/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black md:min-h-[44px] md:min-w-[160px] md:px-6 md:py-3 md:text-sm"
-                          >
-                            Купить первым
-                          </button>
                         </div>
                       </div>
                     </div>

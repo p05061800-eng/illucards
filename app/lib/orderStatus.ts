@@ -65,6 +65,44 @@ export function orderStatusFromStorage(v: unknown): OrderStatus {
   return parseOrderStatusInput(v) ?? "new";
 }
 
+const STATUS_RANK: Record<OrderStatus, number> = {
+  new: 0,
+  confirmed: 1,
+  paid: 2,
+  shipped: 3,
+  sent: 3,
+  delivered: 4,
+  cancelled: -1,
+};
+
+/** Нельзя откатить оплаченный заказ назад в «новый/подтверждён». */
+export function isOrderStatusRegression(
+  from: OrderStatus,
+  to: OrderStatus,
+): boolean {
+  if (from === to) return false;
+  if (to === "cancelled" || from === "cancelled") return false;
+  return STATUS_RANK[to] < STATUS_RANK[from];
+}
+
+/**
+ * В ЛК заказ виден только после оплаты. До этого позиции остаются в корзине.
+ * `confirmed` — принятие в боте/админке до чека, не список заказов.
+ */
+export function isCustomerAccountOrderStatus(status: OrderStatus): boolean {
+  return status !== "new" && status !== "confirmed";
+}
+
+/** Корзина на сайте очищается в момент оплаты, не раньше. */
+export function shouldClearSiteCartForOrderStatus(status: OrderStatus): boolean {
+  return (
+    status === "paid" ||
+    status === "shipped" ||
+    status === "sent" ||
+    status === "delivered"
+  );
+}
+
 /** Три основных состояния в ЛК + отмена. */
 export type OrderAccountUiKind =
   | "processing"

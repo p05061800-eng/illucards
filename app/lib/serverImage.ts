@@ -15,7 +15,7 @@ export async function imageBufferTo34Webp(buffer: Buffer): Promise<Buffer> {
       fit: "cover",
       position: "attention",
     })
-    .webp({ quality: 86 })
+    .webp({ quality: 82, effort: 4, smartSubsample: true })
     .toBuffer();
 }
 
@@ -30,7 +30,7 @@ export async function imageBufferToTmntPosterWebp(
       fit: "cover",
       position: "attention",
     })
-    .webp({ quality: 86 })
+    .webp({ quality: 82, effort: 4, smartSubsample: true })
     .toBuffer();
 }
 
@@ -45,7 +45,7 @@ export async function imageBufferToBerserkPosterWebp(
       fit: "contain",
       background: { r: 0, g: 0, b: 0, alpha: 1 },
     })
-    .webp({ quality: 86 })
+    .webp({ quality: 82, effort: 4, smartSubsample: true })
     .toBuffer();
 }
 
@@ -61,7 +61,7 @@ export async function imageBufferToTransformersPrimePosterWebp(
       fit: "contain",
       background: { r: 0, g: 0, b: 0, alpha: 1 },
     })
-    .webp({ quality: 86 })
+    .webp({ quality: 82, effort: 4, smartSubsample: true })
     .toBuffer();
 }
 
@@ -75,7 +75,7 @@ export async function imageBufferLogoWebp(buffer: Buffer): Promise<Buffer> {
       fit: "inside",
       withoutEnlargement: true,
     })
-    .webp({ quality: 88 })
+    .webp({ quality: 82, effort: 4, smartSubsample: true })
     .toBuffer();
 }
 
@@ -92,7 +92,7 @@ export async function imageBufferPromoBannerWebp(
       fit: "inside",
       withoutEnlargement: true,
     })
-    .webp({ quality: 88 })
+    .webp({ quality: 82, effort: 4, smartSubsample: true })
     .toBuffer();
 }
 

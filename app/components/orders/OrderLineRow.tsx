@@ -8,6 +8,7 @@ import { useCategoryTiles } from "@/app/context/CategoryFramesContext";
 import { getCardArtIntrinsicSize } from "@/app/lib/cardArtIntrinsicSize";
 import { cardRequiresAgeConfirmation } from "@/app/lib/cardRequiresAgeConfirmation";
 import { AdultContentBlurGate } from "@/app/components/AdultContentBlurGate";
+import { IMAGE_W, sizedImageSrc } from "@/app/lib/sizedImage";
 
 export type OrderLineRowModel = {
   id: string;
@@ -76,15 +77,13 @@ export function OrderLineRow({
         {line.frontImage ? (
           <AdultContentBlurGate isAdult={isAdult} cardId={line.id} mode="blurOnly">
             <Image
-              src={line.frontImage}
+              src={sizedImageSrc(line.frontImage, IMAGE_W.thumb)}
               alt=""
               width={art.width}
               height={art.height}
               className="h-auto w-full rounded-2xl"
               sizes={sizes}
-              unoptimized={
-                line.frontImage.startsWith("/") || line.frontImage.startsWith("data:")
-              }
+              unoptimized
               style={{
                 width: "100%",
                 height: "auto",

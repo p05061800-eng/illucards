@@ -1,7 +1,6 @@
 "use client";
 
 import {
-  ChevronDown,
   Copy,
   Flame,
   Gem,
@@ -36,6 +35,8 @@ import {
   clearCatalogReturnCardId,
   parseCatalogCardIdFromHash,
   peekCatalogReturnCardId,
+  rememberCatalogReturnCardId,
+  saveCurrentScrollPosition,
 } from "../lib/catalogScrollRestore";
 import { categoryFocusToStyle } from "../lib/imageFocus";
 import {
@@ -49,7 +50,6 @@ import {
   type CatalogCollectionSection,
 } from "../lib/tmntCollections";
 import { stashProductCard } from "../lib/productCardPreview";
-import { collectionPath } from "../lib/collectionAnchor";
 import { CardPreview } from "./CardPreview";
 
 type Props = {
@@ -181,12 +181,13 @@ function CategoryRowBanner({
 }: {
   banner: CategoryTile;
 }) {
-  if (!banner.image) return null;
+  const src = (banner.image?.trim() || banner.plateImage?.trim() || "").trim();
+  if (!src) return null;
   return (
     <div className="category-row-banner-card relative w-full">
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
-        src={banner.image}
+        src={src}
         alt=""
         className="pointer-events-none"
         style={categoryFocusToStyle(banner.imageFocus)}
@@ -222,7 +223,6 @@ export function HomeCollection({
     search,
     setSearch,
     categoryFilter,
-    setCategoryFilter,
     typeFilter,
     toggleType,
     priceSort,
@@ -265,6 +265,8 @@ export function HomeCollection({
         setSearch("");
         collapseMobileFilters();
         stashProductCard(exact);
+        rememberCatalogReturnCardId(exact.id);
+        saveCurrentScrollPosition();
         router.push(`/card/${exact.id}`);
         return;
       }
@@ -273,6 +275,8 @@ export function HomeCollection({
         setSearch("");
         collapseMobileFilters();
         stashProductCard(byTitle[0]);
+        rememberCatalogReturnCardId(byTitle[0].id);
+        saveCurrentScrollPosition();
         router.push(`/card/${byTitle[0].id}`);
         return;
       }
@@ -310,15 +314,6 @@ export function HomeCollection({
   const orphanNames = [...namesWithCards]
     .filter((n) => !apiOrder.some((c) => c.name === n))
     .sort((a, b) => a.localeCompare(b, "ru"));
-
-  const categoryOptions = useMemo(() => {
-    const fromApi = apiOrder.map((c) => c.name);
-    const merged = [...fromApi];
-    for (const o of orphanNames) {
-      if (!merged.includes(o)) merged.push(o);
-    }
-    return merged.sort((a, b) => a.localeCompare(b, "ru"));
-  }, [apiOrder, orphanNames]);
 
   const lockedName = lockedCategory?.trim() ?? "";
 
@@ -593,42 +588,6 @@ export function HomeCollection({
             <div className="relative mt-3 border-t border-white/[0.06] pt-3">
               <div className="grid gap-3 sm:grid-cols-2">
                 <div className="min-w-0">
-                  <label htmlFor="collection-category" className={filterLabelClass}>
-                    Категория
-                  </label>
-                  <div className="relative">
-                    <select
-                      id="collection-category"
-                      value={lockedName || categoryFilter}
-                      onChange={(e) => {
-                        const next = e.target.value;
-                        if (lockedName) {
-                          if (!next) {
-                            router.push("/collection");
-                            return;
-                          }
-                          router.push(collectionPath(next));
-                          return;
-                        }
-                        setCategoryFilter(next);
-                      }}
-                      className="w-full cursor-pointer appearance-none rounded-lg border border-white/10 bg-black/35 py-2 pl-3 pr-9 text-[13px] text-zinc-100 focus:border-violet-400/45 focus:outline-none focus:ring-2 focus:ring-violet-500/15"
-                    >
-                      <option value="">Все категории</option>
-                      {categoryOptions.map((name) => (
-                        <option key={name} value={name}>
-                          {name}
-                        </option>
-                      ))}
-                    </select>
-                    <ChevronDown
-                      className="pointer-events-none absolute right-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-zinc-500"
-                      aria-hidden
-                    />
-                  </div>
-                </div>
-
-                <div className="min-w-0">
                   <span
                     id="collection-sort-label"
                     className={filterLabelClass}
@@ -740,7 +699,7 @@ export function HomeCollection({
         </div>
       </div>
 
-      {filteredSorted.length === 0 ? (
+      {filteredSorted.length === 0 && hasActiveFilters ? (
         <p className="py-12 text-center text-sm text-zinc-500">
           Ничего не найдено — измените фильтры или поиск.
         </p>

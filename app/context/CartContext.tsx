@@ -29,12 +29,24 @@ import {
   rubFromByn,
 } from "../lib/formatPrice";
 import { apiUrl } from "../lib/apiUrl";
+import {
+  cartLineCopyQuantity,
+  cartLineGoodsTotal,
+  cartLineKey,
+  cartLinePieceCount,
+  copySlotsForOriginals,
+  isCustomOrderCategory,
+  isCustomOrderLine,
+  newCartLineKey,
+} from "../lib/customOrderPricing";
 import { readTelegramPrimaryUserId } from "../lib/telegramUserIdentity";
 import { useAuth } from "./AuthContext";
 import { useCurrency } from "./CurrencyContext";
 
 export type CartLine = {
   id: string;
+  /** Уникальная строка корзины (несколько одинаковых карточек на заказ). */
+  lineKey?: string;
   title: string;
   /** Цена за единицу в бел. руб. */
   priceByn: number;
@@ -47,7 +59,10 @@ export type CartLine = {
   categoryOrder?: number;
   /** Для размытия 18+ в корзине до подтверждения возраста. */
   rarity?: CardRarity;
+  /** Полноценные экземпляры (полная цена). */
   quantity: number;
+  /** Дополнительные копии того же макета (скидка 50%). */
+  copyQuantity?: number;
 };
 
 /** Ключ записи корзины в `localStorage` */
@@ -183,6 +198,16 @@ function normalizeLines(raw: unknown): CartLine[] {
         : undefined;
     const q = typeof o.quantity === "number" ? o.quantity : Number(o.quantity);
     const quantity = Number.isFinite(q) && q >= 1 ? Math.floor(q) : 1;
+    const cqRaw =
+      typeof o.copyQuantity === "number"
+        ? o.copyQuantity
+        : Number(o.copyQuantity);
+    const copyQuantity =
+      Number.isFinite(cqRaw) && cqRaw > 0 ? Math.min(99, Math.floor(cqRaw)) : 0;
+    const storedKey =
+      typeof o.lineKey === "string" && o.lineKey.trim()
+        ? o.lineKey.trim()
+        : "";
     if (!id) continue;
 
     let priceByn: number;
@@ -200,7 +225,7 @@ function normalizeLines(raw: unknown): CartLine[] {
       continue;
     }
 
-    out.push({
+    const base: CartLine = {
       id,
       title,
       priceByn,
@@ -210,6 +235,34 @@ function normalizeLines(raw: unknown): CartLine[] {
       ...(categoryOrder != null ? { categoryOrder } : {}),
       ...(rarity ? { rarity } : {}),
       quantity,
+      ...(copyQuantity > 0 ? { copyQuantity } : {}),
+      ...(storedKey ? { lineKey: storedKey } : {}),
+    };
+    if (isCustomOrderLine(base) && quantity > 1) {
+      const slots = copySlotsForOriginals(quantity, copyQuantity);
+      slots.forEach((copiesOnLine, idx) => {
+        out.push({
+          ...base,
+          quantity: 1,
+          lineKey: idx === 0 && storedKey ? storedKey : newCartLineKey(),
+          ...(copiesOnLine > 0
+            ? { copyQuantity: copiesOnLine }
+            : { copyQuantity: undefined }),
+        });
+      });
+      continue;
+    }
+    if (isCustomOrderLine(base)) {
+      out.push({
+        ...base,
+        quantity: 1,
+        lineKey: storedKey || newCartLineKey(),
+      });
+      continue;
+    }
+    out.push({
+      ...base,
+      lineKey: storedKey || id,
     });
   }
   return out;
@@ -250,8 +303,14 @@ type CartContextValue = {
   closeCart: () => void;
   toggleCart: () => void;
   addToCart: (card: StoredCard) => void;
+  addCustomOrderToCart: (
+    card: StoredCard,
+    originals: number,
+    copies: number,
+  ) => void;
   removeFromCart: (id: string) => void;
   setQuantity: (id: string, quantity: number) => void;
+  setCopyQuantity: (id: string, copyQuantity: number) => void;
   clearCart: () => void;
   /** Пометить корзину как изменённую локально (например, перед checkout). */
   markCartActive: () => void;
@@ -264,6 +323,7 @@ type CartContextValue = {
       id: string;
       title: string;
       quantity: number;
+      copyQuantity?: number;
       priceByn: number;
       priceRub: number;
       frontImage?: string;
@@ -379,8 +439,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
       }
 
       // Очищаем локальную корзину только при новом cartClearedAt с сервера
-      // (после подтверждения заказа админом), и только если пользователь
-      // не менял корзину после этого момента.
+      // (после оплаты заказа), и только если пользователь не менял корзину
+      // после этого момента.
       if (cartClearedAt > prevSeenClear) {
         writeClientSeenCartClearedAt(cartClearedAt);
         if (
@@ -428,8 +488,12 @@ export function CartProvider({ children }: { children: ReactNode }) {
     const seenClear = readClientSeenCartClearedAt();
     const cartPayload = cartItems.map((x) => ({
       id: x.id,
+      ...(x.lineKey ? { lineKey: x.lineKey } : {}),
       title: x.title,
       quantity: x.quantity,
+      ...(x.copyQuantity && x.copyQuantity > 0
+        ? { copyQuantity: x.copyQuantity }
+        : {}),
       priceByn: x.priceByn,
       priceRub: x.priceRub,
       frontImage: x.frontImage,
@@ -472,6 +536,26 @@ export function CartProvider({ children }: { children: ReactNode }) {
   }, [cartItems, deliveryCountry, hydrated, primaryTelegramUserId]);
 
   const addToCart = useCallback((card: StoredCard) => {
+    if (isCustomOrderCategory(card.category)) {
+      touchLocalCartModifiedAt();
+      const { priceByn, priceRub } = lineFromCard(card);
+      setCartItems((prev) => [
+        ...prev,
+        {
+          id: card.id,
+          lineKey: newCartLineKey(),
+          title: card.title,
+          priceByn,
+          priceRub,
+          frontImage: card.frontImage,
+          category: card.category,
+          categoryOrder: card.categoryOrder,
+          rarity: cartLineRarityForStorage(card),
+          quantity: 1,
+        },
+      ]);
+      return;
+    }
     touchLocalCartModifiedAt();
     const { priceByn, priceRub } = lineFromCard(card);
     setCartItems((prev) => {
@@ -491,6 +575,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
         ...prev,
         {
           id: card.id,
+          lineKey: card.id,
           title: card.title,
           priceByn,
           priceRub,
@@ -504,21 +589,83 @@ export function CartProvider({ children }: { children: ReactNode }) {
     });
   }, []);
 
-  const removeFromCart = useCallback((id: string) => {
+  const addCustomOrderToCart = useCallback(
+    (card: StoredCard, originals: number, copies: number) => {
+      touchLocalCartModifiedAt();
+      const orig = Math.max(1, Math.min(99, Math.floor(originals) || 1));
+      const copyN = Math.max(0, Math.min(99, Math.floor(copies) || 0));
+      const { priceByn, priceRub } = lineFromCard(card);
+      const slots = copySlotsForOriginals(orig, copyN);
+      setCartItems((prev) => [
+        ...prev,
+        ...slots.map((copiesOnLine) => ({
+          id: card.id,
+          lineKey: newCartLineKey(),
+          title: card.title,
+          priceByn,
+          priceRub,
+          frontImage: card.frontImage,
+          category: card.category,
+          categoryOrder: card.categoryOrder,
+          rarity: cartLineRarityForStorage(card),
+          quantity: 1,
+          ...(copiesOnLine > 0 ? { copyQuantity: copiesOnLine } : {}),
+        })),
+      ]);
+    },
+    [],
+  );
+
+  const removeFromCart = useCallback((lineKey: string) => {
     touchLocalCartModifiedAt();
-    setCartItems((prev) => prev.filter((l) => l.id !== id));
+    setCartItems((prev) =>
+      prev.filter((l) => cartLineKey(l) !== lineKey),
+    );
   }, []);
 
-  const setQuantity = useCallback((id: string, quantity: number) => {
+  const setQuantity = useCallback((lineKey: string, quantity: number) => {
     touchLocalCartModifiedAt();
     const q = Math.floor(quantity);
-    if (q < 1) {
-      setCartItems((prev) => prev.filter((l) => l.id !== id));
-      return;
-    }
-    const capped = Math.min(99, q);
+    setCartItems((prev) => {
+      const i = prev.findIndex((l) => cartLineKey(l) === lineKey);
+      if (i < 0) return prev;
+      const line = prev[i];
+      if (isCustomOrderLine(line)) {
+        if (q < 1) return prev.filter((_, idx) => idx !== i);
+        if (q <= 1) return prev.map((l, idx) => (idx === i ? { ...l, quantity: 1 } : l));
+        const extra = Math.min(99, q) - 1;
+        const added: CartLine[] = Array.from({ length: extra }, () => {
+          const { copyQuantity: _copies, ...rest } = line;
+          return {
+            ...rest,
+            quantity: 1,
+            lineKey: newCartLineKey(),
+          };
+        });
+        return [...prev.slice(0, i + 1), ...added, ...prev.slice(i + 1)].map(
+          (l, idx) => (idx === i ? { ...l, quantity: 1 } : l),
+        );
+      }
+      if (q < 1) return prev.filter((_, idx) => idx !== i);
+      return prev.map((l, idx) =>
+        idx === i ? { ...l, quantity: Math.min(99, q) } : l,
+      );
+    });
+  }, []);
+
+  const setCopyQuantity = useCallback((lineKey: string, copyQuantity: number) => {
+    touchLocalCartModifiedAt();
+    const n = Math.floor(copyQuantity);
+    const capped = Number.isFinite(n) ? Math.max(0, Math.min(99, n)) : 0;
     setCartItems((prev) =>
-      prev.map((l) => (l.id === id ? { ...l, quantity: capped } : l))
+      prev.map((l) => {
+        if (cartLineKey(l) !== lineKey) return l;
+        if (capped <= 0) {
+          const { copyQuantity: _drop, ...rest } = l;
+          return rest;
+        }
+        return { ...l, copyQuantity: capped };
+      }),
     );
   }, []);
 
@@ -572,8 +719,28 @@ export function CartProvider({ children }: { children: ReactNode }) {
           typeof l.rarity === "string" && l.rarity.trim()
             ? parseCardRarity(l.rarity)
             : undefined;
+        const copiesOnOrder = cartLineCopyQuantity(l);
+        if (isCustomOrderCategory(category) || copiesOnOrder > 0) {
+          const slots = copySlotsForOriginals(q, copiesOnOrder);
+          for (const copiesOnLine of slots) {
+            toAdd.push({
+              id,
+              lineKey: newCartLineKey(),
+              title,
+              priceByn,
+              priceRub,
+              frontImage: img,
+              quantity: 1,
+              ...(copiesOnLine > 0 ? { copyQuantity: copiesOnLine } : {}),
+              ...(category ? { category } : {}),
+              ...(rarity ? { rarity } : {}),
+            });
+          }
+          continue;
+        }
         toAdd.push({
           id,
+          lineKey: id,
           title,
           priceByn,
           priceRub,
@@ -624,19 +791,19 @@ export function CartProvider({ children }: { children: ReactNode }) {
   );
 
   const itemCount = useMemo(
-    () => cartItems.reduce((s, l) => s + l.quantity, 0),
+    () => cartItems.reduce((s, l) => s + cartLinePieceCount(l), 0),
     [cartItems]
   );
 
   const totalPriceByn = useMemo(
     () =>
-      cartItems.reduce((s, l) => s + l.priceByn * l.quantity, 0),
+      cartItems.reduce((s, l) => s + cartLineGoodsTotal(l).byn, 0),
     [cartItems]
   );
 
   const totalPriceRub = useMemo(
     () =>
-      cartItems.reduce((s, l) => s + l.priceRub * l.quantity, 0),
+      cartItems.reduce((s, l) => s + cartLineGoodsTotal(l).rub, 0),
     [cartItems]
   );
 
@@ -679,8 +846,10 @@ export function CartProvider({ children }: { children: ReactNode }) {
       closeCart,
       toggleCart,
       addToCart,
+      addCustomOrderToCart,
       removeFromCart,
       setQuantity,
+      setCopyQuantity,
       clearCart,
       markCartActive,
       repeatOrderToCart,
@@ -702,8 +871,10 @@ export function CartProvider({ children }: { children: ReactNode }) {
       closeCart,
       toggleCart,
       addToCart,
+      addCustomOrderToCart,
       removeFromCart,
       setQuantity,
+      setCopyQuantity,
       clearCart,
       markCartActive,
       repeatOrderToCart,
@@ -725,7 +896,7 @@ export function readClientCheckoutSnapshot(): {
   const cartItems = loadFromStorage();
   const deliveryCountry = loadDeliveryCountry();
   if (!cartItems.length || !deliveryCountry) return null;
-  const goodsTotal = cartItems.reduce((s, l) => s + l.priceByn * l.quantity, 0);
+  const goodsTotal = cartItems.reduce((s, l) => s + cartLineGoodsTotal(l).byn, 0);
   const deliveryByn = deliveryCharge(deliveryCountry).amountByn;
   const orderTotalByn =
     Math.round((goodsTotal + deliveryByn) * 100) / 100;

@@ -8,6 +8,7 @@ import {
   saveOrderRecord,
 } from "@/app/lib/ordersStore";
 import { sanitizeOrderLineImageUrl } from "@/app/lib/sanitizeOrderLineImageUrl";
+import { cartLineGoodsTotal } from "@/app/lib/customOrderPricing";
 
 export { ORDERS_DIR } from "@/app/lib/orderPaths";
 export type { OrderLineIn } from "@/app/lib/orderTypes";
@@ -52,10 +53,22 @@ export function normalizeOrderItems(raw: unknown): OrderLineIn[] | null {
       return null;
     if (!Number.isFinite(priceRub) || priceRub < 0 || priceRub > 50_000_000)
       return null;
+    const cqRaw =
+      typeof o.copyQuantity === "number"
+        ? o.copyQuantity
+        : Number(o.copyQuantity);
+    const copyQuantity =
+      Number.isFinite(cqRaw) && cqRaw > 0 && Number.isInteger(cqRaw)
+        ? Math.min(99, cqRaw)
+        : 0;
+    const lineKeyRaw =
+      typeof o.lineKey === "string" ? o.lineKey.trim().slice(0, 80) : "";
     const lineOut: OrderLineIn = {
       id: id.slice(0, 120),
+      ...(lineKeyRaw ? { lineKey: lineKeyRaw } : {}),
       title: title.slice(0, 300),
       quantity: q,
+      ...(copyQuantity > 0 ? { copyQuantity } : {}),
       priceByn,
       priceRub: Math.round(priceRub),
     };
@@ -127,7 +140,7 @@ export async function persistOrder(
 
   const goodsByn =
     Math.round(
-      items.reduce((s, l) => s + l.priceByn * l.quantity, 0) * 100,
+      items.reduce((s, l) => s + cartLineGoodsTotal(l).byn, 0) * 100,
     ) / 100;
   const d = deliveryCharge(deliveryCountry);
   const orderBynCharged = Math.round((goodsByn + d.amountByn) * 100) / 100;

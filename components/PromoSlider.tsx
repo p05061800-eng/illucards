@@ -336,13 +336,7 @@ function PromoLinkedMedia({
   );
 }
 
-function PromoCtaStack({
-  examplesHref,
-  orderHref,
-}: {
-  examplesHref: string;
-  orderHref?: string;
-}) {
+function PromoCtaStack({ examplesHref }: { examplesHref: string }) {
   return (
     <div className="hero-promo-cta-stack">
       {examplesHref ? (
@@ -361,11 +355,12 @@ function PromoCtaStack({
           </Link>
         )
       ) : null}
-      {orderHref ? (
-        <Link href={orderHref} className="hero-promo-cta">
-          Заказать
-        </Link>
-      ) : null}
+      <span
+        className="hero-promo-cta hero-promo-cta--coming-soon"
+        aria-disabled="true"
+      >
+        (в разработке)
+      </span>
     </div>
   );
 }
@@ -526,10 +521,7 @@ function CustomOrderCarousel({
                   >
                     <ProductCardNavArrowIcon direction="next" />
                   </button>
-                  <PromoCtaStack
-                    examplesHref={examplesHref}
-                    orderHref={`/card/${activeCard.id}`}
-                  />
+                  <PromoCtaStack examplesHref={examplesHref} />
                 </div>
               </div>
             </div>

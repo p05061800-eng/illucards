@@ -85,10 +85,12 @@ export function TelegramCheckoutButton({
         );
         setSubmitting(false);
         onBeforeNavigate?.();
+        markCartActive();
         redirectToTelegramUrl(result.botUrl);
         return;
       }
       onBeforeNavigate?.();
+      markCartActive();
       redirectToTelegramUrl(result.botUrl);
     } catch {
       setError("Сеть недоступна. Попробуйте ещё раз.");

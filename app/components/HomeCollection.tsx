@@ -50,6 +50,7 @@ import {
   type CatalogCollectionSection,
 } from "../lib/tmntCollections";
 import { stashProductCard } from "../lib/productCardPreview";
+import { BuyWholeCollectionButton } from "./BuyWholeCollectionButton";
 import { CardPreview } from "./CardPreview";
 
 type Props = {
@@ -698,6 +699,13 @@ export function HomeCollection({
           ) : null}
         </div>
       </div>
+
+      {lockedName ? (
+        <BuyWholeCollectionButton
+          collectionName={lockedName}
+          cards={cards}
+        />
+      ) : null}
 
       {filteredSorted.length === 0 && hasActiveFilters ? (
         <p className="py-12 text-center text-sm text-zinc-500">

@@ -81,19 +81,7 @@ export async function POST(request: NextRequest) {
   if ("cart" in o) {
     let incoming = parseCart(o.cart);
     const explicitClearCart = o.clear_cart === true || o.cart_clear === true;
-    const seenRaw = o.client_seen_updated_at;
-    const clientSeen =
-      typeof seenRaw === "number" && Number.isFinite(seenRaw)
-        ? seenRaw
-        : typeof seenRaw === "string"
-          ? Number(seenRaw)
-          : NaN;
-    const clientSeenOk = Number.isFinite(clientSeen) && clientSeen > 0;
     const prevEmpty = (prev?.cart ?? []).length === 0;
-    const prevTs =
-      prev && typeof prev.updatedAt === "number" && Number.isFinite(prev.updatedAt)
-        ? prev.updatedAt
-        : 0;
     const prevClearedAt =
       prev && typeof prev.cartClearedAt === "number" && Number.isFinite(prev.cartClearedAt)
         ? Math.floor(prev.cartClearedAt)
@@ -108,9 +96,8 @@ export async function POST(request: NextRequest) {
     const clientStaleVsServerEmpty =
       prevEmpty &&
       incoming.length > 0 &&
-      ((prevTs > 0 && (!clientSeenOk || clientSeen < prevTs)) ||
-        (prevClearedAt > 0 &&
-          (clientClearedSeen <= 0 || clientClearedSeen < prevClearedAt)));
+      prevClearedAt > 0 &&
+      (clientClearedSeen <= 0 || clientClearedSeen < prevClearedAt);
     if (clientStaleVsServerEmpty) {
       incoming = [];
     }

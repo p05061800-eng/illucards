@@ -30,6 +30,9 @@ import {
 } from "../lib/formatPrice";
 import { apiUrl } from "../lib/apiUrl";
 import {
+  collectionPackLineId,
+} from "../lib/collectionBundle";
+import {
   cartLineCopyQuantity,
   cartLineGoodsTotal,
   cartLineKey,
@@ -303,6 +306,12 @@ type CartContextValue = {
   closeCart: () => void;
   toggleCart: () => void;
   addToCart: (card: StoredCard) => void;
+  addCollectionToCart: (input: {
+    collectionName: string;
+    cards: StoredCard[];
+    priceByn: number;
+    priceRub: number;
+  }) => void;
   addCustomOrderToCart: (
     card: StoredCard,
     originals: number,
@@ -438,17 +447,16 @@ export function CartProvider({ children }: { children: ReactNode }) {
         writeClientSeenServerUpdatedAt(ts);
       }
 
-      // Очищаем локальную корзину только при новом cartClearedAt с сервера
-      // (после оплаты заказа), и только если пользователь не менял корзину
-      // после этого момента.
+      // Корзину с сайта чистим только после оплаты (новый cartClearedAt).
+      // Не затираем локальные позиции, если клиент менял корзину позже очистки.
       if (cartClearedAt > prevSeenClear) {
         writeClientSeenCartClearedAt(cartClearedAt);
         if (
           serverCart.length === 0 &&
           localModified > 0 &&
-          localModified <= cartClearedAt
+          localModified < cartClearedAt
         ) {
-          setCartItems([]);
+          setCartItems((prev) => (prev.length === 0 ? prev : []));
           applyLocalCartClear(cartClearedAt);
         }
       } else if (serverCart.length > 0) {
@@ -588,6 +596,52 @@ export function CartProvider({ children }: { children: ReactNode }) {
       ];
     });
   }, []);
+
+  const addCollectionToCart = useCallback(
+    (input: {
+      collectionName: string;
+      cards: StoredCard[];
+      priceByn: number;
+      priceRub: number;
+    }) => {
+      const packCards = input.cards.filter(
+        (c) => String(c?.id || "").trim() && !isCustomOrderCategory(c.category),
+      );
+      if (packCards.length === 0) return;
+      const packId = collectionPackLineId(input.collectionName);
+      const cardIds = new Set(packCards.map((c) => c.id));
+      const cover = packCards[0];
+      const priceByn = Number.isFinite(input.priceByn)
+        ? Math.round(input.priceByn * 100) / 100
+        : 0;
+      const priceRub = Number.isFinite(input.priceRub)
+        ? Math.round(input.priceRub)
+        : 0;
+      if (priceByn <= 0 && priceRub <= 0) return;
+      touchLocalCartModifiedAt();
+      setCartItems((prev) => {
+        const kept = prev.filter(
+          (l) => l.id !== packId && !cardIds.has(l.id),
+        );
+        const adult = packCards.some((c) => cardHasRarityTag(c, "adult"));
+        return [
+          ...kept,
+          {
+            id: packId,
+            lineKey: packId,
+            title: `Вся коллекция ${input.collectionName.trim()}`.slice(0, 300),
+            priceByn,
+            priceRub,
+            frontImage: cover.frontImage,
+            category: cover.category,
+            rarity: adult ? "adult" : cover.rarity,
+            quantity: 1,
+          },
+        ];
+      });
+    },
+    [],
+  );
 
   const addCustomOrderToCart = useCallback(
     (card: StoredCard, originals: number, copies: number) => {
@@ -847,6 +901,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
       closeCart,
       toggleCart,
       addToCart,
+      addCollectionToCart,
       addCustomOrderToCart,
       removeFromCart,
       setQuantity,
@@ -872,6 +927,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
       closeCart,
       toggleCart,
       addToCart,
+      addCollectionToCart,
       addCustomOrderToCart,
       removeFromCart,
       setQuantity,

@@ -687,6 +687,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
         id: string;
         title: string;
         quantity: number;
+        copyQuantity?: number;
         priceByn: number;
         priceRub: number;
         frontImage?: string;

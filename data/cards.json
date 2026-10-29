@@ -8359,7 +8359,7 @@
   },
   {
     "id": "db0770c1-b6fc-4e1a-b5bb-286b78ec72e5",
-    "title": "Карточка на заказ \"Человек-паук и Гвен Стейси\"",
+    "title": "Карточка на заказ",
     "description": "",
     "category": "Карточка на заказ",
     "subcategory": "",
@@ -10380,13 +10380,18 @@
       "intelligence": 50,
       "magic": 50
     },
-    "effect": "vario",
-    "isNew": false,
+    "isNew": true,
     "isPopular": false,
     "isSale": false,
     "inStock": true,
     "ratingAvg": 5,
     "reviewCount": 0,
+    "rarities": [
+      "common",
+      "novelty"
+    ],
+    "noveltySince": "2026-10-25T23:21:15.224Z",
+    "effect": "vario",
     "categoryBg": "/uploads/1792970454944-aa4a775b.webp",
     "frontImageFocus": {
       "x": 50,
@@ -10400,15 +10405,10 @@
       "x": 50,
       "y": 50
     },
-    "categoryOrder": 8,
     "priceRub": 750,
+    "categoryOrder": 8,
     "varioSmoothing": 0.18,
     "frontImageWidth": 600,
-    "frontImageHeight": 900,
-    "rarities": [
-      "common",
-      "novelty"
-    ],
-    "noveltySince": "2026-10-25T23:21:15.224Z"
+    "frontImageHeight": 900
   }
 ]

@@ -7,9 +7,6 @@ import {
   CUSTOM_ORDER_PRICE_BYN,
   CUSTOM_ORDER_PRICE_RUB,
 } from "@/app/lib/customOrderPricing";
-import { getTelegramOrderBotUsername } from "@/app/lib/telegramOrderBotUsername";
-import { telegramCustomCardOrderUrl } from "@/app/lib/telegramOrderStartPayload";
-import { openTelegramUrl } from "@/app/lib/yandexMetrika";
 
 function QtyChip({
   label,
@@ -58,21 +55,14 @@ export function CustomOrderBuyPanel({
   inStock: boolean;
 }) {
   const [originals, setOriginals] = useState(1);
-  const [copies, setCopies] = useState(0);
   const addToCartWithFeedback = useAddToCartWithFeedback();
 
   const addCurrent = () => {
     const source = document.querySelector("[data-cart-fly-source]");
     addToCartWithFeedback(card, source as HTMLElement | null, {
       originals,
-      copies,
+      copies: 0,
     });
-  };
-
-  const goToBot = () => {
-    addCurrent();
-    const url = telegramCustomCardOrderUrl(getTelegramOrderBotUsername());
-    openTelegramUrl(url, "_blank", "noopener,noreferrer");
   };
 
   return (
@@ -86,34 +76,22 @@ export function CustomOrderBuyPanel({
         — со скидкой 50%.
       </p>
       <QtyChip
-        label="Полноценные"
+        label="Количество"
         value={originals}
         min={1}
         onChange={setOriginals}
       />
-      <QtyChip
-        label="Копии со скидкой 50%"
-        value={copies}
-        min={0}
-        onChange={setCopies}
-      />
-      <div className="flex w-full flex-col gap-2.5 sm:flex-row sm:gap-3">
-        <button
-          type="button"
-          disabled={!inStock}
-          onClick={addCurrent}
-          className="w-full rounded-xl border border-purple-500/45 bg-purple-950/40 px-4 py-2.5 text-sm font-semibold text-purple-100 transition hover:border-purple-400/55 hover:bg-purple-900/50 disabled:cursor-not-allowed disabled:opacity-40"
-        >
-          В корзину
-        </button>
-        <button
-          type="button"
-          onClick={goToBot}
-          className="w-full rounded-xl border border-sky-500/40 bg-sky-950/40 px-4 py-2.5 text-sm font-semibold text-sky-100 transition hover:border-sky-400/50 hover:bg-sky-900/50"
-        >
-          Перейти в бот для оформления
-        </button>
-      </div>
+      <p className="text-sm leading-relaxed text-zinc-400">
+        Копию можете добавить в корзине.
+      </p>
+      <button
+        type="button"
+        disabled={!inStock}
+        onClick={addCurrent}
+        className="w-full rounded-xl border border-purple-500/45 bg-purple-950/40 px-4 py-2.5 text-sm font-semibold text-purple-100 transition hover:border-purple-400/55 hover:bg-purple-900/50 disabled:cursor-not-allowed disabled:opacity-40"
+      >
+        В корзину
+      </button>
     </div>
   );
 }

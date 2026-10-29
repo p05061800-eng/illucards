@@ -15,11 +15,13 @@ import { useCatalogFilter } from "@/app/context/CatalogFilterContext";
 
 type ParentKind = "home" | "categories" | "collection";
 
-const BACK_PILL_CLASS =
-  "inline-flex min-h-9 items-center gap-1.5 rounded-full border border-violet-300/55 bg-zinc-950/95 px-3 py-1.5 text-sm font-semibold text-white shadow-[0_6px_20px_rgba(0,0,0,0.4),inset_0_1px_0_rgba(255,255,255,0.12)] backdrop-blur-md transition hover:border-violet-200/80 hover:bg-zinc-900 sm:min-h-10 sm:px-4 sm:py-2";
+const PILL_CLASS =
+  "inline-flex min-h-9 items-center gap-1.5 rounded-full border px-3 py-1.5 text-sm font-semibold shadow-[0_6px_20px_rgba(0,0,0,0.4),inset_0_1px_0_rgba(255,255,255,0.12)] backdrop-blur-md transition";
 
-const FILTER_PILL_CLASS =
-  "inline-flex min-h-9 items-center gap-1.5 rounded-full border px-3 py-1.5 text-sm font-semibold shadow-[0_6px_20px_rgba(0,0,0,0.4),inset_0_1px_0_rgba(255,255,255,0.12)] backdrop-blur-md transition sm:min-h-10 sm:px-4 sm:py-2";
+const BACK_PILL_CLASS =
+  `${PILL_CLASS} border-violet-300/55 bg-zinc-950/95 text-white hover:border-violet-200/80 hover:bg-zinc-900`;
+
+const FILTER_PILL_CLASS = PILL_CLASS;
 
 type Props = {
   href: string;
@@ -46,8 +48,8 @@ function isModifiedClick(e: MouseEvent<HTMLAnchorElement>): boolean {
 }
 
 /**
- * «Назад» сверху слева (фильтр справа, если нужен), всегда на экране.
- * Портал в body — иначе overflow у main уносит кнопку при скролле.
+ * «Назад» и «Фильтр» одной парой по центру, одинаковые на телефоне и компьютере.
+ * Портал в body — иначе overflow у main уносит кнопки при скролле.
  */
 export function CatalogBackLink({
   href,
@@ -85,6 +87,10 @@ export function CatalogBackLink({
     const parent = peekCatalogHierarchyParent();
     const acceptParent = acceptFor(parentKind);
     if (parent && acceptParent(parent) && parent !== window.location.pathname) {
+      if (parent === "/") {
+        router.replace("/");
+        return;
+      }
       router.back();
       return;
     }
@@ -124,11 +130,11 @@ export function CatalogBackLink({
 
   return (
     <>
-      <div className="mb-2 h-9 sm:mb-3 sm:h-10" aria-hidden />
+      <div className="mb-2 h-9" aria-hidden />
       {mounted
         ? createPortal(
             <div
-              className="pointer-events-none fixed inset-x-0 z-[180] flex items-center justify-between gap-3 px-[max(0.75rem,env(safe-area-inset-left))] pr-[max(0.75rem,env(safe-area-inset-right))] sm:px-8"
+              className="pointer-events-none fixed inset-x-0 z-[180] flex items-center justify-center gap-2.5 px-[max(0.75rem,env(safe-area-inset-left))] pr-[max(0.75rem,env(safe-area-inset-right))]"
               style={{ top }}
             >
               <div className="pointer-events-auto">{pill}</div>

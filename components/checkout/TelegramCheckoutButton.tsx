@@ -27,7 +27,6 @@ export function TelegramCheckoutButton({
     deliveryCountry,
     orderTotalByn,
     markCartActive,
-    clearCart,
   } = useCart();
   const { primaryTelegramUserId, user } = useAuth();
   const [submitting, setSubmitting] = useState(false);
@@ -90,7 +89,6 @@ export function TelegramCheckoutButton({
         return;
       }
       onBeforeNavigate?.();
-      clearCart();
       redirectToTelegramUrl(result.botUrl);
     } catch {
       setError("Сеть недоступна. Попробуйте ещё раз.");
@@ -98,7 +96,6 @@ export function TelegramCheckoutButton({
     }
   }, [
     cartItems,
-    clearCart,
     deliveryCountry,
     hydrated,
     markCartActive,

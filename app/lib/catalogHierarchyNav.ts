@@ -103,7 +103,7 @@ export function peekCatalogHierarchyParent(): string | null {
 }
 
 export function acceptCardBackParent(parent: string): boolean {
-  return isCollectionSlugPath(parent);
+  return isCollectionSlugPath(parent) || parent === "/";
 }
 
 export function acceptCollectionBackParent(parent: string): boolean {

@@ -7,7 +7,6 @@ import { playClick } from "@/app/lib/cartUx/playClick";
 import {
   collectionOfferPrice,
   collectionPackCards,
-  collectionRetailTotal,
 } from "@/app/lib/collectionBundle";
 import { isCustomOrderCategory } from "@/app/lib/customOrderHeroCarousel";
 
@@ -24,10 +23,9 @@ type Props = {
 export function BuyWholeCollectionButton({ collectionName, cards }: Props) {
   const { addCollectionToCart, openCart } = useCart();
   const packCards = useMemo(() => collectionPackCards(cards), [cards]);
-  const retail = useMemo(() => collectionRetailTotal(packCards), [packCards]);
   const offer = useMemo(
-    () => collectionOfferPrice(collectionName, retail),
-    [collectionName, retail],
+    () => collectionOfferPrice(collectionName, packCards),
+    [collectionName, packCards],
   );
 
   if (!collectionName.trim() || isCustomOrderCategory(collectionName)) {

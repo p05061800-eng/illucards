@@ -75,6 +75,9 @@ export function CustomOrderBuyPanel({
         {CUSTOM_ORDER_PRICE_BYN} BYN. Каждая дополнительная копия того же макета
         — со скидкой 50%.
       </p>
+      <p className="text-sm leading-relaxed text-zinc-400">
+        Срок изготовления — 2–3 дня.
+      </p>
       <QtyChip
         label="Количество"
         value={originals}

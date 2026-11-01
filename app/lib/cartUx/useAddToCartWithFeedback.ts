@@ -3,6 +3,7 @@
 import { useCallback } from "react";
 import type { StoredCard } from "../../api/cards/route";
 import { useCart } from "../../context/CartContext";
+import { isCustomOrderCategory } from "@/app/lib/customOrderHeroCarousel";
 import { flyToCart } from "./flyToCart";
 import { playClick } from "./playClick";
 
@@ -18,6 +19,7 @@ export function useAddToCartWithFeedback() {
       flySource?: HTMLElement | null,
       qty?: { originals?: number; copies?: number },
     ) => {
+      if (isCustomOrderCategory(card.category)) return;
       playClick();
       flyToCart(flySource ?? null);
       if (qty) {

@@ -700,7 +700,7 @@ export function HomeCollection({
         </div>
       </div>
 
-      {lockedName ? (
+      {lockedName && lockedName !== TMNT_PARENT_CATEGORY ? (
         <BuyWholeCollectionButton
           collectionName={lockedName}
           cards={cards}
@@ -781,6 +781,17 @@ export function HomeCollection({
                       afterParentBanner
                     />
                   </>
+                ) : null}
+
+                {lockedName && section.tmntCollectionId ? (
+                  <div className="mt-4 sm:mt-5">
+                    <BuyWholeCollectionButton
+                      collectionName={section.heading}
+                      cards={cards.filter((c) =>
+                        cardBelongsToCatalogSection(c, section),
+                      )}
+                    />
+                  </div>
                 ) : null}
 
                 {sectionCards.length > 0 ? (

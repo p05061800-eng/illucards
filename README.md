@@ -1,6 +1,6 @@
 # illucards
 
-Магазин и личный кабинет на [Next.js](https://nextjs.org) (App Router). В `package.json` зафиксирован **Node 20.x**.
+Магазин и личный кабинет на [Next.js](https://nextjs.org) (App Router). В `package.json` зафиксирован **Node 24.x**.
 
 ---
 
